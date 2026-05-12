@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import cloudpickle
@@ -10,13 +9,6 @@ from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDat
 
 class RtvaeSynthesizer(TabularDataSynthesizer):
     """Wrapper for synthcity's RTVAE plugin."""
-
-    DEFAULT_NONLIN = "leaky_relu"
-    DEFAULT_DROPOUT = 0.1
-    DEFAULT_LEARNING_RATE = 1e-3
-    DEFAULT_WEIGHT_DECAY = 1e-5
-    DEFAULT_ROBUST_BETA = 2
-    DEFAULT_RANDOM_STATE = 0
 
     def __init__(
         self,
@@ -42,17 +34,17 @@ class RtvaeSynthesizer(TabularDataSynthesizer):
             "encoder_n_layers_hidden": int(synth_params["number_of_layers"]),
             "decoder_n_units_hidden": int(synth_params["number_of_units_in_layers"]),
             "encoder_n_units_hidden": int(synth_params["number_of_units_in_layers"]),
-            "decoder_nonlin": self.DEFAULT_NONLIN,
-            "encoder_nonlin": self.DEFAULT_NONLIN,
-            "decoder_dropout": float(self.DEFAULT_DROPOUT),
-            "encoder_dropout": float(self.DEFAULT_DROPOUT),
+            "decoder_nonlin": "leaky_relu",
+            "encoder_nonlin": "leaky_relu",
+            "decoder_dropout": float(0.1),
+            "encoder_dropout": float(0.1),
             "n_units_embedding": int(synth_params["n_units_embedding"]),
             "batch_size": int(training_params["batch_size"]),
             "n_iter": int(training_params["n_iter"]),
-            "lr": float(self.DEFAULT_LEARNING_RATE),
-            "weight_decay": float(self.DEFAULT_WEIGHT_DECAY),
-            "robust_divergence_beta": int(self.DEFAULT_ROBUST_BETA),
-            "random_state": int(self.DEFAULT_RANDOM_STATE),
+            "lr": float(1e-3),
+            "weight_decay": float(1e-5),
+            "robust_divergence_beta": int(2),
+            "random_state": int(0),
         }
         self._sampling = config["synthetization_configuration"]["algorithm"]["sampling"]
 

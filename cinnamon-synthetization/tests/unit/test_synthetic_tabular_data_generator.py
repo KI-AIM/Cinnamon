@@ -7,6 +7,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 ALGORITHM_DIR = PROJECT_ROOT / "synthetic_tabular_data_generator" / "algorithms"
+LLM_BASE_FILE = PROJECT_ROOT / "synthetic_tabular_data_generator" / "llm" / "base.py"
 SKIP_FILES = {"__init__.py"}
 
 
@@ -42,10 +43,15 @@ def _annotation_matches(annotation: str, expected_parts: list[str]) -> bool:
 
 
 def _is_tabular_base(base: ast.expr) -> bool:
+    valid_base_names = {
+        "TabularDataSynthesizer",
+        "ConfiguredLlmSynthesizerBase",
+        "LlmTextSynthesisBase",
+    }
     if isinstance(base, ast.Name):
-        return base.id == "TabularDataSynthesizer"
+        return base.id in valid_base_names
     if isinstance(base, ast.Attribute):
-        return base.attr == "TabularDataSynthesizer"
+        return base.attr in valid_base_names
     return False
 
 
@@ -68,14 +74,34 @@ def _method_map(cls: ast.ClassDef) -> dict[str, ast.FunctionDef]:
     return {node.name: node for node in cls.body if isinstance(node, ast.FunctionDef)}
 
 
+def _llm_base_method_maps() -> dict[str, dict[str, ast.FunctionDef]]:
+    tree = ast.parse(LLM_BASE_FILE.read_text(encoding="utf-8"))
+    classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+    return {cls.name: _method_map(cls) for cls in classes}
+
+
+def _resolve_method(cls: ast.ClassDef, method_name: str) -> ast.FunctionDef | None:
+    direct_methods = _method_map(cls)
+    if method_name in direct_methods:
+        return direct_methods[method_name]
+
+    inherited_method_maps = _llm_base_method_maps()
+    for base in cls.bases:
+        base_name = _annotation_to_str(base)
+        base_methods = inherited_method_maps.get(base_name)
+        if base_methods and method_name in base_methods:
+            return base_methods[method_name]
+
+    return None
+
+
 def _assert_method_present_and_signature(
     method_name: str,
     expected_param_types: list[list[str]],
     expected_return_types: list[str],
 ) -> None:
     for path, cls in _synth_classes():
-        methods = _method_map(cls)
-        method = methods.get(method_name)
+        method = _resolve_method(cls, method_name)
         assert method is not None, f"{path.name}:{cls.name} missing method {method_name}"
 
         params = _get_params(method)[1:]

@@ -1,0 +1,453 @@
+from __future__ import annotations
+
+from typing import Any, Callable, Dict, List, Optional
+
+import pandas as pd
+
+from synthetic_tabular_data_generator.llm.client import (
+    LlmClient,
+    LlmClientConfig,
+    create_llm_client,
+    load_llm_client_config,
+)
+from synthetic_tabular_data_generator.llm.few_shot_similarity import (
+    StructuredAttributeNearestNeighborIndex,
+    select_structured_attribute_neighbors,
+)
+from synthetic_tabular_data_generator.llm.prompt_builders import build_text_enrichment_prompt
+from synthetic_tabular_data_generator.llm.response_validation import require_first_dict_row
+from synthetic_tabular_data_generator.llm.synthesizer_support import (
+    ColumnProfileOptions,
+    LlmSynthesizerSupport,
+)
+from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
+
+
+class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport):
+    FAILURE_POLICY_FAIL_FAST = "fail_fast"
+    FAILURE_POLICY_FALLBACK_TO_BASE_ROW = "fallback_to_base_row"
+    SUPPORTED_FAILURE_POLICIES = {
+        FAILURE_POLICY_FAIL_FAST,
+        FAILURE_POLICY_FALLBACK_TO_BASE_ROW,
+    }
+
+    def __init__(
+        self,
+        attribute_configuration: Optional[Dict[str, Any]] = None,
+        anonymization_configuration: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        super().__init__(attribute_configuration, anonymization_configuration)
+        self._llm_config: Optional[LlmClientConfig] = None
+        self._llm_client: Optional[LlmClient] = None
+        self._fitting_kwargs: Optional[Dict[str, Any]] = None
+        self._sampling: Optional[Dict[str, Any]] = None
+        self._user_prompt_domain_context: str = ""
+        self._sample_start_time: Optional[float] = None
+        self._failure_policy: str = self.FAILURE_POLICY_FAIL_FAST
+        self._generation_failures: int = 0
+        self._generation_fallbacks: int = 0
+        self.synthesizer = None
+
+    def _initialize_common_llm_configuration(
+        self,
+        config: Dict[str, Any],
+        *,
+        default_profile_rows: int = 1000,
+        default_few_shot_rows: int = 0,
+        default_failure_policy: str = FAILURE_POLICY_FAIL_FAST,
+    ) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+        algorithm_config = config["synthetization_configuration"]["algorithm"]
+        model_params = algorithm_config.get("model_parameter", {})
+        training_params = algorithm_config.get("model_fitting", {})
+        self._llm_config = load_llm_client_config(config)
+        profile_rows = model_params.get("profile_rows", training_params.get("profile_rows", default_profile_rows))
+        few_shot_rows = model_params.get("few_shot_rows", training_params.get("few_shot_rows", default_few_shot_rows))
+        self._fitting_kwargs = {
+            "profile_rows": max(1, int(profile_rows)),
+            "few_shot_rows": max(0, int(few_shot_rows)),
+            "max_retries": self._llm_config.max_retries,
+            "timeout_seconds": self._llm_config.timeout_seconds,
+        }
+        self._sampling = algorithm_config.get("sampling", {})
+        self._user_prompt_domain_context = str(training_params.get("user_prompt_domain_context", "")).strip()
+        self._failure_policy = self._resolve_failure_policy(
+            training_params.get("failure_policy"),
+            default_failure_policy,
+        )
+        return algorithm_config, model_params, training_params
+
+    def _initialize_llm_backend(self, *, mode: Optional[str] = None) -> None:
+        if self._llm_config is None:
+            raise ValueError("Anonymization configuration is not initialized.")
+
+        self._llm_client = create_llm_client(self._llm_config)
+        self._llm_client.initialize()
+
+        synthesizer_metadata = {
+            "backend": self._llm_config.provider,
+            "model_name": self._llm_config.model_name,
+            "failure_policy": self._failure_policy,
+        }
+        if mode:
+            synthesizer_metadata["mode"] = mode
+        self.synthesizer = synthesizer_metadata
+
+    def _build_profile_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        if self._fitting_kwargs is None:
+            raise ValueError("Anonymization configuration is not initialized.")
+
+        profile_rows = self._fitting_kwargs["profile_rows"]
+        if len(df) > profile_rows:
+            return df.sample(n=profile_rows).reset_index(drop=True)
+        return df.copy()
+
+    def _resolve_num_samples(self, default_num_samples: int, *, allow_exceed_default: bool) -> int:
+        if self._sampling is None:
+            raise ValueError("Sampling configuration is not initialized.")
+
+        configured_num_samples = self._sampling.get("num_samples")
+        if configured_num_samples is None:
+            return default_num_samples
+
+        num_samples = int(configured_num_samples)
+        if num_samples <= 0:
+            raise ValueError("num_samples must be greater than 0.")
+        if not allow_exceed_default and num_samples > default_num_samples:
+            raise ValueError("num_samples cannot exceed the number of synthetic tabular input rows.")
+        return num_samples
+
+    def _reset_generation_counters(self) -> None:
+        self._generation_failures = 0
+        self._generation_fallbacks = 0
+
+    def _handle_generation_failure(
+        self,
+        *,
+        message: str,
+        last_error: Optional[Exception],
+        fallback_factory: Optional[Callable[[], Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        self._generation_failures += 1
+
+        if self._failure_policy == self.FAILURE_POLICY_FALLBACK_TO_BASE_ROW and fallback_factory is not None:
+            self._generation_fallbacks += 1
+            return fallback_factory()
+
+        if last_error is not None:
+            raise RuntimeError(message) from last_error
+        raise RuntimeError(message)
+
+    @classmethod
+    def _resolve_failure_policy(cls, raw_value: Any, default_value: str) -> str:
+        value = default_value if raw_value is None else str(raw_value).strip().lower()
+        if value not in cls.SUPPORTED_FAILURE_POLICIES:
+            raise ValueError(
+                f"Unsupported failure_policy '{value}'. Supported values are: "
+                f"{sorted(cls.SUPPORTED_FAILURE_POLICIES)}."
+            )
+        return value
+
+    @staticmethod
+    def _parse_bool_like(value: Any) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value != 0
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "y", "on"}:
+                return True
+            if normalized in {"0", "false", "no", "n", "off"}:
+                return False
+        return bool(value)
+
+
+class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
+    def __init__(
+        self,
+        attribute_configuration: Optional[Dict[str, Any]] = None,
+        anonymization_configuration: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        super().__init__(attribute_configuration, anonymization_configuration)
+        self.attribute_config: Optional[Dict[str, Any]] = None
+        self.dataset: Optional[pd.DataFrame] = None
+        self.reference_dataset: Optional[pd.DataFrame] = None
+        self._ordered_column_configs: List[Dict[str, Any]] = []
+        self._text_columns: List[str] = []
+        self._column_profiles: Dict[str, Dict[str, Any]] = {}
+        self._few_shot_source_df: Optional[pd.DataFrame] = None
+        self._few_shot_examples: List[Dict[str, Any]] = []
+        self._few_shot_neighbor_index: Optional[StructuredAttributeNearestNeighborIndex] = None
+        self._similarity_strategy: str = "random"
+        self._allow_structured_corrections: bool = True
+
+    def _initialize_text_synthesis_configuration(
+        self,
+        config: Dict[str, Any],
+        *,
+        default_similarity_strategy: str,
+        default_failure_policy: str = ConfiguredLlmSynthesizerBase.FAILURE_POLICY_FALLBACK_TO_BASE_ROW,
+    ) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+        algorithm_config, model_params, training_params = self._initialize_common_llm_configuration(
+            config,
+            default_profile_rows=1000,
+            default_few_shot_rows=20,
+            default_failure_policy=default_failure_policy,
+        )
+        self._similarity_strategy = (
+            str(model_params.get("similarity_strategy", default_similarity_strategy)).strip().lower()
+            or default_similarity_strategy
+        )
+        self._allow_structured_corrections = self._parse_bool_like(
+            training_params.get("allow_structured_corrections", True)
+        )
+        return algorithm_config, model_params, training_params
+
+    def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
+        configurations = attribute_config.get("configurations", [])
+        if not configurations:
+            raise ValueError("Attribute configuration is empty.")
+
+        self.attribute_config = attribute_config
+        self._ordered_column_configs = sorted(configurations, key=lambda cfg: cfg.get("index", float("inf")))
+        self._text_columns = [
+            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() == "TEXT"
+        ]
+
+        if not self._text_columns:
+            raise ValueError("No TEXT columns found in attribute configuration.")
+
+    def _initialize_dataset(self, df: pd.DataFrame) -> None:
+        self.dataset = df.copy()
+
+    def initialize_reference_dataset(self, df: pd.DataFrame) -> None:
+        self.reference_dataset = df.copy()
+
+    def _initialize_synthesizer(self) -> None:
+        self._initialize_llm_backend(mode="text_synthesis")
+
+    def _fit(self) -> None:
+        if self.dataset is None:
+            raise ValueError("Dataset is not initialized.")
+        if self.reference_dataset is None:
+            raise ValueError("Reference dataset is not initialized.")
+        if self._fitting_kwargs is None:
+            raise ValueError("Anonymization configuration is not initialized.")
+
+        profile_df = self._build_profile_dataframe(self.reference_dataset)
+        self._column_profiles = {}
+        for config in self._ordered_column_configs:
+            column_name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            self._column_profiles[column_name] = self.build_column_profile(
+                profile_df,
+                column_name,
+                column_type,
+                options=self._column_profile_options(),
+            )
+
+        few_shot_rows = self._fitting_kwargs["few_shot_rows"]
+        if few_shot_rows > 0 and not self.reference_dataset.empty:
+            self._few_shot_source_df = self.reference_dataset.copy().reset_index(drop=True)
+            n_examples = min(few_shot_rows, len(self._few_shot_source_df))
+            sampled = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
+            self._few_shot_examples = [self.serialize_row_values(row) for row in sampled]
+            if self._similarity_strategy == "structured_attributes":
+                self._few_shot_neighbor_index = StructuredAttributeNearestNeighborIndex(
+                    reference_df=self._few_shot_source_df,
+                    column_configs=self._ordered_column_configs,
+                    missing_value_string=self._missing_value_string(),
+                )
+            else:
+                self._few_shot_neighbor_index = None
+        else:
+            self._few_shot_source_df = None
+            self._few_shot_examples = []
+            self._few_shot_neighbor_index = None
+
+    def _sample(self) -> pd.DataFrame:
+        if self.dataset is None:
+            raise ValueError("Dataset is not initialized.")
+        if self._llm_client is None:
+            raise ValueError("LLM client is not initialized.")
+        if self._fitting_kwargs is None:
+            raise ValueError("Anonymization configuration is not initialized.")
+
+        source = self.dataset.copy().reset_index(drop=True)
+        num_samples = self._resolve_num_samples(len(source), allow_exceed_default=False)
+        source = source.head(num_samples)
+
+        rows = source.to_dict(orient="records")
+        total = len(rows)
+        self._sample_start_time = pd.Timestamp.utcnow().timestamp()
+        self._reset_generation_counters()
+
+        generated_rows: List[Dict[str, Any]] = []
+        for row_index, row in enumerate(rows):
+            generated_rows.append(self._generate_row(row, row_index, total))
+            self.report_remaining_time(self._sample_start_time, len(generated_rows), total)
+
+        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
+        generated = pd.DataFrame(generated_rows)
+        for column_name in ordered_columns:
+            if column_name not in generated.columns:
+                generated[column_name] = pd.NA
+        return generated[ordered_columns]
+
+    def _generate_row(self, base_row: Dict[str, Any], row_index: int, total_rows: int) -> Dict[str, Any]:
+        if self._fitting_kwargs is None or self._llm_client is None:
+            raise ValueError("Synthesizer is not initialized for LLM sampling.")
+
+        max_retries = self._fitting_kwargs["max_retries"]
+        last_error: Optional[Exception] = None
+
+        for _ in range(max_retries):
+            try:
+                prompt = self._build_prompt(base_row)
+                content = self._llm_client.generate_text(prompt)
+                parsed = self.parse_json_with_fallback(content)
+                candidate = require_first_dict_row(parsed)
+                merged = self._merge_candidate_row(base_row, candidate)
+                return self._coerce_row(merged, base_row)
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+
+        return self._handle_generation_failure(
+            message=(
+                f"LLM returned no valid row for sample {row_index + 1}/{total_rows} "
+                f"after {max_retries} attempts."
+            ),
+            last_error=last_error,
+            fallback_factory=lambda: self._coerce_base_row(base_row),
+        )
+
+    def _build_prompt(self, base_row: Dict[str, Any]) -> str:
+        column_order = [cfg["name"] for cfg in self._ordered_column_configs]
+        profile_lines = []
+        for config in self._ordered_column_configs:
+            name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            line = self.build_profile_line(name, column_type, self._column_profiles.get(name, {}))
+            profile_lines.append(line.replace("no observed values.", "no observed reference values."))
+
+        return build_text_enrichment_prompt(
+            column_order=column_order,
+            text_columns=self._text_columns,
+            profile_lines=profile_lines,
+            base_row=self.serialize_row_values(base_row),
+            missing_value_string=self._missing_value_string(),
+            domain_context=self._user_prompt_domain_context,
+            reference_examples=self._draw_few_shot_examples(base_row),
+            knowledge_chunks=self._build_knowledge_chunks(base_row),
+            knowledge_source_type=self._knowledge_source_type(),
+        )
+
+    def _merge_candidate_row(self, base_row: Dict[str, Any], candidate_row: Dict[str, Any]) -> Dict[str, Any]:
+        merged: Dict[str, Any] = {}
+        for config in self._ordered_column_configs:
+            column_name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            base_value = base_row.get(column_name)
+            candidate_value = candidate_row.get(column_name, base_value)
+
+            if column_type == "TEXT":
+                merged[column_name] = candidate_value
+                continue
+
+            if self._allow_structured_corrections and column_name in candidate_row:
+                merged[column_name] = candidate_value
+            else:
+                merged[column_name] = base_value
+
+        return merged
+
+    def _coerce_row(self, row: Dict[str, Any], base_row: Dict[str, Any]) -> Dict[str, Any]:
+        coerced: Dict[str, Any] = {}
+        for config in self._ordered_column_configs:
+            column_name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            value = row.get(column_name)
+            base_value = base_row.get(column_name)
+            coerced[column_name] = self._coerce_value(column_name, column_type, value, base_value)
+        return coerced
+
+    def _coerce_base_row(self, base_row: Dict[str, Any]) -> Dict[str, Any]:
+        coerced: Dict[str, Any] = {}
+        for config in self._ordered_column_configs:
+            column_name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            base_value = base_row.get(column_name)
+
+            if column_type == "TEXT":
+                coerced[column_name] = self.coerce_text(base_value)
+                continue
+            if column_type == "BOOLEAN":
+                coerced[column_name] = self.coerce_boolean(base_value, fallback_value=base_value)
+                continue
+            if column_type in self.NUMERIC_TYPES:
+                numeric = self.to_float(base_value)
+                if numeric is None:
+                    numeric = self.default_numeric_value(column_name, self._column_profiles)
+                coerced[column_name] = int(round(numeric)) if column_type in {"INTEGER", "DATE"} else float(numeric)
+                continue
+
+            coerced[column_name] = self.coerce_string(base_value, fallback_value=base_value)
+
+        return coerced
+
+    def _coerce_value(self, column_name: str, column_type: str, value: Any, base_value: Any) -> Any:
+        if column_type == "BOOLEAN":
+            return self.coerce_boolean(value, fallback_value=base_value)
+        if column_type in self.NUMERIC_TYPES:
+            return self.coerce_numeric(
+                column_name,
+                column_type,
+                value,
+                self._column_profiles,
+                fallback_value=base_value,
+            )
+        if column_type == "TEXT":
+            return self.coerce_text(value)
+        return self.coerce_string(value, fallback_value=base_value)
+
+    def _column_profile_options(self) -> ColumnProfileOptions:
+        return ColumnProfileOptions(
+            categorical_top_k=10,
+            include_text_examples=True,
+            text_example_limit=3,
+            excluded_text_values=(self._missing_value_string(),),
+        )
+
+    def _draw_few_shot_examples(self, base_row: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if self._fitting_kwargs is None:
+            raise ValueError("Anonymization configuration is not initialized.")
+        if self._few_shot_source_df is None or self._few_shot_source_df.empty:
+            return []
+
+        few_shot_rows = self._fitting_kwargs.get("few_shot_rows", 0)
+        if few_shot_rows <= 0:
+            return []
+
+        if self._similarity_strategy == "structured_attributes":
+            selected_rows = select_structured_attribute_neighbors(
+                base_row=self.serialize_row_values(base_row),
+                reference_df=self._few_shot_source_df,
+                column_configs=self._ordered_column_configs,
+                k=few_shot_rows,
+                missing_value_string=self._missing_value_string(),
+                neighbor_index=self._few_shot_neighbor_index,
+            )
+            return [self.serialize_row_values(row) for row in selected_rows]
+
+        del base_row
+        return list(self._few_shot_examples)
+
+    def _build_knowledge_chunks(self, base_row: Dict[str, Any]) -> List[str]:
+        del base_row
+        return []
+
+    def _knowledge_source_type(self) -> str:
+        return "none"
+
+    def _missing_value_string(self) -> str:
+        raise NotImplementedError

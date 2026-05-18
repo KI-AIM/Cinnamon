@@ -113,7 +113,7 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch
         if method == "POST" and url.endswith("/api/generate"):
             call_counter["count"] += 1
             prompt = kwargs["json"]["prompt"]
-            assert "Generate exactly 1 rows." in prompt
+            assert "Generate exactly 1 row." in prompt
 
             rows = [
                 {"age": 30 + call_counter["count"], "height": 170.0 + call_counter["count"], "risk": True, "group": "A"},
@@ -152,7 +152,7 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_openai_compatible(
         if method == "POST" and url.endswith("/v1/chat/completions"):
             call_counter["count"] += 1
             prompt = kwargs["json"]["messages"][1]["content"]
-            assert "Generate exactly 1 rows." in prompt
+            assert "Generate exactly 1 row." in prompt
             content = json.dumps(
                 {
                     "rows": [

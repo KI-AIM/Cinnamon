@@ -40,7 +40,7 @@ configurations:
       - name: similarity_strategy
         type: string
         label: Similarity Strategy
-        description: Strategy for selecting few-shot reference rows. Currently only random is implemented. The values structured_attributes, embedding, and hybrid are reserved for future extensions and currently fall back to random selection.
+        description: Strategy for selecting few-shot reference rows. random samples original rows uniformly. structured_attributes retrieves the nearest original rows using only non-TEXT attributes. embedding and hybrid are reserved for future extensions and currently fall back to random selection.
         default_value: random
         values: ["structured_attributes", "random", "embedding", "hybrid"]
   model_fitting:
@@ -60,6 +60,12 @@ configurations:
         label: Allow Structured Corrections
         description: If true, the model may minimally adjust non-TEXT values when combinations are implausible.
         default_value: true
+      - name: failure_policy
+        type: string
+        label: Failure Policy
+        description: Controls whether the algorithm falls back to the input base row or aborts on repeated invalid LLM responses.
+        default_value: fallback_to_base_row
+        values: ["fallback_to_base_row", "fail_fast"]
   sampling:
     display_name: Sampling
     description: Configure LLM decoding behavior. The number of processed rows is always derived from the input dataset.

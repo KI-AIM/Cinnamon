@@ -435,11 +435,6 @@ class LlmClient:
             try:
                 self._healthcheck(candidate_base_url)
                 self.base_url = candidate_base_url
-                if candidate_base_url != configured_base_url:
-                    print(
-                        f"LLM URL fallback activated: '{configured_base_url}' was unreachable, "
-                        f"using '{candidate_base_url}' instead."
-                    )
                 return
             except requests.exceptions.RequestException as exc:
                 last_error = exc
@@ -458,35 +453,16 @@ class LlmClient:
     def _healthcheck(self, base_url: str) -> None:
         if self.config.provider == "ollama":
             response = self._request("GET", _join_url(base_url, self.config.healthcheck_path))
-            models = response.json().get("models", [])
-            available_models = [item.get("name") for item in models if isinstance(item, dict)]
-            if available_models and self.config.model_name not in available_models:
-                print(
-                    f"Model '{self.config.model_name}' is currently not present in the provider model list. "
-                    "The provider may still load it on first request."
-                )
             return
 
         healthcheck_url = _join_url(base_url, self.config.healthcheck_path)
         try:
             response = self._request("GET", healthcheck_url)
             body = response.json()
-            if isinstance(body, dict):
-                model_entries = body.get("data", [])
-                available_models = [item.get("id") for item in model_entries if isinstance(item, dict)]
-                if available_models and self.config.model_name not in available_models:
-                    print(
-                        f"Model '{self.config.model_name}' was not listed by the OpenAI-compatible server. "
-                        "The provider may still accept it during generation."
-                    )
             return
         except requests.exceptions.HTTPError as exc:
             response = exc.response
             if response is not None and response.status_code in {404, 405}:
-                print(
-                    f"LLM healthcheck path '{self.config.healthcheck_path}' is not available on '{base_url}'. "
-                    "Deferring validation to the generation endpoint."
-                )
                 return
             raise
 

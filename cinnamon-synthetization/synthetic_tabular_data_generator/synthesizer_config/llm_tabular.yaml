@@ -49,6 +49,12 @@ configurations:
         description: Optional domain-specific context that helps the model better interpret the dataset semantics, for example clinical documentation, claims data, lab records, registries, or other specialized tabular domains.
         default_value: ""
         mandatory: false
+      - name: failure_policy
+        type: string
+        label: Failure Policy
+        description: Controls whether sampling aborts immediately on repeated invalid LLM responses.
+        default_value: fail_fast
+        values: ["fail_fast"]
   sampling:
     display_name: Sampling
     description: Configure row count and decoding behavior of the language model.

@@ -2,7 +2,6 @@ import cloudpickle
 import json
 import math
 import re
-import time
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
@@ -10,16 +9,11 @@ import pandas as pd
 from data_processing.utils import MISSING_VALUE_STRING, TEXT_PENDING_LLM
 from synthetic_tabular_data_generator.llm import (
     ColumnProfileOptions,
-    LlmClient,
-    LlmClientConfig,
-    LlmSynthesizerSupport,
-    create_llm_client,
-    load_llm_client_config,
+    ConfiguredLlmSynthesizerBase,
 )
-from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
-
-
-class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
+from synthetic_tabular_data_generator.llm.prompt_builders import build_tabular_generation_prompt
+from synthetic_tabular_data_generator.llm.response_validation import require_non_empty_rows
+class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
     """
     LLM-based tabular synthesizer backed by a configurable LLM provider.
     """
@@ -34,37 +28,24 @@ class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
         super().__init__(attribute_configuration, anonymization_configuration)
         self.attribute_config: Optional[Dict[str, Any]] = None
         self.dataset: Optional[pd.DataFrame] = None
-        self._llm_config: Optional[LlmClientConfig] = None
-        self._llm_client: Optional[LlmClient] = None
-        self._fitting_kwargs: Optional[Dict[str, Any]] = None
-        self._sampling: Optional[Dict[str, Any]] = None
-        self.synthesizer = None
 
         self._ordered_column_configs: List[Dict[str, Any]] = []
         self._column_profiles: Dict[str, Dict[str, Any]] = {}
         self._few_shot_source_df: Optional[pd.DataFrame] = None
-        self._sample_start_time: Optional[float] = None
         self._generation_prompt_prefix: Optional[str] = None
-        self._user_prompt_domain_context: str = ""
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
         """
         Core logic for initializing anonymization configuration.
         """
-        algorithm_config = config["synthetization_configuration"]["algorithm"]
-        model_params = algorithm_config.get("model_parameter", {})
-        training_params = algorithm_config.get("model_fitting", {})
-        self._llm_config = load_llm_client_config(config)
-        profile_rows = model_params.get("profile_rows", training_params.get("profile_rows", 1000))
-        few_shot_rows = model_params.get("few_shot_rows", training_params.get("few_shot_rows", 20))
-        self._fitting_kwargs = {
-            "profile_rows": max(1, int(profile_rows)),
-            "few_shot_rows": max(0, int(few_shot_rows)),
-            "max_retries": self._llm_config.max_retries,
-            "timeout_seconds": self._llm_config.timeout_seconds,
-        }
-        self._user_prompt_domain_context = str(training_params.get("user_prompt_domain_context", "")).strip()
-        self._sampling = algorithm_config["sampling"]
+        self._initialize_common_llm_configuration(
+            config,
+            default_profile_rows=1000,
+            default_few_shot_rows=20,
+            default_failure_policy=self.FAILURE_POLICY_FAIL_FAST,
+        )
+        if self._failure_policy != self.FAILURE_POLICY_FAIL_FAST:
+            raise ValueError("llm_tabular supports only failure_policy='fail_fast'.")
 
     def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
         """
@@ -87,15 +68,9 @@ class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
         """
         Core logic for initializing the synthesizer.
         """
-        if self._llm_config is None or self._fitting_kwargs is None:
+        if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration must be initialized before synthesizer setup.")
-
-        self._llm_client = create_llm_client(self._llm_config)
-        self._llm_client.initialize()
-        self.synthesizer = {
-            "backend": self._llm_config.provider,
-            "model_name": self._llm_config.model_name,
-        }
+        self._initialize_llm_backend()
 
     def _fit(self) -> None:
         """
@@ -108,11 +83,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
         if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration is not initialized.")
 
-        profile_rows = self._fitting_kwargs["profile_rows"]
-        if len(self.dataset) > profile_rows:
-            profile_df = self.dataset.sample(n=profile_rows).reset_index(drop=True)
-        else:
-            profile_df = self.dataset.copy()
+        profile_df = self._build_profile_dataframe(self.dataset)
 
         self._column_profiles = {}
         for column_config in self._ordered_column_configs:
@@ -126,7 +97,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
         else:
             self._few_shot_source_df = None
 
-        self._generation_prompt_prefix = self._build_generation_prompt_prefix()
+        self._generation_prompt_prefix = None
 
     def _sample(self) -> pd.DataFrame:
         """
@@ -142,16 +113,10 @@ class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
         if self.dataset is None:
             raise ValueError("Dataset is not initialized.")
 
-        configured_num_samples = self._sampling.get("num_samples")
-        if configured_num_samples is None:
-            num_samples = len(self.dataset)
-        else:
-            num_samples = int(configured_num_samples)
-            if num_samples <= 0:
-                raise ValueError("num_samples must be greater than 0.")
-
+        num_samples = self._resolve_num_samples(len(self.dataset), allow_exceed_default=True)
         max_retries = self._fitting_kwargs["max_retries"]
-        self._sample_start_time = time.time()
+        self._sample_start_time = pd.Timestamp.utcnow().timestamp()
+        self._reset_generation_counters()
 
         generated_rows = self._generate_rows_sequentially(num_samples, max_retries)
 
@@ -243,13 +208,13 @@ class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
 
-        message = (
-            f"LLM returned no valid row for sample {row_index + 1}/{target_rows} "
-            f"after {max_retries} attempts."
+        return self._handle_generation_failure(
+            message=(
+                f"LLM returned no valid row for sample {row_index + 1}/{target_rows} "
+                f"after {max_retries} attempts."
+            ),
+            last_error=last_error,
         )
-        if last_error is not None:
-            raise RuntimeError(message) from last_error
-        raise RuntimeError(message)
 
     def _request_rows_from_llm(self, num_rows: int, row_index: int, target_rows: int) -> str:
         if self._llm_client is None:
@@ -260,66 +225,37 @@ class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
 
     def _build_generation_prompt_prefix(self) -> str:
         ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
-        column_descriptions = []
-
+        profile_lines = []
         for config in self._ordered_column_configs:
             name = config["name"]
             column_type = str(config.get("type", "STRING")).upper()
-            profile = self._column_profiles.get(name, {})
-            column_descriptions.append(self._profile_line(name, column_type, profile))
+            profile_lines.append(self._profile_line(name, column_type, self._column_profiles.get(name, {})))
 
-        profile_lines = "\n".join(column_descriptions)
-        shape_example = {column_name: "<value>" for column_name in ordered_columns}
-        shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=True)
-        domain_context_block = ""
-        if self._user_prompt_domain_context:
-            domain_context_block = f"Domain context: {self._user_prompt_domain_context}\n"
-
-        return (
-            "You are generating synthetic tabular rows.\n"
-            f"{domain_context_block}"
-            "Return ONLY valid JSON with this exact shape:\n"
-            f"{shape_text}\n"
-            "Use one top-level key only: rows.\n"
-            "No markdown, no comments, no code fences, no extra keys.\n"
-            f"Use exactly these columns: {ordered_columns}\n"
-            "Never use generic column names like column_a, column_b, feature_1, field_1.\n"
-            "Generation order constraint (single output step):\n"
-            "- First determine all non-TEXT column values.\n"
-            "- Then generate TEXT column values conditioned on those non-TEXT values.\n"
-            "- Return only the final JSON rows output, no intermediate reasoning.\n"
-            "Type rules:\n"
-            "- INTEGER: integer number\n"
-            "- DECIMAL: decimal number\n"
-            "- DATE: UNIX timestamp in seconds as number\n"
-            "- BOOLEAN: true or false\n"
-            f"- STRING: plain text, use '{MISSING_VALUE_STRING}' for missing\n"
-            f"- TEXT: realistic free text, use '{MISSING_VALUE_STRING}' for missing\n"
-            "Column profiles:\n"
-            f"{profile_lines}"
-            "\nModel realistic relationships between columns based on the profiles."
+        return build_tabular_generation_prompt(
+            ordered_columns=ordered_columns,
+            profile_lines=profile_lines,
+            num_rows=1,
+            missing_value_string=MISSING_VALUE_STRING,
+            domain_context=self._user_prompt_domain_context,
+            few_shot_examples=None,
         )
 
     def _build_generation_prompt(self, num_rows: int, row_index: int, target_rows: int) -> str:
-        prefix = self._generation_prompt_prefix or self._build_generation_prompt_prefix()
-        few_shot_block = self._build_few_shot_block()
-        return (
-            f"{prefix}\n"
-            f"{few_shot_block}"
-            "Generation task:\n"
-            f"Generate exactly {num_rows} rows.\n"
-            "Return exactly one realistic synthetic row in the rows array."
-        )
+        del row_index, target_rows
+        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
+        profile_lines = []
+        for config in self._ordered_column_configs:
+            name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            profile_lines.append(self._profile_line(name, column_type, self._column_profiles.get(name, {})))
 
-    def _build_few_shot_block(self) -> str:
-        examples = self._draw_few_shot_examples()
-        if not examples:
-            return ""
-
-        few_shot_json = json.dumps(examples, ensure_ascii=True)
-        return (
-            "\nReference examples (learn structure only, do not copy rows):\n"
-            f"{few_shot_json}\n"
+        return build_tabular_generation_prompt(
+            ordered_columns=ordered_columns,
+            profile_lines=profile_lines,
+            num_rows=num_rows,
+            missing_value_string=MISSING_VALUE_STRING,
+            domain_context=self._user_prompt_domain_context,
+            few_shot_examples=self._draw_few_shot_examples(),
         )
 
     def _draw_few_shot_examples(self) -> List[Dict[str, Any]]:
@@ -345,9 +281,7 @@ class LlmTabularSynthesizer(TabularDataSynthesizer, LlmSynthesizerSupport):
         rows = self.rows_from_json(parsed_json)
         if not rows:
             rows = self._extract_rows_from_repeated_rows_blocks(response_content)
-        if not rows:
-            raise ValueError("No rows were found in the LLM response.")
-        return rows
+        return require_non_empty_rows(rows)
 
     def _extract_rows_from_repeated_rows_blocks(self, content: str) -> List[Dict[str, Any]]:
         extracted_rows: List[Dict[str, Any]] = []

@@ -12,6 +12,7 @@ from data_processing.utils import MISSING_VALUE_STRING
 from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_few_shot_text_synthesis import (
     LlmNearestNeighborFewShotTextSynthesisSynthesizer,
 )
+from synthetic_tabular_data_generator.tabular_data_synthesizer import SynthesizerOperationError
 
 
 def _attribute_config() -> dict:
@@ -197,13 +198,25 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_reports_sampling_remaining
     assert updates[-1] == ("sampling", 0)
 
 
-def test_llm_nearest_neighbor_few_shot_text_synthesis_falls_back_to_random_for_unimplemented_similarity_strategy(monkeypatch):
+def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_neighbors(monkeypatch):
     _set_shared_llm_env(monkeypatch)
+
+    synthetic_input = pd.DataFrame(
+        {
+            "age": [53],
+            "group": ["B"],
+            "notes": [MISSING_VALUE_STRING],
+        }
+    )
 
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
         if method == "POST" and url.endswith("/api/generate"):
+            prompt = kwargs["json"]["prompt"]
+            assert '"age": 52' in prompt
+            assert '"group": "B"' in prompt
+            assert '"notes": "Requires follow-up in two weeks."' in prompt
             return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
         raise AssertionError(f"Unexpected request: {method} {url}")
 
@@ -216,7 +229,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_falls_back_to_random_for_u
     synthesizer = LlmNearestNeighborFewShotTextSynthesisSynthesizer()
     synthesizer.initialize_anonymization_configuration(algorithm_config)
     synthesizer.initialize_attribute_configuration(_attribute_config())
-    synthesizer.initialize_dataset(_synthetic_input())
+    synthesizer.initialize_dataset(synthetic_input)
     synthesizer.initialize_reference_dataset(_original_input())
     synthesizer.initialize_synthesizer()
     synthesizer.fit()
@@ -225,3 +238,34 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_falls_back_to_random_for_u
 
     assert len(sample) == 1
     assert sample["notes"].iloc[0] == "Stable clinical status."
+
+
+def test_llm_nearest_neighbor_few_shot_text_synthesis_can_fail_fast_after_invalid_responses(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            return _DummyResponse({"response": "invalid payload"})
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    algorithm_config = _algorithm_config()
+    algorithm_config["synthetization_configuration"]["algorithm"]["model_fitting"]["failure_policy"] = "fail_fast"
+    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+
+    synthesizer = LlmNearestNeighborFewShotTextSynthesisSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(_synthetic_input())
+    synthesizer.initialize_reference_dataset(_original_input())
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    try:
+        synthesizer.sample()
+        assert False, "Expected SynthesizerOperationError for fail_fast policy"
+    except SynthesizerOperationError as exc:
+        assert "after 2 attempts" in str(exc)

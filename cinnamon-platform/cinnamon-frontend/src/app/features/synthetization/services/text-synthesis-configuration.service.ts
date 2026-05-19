@@ -7,6 +7,7 @@ import { ConfigurationObject } from "@shared/model/anonymization-attribute-confi
 })
 export class TextSynthesisConfigurationService {
     public readonly formGroupName = "text_synthesis_configuration";
+    private readonly defaultTextSynthesizer = "llm_nearest_neighbor_few_shot_text_synthesis";
 
     constructor(
         private readonly formBuilder: FormBuilder,
@@ -28,14 +29,14 @@ export class TextSynthesisConfigurationService {
         return this.formBuilder.group({
             synthetization_configuration: this.formBuilder.group({
                 algorithm: this.formBuilder.group({
-                    synthesizer: new FormControl({value: algorithm.synthesizer ?? "llm_text_synthesis", disabled}, [Validators.required]),
+                    synthesizer: new FormControl({value: algorithm.synthesizer ?? this.defaultTextSynthesizer, disabled}, [Validators.required]),
                     llm_profile: this.formBuilder.group({
                         llm_profile: new FormControl({value: llmProfile.llm_profile ?? "", disabled}),
                     }),
                     model_parameter: this.formBuilder.group({
                         profile_rows: new FormControl({value: modelParameter.profile_rows ?? 1000, disabled}, [Validators.required, Validators.min(1)]),
                         few_shot_rows: new FormControl({value: modelParameter.few_shot_rows ?? 20, disabled}, [Validators.required, Validators.min(0)]),
-                        similarity_strategy: new FormControl({value: modelParameter.similarity_strategy ?? "random", disabled}, [Validators.required]),
+                        similarity_strategy: new FormControl({value: modelParameter.similarity_strategy ?? "Random", disabled}, [Validators.required]),
                         knowledge_source_type: new FormControl({value: modelParameter.knowledge_source_type ?? "none", disabled}, [Validators.required]),
                         max_knowledge_chunks: new FormControl({value: modelParameter.max_knowledge_chunks ?? 5, disabled}, [Validators.required, Validators.min(0)]),
                     }),

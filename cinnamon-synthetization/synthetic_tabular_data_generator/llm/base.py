@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
 
+from data_processing.utils import FAILED_TEXT_GENERATION
 from synthetic_tabular_data_generator.llm.client import (
     LlmClient,
     LlmClientConfig,
@@ -24,13 +25,6 @@ from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDat
 
 
 class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport):
-    FAILURE_POLICY_FAIL_FAST = "fail_fast"
-    FAILURE_POLICY_FALLBACK_TO_BASE_ROW = "fallback_to_base_row"
-    SUPPORTED_FAILURE_POLICIES = {
-        FAILURE_POLICY_FAIL_FAST,
-        FAILURE_POLICY_FALLBACK_TO_BASE_ROW,
-    }
-
     def __init__(
         self,
         attribute_configuration: Optional[Dict[str, Any]] = None,
@@ -43,9 +37,7 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         self._sampling: Optional[Dict[str, Any]] = None
         self._user_prompt_domain_context: str = ""
         self._sample_start_time: Optional[float] = None
-        self._failure_policy: str = self.FAILURE_POLICY_FAIL_FAST
         self._generation_failures: int = 0
-        self._generation_fallbacks: int = 0
         self.synthesizer = None
 
     def _initialize_common_llm_configuration(
@@ -54,7 +46,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         *,
         default_profile_rows: int = 1000,
         default_few_shot_rows: int = 0,
-        default_failure_policy: str = FAILURE_POLICY_FAIL_FAST,
     ) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         algorithm_config = config["synthetization_configuration"]["algorithm"]
         model_params = algorithm_config.get("model_parameter", {})
@@ -70,10 +61,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         }
         self._sampling = algorithm_config.get("sampling", {})
         self._user_prompt_domain_context = str(training_params.get("user_prompt_domain_context", "")).strip()
-        self._failure_policy = self._resolve_failure_policy(
-            training_params.get("failure_policy"),
-            default_failure_policy,
-        )
         return algorithm_config, model_params, training_params
 
     def _initialize_llm_backend(self, *, mode: Optional[str] = None) -> None:
@@ -86,7 +73,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         synthesizer_metadata = {
             "backend": self._llm_config.provider,
             "model_name": self._llm_config.model_name,
-            "failure_policy": self._failure_policy,
         }
         if mode:
             synthesizer_metadata["mode"] = mode
@@ -118,7 +104,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
 
     def _reset_generation_counters(self) -> None:
         self._generation_failures = 0
-        self._generation_fallbacks = 0
 
     def _handle_generation_failure(
         self,
@@ -129,23 +114,12 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
     ) -> Dict[str, Any]:
         self._generation_failures += 1
 
-        if self._failure_policy == self.FAILURE_POLICY_FALLBACK_TO_BASE_ROW and fallback_factory is not None:
-            self._generation_fallbacks += 1
+        if fallback_factory is not None:
             return fallback_factory()
 
         if last_error is not None:
             raise RuntimeError(message) from last_error
         raise RuntimeError(message)
-
-    @classmethod
-    def _resolve_failure_policy(cls, raw_value: Any, default_value: str) -> str:
-        value = default_value if raw_value is None else str(raw_value).strip().lower()
-        if value not in cls.SUPPORTED_FAILURE_POLICIES:
-            raise ValueError(
-                f"Unsupported failure_policy '{value}'. Supported values are: "
-                f"{sorted(cls.SUPPORTED_FAILURE_POLICIES)}."
-            )
-        return value
 
     @staticmethod
     def _parse_bool_like(value: Any) -> bool:
@@ -163,6 +137,13 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
 
 
 class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
+    SIMILARITY_STRATEGY_RANDOM = "Random"
+    SIMILARITY_STRATEGY_ATTRIBUTES = "Attributes"
+    _LEGACY_SIMILARITY_STRATEGIES = {
+        "random": SIMILARITY_STRATEGY_RANDOM,
+        "structured_attributes": SIMILARITY_STRATEGY_ATTRIBUTES,
+    }
+
     def __init__(
         self,
         attribute_configuration: Optional[Dict[str, Any]] = None,
@@ -178,7 +159,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         self._few_shot_source_df: Optional[pd.DataFrame] = None
         self._few_shot_examples: List[Dict[str, Any]] = []
         self._few_shot_neighbor_index: Optional[StructuredAttributeNearestNeighborIndex] = None
-        self._similarity_strategy: str = "random"
+        self._similarity_strategy: str = self.SIMILARITY_STRATEGY_RANDOM
         self._allow_structured_corrections: bool = True
 
     def _initialize_text_synthesis_configuration(
@@ -186,22 +167,31 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         config: Dict[str, Any],
         *,
         default_similarity_strategy: str,
-        default_failure_policy: str = ConfiguredLlmSynthesizerBase.FAILURE_POLICY_FALLBACK_TO_BASE_ROW,
     ) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         algorithm_config, model_params, training_params = self._initialize_common_llm_configuration(
             config,
             default_profile_rows=1000,
             default_few_shot_rows=20,
-            default_failure_policy=default_failure_policy,
         )
-        self._similarity_strategy = (
-            str(model_params.get("similarity_strategy", default_similarity_strategy)).strip().lower()
-            or default_similarity_strategy
+        self._similarity_strategy = self._normalize_similarity_strategy(
+            model_params.get("similarity_strategy", default_similarity_strategy),
+            default_similarity_strategy,
         )
         self._allow_structured_corrections = self._parse_bool_like(
             training_params.get("allow_structured_corrections", True)
         )
         return algorithm_config, model_params, training_params
+
+    @classmethod
+    def _normalize_similarity_strategy(cls, raw_value: Any, default_value: str) -> str:
+        value = str(raw_value or default_value).strip()
+        if not value:
+            value = default_value
+
+        if value in {cls.SIMILARITY_STRATEGY_RANDOM, cls.SIMILARITY_STRATEGY_ATTRIBUTES}:
+            return value
+
+        return cls._LEGACY_SIMILARITY_STRATEGIES.get(value.lower(), default_value)
 
     def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
         configurations = attribute_config.get("configurations", [])
@@ -252,7 +242,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
             n_examples = min(few_shot_rows, len(self._few_shot_source_df))
             sampled = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
             self._few_shot_examples = [self.serialize_row_values(row) for row in sampled]
-            if self._similarity_strategy == "structured_attributes":
+            if self._similarity_strategy == self.SIMILARITY_STRATEGY_ATTRIBUTES:
                 self._few_shot_neighbor_index = StructuredAttributeNearestNeighborIndex(
                     reference_df=self._few_shot_source_df,
                     column_configs=self._ordered_column_configs,
@@ -318,7 +308,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
                 f"after {max_retries} attempts."
             ),
             last_error=last_error,
-            fallback_factory=lambda: self._coerce_base_row(base_row),
+            fallback_factory=lambda: self._coerce_failed_generation_row(base_row),
         )
 
     def _build_prompt(self, base_row: Dict[str, Any]) -> str:
@@ -371,7 +361,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
             coerced[column_name] = self._coerce_value(column_name, column_type, value, base_value)
         return coerced
 
-    def _coerce_base_row(self, base_row: Dict[str, Any]) -> Dict[str, Any]:
+    def _coerce_failed_generation_row(self, base_row: Dict[str, Any]) -> Dict[str, Any]:
         coerced: Dict[str, Any] = {}
         for config in self._ordered_column_configs:
             column_name = config["name"]
@@ -379,7 +369,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
             base_value = base_row.get(column_name)
 
             if column_type == "TEXT":
-                coerced[column_name] = self.coerce_text(base_value)
+                coerced[column_name] = FAILED_TEXT_GENERATION
                 continue
             if column_type == "BOOLEAN":
                 coerced[column_name] = self.coerce_boolean(base_value, fallback_value=base_value)
@@ -428,7 +418,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         if few_shot_rows <= 0:
             return []
 
-        if self._similarity_strategy == "structured_attributes":
+        if self._similarity_strategy == self.SIMILARITY_STRATEGY_ATTRIBUTES:
             selected_rows = select_structured_attribute_neighbors(
                 base_row=self.serialize_row_values(base_row),
                 reference_df=self._few_shot_source_df,

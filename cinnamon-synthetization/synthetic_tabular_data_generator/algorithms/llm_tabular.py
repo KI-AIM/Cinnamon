@@ -42,10 +42,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             config,
             default_profile_rows=1000,
             default_few_shot_rows=20,
-            default_failure_policy=self.FAILURE_POLICY_FAIL_FAST,
         )
-        if self._failure_policy != self.FAILURE_POLICY_FAIL_FAST:
-            raise ValueError("llm_tabular supports only failure_policy='fail_fast'.")
 
     def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
         """

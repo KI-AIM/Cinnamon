@@ -31,17 +31,13 @@ def _algorithm_config() -> dict:
                 "model_parameter": {
                     "profile_rows": 1000,
                     "few_shot_rows": 2,
-                    "similarity_strategy": "structured_attributes",
+                    "similarity_strategy": "Attributes",
                     "knowledge_source_type": "local_terminology",
                     "max_knowledge_chunks": 2,
                 },
                 "model_fitting": {
                     "user_prompt_domain_context": "German clinical discharge summaries.",
                     "allow_structured_corrections": True,
-                    "knowledge_context": (
-                        "Hypertension should be documented when elevated blood pressure is present.\n\n"
-                        "Stable discharge summaries should mention follow-up timing."
-                    ),
                 },
                 "sampling": {
                     "num_samples": 1,
@@ -114,7 +110,7 @@ def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_injects_knowledg
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
             assert "Knowledge grounding (local_terminology):" in prompt
-            assert "Hypertension should be documented" in prompt
+            assert "Observed local pattern for notes" in prompt
             assert "Current synthetic row:" in prompt
             return _DummyResponse(
                 {"response": json.dumps({"row": {"age": 67, "group": "A", "notes": "Stable discharge with follow-up in one week."}})}

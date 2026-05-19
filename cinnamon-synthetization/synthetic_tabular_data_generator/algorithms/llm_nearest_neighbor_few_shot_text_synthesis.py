@@ -26,8 +26,7 @@ class LlmNearestNeighborFewShotTextSynthesisSynthesizer(LlmTextSynthesisBase):
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
         self._initialize_text_synthesis_configuration(
             config,
-            default_similarity_strategy="random",
-            default_failure_policy=self.FAILURE_POLICY_FALLBACK_TO_BASE_ROW,
+            default_similarity_strategy=self.SIMILARITY_STRATEGY_RANDOM,
         )
 
     def _missing_value_string(self) -> str:

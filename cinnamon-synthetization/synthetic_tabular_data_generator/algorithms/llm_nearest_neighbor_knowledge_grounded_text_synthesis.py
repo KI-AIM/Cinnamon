@@ -31,16 +31,14 @@ class LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer(LlmTextSynthes
         self.reference_dataset: Optional[pd.DataFrame] = None
         self._configured_knowledge_source_type: str = "none"
         self._max_knowledge_chunks: int = 0
-        self._knowledge_context_chunks: List[str] = []
         self._knowledge_catalog: List[str] = []
 
     def _initialize_anonymization_configuration(self, configuration: Dict[str, Any]) -> None:
         algorithm_config, model_params, training_params = self._initialize_text_synthesis_configuration(
             configuration,
-            default_similarity_strategy="structured_attributes",
-            default_failure_policy=self.FAILURE_POLICY_FALLBACK_TO_BASE_ROW,
+            default_similarity_strategy=self.SIMILARITY_STRATEGY_ATTRIBUTES,
         )
-        del algorithm_config
+        del algorithm_config, training_params
 
         knowledge_source_type = str(model_params.get("knowledge_source_type", "none")).strip().lower() or "none"
         if knowledge_source_type not in self.SUPPORTED_KNOWLEDGE_SOURCE_TYPES:
@@ -51,7 +49,6 @@ class LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer(LlmTextSynthes
 
         self._configured_knowledge_source_type = knowledge_source_type
         self._max_knowledge_chunks = max(0, int(model_params.get("max_knowledge_chunks", 5)))
-        self._knowledge_context_chunks = self._split_knowledge_context(training_params.get("knowledge_context", ""))
 
     def _fit(self) -> None:
         super()._fit()
@@ -61,17 +58,13 @@ class LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer(LlmTextSynthes
         if self._configured_knowledge_source_type == "none" or self._max_knowledge_chunks <= 0:
             return []
 
-        prioritized_chunks = list(self._knowledge_context_chunks)
         catalog_candidates = list(self._knowledge_catalog)
-
-        if not prioritized_chunks and self._configured_knowledge_source_type != "local_terminology":
-            prioritized_chunks = []
 
         row_terms = self._extract_row_terms(base_row)
         ranked_catalog_chunks = self._rank_knowledge_chunks(catalog_candidates, row_terms)
 
         selected_chunks: List[str] = []
-        for chunk in prioritized_chunks + ranked_catalog_chunks:
+        for chunk in ranked_catalog_chunks:
             if chunk in selected_chunks:
                 continue
             selected_chunks.append(chunk)
@@ -92,18 +85,6 @@ class LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer(LlmTextSynthes
             profile_line = self.build_profile_line(column_name, column_type, profile).lstrip("- ").strip()
             catalog.append(f"Observed local pattern for {column_name}: {profile_line}")
         return catalog
-
-    @staticmethod
-    def _split_knowledge_context(raw_context: Any) -> List[str]:
-        if raw_context is None:
-            return []
-
-        text = str(raw_context).strip()
-        if not text:
-            return []
-
-        chunks = [chunk.strip() for chunk in re.split(r"\n\s*\n", text) if chunk.strip()]
-        return chunks or [text]
 
     def _extract_row_terms(self, base_row: Dict[str, Any]) -> set[str]:
         tokens: set[str] = set()

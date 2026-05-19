@@ -40,9 +40,9 @@ configurations:
       - name: similarity_strategy
         type: string
         label: Similarity Strategy
-        description: Strategy used to identify the most similar original rows for each synthetic row. structured_attributes retrieves nearest neighbors using only non-TEXT attributes. embedding and hybrid are reserved for future extensions and currently fall back to structured_attributes behavior.
-        default_value: structured_attributes
-        values: ["structured_attributes", "embedding", "hybrid"]
+        description: Strategy used to identify the most similar original rows for each synthetic row. Attributes retrieves nearest neighbors using only non-TEXT attributes. Random samples original rows uniformly.
+        default_value: Attributes
+        values: ["Attributes", "Random"]
       - name: knowledge_source_type
         type: string
         label: Knowledge Source Type
@@ -73,20 +73,6 @@ configurations:
         label: Allow Structured Corrections
         description: If true, the model may minimally adjust non-TEXT values when combinations are implausible.
         default_value: true
-      - name: knowledge_context
-        type: string
-        multiline: true
-        rows: 6
-        label: Knowledge Context
-        description: Optional knowledge snippets separated by blank lines. These chunks are injected as grounding context for the LLM.
-        default_value: ""
-        mandatory: false
-      - name: failure_policy
-        type: string
-        label: Failure Policy
-        description: Controls whether the algorithm falls back to the input base row or aborts on repeated invalid LLM responses.
-        default_value: fallback_to_base_row
-        values: ["fallback_to_base_row", "fail_fast"]
   sampling:
     display_name: Sampling
     description: Configure LLM decoding behavior for nearest-neighbor and knowledge-grounded text generation.

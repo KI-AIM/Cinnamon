@@ -139,10 +139,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
 class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
     SIMILARITY_STRATEGY_RANDOM = "Random"
     SIMILARITY_STRATEGY_ATTRIBUTES = "Attributes"
-    _LEGACY_SIMILARITY_STRATEGIES = {
-        "random": SIMILARITY_STRATEGY_RANDOM,
-        "structured_attributes": SIMILARITY_STRATEGY_ATTRIBUTES,
-    }
 
     def __init__(
         self,
@@ -191,7 +187,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         if value in {cls.SIMILARITY_STRATEGY_RANDOM, cls.SIMILARITY_STRATEGY_ATTRIBUTES}:
             return value
 
-        return cls._LEGACY_SIMILARITY_STRATEGIES.get(value.lower(), default_value)
+        return default_value
 
     def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
         configurations = attribute_config.get("configurations", [])

@@ -7,8 +7,13 @@ WORKDIR /app
 # Copy the requirements file into the working directory
 COPY requirements.txt ./
 
-# Install libgomp for LightGBM
-RUN apt-get update && apt-get install -y libgomp1
+# Install system dependencies for LightGBM and packages that need compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    build-essential \
+    g++ \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
@@ -24,6 +29,3 @@ ENV FLASK_APP=app.py
 
 # Run the application using Gunicorn when the container launches, timeout is set to one day
 CMD ["gunicorn", "--workers=4", "--bind=0.0.0.0:5010", "--timeout=86400", "app:app"]
-
-
-

@@ -81,8 +81,8 @@ synthesizer_classes = {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
-        'display_name': 'LLM Nearest-neighbor Knowledge-grounded Text Synthesis',
-        'description': 'Generate synthetic medical free-text fields using an LLM with both dynamically selected similar original examples and medical knowledge grounding. The method combines nearest-neighbor few-shot prompting with retrieval- or ontology-based medical context. This is a prompt-based method without fine-tuning.',
+        'display_name': 'LLM Knowledge-grounded Text Synthesis',
+        'description': 'Generate synthetic medical free-text fields using an LLM with dynamically selected similar original examples. Knowledge-base grounding is not implemented yet and is currently exposed only as NOT_IMPLEMENTED.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml'
     }
 }

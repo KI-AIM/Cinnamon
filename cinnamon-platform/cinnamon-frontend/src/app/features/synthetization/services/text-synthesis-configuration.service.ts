@@ -37,8 +37,7 @@ export class TextSynthesisConfigurationService {
                         profile_rows: new FormControl({value: modelParameter.profile_rows ?? 1000, disabled}, [Validators.required, Validators.min(1)]),
                         few_shot_rows: new FormControl({value: modelParameter.few_shot_rows ?? 20, disabled}, [Validators.required, Validators.min(0)]),
                         similarity_strategy: new FormControl({value: modelParameter.similarity_strategy ?? "Random", disabled}, [Validators.required]),
-                        knowledge_source_type: new FormControl({value: modelParameter.knowledge_source_type ?? "none", disabled}, [Validators.required]),
-                        max_knowledge_chunks: new FormControl({value: modelParameter.max_knowledge_chunks ?? 5, disabled}, [Validators.required, Validators.min(0)]),
+                        knowledge_source_type: new FormControl({value: modelParameter.knowledge_source_type ?? "NOT_IMPLEMENTED", disabled}, [Validators.required]),
                     }),
                     model_fitting: this.formBuilder.group({
                         user_prompt_domain_context: new FormControl({value: modelFitting.user_prompt_domain_context ?? "", disabled}),

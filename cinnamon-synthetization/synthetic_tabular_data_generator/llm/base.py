@@ -187,7 +187,10 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         if value in {cls.SIMILARITY_STRATEGY_RANDOM, cls.SIMILARITY_STRATEGY_ATTRIBUTES}:
             return value
 
-        return default_value
+        raise ValueError(
+            f"Unsupported similarity_strategy '{value}'. Supported values are: "
+            f"{[cls.SIMILARITY_STRATEGY_RANDOM, cls.SIMILARITY_STRATEGY_ATTRIBUTES]}."
+        )
 
     def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
         configurations = attribute_config.get("configurations", [])

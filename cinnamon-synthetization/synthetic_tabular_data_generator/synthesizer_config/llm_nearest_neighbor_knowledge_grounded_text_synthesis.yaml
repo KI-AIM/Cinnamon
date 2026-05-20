@@ -1,8 +1,8 @@
 name: llm_nearest_neighbor_knowledge_grounded_text_synthesis
 version: "0.1"
 type: cross-sectional
-display_name: LLM Nearest-neighbor Knowledge-grounded Text Synthesis
-description: Generate synthetic medical free-text fields using an LLM with both dynamically selected similar original examples and medical knowledge grounding. The method combines nearest-neighbor few-shot prompting with retrieval- or ontology-based medical context. This is a prompt-based method without fine-tuning.
+display_name: LLM Knowledge-grounded Text Synthesis
+description: Generate synthetic medical free-text fields using an LLM with dynamically selected similar original examples. Knowledge-base grounding is not implemented yet and is currently exposed only as NOT_IMPLEMENTED.
 URL: /start_synthetization_process/llm_nearest_neighbor_knowledge_grounded_text_synthesis
 processing_capabilities:
   supports_structured_data: false
@@ -21,7 +21,7 @@ configurations:
         mandatory: false
   model_parameter:
     display_name: Similarity and Knowledge Parameters
-    description: Configure how many rows are profiled, how nearest-neighbor examples are selected, and how medical knowledge grounding is prepared.
+    description: Configure how many rows are profiled and how nearest-neighbor examples are selected. Knowledge bases are not implemented yet.
     parameters:
       - name: profile_rows
         type: integer
@@ -46,16 +46,9 @@ configurations:
       - name: knowledge_source_type
         type: string
         label: Knowledge Source Type
-        description: Type of medical knowledge source used to ground the LLM prompt.
-        default_value: none
-        values: ["none", "ontology", "taxonomy", "guideline", "local_terminology", "rag_index"]
-      - name: max_knowledge_chunks
-        type: integer
-        label: Max Knowledge Chunks
-        description: Maximum number of retrieved or selected knowledge snippets to inject into the prompt.
-        default_value: 5
-        min_value: 0
-        max_value: 100
+        description: Knowledge-base support is not implemented yet.
+        default_value: NOT_IMPLEMENTED
+        values: ["NOT_IMPLEMENTED"]
   model_fitting:
     display_name: Prompt Configuration
     description: Configure domain context and whether structured values may be minimally corrected for consistency.

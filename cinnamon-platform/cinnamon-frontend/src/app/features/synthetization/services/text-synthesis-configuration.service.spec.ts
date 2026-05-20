@@ -21,7 +21,6 @@ describe("TextSynthesisConfigurationService", () => {
         expect(algorithmGroup?.get("model_parameter.few_shot_rows")).not.toBeNull();
         expect(algorithmGroup?.get("model_parameter.similarity_strategy")).not.toBeNull();
         expect(algorithmGroup?.get("model_parameter.knowledge_source_type")).not.toBeNull();
-        expect(algorithmGroup?.get("model_parameter.max_knowledge_chunks")).not.toBeNull();
         expect(algorithmGroup?.get("model_fitting.user_prompt_domain_context")).not.toBeNull();
         expect(algorithmGroup?.get("model_fitting.allow_structured_corrections")).not.toBeNull();
         expect(algorithmGroup?.get("sampling.temperature")).not.toBeNull();

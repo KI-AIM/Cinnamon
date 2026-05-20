@@ -32,8 +32,7 @@ def _algorithm_config() -> dict:
                     "profile_rows": 1000,
                     "few_shot_rows": 2,
                     "similarity_strategy": "Attributes",
-                    "knowledge_source_type": "local_terminology",
-                    "max_knowledge_chunks": 2,
+                    "knowledge_source_type": "NOT_IMPLEMENTED",
                 },
                 "model_fitting": {
                     "user_prompt_domain_context": "German clinical discharge summaries.",
@@ -100,7 +99,7 @@ def _original_input() -> pd.DataFrame:
     )
 
 
-def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_injects_knowledge_chunks(monkeypatch):
+def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_runs_without_knowledge_chunks(monkeypatch):
     _set_shared_llm_env(monkeypatch)
 
     def fake_request(method, url, **kwargs):
@@ -109,8 +108,7 @@ def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_injects_knowledg
 
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
-            assert "Knowledge grounding (local_terminology):" in prompt
-            assert "Observed local pattern for notes" in prompt
+            assert "Knowledge grounding" not in prompt
             assert "Current synthetic row:" in prompt
             return _DummyResponse(
                 {"response": json.dumps({"row": {"age": 67, "group": "A", "notes": "Stable discharge with follow-up in one week."}})}

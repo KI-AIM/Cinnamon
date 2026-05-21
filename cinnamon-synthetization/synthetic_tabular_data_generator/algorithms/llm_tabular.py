@@ -11,7 +11,10 @@ from synthetic_tabular_data_generator.llm import (
     ColumnProfileOptions,
     ConfiguredLlmSynthesizerBase,
 )
-from synthetic_tabular_data_generator.llm.prompt_builders import build_tabular_generation_prompt
+from synthetic_tabular_data_generator.llm.prompt_builders import (
+    build_tabular_generation_prompt_from_prefix,
+    build_tabular_generation_prompt_prefix,
+)
 from synthetic_tabular_data_generator.llm.response_validation import require_non_empty_rows
 class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
     """
@@ -94,7 +97,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         else:
             self._few_shot_source_df = None
 
-        self._generation_prompt_prefix = None
+        self._generation_prompt_prefix = self._build_generation_prompt_prefix()
 
     def _sample(self) -> pd.DataFrame:
         """
@@ -177,11 +180,13 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         max_retries: int,
     ) -> Dict[str, Any]:
         last_error: Optional[Exception] = None
+        last_attempt_details: Optional[str] = None
 
         for attempt_index in range(max_retries):
             non_dict_rows = 0
             unusable_rows = 0
             coercion_errors = 0
+            attempt_error: Optional[Exception] = None
 
             try:
                 content = self._request_rows_from_llm(1, row_index, target_rows)
@@ -203,12 +208,31 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
                         coercion_errors += 1
                         continue
             except Exception as exc:  # noqa: BLE001
-                last_error = exc
+                attempt_error = exc
+
+            if attempt_error is None:
+                attempt_error = ValueError("No usable rows were accepted from the LLM response.")
+
+            last_attempt_details = (
+                f"non_dict_rows={non_dict_rows}, unusable_rows={unusable_rows}, "
+                f"coercion_errors={coercion_errors}"
+            )
+            last_error = attempt_error
+            self._log_generation_attempt_failure(
+                mode="TABULAR_GENERATION",
+                row_index=row_index,
+                total_rows=target_rows,
+                attempt_index=attempt_index,
+                max_retries=max_retries,
+                error=attempt_error,
+                details=last_attempt_details,
+            )
 
         return self._handle_generation_failure(
             message=(
                 f"LLM returned no valid row for sample {row_index + 1}/{target_rows} "
                 f"after {max_retries} attempts."
+                f"{'' if last_attempt_details is None else f' Last attempt stats: {last_attempt_details}.'}"
             ),
             last_error=last_error,
         )
@@ -228,30 +252,19 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             column_type = str(config.get("type", "STRING")).upper()
             profile_lines.append(self._profile_line(name, column_type, self._column_profiles.get(name, {})))
 
-        return build_tabular_generation_prompt(
+        return build_tabular_generation_prompt_prefix(
             ordered_columns=ordered_columns,
             profile_lines=profile_lines,
-            num_rows=1,
             missing_value_string=MISSING_VALUE_STRING,
             domain_context=self._user_prompt_domain_context,
-            few_shot_examples=None,
         )
 
     def _build_generation_prompt(self, num_rows: int, row_index: int, target_rows: int) -> str:
         del row_index, target_rows
-        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
-        profile_lines = []
-        for config in self._ordered_column_configs:
-            name = config["name"]
-            column_type = str(config.get("type", "STRING")).upper()
-            profile_lines.append(self._profile_line(name, column_type, self._column_profiles.get(name, {})))
-
-        return build_tabular_generation_prompt(
-            ordered_columns=ordered_columns,
-            profile_lines=profile_lines,
+        prompt_prefix = self._generation_prompt_prefix or self._build_generation_prompt_prefix()
+        return build_tabular_generation_prompt_from_prefix(
+            prompt_prefix,
             num_rows=num_rows,
-            missing_value_string=MISSING_VALUE_STRING,
-            domain_context=self._user_prompt_domain_context,
             few_shot_examples=self._draw_few_shot_examples(),
         )
 
@@ -265,7 +278,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
 
         n_examples = min(few_shot_rows, len(self._few_shot_source_df))
         examples = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
-        return [self._serialize_row_values(example) for example in examples]
+        return [self.serialize_row_values(example) for example in examples]
 
     def _profile_line(self, column_name: str, column_type: str, profile: Dict[str, Any]) -> str:
         line = self.build_profile_line(column_name, column_type, profile)
@@ -345,12 +358,12 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             if not isinstance(key, str):
                 return {}
             position = self._extract_positional_index(key)
-            if position is None:
+            if position is None or position < 0:
                 return {}
             indexed_keys.append((position, key))
 
         indexed_keys.sort(key=lambda item: item[0])
-        return {idx: key for idx, (_, key) in enumerate(indexed_keys)}
+        return {position: key for position, key in indexed_keys}
 
     @staticmethod
     def _extract_positional_index(key: str) -> Optional[int]:
@@ -358,7 +371,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
 
         numeric_match = re.match(r"^(?:column|col|feature|field|attribute)[_\-\s]?(\d+)$", lowered)
         if numeric_match:
-            return int(numeric_match.group(1))
+            return int(numeric_match.group(1)) - 1
 
         alpha_match = re.match(r"^(?:column|col|feature|field|attribute)[_\-\s]?([a-z]+)$", lowered)
         if alpha_match:
@@ -366,7 +379,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             value = 0
             for char in letters:
                 value = value * 26 + (ord(char) - ord("a") + 1)
-            return value
+            return value - 1
 
         return None
 
@@ -415,34 +428,15 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
 
     def _coerce_value(self, column_name: str, column_type: str, value: Any) -> Any:
         if column_type == "BOOLEAN":
-            return self._coerce_boolean(value)
+            return self.coerce_boolean(value)
 
         if column_type in self.NUMERIC_TYPES:
-            return self._coerce_numeric(column_name, column_type, value)
+            return self.coerce_numeric(column_name, column_type, value, self._column_profiles)
 
         if column_type == "TEXT":
-            return self._coerce_text(value)
+            return self.coerce_text(value)
 
-        return self._coerce_string(value)
-
-    def _coerce_text(self, value: Any) -> str:
-        return self.coerce_text(value)
-
-    def _coerce_boolean(self, value: Any) -> bool:
-        return self.coerce_boolean(value)
-
-    def _coerce_numeric(self, column_name: str, column_type: str, value: Any) -> Any:
-        return self.coerce_numeric(column_name, column_type, value, self._column_profiles)
-
-    def _default_numeric_value(self, column_name: str, column_type: str) -> float:
-        del column_type
-        return self.default_numeric_value(column_name, self._column_profiles)
-
-    def _coerce_string(self, value: Any) -> str:
         return self.coerce_string(value)
-
-    def _serialize_row_values(self, row: Dict[str, Any]) -> Dict[str, Any]:
-        return self.serialize_row_values(row)
 
     def _print_remaining_time(self, generated: int, total: int) -> None:
         self.report_remaining_time(self._sample_start_time, generated, total)

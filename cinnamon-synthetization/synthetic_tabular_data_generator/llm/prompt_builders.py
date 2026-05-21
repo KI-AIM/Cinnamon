@@ -29,23 +29,16 @@ def _knowledge_block(chunks: Optional[Sequence[str]], source_type: str) -> str:
     )
 
 
-def build_text_enrichment_prompt(
+def build_text_enrichment_prompt_prefix(
     *,
     column_order: Sequence[str],
     text_columns: Sequence[str],
     profile_lines: Sequence[str],
-    base_row: Dict[str, Any],
     missing_value_string: str,
     domain_context: str = "",
-    reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    reference_heading: str = "Reference rows from original data (learn semantics and writing style, never copy):",
-    knowledge_chunks: Optional[Sequence[str]] = None,
-    knowledge_source_type: str = "none",
 ) -> str:
     text_columns_text = ", ".join(text_columns)
     profile_block = "\n".join(profile_lines)
-    reference_block = _reference_examples_block(reference_examples, reference_heading)
-    knowledge_block = _knowledge_block(knowledge_chunks, knowledge_source_type)
 
     return (
         "You enrich one synthetic tabular row.\n"
@@ -63,6 +56,23 @@ def build_text_enrichment_prompt(
         "- DATE values must be UNIX timestamps in seconds.\n"
         "Column profiles derived from original data:\n"
         f"{profile_block}\n"
+    )
+
+
+def build_text_enrichment_prompt_from_prefix(
+    prompt_prefix: str,
+    *,
+    base_row: Dict[str, Any],
+    reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
+    reference_heading: str = "Reference rows from original data (learn semantics and writing style, never copy):",
+    knowledge_chunks: Optional[Sequence[str]] = None,
+    knowledge_source_type: str = "none",
+) -> str:
+    reference_block = _reference_examples_block(reference_examples, reference_heading)
+    knowledge_block = _knowledge_block(knowledge_chunks, knowledge_source_type)
+
+    return (
+        f"{prompt_prefix}"
         f"{reference_block}"
         f"{knowledge_block}"
         "Current synthetic row:\n"
@@ -70,25 +80,46 @@ def build_text_enrichment_prompt(
     )
 
 
-def build_tabular_generation_prompt(
+def build_text_enrichment_prompt(
+    *,
+    column_order: Sequence[str],
+    text_columns: Sequence[str],
+    profile_lines: Sequence[str],
+    base_row: Dict[str, Any],
+    missing_value_string: str,
+    domain_context: str = "",
+    reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
+    reference_heading: str = "Reference rows from original data (learn semantics and writing style, never copy):",
+    knowledge_chunks: Optional[Sequence[str]] = None,
+    knowledge_source_type: str = "none",
+) -> str:
+    prompt_prefix = build_text_enrichment_prompt_prefix(
+        column_order=column_order,
+        text_columns=text_columns,
+        profile_lines=profile_lines,
+        missing_value_string=missing_value_string,
+        domain_context=domain_context,
+    )
+    return build_text_enrichment_prompt_from_prefix(
+        prompt_prefix,
+        base_row=base_row,
+        reference_examples=reference_examples,
+        reference_heading=reference_heading,
+        knowledge_chunks=knowledge_chunks,
+        knowledge_source_type=knowledge_source_type,
+    )
+
+
+def build_tabular_generation_prompt_prefix(
     *,
     ordered_columns: Sequence[str],
     profile_lines: Sequence[str],
-    num_rows: int,
     missing_value_string: str,
     domain_context: str = "",
-    few_shot_examples: Optional[Sequence[Dict[str, Any]]] = None,
 ) -> str:
     shape_example = {column_name: "<value>" for column_name in ordered_columns}
     shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=True)
     profile_block = "\n".join(profile_lines)
-    requested_row_count = _row_count_phrase(num_rows)
-    reference_block = ""
-    if few_shot_examples:
-        reference_block = (
-            "Reference examples (learn structure only, do not copy rows):\n"
-            f"{json.dumps(list(few_shot_examples), ensure_ascii=True)}\n"
-        )
 
     return (
         "You are generating synthetic tabular rows.\n"
@@ -113,8 +144,49 @@ def build_tabular_generation_prompt(
         "Column profiles:\n"
         f"{profile_block}\n"
         "Model realistic relationships between columns based on the profiles.\n"
+    )
+
+
+def build_tabular_generation_prompt_from_prefix(
+    prompt_prefix: str,
+    *,
+    num_rows: int,
+    few_shot_examples: Optional[Sequence[Dict[str, Any]]] = None,
+) -> str:
+    requested_row_count = _row_count_phrase(num_rows)
+    reference_block = ""
+    if few_shot_examples:
+        reference_block = (
+            "Reference examples (learn structure only, do not copy rows):\n"
+            f"{json.dumps(list(few_shot_examples), ensure_ascii=True)}\n"
+        )
+
+    return (
+        f"{prompt_prefix}"
         f"{reference_block}"
         "Generation task:\n"
         f"Generate exactly {requested_row_count}.\n"
         f"Return exactly {requested_row_count} in the rows array."
+    )
+
+
+def build_tabular_generation_prompt(
+    *,
+    ordered_columns: Sequence[str],
+    profile_lines: Sequence[str],
+    num_rows: int,
+    missing_value_string: str,
+    domain_context: str = "",
+    few_shot_examples: Optional[Sequence[Dict[str, Any]]] = None,
+) -> str:
+    prompt_prefix = build_tabular_generation_prompt_prefix(
+        ordered_columns=ordered_columns,
+        profile_lines=profile_lines,
+        missing_value_string=missing_value_string,
+        domain_context=domain_context,
+    )
+    return build_tabular_generation_prompt_from_prefix(
+        prompt_prefix,
+        num_rows=num_rows,
+        few_shot_examples=few_shot_examples,
     )

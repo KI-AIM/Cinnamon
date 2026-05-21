@@ -8,6 +8,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from data_processing.utils import MISSING_VALUE_STRING, TEXT_PENDING_LLM
+from synthetic_tabular_data_generator.llm.response_validation import require_first_dict_row
 from synthetic_tabular_data_generator.llm.synthesizer_support import (
     ColumnProfileOptions,
     LlmSynthesizerSupport,
@@ -60,9 +61,9 @@ def test_parse_json_with_fallback_extracts_json_from_surrounding_text():
     assert parsed["rows"][0]["age"] == 42
 
 
-def test_first_dict_row_prefers_row_key_and_falls_back_to_rows():
-    row_from_row_key = LlmSynthesizerSupport.first_dict_row({"row": {"age": 42}})
-    row_from_rows_key = LlmSynthesizerSupport.first_dict_row({"rows": [{"age": 43}]})
+def test_require_first_dict_row_prefers_row_key_and_falls_back_to_rows():
+    row_from_row_key = require_first_dict_row({"row": {"age": 42}})
+    row_from_rows_key = require_first_dict_row({"rows": [{"age": 43}]})
 
     assert row_from_row_key == {"age": 42}
     assert row_from_rows_key == {"age": 43}

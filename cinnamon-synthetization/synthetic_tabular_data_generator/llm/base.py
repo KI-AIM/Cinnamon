@@ -15,7 +15,10 @@ from synthetic_tabular_data_generator.llm.few_shot_similarity import (
     StructuredAttributeNearestNeighborIndex,
     select_structured_attribute_neighbors,
 )
-from synthetic_tabular_data_generator.llm.prompt_builders import build_text_enrichment_prompt
+from synthetic_tabular_data_generator.llm.prompt_builders import (
+    build_text_enrichment_prompt_from_prefix,
+    build_text_enrichment_prompt_prefix,
+)
 from synthetic_tabular_data_generator.llm.response_validation import require_first_dict_row
 from synthetic_tabular_data_generator.llm.synthesizer_support import (
     ColumnProfileOptions,
@@ -122,6 +125,31 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         raise RuntimeError(message)
 
     @staticmethod
+    def _summarize_exception(exc: Exception) -> str:
+        message = str(exc).strip()
+        if not message:
+            message = exc.__class__.__name__
+        return f"{exc.__class__.__name__}: {message}"
+
+    def _log_generation_attempt_failure(
+        self,
+        *,
+        mode: str,
+        row_index: int,
+        total_rows: int,
+        attempt_index: int,
+        max_retries: int,
+        error: Exception,
+        details: Optional[str] = None,
+    ) -> None:
+        suffix = f" ({details})" if details else ""
+        print(
+            f"[LLM_{mode}] sample {row_index + 1}/{total_rows}, "
+            f"attempt {attempt_index + 1}/{max_retries} failed: "
+            f"{self._summarize_exception(error)}{suffix}"
+        )
+
+    @staticmethod
     def _parse_bool_like(value: Any) -> bool:
         if isinstance(value, bool):
             return value
@@ -153,10 +181,10 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         self._text_columns: List[str] = []
         self._column_profiles: Dict[str, Dict[str, Any]] = {}
         self._few_shot_source_df: Optional[pd.DataFrame] = None
-        self._few_shot_examples: List[Dict[str, Any]] = []
         self._few_shot_neighbor_index: Optional[StructuredAttributeNearestNeighborIndex] = None
         self._similarity_strategy: str = self.SIMILARITY_STRATEGY_RANDOM
         self._allow_structured_corrections: bool = True
+        self._prompt_prefix: Optional[str] = None
 
     def _initialize_text_synthesis_configuration(
         self,
@@ -237,22 +265,21 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
 
         few_shot_rows = self._fitting_kwargs["few_shot_rows"]
         if few_shot_rows > 0 and not self.reference_dataset.empty:
-            self._few_shot_source_df = self.reference_dataset.copy().reset_index(drop=True)
-            n_examples = min(few_shot_rows, len(self._few_shot_source_df))
-            sampled = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
-            self._few_shot_examples = [self.serialize_row_values(row) for row in sampled]
             if self._similarity_strategy == self.SIMILARITY_STRATEGY_ATTRIBUTES:
+                self._few_shot_source_df = self.reference_dataset.copy().reset_index(drop=True)
                 self._few_shot_neighbor_index = StructuredAttributeNearestNeighborIndex(
                     reference_df=self._few_shot_source_df,
                     column_configs=self._ordered_column_configs,
                     missing_value_string=self._missing_value_string(),
                 )
             else:
+                self._few_shot_source_df = profile_df.copy().reset_index(drop=True)
                 self._few_shot_neighbor_index = None
         else:
             self._few_shot_source_df = None
-            self._few_shot_examples = []
             self._few_shot_neighbor_index = None
+
+        self._prompt_prefix = self._build_prompt_prefix()
 
     def _sample(self) -> pd.DataFrame:
         if self.dataset is None:
@@ -290,7 +317,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         max_retries = self._fitting_kwargs["max_retries"]
         last_error: Optional[Exception] = None
 
-        for _ in range(max_retries):
+        for attempt_index in range(max_retries):
             try:
                 prompt = self._build_prompt(base_row)
                 content = self._llm_client.generate_text(prompt)
@@ -300,6 +327,14 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
                 return self._coerce_row(merged, base_row)
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
+                self._log_generation_attempt_failure(
+                    mode="TEXT_GENERATION",
+                    row_index=row_index,
+                    total_rows=total_rows,
+                    attempt_index=attempt_index,
+                    max_retries=max_retries,
+                    error=exc,
+                )
 
         return self._handle_generation_failure(
             message=(
@@ -311,6 +346,17 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         )
 
     def _build_prompt(self, base_row: Dict[str, Any]) -> str:
+        prompt_prefix = self._prompt_prefix or self._build_prompt_prefix()
+
+        return build_text_enrichment_prompt_from_prefix(
+            prompt_prefix,
+            base_row=self.serialize_row_values(base_row),
+            reference_examples=self._draw_few_shot_examples(base_row),
+            knowledge_chunks=self._build_knowledge_chunks(base_row),
+            knowledge_source_type=self._knowledge_source_type(),
+        )
+
+    def _build_prompt_prefix(self) -> str:
         column_order = [cfg["name"] for cfg in self._ordered_column_configs]
         profile_lines = []
         for config in self._ordered_column_configs:
@@ -319,16 +365,12 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
             line = self.build_profile_line(name, column_type, self._column_profiles.get(name, {}))
             profile_lines.append(line.replace("no observed values.", "no observed reference values."))
 
-        return build_text_enrichment_prompt(
+        return build_text_enrichment_prompt_prefix(
             column_order=column_order,
             text_columns=self._text_columns,
             profile_lines=profile_lines,
-            base_row=self.serialize_row_values(base_row),
             missing_value_string=self._missing_value_string(),
             domain_context=self._user_prompt_domain_context,
-            reference_examples=self._draw_few_shot_examples(base_row),
-            knowledge_chunks=self._build_knowledge_chunks(base_row),
-            knowledge_source_type=self._knowledge_source_type(),
         )
 
     def _merge_candidate_row(self, base_row: Dict[str, Any], candidate_row: Dict[str, Any]) -> Dict[str, Any]:
@@ -400,10 +442,19 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         return self.coerce_string(value, fallback_value=base_value)
 
     def _column_profile_options(self) -> ColumnProfileOptions:
+        include_text_examples = True
+        text_example_limit = 3
+        if self._fitting_kwargs is not None and self._fitting_kwargs.get("few_shot_rows", 0) > 0:
+            # Few-shot reference rows already carry the original free-text content.
+            # Skip extra text snippets in the profile block to avoid repeating the
+            # same texts in the prompt.
+            include_text_examples = False
+            text_example_limit = 0
+
         return ColumnProfileOptions(
             categorical_top_k=10,
-            include_text_examples=True,
-            text_example_limit=3,
+            include_text_examples=include_text_examples,
+            text_example_limit=text_example_limit,
             excluded_text_values=(self._missing_value_string(),),
         )
 
@@ -429,7 +480,9 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
             return [self.serialize_row_values(row) for row in selected_rows]
 
         del base_row
-        return list(self._few_shot_examples)
+        n_examples = min(few_shot_rows, len(self._few_shot_source_df))
+        sampled = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
+        return [self.serialize_row_values(row) for row in sampled]
 
     def _build_knowledge_chunks(self, base_row: Dict[str, Any]) -> List[str]:
         del base_row

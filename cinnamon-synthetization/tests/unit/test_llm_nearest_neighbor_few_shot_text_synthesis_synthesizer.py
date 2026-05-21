@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import requests
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -63,11 +64,15 @@ def _set_shared_llm_env(monkeypatch) -> None:
 
 
 class _DummyResponse:
-    def __init__(self, payload: dict):
+    def __init__(self, payload: dict, status_code: int = 200):
         self._payload = payload
-        self.status_code = 200
+        self.status_code = status_code
 
     def raise_for_status(self):
+        if self.status_code >= 400:
+            error = requests.exceptions.HTTPError(f"HTTP {self.status_code}")
+            error.response = self
+            raise error
         return None
 
     def json(self):
@@ -108,9 +113,12 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
 
         if method == "POST" and url.endswith("/api/generate"):
             call_count["post"] += 1
-            prompt = kwargs["json"]["prompt"]
+            payload = kwargs["json"]
+            prompt = payload["prompt"]
             assert "Current synthetic row:" in prompt
             assert "Generate realistic values for TEXT columns: notes" in prompt
+            assert "text_examples=" not in prompt
+            assert payload["options"]["num_predict"] == 1024
             if call_count["post"] == 1:
                 return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
             return _DummyResponse({"response": json.dumps({"row": {"age": 51, "group": "B", "notes": "Follow-up appointment recommended."}})})
@@ -140,6 +148,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
 
 def test_llm_nearest_neighbor_few_shot_text_synthesis_marks_failed_text_after_invalid_responses(monkeypatch):
     _set_shared_llm_env(monkeypatch)
+    logs = []
 
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
@@ -151,6 +160,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_marks_failed_text_after_in
         raise AssertionError(f"Unexpected request: {method} {url}")
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+    monkeypatch.setattr("builtins.print", lambda message: logs.append(message))
 
     synthesizer = LlmNearestNeighborFewShotTextSynthesisSynthesizer()
     synthesizer.initialize_anonymization_configuration(_algorithm_config())
@@ -165,6 +175,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_marks_failed_text_after_in
     assert sample["age"].tolist() == [999, 50]
     assert sample["group"].tolist() == ["A", "B"]
     assert sample["notes"].tolist() == [FAILED_TEXT_GENERATION, FAILED_TEXT_GENERATION]
+    assert any("[LLM_TEXT_GENERATION]" in entry for entry in logs)
 
 
 def test_llm_nearest_neighbor_few_shot_text_synthesis_reports_sampling_remaining_time_via_callback(monkeypatch):
@@ -237,3 +248,76 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
 
     assert len(sample) == 1
     assert sample["notes"].iloc[0] == "Stable clinical status."
+
+
+def test_llm_nearest_neighbor_few_shot_text_synthesis_random_strategy_uses_profile_pool_and_redraws():
+    algorithm_config = _algorithm_config()
+    algorithm = algorithm_config["synthetization_configuration"]["algorithm"]
+    algorithm["model_parameter"]["profile_rows"] = 2
+    algorithm["model_parameter"]["few_shot_rows"] = 1
+    algorithm["model_parameter"]["similarity_strategy"] = "Random"
+
+    synthesizer = LlmNearestNeighborFewShotTextSynthesisSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(_synthetic_input())
+    synthesizer.initialize_reference_dataset(_original_input())
+    synthesizer._column_profiles = {"age": {}, "group": {}, "notes": {}}  # type: ignore[assignment]
+    synthesizer._fit()
+
+    assert synthesizer._few_shot_neighbor_index is None
+    assert len(synthesizer._few_shot_source_df) == 2
+
+    class _FakeFewShotPool:
+        empty = False
+
+        def __init__(self):
+            self.calls = 0
+
+        def __len__(self):
+            return 2
+
+        def sample(self, n):
+            self.calls += 1
+            age = 40 if self.calls == 1 else 52
+            return pd.DataFrame([{"age": age, "group": "A", "notes": f"note-{age}"}])
+
+    synthesizer._few_shot_source_df = _FakeFewShotPool()  # type: ignore[assignment]
+
+    first = synthesizer._draw_few_shot_examples({"age": 999, "group": "A", "notes": MISSING_VALUE_STRING})
+    second = synthesizer._draw_few_shot_examples({"age": 999, "group": "A", "notes": MISSING_VALUE_STRING})
+
+    assert first[0]["age"] == 40
+    assert second[0]["age"] == 52
+
+
+def test_llm_nearest_neighbor_few_shot_text_synthesis_does_not_nest_http_retries(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    post_attempts = {"count": 0}
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            post_attempts["count"] += 1
+            return _DummyResponse({}, status_code=503)
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    algorithm_config = _algorithm_config()
+    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+
+    synthesizer = LlmNearestNeighborFewShotTextSynthesisSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(_synthetic_input().head(1))
+    synthesizer.initialize_reference_dataset(_original_input())
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    sample = synthesizer.sample()
+
+    assert post_attempts["count"] == 2
+    assert sample["notes"].tolist() == [FAILED_TEXT_GENERATION]

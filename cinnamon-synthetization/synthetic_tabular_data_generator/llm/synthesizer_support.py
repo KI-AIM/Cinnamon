@@ -145,21 +145,6 @@ class LlmSynthesizerSupport:
 
         return []
 
-    @staticmethod
-    def first_dict_row(parsed_json: Any) -> Optional[Dict[str, Any]]:
-        if isinstance(parsed_json, dict):
-            row = parsed_json.get("row")
-            if isinstance(row, dict):
-                return row
-            rows = parsed_json.get("rows")
-            if isinstance(rows, list) and rows and isinstance(rows[0], dict):
-                return rows[0]
-
-        if isinstance(parsed_json, list) and parsed_json and isinstance(parsed_json[0], dict):
-            return parsed_json[0]
-
-        return None
-
     def coerce_text(self, value: Any, fallback_value: Any = None) -> str:
         candidate = fallback_value if value is None else value
         if candidate is None:

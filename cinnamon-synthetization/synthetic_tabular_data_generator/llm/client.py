@@ -436,7 +436,7 @@ class LlmClient:
                 self._healthcheck(candidate_base_url)
                 self.base_url = candidate_base_url
                 return
-            except requests.exceptions.RequestException as exc:
+            except (requests.exceptions.RequestException, ValueError) as exc:
                 last_error = exc
 
         if last_error is not None:
@@ -453,6 +453,14 @@ class LlmClient:
     def _healthcheck(self, base_url: str) -> None:
         if self.config.provider == "ollama":
             response = self._request("GET", _join_url(base_url, self.config.healthcheck_path))
+            body = response.json()
+            available_models = self._extract_ollama_model_names(body)
+            if self.config.model_name not in available_models:
+                available = ", ".join(sorted(available_models)) or "none"
+                raise ValueError(
+                    f"Ollama model '{self.config.model_name}' is not available at {base_url}. "
+                    f"Available models: {available}."
+                )
             return
 
         healthcheck_url = _join_url(base_url, self.config.healthcheck_path)
@@ -473,6 +481,7 @@ class LlmClient:
             "format": "json",
             "prompt": prompt,
             "options": {
+                "num_predict": self.config.max_tokens,
                 "temperature": self.config.temperature,
                 "top_p": self.config.top_p,
             },
@@ -483,6 +492,7 @@ class LlmClient:
             "POST",
             _join_url(self.base_url, self.config.endpoint_path),
             json=payload,
+            max_attempts=1,
         )
         body = response.json()
         content = body.get("response")
@@ -512,6 +522,7 @@ class LlmClient:
             "POST",
             _join_url(self.base_url, self.config.endpoint_path),
             json=payload,
+            max_attempts=1,
         )
         body = response.json()
         choices = body.get("choices")
@@ -535,15 +546,22 @@ class LlmClient:
 
         raise ValueError("OpenAI-compatible response is missing text content.")
 
-    def _request(self, method: str, url: str, json: Optional[Dict[str, Any]] = None) -> requests.Response:
+    def _request(
+        self,
+        method: str,
+        url: str,
+        json: Optional[Dict[str, Any]] = None,
+        *,
+        max_attempts: Optional[int] = None,
+    ) -> requests.Response:
         headers = {"Content-Type": "application/json"}
         if self.config.api_key:
             headers["Authorization"] = f"Bearer {self.config.api_key}"
 
         last_error: Optional[Exception] = None
-        max_attempts = max(1, self.config.max_retries)
+        resolved_max_attempts = max(1, self.config.max_retries if max_attempts is None else int(max_attempts))
 
-        for attempt in range(max_attempts):
+        for attempt in range(resolved_max_attempts):
             try:
                 response = requests.request(
                     method,
@@ -558,11 +576,11 @@ class LlmClient:
             except requests.exceptions.HTTPError as exc:
                 last_error = exc
                 status_code = exc.response.status_code if exc.response is not None else None
-                if status_code not in RETRYABLE_STATUS_CODES or attempt == max_attempts - 1:
+                if status_code not in RETRYABLE_STATUS_CODES or attempt == resolved_max_attempts - 1:
                     raise
             except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
                 last_error = exc
-                if attempt == max_attempts - 1:
+                if attempt == resolved_max_attempts - 1:
                     raise
 
             self._sleep_before_retry(attempt)
@@ -593,6 +611,25 @@ class LlmClient:
             return "\n".join(parts).strip()
 
         return ""
+
+    @staticmethod
+    def _extract_ollama_model_names(body: Any) -> List[str]:
+        if not isinstance(body, dict):
+            return []
+
+        models = body.get("models")
+        if not isinstance(models, list):
+            return []
+
+        names: List[str] = []
+        for model in models:
+            if not isinstance(model, dict):
+                continue
+            name = model.get("name")
+            if isinstance(name, str) and name.strip():
+                names.append(name.strip())
+
+        return names
 
     @staticmethod
     def _candidate_base_urls(base_url: str) -> List[str]:

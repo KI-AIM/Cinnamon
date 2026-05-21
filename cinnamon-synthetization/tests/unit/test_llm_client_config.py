@@ -254,3 +254,41 @@ def test_llm_client_does_not_retry_on_non_retryable_http_status(monkeypatch):
 
     assert call_counter["count"] == 1
     assert sleep_calls == []
+
+
+def test_llm_client_ollama_healthcheck_requires_configured_model(monkeypatch):
+    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "qwen3:8b")
+    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://127.0.0.1:11434")
+    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
+    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
+    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
+    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "512")
+
+    config = load_llm_client_config(
+        {
+            "synthetization_configuration": {
+                "algorithm": {
+                    "model_parameter": {},
+                    "model_fitting": {},
+                    "sampling": {"temperature": 0.2, "top_p": 0.9},
+                }
+            }
+        }
+    )
+    client = LlmClient(config)
+
+    def fake_request(method, url, **kwargs):
+        del method, url, kwargs
+        return _DummyRetryResponse(200, {"models": [{"name": "llama3.1:8b"}]})
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    try:
+        client.initialize()
+        assert False, "Expected ValueError when configured Ollama model is missing"
+    except ValueError as exc:
+        message = str(exc)
+        assert "qwen3:8b" in message
+        assert "llama3.1:8b" in message

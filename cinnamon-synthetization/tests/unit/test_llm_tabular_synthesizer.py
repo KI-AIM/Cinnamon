@@ -113,6 +113,7 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch
         if method == "POST" and url.endswith("/api/generate"):
             call_counter["count"] += 1
             prompt = kwargs["json"]["prompt"]
+            assert "You generate new synthetic tabular rows." in prompt
             assert "Generate exactly 1 row." in prompt
 
             rows = [
@@ -152,6 +153,7 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_openai_compatible(
         if method == "POST" and url.endswith("/v1/chat/completions"):
             call_counter["count"] += 1
             prompt = kwargs["json"]["messages"][1]["content"]
+            assert "You generate new synthetic tabular rows." in prompt
             assert "Generate exactly 1 row." in prompt
             content = json.dumps(
                 {
@@ -257,6 +259,7 @@ def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
 
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
+            assert "You are not reconstructing original records." in prompt
             assert "Domain context: Hospital discharge documentation in German." in prompt
             assert "Generation order constraint (single output step):" in prompt
             assert "First determine all non-TEXT column values." in prompt
@@ -382,6 +385,7 @@ def test_llm_tabular_draws_new_few_shot_examples_for_each_prompt(monkeypatch):
     assert len(sample) == 3
     assert call_counter["count"] == 3
     assert draw_counter["count"] == 3
+    assert "Reference examples from original data" in prompts[0]
     assert '"age": 101' in prompts[0]
     assert '"age": 102' in prompts[1]
     assert '"age": 103' in prompts[2]

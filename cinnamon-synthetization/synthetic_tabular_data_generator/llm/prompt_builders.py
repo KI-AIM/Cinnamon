@@ -44,12 +44,47 @@ def build_text_enrichment_prompt_prefix(
         profile_section = f"Column profiles derived from original data:\n{profile_block}\n"
 
     return (
-        "You enrich one synthetic tabular row.\n"
+        "You generate a new synthetic text value for a synthetic table row.\n"
         f"{_domain_context_block(domain_context)}"
-        "Primary objective:\n"
+        "Important:\n"
+        "- You are not reconstructing an original record.\n"
+        "- You are creating a new synthetic record in the same content category.\n"
+        "Sources and roles:\n"
+        "1. Current synthetic row\n"
+        "- The current synthetic row defines the fixed constraints of the new synthetic record.\n"
+        "- The generated text must be consistent with the available structured information.\n"
+        "2. Most similar neighboring record\n"
+        "- The most similar neighboring record is the most important semantic reference.\n"
+        "- Use it for content plausibility, typical details, logical structure, writing style, and appropriate level of detail.\n"
+        "- Do not use it as a template to copy from.\n"
+        "- The new text may be inspired by it, but it must not reconstruct an original record.\n"
+        "3. Additional neighboring records\n"
+        "- Additional neighboring records serve only as references for structure, style, and variation.\n"
+        "- Use them for section structure, wording/formality, typical order, document structure, linguistic variation, and level of detail.\n"
+        "- Do not mix specific facts from multiple neighboring records into one new record.\n"
+        "Synthetic variation:\n"
+        "- You may and should vary concrete details if they are not fixed by the current synthetic row.\n"
+        "- Vary only details that improve plausibility and naturalness while staying consistent with the structured data.\n"
+        "- Details may be inspired by the most similar neighboring record, but they must not be copied exactly from it.\n"
+        "- The goal is a new synthetic record that appears realistic without reconstructing an original record.\n"
+        "Consistency rules:\n"
         f"- Generate realistic values for TEXT columns: {text_columns_text}\n"
         "- Keep non-TEXT values unchanged unless they are clearly implausible in combination.\n"
-        "- If you correct non-TEXT fields, use minimal changes and stay close to the original synthetic row.\n"
+        "- If structured fields are contradictory, adjust only the minimum necessary non-TEXT fields so that the row describes a coherent record.\n"
+        "- If a single field clearly does not fit the other fields, preferably correct that single field.\n"
+        "- Do not generate text from a different content domain.\n"
+        "- Avoid contradictions between structured data and generated text.\n"
+        "Privacy and anti-copying rules:\n"
+        "- Avoid verbatim or near-verbatim copying from the reference texts.\n"
+        "- Do not copy exact combinations of concrete details that could reconstruct an original record.\n"
+        "- Do not generate direct identifiers.\n"
+        "- Do not use exact dates from the texts unless they are explicitly provided in the current synthetic row.\n"
+        "Quality goal:\n"
+        "- Generate a realistic, plausible, synthetic text that fits the current synthetic row.\n"
+        "- The result should be primarily inspired by the most similar neighboring record.\n"
+        "- It must differ sufficiently from the original.\n"
+        "- Do not mix neighboring records in an uncontrolled way.\n"
+        "- Use the structure and style of additional neighboring records only as supporting references.\n"
         "Output rules:\n"
         "- Return ONLY valid JSON.\n"
         "- Use exactly this shape: {\"row\": { ... }}\n"
@@ -66,16 +101,14 @@ def build_text_enrichment_prompt_from_prefix(
     *,
     base_row: Dict[str, Any],
     reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    reference_heading: str = "Reference rows from original data (learn semantics and writing style, never copy):",
+    reference_heading: str = (
+        "Additional neighboring records from original data "
+        "(reference texts for structure, style, and variation; never copy):"
+    ),
     primary_reference_row: Optional[Dict[str, Any]] = None,
     primary_reference_heading: str = (
-        "Closest reference row from original data "
-        "(use TEXT semantics and writing style from this row, never copy):"
-    ),
-    structural_reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    structural_reference_heading: str = (
-        "Structured neighbor rows from original data "
-        "(use only non-TEXT patterns from these rows; TEXT fields are masked on purpose):"
+        "Most similar neighboring record from original data "
+        "(most important semantic reference; use for plausibility, logic, style, and detail; never copy):"
     ),
     knowledge_chunks: Optional[Sequence[str]] = None,
     knowledge_source_type: str = "none",
@@ -84,17 +117,12 @@ def build_text_enrichment_prompt_from_prefix(
     if primary_reference_row:
         primary_reference_block = _reference_examples_block([primary_reference_row], primary_reference_heading)
 
-    structural_reference_block = _reference_examples_block(
-        structural_reference_examples,
-        structural_reference_heading,
-    )
     reference_block = _reference_examples_block(reference_examples, reference_heading)
     knowledge_block = _knowledge_block(knowledge_chunks, knowledge_source_type)
 
     return (
         f"{prompt_prefix}"
         f"{primary_reference_block}"
-        f"{structural_reference_block}"
         f"{reference_block}"
         f"{knowledge_block}"
         "Current synthetic row:\n"
@@ -111,16 +139,14 @@ def build_text_enrichment_prompt(
     missing_value_string: str,
     domain_context: str = "",
     reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    reference_heading: str = "Reference rows from original data (learn semantics and writing style, never copy):",
+    reference_heading: str = (
+        "Additional neighboring records from original data "
+        "(reference texts for structure, style, and variation; never copy):"
+    ),
     primary_reference_row: Optional[Dict[str, Any]] = None,
     primary_reference_heading: str = (
-        "Closest reference row from original data "
-        "(use TEXT semantics and writing style from this row, never copy):"
-    ),
-    structural_reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    structural_reference_heading: str = (
-        "Structured neighbor rows from original data "
-        "(use only non-TEXT patterns from these rows; TEXT fields are masked on purpose):"
+        "Most similar neighboring record from original data "
+        "(most important semantic reference; use for plausibility, logic, style, and detail; never copy):"
     ),
     knowledge_chunks: Optional[Sequence[str]] = None,
     knowledge_source_type: str = "none",
@@ -139,8 +165,6 @@ def build_text_enrichment_prompt(
         reference_heading=reference_heading,
         primary_reference_row=primary_reference_row,
         primary_reference_heading=primary_reference_heading,
-        structural_reference_examples=structural_reference_examples,
-        structural_reference_heading=structural_reference_heading,
         knowledge_chunks=knowledge_chunks,
         knowledge_source_type=knowledge_source_type,
     )
@@ -158,18 +182,46 @@ def build_tabular_generation_prompt_prefix(
     profile_block = "\n".join(profile_lines)
 
     return (
-        "You are generating synthetic tabular rows.\n"
+        "You generate new synthetic tabular rows.\n"
         f"{_domain_context_block(domain_context)}"
+        "Important:\n"
+        "- You are not reconstructing original records.\n"
+        "- You are creating new synthetic records in the same content category.\n"
+        "Sources and roles:\n"
+        "1. Column schema and profiles\n"
+        "- The schema and column profiles define the allowed structure, value types, value ranges, and typical distributions.\n"
+        "- Generated rows must remain plausible with respect to these constraints.\n"
+        "2. Reference examples\n"
+        "- Reference examples from original data are supporting examples for structure, style, realistic combinations, and level of detail.\n"
+        "- Use them as inspiration, not as templates to copy from.\n"
+        "- Do not reconstruct original rows or copy characteristic combinations of details.\n"
+        "Synthetic variation:\n"
+        "- You may and should vary concrete details while staying plausible for the dataset.\n"
+        "- Create realistic variation instead of reproducing memorized rows.\n"
+        "- The goal is a new synthetic record that appears realistic without reconstructing an original record.\n"
+        "Consistency rules:\n"
+        "- Each generated row must be internally coherent across structured and TEXT columns.\n"
+        "- Do not generate text from a different content domain.\n"
+        "- Avoid contradictions between structured data and generated text.\n"
         "Return ONLY valid JSON with this exact shape:\n"
         f"{shape_text}\n"
         "Use one top-level key only: rows.\n"
         "No markdown, no comments, no code fences, no extra keys.\n"
         f"Use exactly these columns: {list(ordered_columns)}\n"
         "Never use generic column names like column_a, column_b, feature_1, field_1.\n"
+        "Privacy and anti-copying rules:\n"
+        "- Avoid verbatim or near-verbatim copying from reference examples.\n"
+        "- Do not copy exact combinations of concrete details that could reconstruct an original record.\n"
+        "- Do not generate direct identifiers unless they are clearly part of the intended synthetic schema.\n"
+        "- Do not use exact dates from reference examples unless such dates are plausibly generated as new synthetic values.\n"
         "Generation order constraint (single output step):\n"
         "- First determine all non-TEXT column values.\n"
         "- Then generate TEXT column values conditioned on those non-TEXT values.\n"
         "- Return only the final JSON rows output, no intermediate reasoning.\n"
+        "Quality goal:\n"
+        "- Generate realistic, plausible, synthetic rows that fit the schema and column profiles.\n"
+        "- Use reference examples only as supporting references for structure, style, and realistic combinations.\n"
+        "- The result must differ sufficiently from the original data.\n"
         "Type rules:\n"
         "- INTEGER: integer number\n"
         "- DECIMAL: decimal number\n"
@@ -193,7 +245,8 @@ def build_tabular_generation_prompt_from_prefix(
     reference_block = ""
     if few_shot_examples:
         reference_block = (
-            "Reference examples (learn structure only, do not copy rows):\n"
+            "Reference examples from original data "
+            "(supporting references for structure, style, and realistic combinations; never copy):\n"
             f"{json.dumps(list(few_shot_examples), ensure_ascii=True)}\n"
         )
 

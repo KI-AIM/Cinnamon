@@ -21,7 +21,6 @@ from synthetic_tabular_data_generator.llm.prompt_builders import (
 )
 from synthetic_tabular_data_generator.llm.response_validation import require_first_dict_row
 from synthetic_tabular_data_generator.llm.synthesizer_support import (
-    ColumnProfileOptions,
     LlmSynthesizerSupport,
 )
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
@@ -47,21 +46,27 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         self,
         config: Dict[str, Any],
         *,
-        default_profile_rows: int = 1000,
+        default_profile_rows: Optional[int] = 1000,
         default_few_shot_rows: int = 0,
+        include_profile_rows: bool = True,
     ) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         algorithm_config = config["synthetization_configuration"]["algorithm"]
         model_params = algorithm_config.get("model_parameter", {})
         training_params = algorithm_config.get("model_fitting", {})
         self._llm_config = load_llm_client_config(config)
-        profile_rows = model_params.get("profile_rows", training_params.get("profile_rows", default_profile_rows))
         few_shot_rows = model_params.get("few_shot_rows", training_params.get("few_shot_rows", default_few_shot_rows))
+
         self._fitting_kwargs = {
-            "profile_rows": max(1, int(profile_rows)),
             "few_shot_rows": max(0, int(few_shot_rows)),
             "max_retries": self._llm_config.max_retries,
             "timeout_seconds": self._llm_config.timeout_seconds,
         }
+        if include_profile_rows:
+            profile_rows = model_params.get("profile_rows", training_params.get("profile_rows", default_profile_rows))
+            if profile_rows is None:
+                raise ValueError("profile_rows must be configured for this synthesizer.")
+            self._fitting_kwargs["profile_rows"] = max(1, int(profile_rows))
+
         self._sampling = algorithm_config.get("sampling", {})
         self._user_prompt_domain_context = str(training_params.get("user_prompt_domain_context", "")).strip()
         return algorithm_config, model_params, training_params
@@ -85,7 +90,9 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration is not initialized.")
 
-        profile_rows = self._fitting_kwargs["profile_rows"]
+        profile_rows = self._fitting_kwargs.get("profile_rows")
+        if profile_rows is None:
+            return df.copy()
         if len(df) > profile_rows:
             return df.sample(n=profile_rows).reset_index(drop=True)
         return df.copy()
@@ -179,7 +186,6 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         self.reference_dataset: Optional[pd.DataFrame] = None
         self._ordered_column_configs: List[Dict[str, Any]] = []
         self._text_columns: List[str] = []
-        self._column_profiles: Dict[str, Dict[str, Any]] = {}
         self._few_shot_source_df: Optional[pd.DataFrame] = None
         self._few_shot_neighbor_index: Optional[StructuredAttributeNearestNeighborIndex] = None
         self._similarity_strategy: str = self.SIMILARITY_STRATEGY_RANDOM
@@ -194,8 +200,8 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
     ) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         algorithm_config, model_params, training_params = self._initialize_common_llm_configuration(
             config,
-            default_profile_rows=1000,
             default_few_shot_rows=20,
+            include_profile_rows=False,
         )
         self._similarity_strategy = self._normalize_similarity_strategy(
             model_params.get("similarity_strategy", default_similarity_strategy),
@@ -251,18 +257,6 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration is not initialized.")
 
-        profile_df = self._build_profile_dataframe(self.reference_dataset)
-        self._column_profiles = {}
-        for config in self._ordered_column_configs:
-            column_name = config["name"]
-            column_type = str(config.get("type", "STRING")).upper()
-            self._column_profiles[column_name] = self.build_column_profile(
-                profile_df,
-                column_name,
-                column_type,
-                options=self._column_profile_options(),
-            )
-
         few_shot_rows = self._fitting_kwargs["few_shot_rows"]
         if few_shot_rows > 0 and not self.reference_dataset.empty:
             if self._similarity_strategy == self.SIMILARITY_STRATEGY_ATTRIBUTES:
@@ -273,7 +267,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
                     missing_value_string=self._missing_value_string(),
                 )
             else:
-                self._few_shot_source_df = profile_df.copy().reset_index(drop=True)
+                self._few_shot_source_df = self.reference_dataset.copy().reset_index(drop=True)
                 self._few_shot_neighbor_index = None
         else:
             self._few_shot_source_df = None
@@ -361,17 +355,10 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
 
     def _build_prompt_prefix(self) -> str:
         column_order = [cfg["name"] for cfg in self._ordered_column_configs]
-        profile_lines = []
-        for config in self._ordered_column_configs:
-            name = config["name"]
-            column_type = str(config.get("type", "STRING")).upper()
-            line = self.build_profile_line(name, column_type, self._column_profiles.get(name, {}))
-            profile_lines.append(line.replace("no observed values.", "no observed reference values."))
 
         return build_text_enrichment_prompt_prefix(
             column_order=column_order,
             text_columns=self._text_columns,
-            profile_lines=profile_lines,
             missing_value_string=self._missing_value_string(),
             domain_context=self._user_prompt_domain_context,
         )
@@ -421,7 +408,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
             if column_type in self.NUMERIC_TYPES:
                 numeric = self.to_float(base_value)
                 if numeric is None:
-                    numeric = self.default_numeric_value(column_name, self._column_profiles)
+                    numeric = 0.0
                 coerced[column_name] = int(round(numeric)) if column_type in {"INTEGER", "DATE"} else float(numeric)
                 continue
 
@@ -437,29 +424,12 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
                 column_name,
                 column_type,
                 value,
-                self._column_profiles,
+                {},
                 fallback_value=base_value,
             )
         if column_type == "TEXT":
             return self.coerce_text(value)
         return self.coerce_string(value, fallback_value=base_value)
-
-    def _column_profile_options(self) -> ColumnProfileOptions:
-        include_text_examples = True
-        text_example_limit = 3
-        if self._fitting_kwargs is not None and self._fitting_kwargs.get("few_shot_rows", 0) > 0:
-            # Few-shot reference rows already carry the original free-text content.
-            # Skip extra text snippets in the profile block to avoid repeating the
-            # same texts in the prompt.
-            include_text_examples = False
-            text_example_limit = 0
-
-        return ColumnProfileOptions(
-            categorical_top_k=10,
-            include_text_examples=include_text_examples,
-            text_example_limit=text_example_limit,
-            excluded_text_values=(self._missing_value_string(),),
-        )
 
     def _draw_few_shot_examples(self, base_row: Dict[str, Any]) -> List[Dict[str, Any]]:
         if self._fitting_kwargs is None:

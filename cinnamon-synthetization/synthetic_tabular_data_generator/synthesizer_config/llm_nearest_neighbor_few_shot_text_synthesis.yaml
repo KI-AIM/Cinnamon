@@ -21,15 +21,8 @@ configurations:
         mandatory: false
   model_parameter:
     display_name: Dataset Generation Parameters
-    description: Configure how much original data is profiled and how few-shot reference examples are selected for text generation.
+    description: Configure how few-shot reference examples are selected for text generation.
     parameters:
-      - name: profile_rows
-        type: integer
-        label: Profile Rows
-        description: Maximum number of original rows used to estimate prompt statistics and plausibility bounds.
-        default_value: 1000
-        min_value: 1
-        max_value: 100000
       - name: few_shot_rows
         type: integer
         label: Example Rows

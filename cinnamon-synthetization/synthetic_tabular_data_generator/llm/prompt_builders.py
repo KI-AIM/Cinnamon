@@ -33,12 +33,15 @@ def build_text_enrichment_prompt_prefix(
     *,
     column_order: Sequence[str],
     text_columns: Sequence[str],
-    profile_lines: Sequence[str],
+    profile_lines: Optional[Sequence[str]] = None,
     missing_value_string: str,
     domain_context: str = "",
 ) -> str:
     text_columns_text = ", ".join(text_columns)
-    profile_block = "\n".join(profile_lines)
+    profile_section = ""
+    if profile_lines:
+        profile_block = "\n".join(profile_lines)
+        profile_section = f"Column profiles derived from original data:\n{profile_block}\n"
 
     return (
         "You enrich one synthetic tabular row.\n"
@@ -54,8 +57,7 @@ def build_text_enrichment_prompt_prefix(
         f"- For missing strings/text use '{missing_value_string}'\n"
         "- BOOLEAN values must be true/false.\n"
         "- DATE values must be UNIX timestamps in seconds.\n"
-        "Column profiles derived from original data:\n"
-        f"{profile_block}\n"
+        f"{profile_section}"
     )
 
 

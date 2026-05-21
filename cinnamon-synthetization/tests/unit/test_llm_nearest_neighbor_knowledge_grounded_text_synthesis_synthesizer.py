@@ -29,7 +29,6 @@ def _algorithm_config() -> dict:
         "synthetization_configuration": {
             "algorithm": {
                 "model_parameter": {
-                    "profile_rows": 1000,
                     "few_shot_rows": 2,
                     "similarity_strategy": "Attributes",
                     "knowledge_source_type": "NOT_IMPLEMENTED",

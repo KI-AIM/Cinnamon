@@ -30,7 +30,6 @@ def _algorithm_config() -> dict:
         "synthetization_configuration": {
             "algorithm": {
                 "model_parameter": {
-                    "profile_rows": 1000,
                     "few_shot_rows": 2,
                     "similarity_strategy": "Random",
                 },
@@ -117,7 +116,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
             prompt = payload["prompt"]
             assert "Current synthetic row:" in prompt
             assert "Generate realistic values for TEXT columns: notes" in prompt
-            assert "text_examples=" not in prompt
+            assert "Column profiles derived from original data" not in prompt
             assert payload["options"]["num_predict"] == 1024
             if call_count["post"] == 1:
                 return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
@@ -257,7 +256,6 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
 def test_llm_nearest_neighbor_few_shot_text_synthesis_random_strategy_uses_profile_pool_and_redraws():
     algorithm_config = _algorithm_config()
     algorithm = algorithm_config["synthetization_configuration"]["algorithm"]
-    algorithm["model_parameter"]["profile_rows"] = 2
     algorithm["model_parameter"]["few_shot_rows"] = 1
     algorithm["model_parameter"]["similarity_strategy"] = "Random"
 
@@ -266,11 +264,10 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_random_strategy_uses_profi
     synthesizer.initialize_attribute_configuration(_attribute_config())
     synthesizer.initialize_dataset(_synthetic_input())
     synthesizer.initialize_reference_dataset(_original_input())
-    synthesizer._column_profiles = {"age": {}, "group": {}, "notes": {}}  # type: ignore[assignment]
     synthesizer._fit()
 
     assert synthesizer._few_shot_neighbor_index is None
-    assert len(synthesizer._few_shot_source_df) == 2
+    assert len(synthesizer._few_shot_source_df) == 3
 
     class _FakeFewShotPool:
         empty = False

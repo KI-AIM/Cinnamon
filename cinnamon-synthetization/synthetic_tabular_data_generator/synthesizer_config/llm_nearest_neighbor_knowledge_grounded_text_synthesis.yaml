@@ -21,15 +21,8 @@ configurations:
         mandatory: false
   model_parameter:
     display_name: Similarity and Knowledge Parameters
-    description: Configure how many rows are profiled and how nearest-neighbor examples are selected. Knowledge bases are not implemented yet.
+    description: Configure how nearest-neighbor examples are selected. Knowledge bases are not implemented yet.
     parameters:
-      - name: profile_rows
-        type: integer
-        label: Profile Rows
-        description: Maximum number of original rows used to estimate prompt statistics, candidate example pools, and grounding context.
-        default_value: 1000
-        min_value: 1
-        max_value: 100000
       - name: few_shot_rows
         type: integer
         label: Example Rows

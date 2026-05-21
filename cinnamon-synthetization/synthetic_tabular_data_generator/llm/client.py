@@ -7,6 +7,8 @@ from urllib.parse import urlparse
 
 import requests
 
+from synthetic_tabular_data_generator.llm.prompt_logger import PromptLogger
+
 
 DEFAULT_OPENAI_SYSTEM_PROMPT = "Return only the requested JSON or text content with no extra formatting."
 LLM_PROFILE_IDS_ENV_VAR = "CINNAMON_LLM_PROFILE_IDS"
@@ -426,7 +428,8 @@ class LlmClient:
     def __init__(self, config: LlmClientConfig) -> None:
         self.config = config
         self.base_url = config.base_url.rstrip("/")
-
+        self._prompt_logger: Optional[PromptLogger] = None
+    
     def initialize(self) -> None:
         configured_base_url = self.base_url
         last_error: Optional[Exception] = None
@@ -442,6 +445,11 @@ class LlmClient:
         if last_error is not None:
             raise last_error
         raise RuntimeError("Unable to reach the configured LLM API.")
+    
+    def set_session_key(self, session_key: Optional[str] = None) -> None:
+        """Set the session key for prompt logging."""
+        self._prompt_logger = PromptLogger.get_instance()
+        self._prompt_logger.initialize(session_key)
 
     def generate_text(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         if self.config.provider == "ollama":
@@ -498,6 +506,23 @@ class LlmClient:
         content = body.get("response")
         if not isinstance(content, str) or not content.strip():
             raise ValueError("LLM response is empty or missing the 'response' field.")
+        
+        # Log prompt and response if logger is initialized
+        if self._prompt_logger is not None:
+            metadata = {
+                "provider": self.config.provider,
+                "model": self.config.model_name,
+                "temperature": self.config.temperature,
+                "top_p": self.config.top_p,
+                "max_tokens": self.config.max_tokens,
+            }
+            self._prompt_logger.log_prompt_and_response(
+                prompt=prompt,
+                response=content,
+                system_prompt=system_prompt,
+                metadata=metadata,
+            )
+        
         return content
 
     def _generate_openai_compatible(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -538,10 +563,40 @@ class LlmClient:
             content = message.get("content")
             extracted = self._normalize_openai_content(content)
             if extracted:
+                # Log prompt and response if logger is initialized
+                if self._prompt_logger is not None:
+                    metadata = {
+                        "provider": self.config.provider,
+                        "model": self.config.model_name,
+                        "temperature": self.config.temperature,
+                        "top_p": self.config.top_p,
+                        "max_tokens": self.config.max_tokens,
+                    }
+                    self._prompt_logger.log_prompt_and_response(
+                        prompt=prompt,
+                        response=extracted,
+                        system_prompt=resolved_system_prompt,
+                        metadata=metadata,
+                    )
                 return extracted
 
         text = first_choice.get("text")
         if isinstance(text, str) and text.strip():
+            # Log prompt and response if logger is initialized
+            if self._prompt_logger is not None:
+                metadata = {
+                    "provider": self.config.provider,
+                    "model": self.config.model_name,
+                    "temperature": self.config.temperature,
+                    "top_p": self.config.top_p,
+                    "max_tokens": self.config.max_tokens,
+                }
+                self._prompt_logger.log_prompt_and_response(
+                    prompt=prompt,
+                    response=text,
+                    system_prompt=resolved_system_prompt,
+                    metadata=metadata,
+                )
             return text
 
         raise ValueError("OpenAI-compatible response is missing text content.")

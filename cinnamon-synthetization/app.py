@@ -343,6 +343,7 @@ def run_synthesizer_stage(
     reference_data=None,
     replace_text_with_pending=True,
     fill_text_with_pending=True,
+    session_key=None,
 ):
     stage_init_time = time.time()
 
@@ -380,6 +381,16 @@ def run_synthesizer_stage(
 
     synthesizer_class.initialize_synthesizer()
     print(f"[{stage_label}] Synthesizer initialized.")
+    
+    # Set session key for prompt logging if this is an LLM synthesizer
+    if session_key is not None and hasattr(synthesizer_class, 'synthesizer') and synthesizer_class.synthesizer is not None:
+        if hasattr(synthesizer_class, '_llm_client') and synthesizer_class._llm_client is not None:
+            try:
+                synthesizer_class._llm_client.set_session_key(session_key)
+                print(f"[{stage_label}] Prompt logging enabled for session: {session_key}")
+            except Exception as e:
+                print(f"[{stage_label}] Warning: Failed to set session key for prompt logging: {e}")
+    
     stage_init_duration = time.time() - stage_init_time
     update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True)
 
@@ -479,6 +490,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 file_path_status=file_path_status,
                 replace_text_with_pending=False,
                 fill_text_with_pending=False,
+                session_key=session_key,
             )
             total_init_duration += init_duration
             total_fit_duration += fit_duration
@@ -504,6 +516,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                     file_path_status=file_path_status,
                     replace_text_with_pending=True,
                     fill_text_with_pending=True,
+                    session_key=session_key,
                 )
                 total_init_duration += init_duration
                 total_fit_duration += fit_duration
@@ -532,6 +545,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 file_path_status=file_path_status,
                 replace_text_with_pending=False,
                 fill_text_with_pending=False,
+                session_key=session_key,
             )
             total_init_duration += init_duration
             total_fit_duration += fit_duration
@@ -553,6 +567,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 file_path_status=file_path_status,
                 replace_text_with_pending=not is_llm_synthesizer(synthesizer_name),
                 fill_text_with_pending=not is_llm_synthesizer(synthesizer_name),
+                session_key=session_key,
             )
             total_init_duration += init_duration
             total_fit_duration += fit_duration

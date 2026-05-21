@@ -224,9 +224,13 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
+            assert "Closest reference row from original data" in prompt
+            assert "Structured neighbor rows from original data" in prompt
             assert '"age": 52' in prompt
             assert '"group": "B"' in prompt
             assert '"notes": "Requires follow-up in two weeks."' in prompt
+            assert '"notes": "No acute findings and good recovery."' not in prompt
+            assert prompt.count(f'"notes": "{MISSING_VALUE_STRING}"') >= 2
             return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
         raise AssertionError(f"Unexpected request: {method} {url}")
 

@@ -347,11 +347,14 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
 
     def _build_prompt(self, base_row: Dict[str, Any]) -> str:
         prompt_prefix = self._prompt_prefix or self._build_prompt_prefix()
+        primary_reference_row, structural_reference_examples, reference_examples = self._build_reference_context(base_row)
 
         return build_text_enrichment_prompt_from_prefix(
             prompt_prefix,
             base_row=self.serialize_row_values(base_row),
-            reference_examples=self._draw_few_shot_examples(base_row),
+            primary_reference_row=primary_reference_row,
+            structural_reference_examples=structural_reference_examples,
+            reference_examples=reference_examples,
             knowledge_chunks=self._build_knowledge_chunks(base_row),
             knowledge_source_type=self._knowledge_source_type(),
         )
@@ -483,6 +486,29 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         n_examples = min(few_shot_rows, len(self._few_shot_source_df))
         sampled = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
         return [self.serialize_row_values(row) for row in sampled]
+
+    def _build_reference_context(
+        self,
+        base_row: Dict[str, Any],
+    ) -> tuple[Optional[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+        reference_examples = self._draw_few_shot_examples(base_row)
+        if self._similarity_strategy != self.SIMILARITY_STRATEGY_ATTRIBUTES or not reference_examples:
+            return None, [], reference_examples
+
+        primary_reference_row = reference_examples[0]
+        structural_reference_examples = [
+            self._mask_text_columns_for_structural_reference(row)
+            for row in reference_examples
+        ]
+        return primary_reference_row, structural_reference_examples, []
+
+    def _mask_text_columns_for_structural_reference(self, row: Dict[str, Any]) -> Dict[str, Any]:
+        masked = dict(row)
+        missing_value = self._missing_value_string()
+        for column_name in self._text_columns:
+            if column_name in masked:
+                masked[column_name] = missing_value
+        return masked
 
     def _build_knowledge_chunks(self, base_row: Dict[str, Any]) -> List[str]:
         del base_row

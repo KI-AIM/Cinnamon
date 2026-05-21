@@ -65,14 +65,34 @@ def build_text_enrichment_prompt_from_prefix(
     base_row: Dict[str, Any],
     reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
     reference_heading: str = "Reference rows from original data (learn semantics and writing style, never copy):",
+    primary_reference_row: Optional[Dict[str, Any]] = None,
+    primary_reference_heading: str = (
+        "Closest reference row from original data "
+        "(use TEXT semantics and writing style from this row, never copy):"
+    ),
+    structural_reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
+    structural_reference_heading: str = (
+        "Structured neighbor rows from original data "
+        "(use only non-TEXT patterns from these rows; TEXT fields are masked on purpose):"
+    ),
     knowledge_chunks: Optional[Sequence[str]] = None,
     knowledge_source_type: str = "none",
 ) -> str:
+    primary_reference_block = ""
+    if primary_reference_row:
+        primary_reference_block = _reference_examples_block([primary_reference_row], primary_reference_heading)
+
+    structural_reference_block = _reference_examples_block(
+        structural_reference_examples,
+        structural_reference_heading,
+    )
     reference_block = _reference_examples_block(reference_examples, reference_heading)
     knowledge_block = _knowledge_block(knowledge_chunks, knowledge_source_type)
 
     return (
         f"{prompt_prefix}"
+        f"{primary_reference_block}"
+        f"{structural_reference_block}"
         f"{reference_block}"
         f"{knowledge_block}"
         "Current synthetic row:\n"
@@ -90,6 +110,16 @@ def build_text_enrichment_prompt(
     domain_context: str = "",
     reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
     reference_heading: str = "Reference rows from original data (learn semantics and writing style, never copy):",
+    primary_reference_row: Optional[Dict[str, Any]] = None,
+    primary_reference_heading: str = (
+        "Closest reference row from original data "
+        "(use TEXT semantics and writing style from this row, never copy):"
+    ),
+    structural_reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
+    structural_reference_heading: str = (
+        "Structured neighbor rows from original data "
+        "(use only non-TEXT patterns from these rows; TEXT fields are masked on purpose):"
+    ),
     knowledge_chunks: Optional[Sequence[str]] = None,
     knowledge_source_type: str = "none",
 ) -> str:
@@ -105,6 +135,10 @@ def build_text_enrichment_prompt(
         base_row=base_row,
         reference_examples=reference_examples,
         reference_heading=reference_heading,
+        primary_reference_row=primary_reference_row,
+        primary_reference_heading=primary_reference_heading,
+        structural_reference_examples=structural_reference_examples,
+        structural_reference_heading=structural_reference_heading,
         knowledge_chunks=knowledge_chunks,
         knowledge_source_type=knowledge_source_type,
     )

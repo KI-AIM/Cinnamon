@@ -108,13 +108,13 @@ def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_runs_without_kno
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
             assert "Knowledge grounding" not in prompt
-            assert "Most similar neighboring record from original data" in prompt
-            assert "Additional neighboring records from original data" in prompt
+            assert "MOST SIMILAR EXAMPLE" in prompt
+            assert "NEIGHBORING EXAMPLES" in prompt
+            assert "SYNTHETIC EXAMPLE" in prompt
             assert '"notes": "No acute findings and good recovery."' in prompt
             assert '"age": 67' in prompt
             assert '"group": "A"' in prompt
             assert f'"notes": "{MISSING_VALUE_STRING}"' not in prompt
-            assert "Current synthetic row:" in prompt
             return _DummyResponse(
                 {"response": json.dumps({"row": {"age": 67, "group": "A", "notes": "Stable discharge with follow-up in one week."}})}
             )

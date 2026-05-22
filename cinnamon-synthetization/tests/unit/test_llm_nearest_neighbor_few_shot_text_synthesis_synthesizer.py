@@ -114,10 +114,10 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
             call_count["post"] += 1
             payload = kwargs["json"]
             prompt = payload["prompt"]
-            assert "Current synthetic row:" in prompt
             assert "You generate a new synthetic text value for a synthetic table row." in prompt
-            assert "Most similar neighboring record" in prompt
-            assert "Additional neighboring records" in prompt
+            assert "MOST SIMILAR EXAMPLE" in prompt
+            assert "NEIGHBORING EXAMPLES" in prompt
+            assert "SYNTHETIC EXAMPLE" in prompt
             assert "Generate realistic values for TEXT columns: notes" in prompt
             assert "Column profiles derived from original data" not in prompt
             assert payload["options"]["num_predict"] == 1024
@@ -226,10 +226,11 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
-            assert "Most similar neighboring record from original data" in prompt
-            assert "Additional neighboring records from original data" in prompt
+            assert "MOST SIMILAR EXAMPLE" in prompt
+            assert "NEIGHBORING EXAMPLES" in prompt
             assert '"notes": "Requires follow-up in two weeks."' in prompt
-            assert '"notes": "No acute findings and good recovery."' not in prompt
+            assert '"notes": "Patient stable after treatment."' not in prompt
+            assert '"notes": "No acute findings and good recovery."' in prompt
             assert '"age": 53' in prompt
             assert '"group": "B"' in prompt
             assert f'"notes": "{MISSING_VALUE_STRING}"' not in prompt

@@ -18,6 +18,7 @@ def test_build_tabular_generation_prompt_uses_singular_for_one_row():
 
     assert "You generate new synthetic tabular rows." in prompt
     assert "You are not reconstructing original records." in prompt
+    assert "GENERATION TASK" in prompt
     assert "Generate exactly 1 row." in prompt
     assert "Return exactly 1 row in the rows array." in prompt
 
@@ -33,3 +34,4 @@ def test_build_tabular_generation_prompt_uses_plural_for_multiple_rows():
     assert "Generate exactly 3 rows." in prompt
     assert "Return exactly 3 rows in the rows array." in prompt
     assert "Reference examples from original data" not in prompt
+    assert "REFERENCE EXAMPLES" not in prompt

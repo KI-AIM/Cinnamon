@@ -8,6 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from data_processing.utils import MISSING_VALUE_STRING
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
 
 
@@ -254,27 +255,39 @@ def test_llm_tabular_synthesizer_preserves_sparse_positional_indices():
 
 def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
     _set_shared_llm_env(monkeypatch, provider="ollama")
+    post_count = {"count": 0}
 
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
 
         if method == "POST" and url.endswith("/api/generate"):
+            post_count["count"] += 1
             prompt = kwargs["json"]["prompt"]
-            assert "You are not reconstructing original records." in prompt
             assert "Domain context: Hospital discharge documentation in German." in prompt
-            assert "Generation order constraint (single output step):" in prompt
-            assert "First determine all non-TEXT column values." in prompt
-            assert "Then generate TEXT column values conditioned on those non-TEXT values." in prompt
-            assert "- notes (TEXT): missing_ratio=" in prompt
-            assert "- notes (TEXT): frequent values [" not in prompt
+            if "You generate non-TEXT fields for synthetic tabular rows." in prompt:
+                assert "REFERENCE EXAMPLES" in prompt
+                assert "- notes (TEXT): missing_ratio=" in prompt
+                assert "- notes (TEXT): frequent values [" not in prompt
+                return _DummyResponse(
+                    {
+                        "response": json.dumps(
+                            {
+                                "rows": [
+                                    {"age": 33, "group": "A", "notes": MISSING_VALUE_STRING},
+                                ]
+                            }
+                        )
+                    }
+                )
+
+            assert "You generate TEXT fields for repaired synthetic tabular rows." in prompt
+            assert "SYNTHETIC EXAMPLE" in prompt
             return _DummyResponse(
                 {
                     "response": json.dumps(
                         {
-                            "rows": [
-                                {"age": 33, "group": "A", "notes": "Patient shows stable recovery."},
-                            ]
+                            "row": {"age": 99, "group": "Z", "notes": "Patient shows stable recovery."},
                         }
                     )
                 }
@@ -300,6 +313,7 @@ def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
     sample = synthesizer.sample()
 
     assert len(sample) == 1
+    assert post_count["count"] == 2
     assert sample["notes"].iloc[0] == "Patient shows stable recovery."
 
 
@@ -445,14 +459,14 @@ def test_llm_tabular_caches_generation_prompt_prefix(monkeypatch):
     synthesizer.initialize_dataset(_dataset())
     synthesizer.initialize_synthesizer()
 
-    original_builder = synthesizer._build_generation_prompt_prefix
+    original_builder = synthesizer._build_non_text_generation_prompt_prefix
     build_counter = {"count": 0}
 
     def counted_builder():
         build_counter["count"] += 1
         return original_builder()
 
-    synthesizer._build_generation_prompt_prefix = counted_builder  # type: ignore[assignment]
+    synthesizer._build_non_text_generation_prompt_prefix = counted_builder  # type: ignore[assignment]
 
     synthesizer.fit()
     synthesizer.sample()
@@ -489,5 +503,5 @@ def test_llm_tabular_logs_diagnostics_for_invalid_generation_attempts(monkeypatc
     except RuntimeError:
         pass
 
-    assert any("[LLM_TABULAR_GENERATION]" in entry for entry in logs)
+    assert any("[LLM_TABULAR_NON_TEXT_GENERATION]" in entry for entry in logs)
     assert any("unusable_rows=" in entry for entry in logs)

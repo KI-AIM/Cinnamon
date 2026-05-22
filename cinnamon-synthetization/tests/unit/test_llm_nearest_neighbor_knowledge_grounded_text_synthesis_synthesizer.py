@@ -100,19 +100,31 @@ def _original_input() -> pd.DataFrame:
 
 def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_runs_without_knowledge_chunks(monkeypatch):
     _set_shared_llm_env(monkeypatch)
+    post_count = {"count": 0}
 
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
 
         if method == "POST" and url.endswith("/api/generate"):
+            post_count["count"] += 1
             prompt = kwargs["json"]["prompt"]
-            assert "Knowledge grounding" not in prompt
+            assert "SYNTHETIC EXAMPLE" in prompt
+            if "You repair the non-TEXT fields of a synthetic table row." in prompt:
+                assert "Knowledge grounding" not in prompt
+                assert "MOST SIMILAR REFERENCE ROW" in prompt
+                assert "NEIGHBORING REFERENCE ROWS" in prompt
+                assert '"notes": "No acute findings and good recovery."' not in prompt
+                assert '"age": 67' in prompt
+                assert '"group": "A"' in prompt
+                return _DummyResponse(
+                    {"response": json.dumps({"row": {"age": 61, "group": "A", "notes": MISSING_VALUE_STRING}})}
+                )
+
             assert "MOST SIMILAR EXAMPLE" in prompt
             assert "NEIGHBORING EXAMPLES" in prompt
-            assert "SYNTHETIC EXAMPLE" in prompt
             assert '"notes": "No acute findings and good recovery."' in prompt
-            assert '"age": 67' in prompt
+            assert '"age": 61' in prompt
             assert '"group": "A"' in prompt
             assert f'"notes": "{MISSING_VALUE_STRING}"' not in prompt
             return _DummyResponse(
@@ -134,4 +146,5 @@ def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_runs_without_kno
     sample = synthesizer.sample()
 
     assert len(sample) == 1
+    assert post_count["count"] == 2
     assert sample["notes"].iloc[0] == "Stable discharge with follow-up in one week."

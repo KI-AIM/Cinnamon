@@ -104,6 +104,8 @@ def _original_input() -> pd.DataFrame:
 
 def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_correct_structured_values(monkeypatch):
     call_count = {"post": 0}
+    repair_prompts = []
+    text_prompts = []
     _set_shared_llm_env(monkeypatch)
 
     def fake_request(method, url, **kwargs):
@@ -114,16 +116,27 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
             call_count["post"] += 1
             payload = kwargs["json"]
             prompt = payload["prompt"]
-            assert "You generate a new synthetic text value for a synthetic table row." in prompt
+            assert "SYNTHETIC EXAMPLE" in prompt
+            assert payload["options"]["num_predict"] == 1024
+            if "You repair the non-TEXT fields of a synthetic table row." in prompt:
+                repair_prompts.append(prompt)
+                assert "MOST SIMILAR REFERENCE ROW" in prompt or "NEIGHBORING REFERENCE ROWS" in prompt
+                assert "Column profiles derived from original data" in prompt
+                assert '"notes": "Requires follow-up in two weeks."' not in prompt
+                assert '"notes": "Patient stable after treatment."' not in prompt
+                if len(repair_prompts) == 1:
+                    return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": MISSING_VALUE_STRING}})})
+                return _DummyResponse({"response": json.dumps({"row": {"age": 51, "group": "B", "notes": MISSING_VALUE_STRING}})})
+
+            text_prompts.append(prompt)
+            assert "You generate TEXT values for a repaired synthetic table row." in prompt
             assert "MOST SIMILAR EXAMPLE" in prompt
             assert "NEIGHBORING EXAMPLES" in prompt
-            assert "SYNTHETIC EXAMPLE" in prompt
             assert "Generate realistic values for TEXT columns: notes" in prompt
             assert "Column profiles derived from original data" not in prompt
-            assert payload["options"]["num_predict"] == 1024
-            if call_count["post"] == 1:
-                return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
-            return _DummyResponse({"response": json.dumps({"row": {"age": 51, "group": "B", "notes": "Follow-up appointment recommended."}})})
+            if len(text_prompts) == 1:
+                return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "notes": "Stable clinical status."}})})
+            return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "notes": "Follow-up appointment recommended."}})})
 
         raise AssertionError(f"Unexpected request: {method} {url}")
 
@@ -140,6 +153,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
     sample = synthesizer.sample()
 
     assert len(sample) == 2
+    assert call_count["post"] == 4
     assert sample["notes"].tolist() == [
         "Stable clinical status.",
         "Follow-up appointment recommended.",
@@ -151,12 +165,17 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
 def test_llm_nearest_neighbor_few_shot_text_synthesis_marks_failed_text_after_invalid_responses(monkeypatch):
     _set_shared_llm_env(monkeypatch)
     logs = []
+    post_attempts = {"count": 0}
 
     def fake_request(method, url, **kwargs):
         if method == "GET" and url.endswith("/api/tags"):
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
 
         if method == "POST" and url.endswith("/api/generate"):
+            post_attempts["count"] += 1
+            prompt = kwargs["json"]["prompt"]
+            if "You repair the non-TEXT fields of a synthetic table row." in prompt:
+                return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "A", "notes": MISSING_VALUE_STRING}})})
             return _DummyResponse({"response": "no valid json"})
 
         raise AssertionError(f"Unexpected request: {method} {url}")
@@ -177,6 +196,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_marks_failed_text_after_in
     assert sample["age"].tolist() == [999, 50]
     assert sample["group"].tolist() == ["A", "B"]
     assert sample["notes"].tolist() == [FAILED_TEXT_GENERATION, FAILED_TEXT_GENERATION]
+    assert post_attempts["count"] == 6
     assert any("[LLM_TEXT_GENERATION]" in entry for entry in logs)
 
 
@@ -187,6 +207,9 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_reports_sampling_remaining
         if method == "GET" and url.endswith("/api/tags"):
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
         if method == "POST" and url.endswith("/api/generate"):
+            prompt = kwargs["json"]["prompt"]
+            if "You repair the non-TEXT fields of a synthetic table row." in prompt:
+                return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": MISSING_VALUE_STRING}})})
             return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
         raise AssertionError(f"Unexpected request: {method} {url}")
 
@@ -226,15 +249,23 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
+            if "You repair the non-TEXT fields of a synthetic table row." in prompt:
+                assert "MOST SIMILAR REFERENCE ROW" in prompt
+                assert "NEIGHBORING REFERENCE ROWS" in prompt
+                assert '"age": 52' in prompt
+                assert '"group": "B"' in prompt
+                assert '"notes": "Requires follow-up in two weeks."' not in prompt
+                return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": MISSING_VALUE_STRING}})})
+
             assert "MOST SIMILAR EXAMPLE" in prompt
             assert "NEIGHBORING EXAMPLES" in prompt
-            assert '"notes": "Requires follow-up in two weeks."' in prompt
-            assert '"notes": "Patient stable after treatment."' not in prompt
+            assert '"notes": "Patient stable after treatment."' in prompt
+            assert '"notes": "Requires follow-up in two weeks."' not in prompt
             assert '"notes": "No acute findings and good recovery."' in prompt
-            assert '"age": 53' in prompt
-            assert '"group": "B"' in prompt
+            assert '"age": 45' in prompt
+            assert '"group": "A"' in prompt
             assert f'"notes": "{MISSING_VALUE_STRING}"' not in prompt
-            return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": "Stable clinical status."}})})
+            return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "notes": "Stable clinical status."}})})
         raise AssertionError(f"Unexpected request: {method} {url}")
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
@@ -324,5 +355,5 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_does_not_nest_http_retries
 
     sample = synthesizer.sample()
 
-    assert post_attempts["count"] == 2
+    assert post_attempts["count"] == 4
     assert sample["notes"].tolist() == [FAILED_TEXT_GENERATION]

@@ -12,10 +12,17 @@ from synthetic_tabular_data_generator.llm import (
     ConfiguredLlmSynthesizerBase,
 )
 from synthetic_tabular_data_generator.llm.prompt_builders import (
-    build_tabular_generation_prompt_from_prefix,
-    build_tabular_generation_prompt_prefix,
+    build_tabular_non_text_generation_prompt_from_prefix,
+    build_tabular_non_text_generation_prompt_prefix,
+    build_tabular_text_completion_prompt_from_prefix,
+    build_tabular_text_completion_prompt_prefix,
 )
-from synthetic_tabular_data_generator.llm.response_validation import require_non_empty_rows
+from synthetic_tabular_data_generator.llm.response_validation import (
+    require_first_dict_row,
+    require_non_empty_rows,
+)
+
+
 class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
     """
     LLM-based tabular synthesizer backed by a configurable LLM provider.
@@ -35,7 +42,8 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         self._ordered_column_configs: List[Dict[str, Any]] = []
         self._column_profiles: Dict[str, Dict[str, Any]] = {}
         self._few_shot_source_df: Optional[pd.DataFrame] = None
-        self._generation_prompt_prefix: Optional[str] = None
+        self._non_text_prompt_prefix: Optional[str] = None
+        self._text_prompt_prefix: Optional[str] = None
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
         """
@@ -97,7 +105,8 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         else:
             self._few_shot_source_df = None
 
-        self._generation_prompt_prefix = self._build_generation_prompt_prefix()
+        self._non_text_prompt_prefix = self._build_non_text_generation_prompt_prefix()
+        self._text_prompt_prefix = self._build_text_completion_prompt_prefix()
 
     def _sample(self) -> pd.DataFrame:
         """
@@ -179,6 +188,19 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         target_rows: int,
         max_retries: int,
     ) -> Dict[str, Any]:
+        few_shot_examples = self._draw_few_shot_examples()
+        structured_row = self._generate_non_text_row(row_index, target_rows, max_retries, few_shot_examples)
+        if not any(str(cfg.get("type", "STRING")).upper() == "TEXT" for cfg in self._ordered_column_configs):
+            return structured_row
+        return self._generate_text_row(structured_row, row_index, target_rows, max_retries, few_shot_examples)
+
+    def _generate_non_text_row(
+        self,
+        row_index: int,
+        target_rows: int,
+        max_retries: int,
+        few_shot_examples: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
         last_error: Optional[Exception] = None
         last_attempt_details: Optional[str] = None
 
@@ -189,7 +211,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             attempt_error: Optional[Exception] = None
 
             try:
-                content = self._request_rows_from_llm(1, row_index, target_rows)
+                content = self._request_non_text_row_from_llm(1, row_index, target_rows, few_shot_examples)
                 raw_rows = self._extract_rows(content)
 
                 for row in raw_rows:
@@ -203,7 +225,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
                         continue
 
                     try:
-                        return self._coerce_row(aligned_row)
+                        return self._coerce_non_text_row(aligned_row)
                     except Exception:  # noqa: BLE001
                         coercion_errors += 1
                         continue
@@ -219,7 +241,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             )
             last_error = attempt_error
             self._log_generation_attempt_failure(
-                mode="TABULAR_GENERATION",
+                mode="TABULAR_NON_TEXT_GENERATION",
                 row_index=row_index,
                 total_rows=target_rows,
                 attempt_index=attempt_index,
@@ -230,42 +252,133 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
 
         return self._handle_generation_failure(
             message=(
-                f"LLM returned no valid row for sample {row_index + 1}/{target_rows} "
+                f"LLM returned no valid structured row for sample {row_index + 1}/{target_rows} "
                 f"after {max_retries} attempts."
                 f"{'' if last_attempt_details is None else f' Last attempt stats: {last_attempt_details}.'}"
             ),
             last_error=last_error,
         )
 
-    def _request_rows_from_llm(self, num_rows: int, row_index: int, target_rows: int) -> str:
+    def _generate_text_row(
+        self,
+        structured_row: Dict[str, Any],
+        row_index: int,
+        target_rows: int,
+        max_retries: int,
+        few_shot_examples: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        last_error: Optional[Exception] = None
+
+        for attempt_index in range(max_retries):
+            try:
+                content = self._request_text_row_from_llm(structured_row, few_shot_examples)
+                parsed = self.parse_json_with_fallback(content)
+                candidate_row = require_first_dict_row(parsed)
+                merged = self._merge_text_only_row(structured_row, candidate_row)
+                return self._coerce_row(merged)
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                self._log_generation_attempt_failure(
+                    mode="TABULAR_TEXT_GENERATION",
+                    row_index=row_index,
+                    total_rows=target_rows,
+                    attempt_index=attempt_index,
+                    max_retries=max_retries,
+                    error=exc,
+                )
+
+        return self._handle_generation_failure(
+            message=(
+                f"LLM returned no valid text row for sample {row_index + 1}/{target_rows} "
+                f"after {max_retries} attempts."
+            ),
+            last_error=last_error,
+        )
+
+    def _request_non_text_row_from_llm(
+        self,
+        num_rows: int,
+        row_index: int,
+        target_rows: int,
+        few_shot_examples: List[Dict[str, Any]],
+    ) -> str:
         if self._llm_client is None:
             raise ValueError("LLM client is not initialized.")
 
-        prompt = self._build_generation_prompt(num_rows, row_index, target_rows)
+        prompt = self._build_non_text_generation_prompt(num_rows, row_index, target_rows, few_shot_examples)
         return self._llm_client.generate_text(prompt)
 
-    def _build_generation_prompt_prefix(self) -> str:
+    def _request_text_row_from_llm(
+        self,
+        structured_row: Dict[str, Any],
+        few_shot_examples: List[Dict[str, Any]],
+    ) -> str:
+        if self._llm_client is None:
+            raise ValueError("LLM client is not initialized.")
+
+        prompt = self._build_text_completion_prompt(structured_row, few_shot_examples)
+        return self._llm_client.generate_text(prompt)
+
+    def _build_non_text_generation_prompt_prefix(self) -> str:
         ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
+        non_text_columns = [
+            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() != "TEXT"
+        ]
+        text_columns = [
+            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() == "TEXT"
+        ]
         profile_lines = []
         for config in self._ordered_column_configs:
             name = config["name"]
             column_type = str(config.get("type", "STRING")).upper()
             profile_lines.append(self._profile_line(name, column_type, self._column_profiles.get(name, {})))
 
-        return build_tabular_generation_prompt_prefix(
+        return build_tabular_non_text_generation_prompt_prefix(
             ordered_columns=ordered_columns,
+            non_text_columns=non_text_columns,
+            text_columns=text_columns,
             profile_lines=profile_lines,
             missing_value_string=MISSING_VALUE_STRING,
             domain_context=self._user_prompt_domain_context,
         )
 
-    def _build_generation_prompt(self, num_rows: int, row_index: int, target_rows: int) -> str:
+    def _build_text_completion_prompt_prefix(self) -> str:
+        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
+        text_columns = [
+            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() == "TEXT"
+        ]
+        return build_tabular_text_completion_prompt_prefix(
+            column_order=ordered_columns,
+            text_columns=text_columns,
+            missing_value_string=MISSING_VALUE_STRING,
+            domain_context=self._user_prompt_domain_context,
+        )
+
+    def _build_non_text_generation_prompt(
+        self,
+        num_rows: int,
+        row_index: int,
+        target_rows: int,
+        few_shot_examples: List[Dict[str, Any]],
+    ) -> str:
         del row_index, target_rows
-        prompt_prefix = self._generation_prompt_prefix or self._build_generation_prompt_prefix()
-        return build_tabular_generation_prompt_from_prefix(
+        prompt_prefix = self._non_text_prompt_prefix or self._build_non_text_generation_prompt_prefix()
+        return build_tabular_non_text_generation_prompt_from_prefix(
             prompt_prefix,
             num_rows=num_rows,
-            few_shot_examples=self._draw_few_shot_examples(),
+            few_shot_examples=few_shot_examples,
+        )
+
+    def _build_text_completion_prompt(
+        self,
+        structured_row: Dict[str, Any],
+        few_shot_examples: List[Dict[str, Any]],
+    ) -> str:
+        prompt_prefix = self._text_prompt_prefix or self._build_text_completion_prompt_prefix()
+        return build_tabular_text_completion_prompt_from_prefix(
+            prompt_prefix,
+            base_row=self.serialize_row_values(structured_row),
+            reference_examples=self._text_only_examples(few_shot_examples),
         )
 
     def _draw_few_shot_examples(self) -> List[Dict[str, Any]]:
@@ -279,6 +392,15 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         n_examples = min(few_shot_rows, len(self._few_shot_source_df))
         examples = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
         return [self.serialize_row_values(example) for example in examples]
+
+    def _text_only_examples(self, examples: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        text_columns = [
+            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() == "TEXT"
+        ]
+        return [
+            {column_name: example.get(column_name) for column_name in text_columns if column_name in example}
+            for example in examples
+        ]
 
     def _profile_line(self, column_name: str, column_type: str, profile: Dict[str, Any]) -> str:
         line = self.build_profile_line(column_name, column_type, profile)
@@ -425,6 +547,26 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             coerced[column_name] = self._coerce_value(column_name, column_type, value)
 
         return coerced
+
+    def _coerce_non_text_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
+        coerced = self._coerce_row(row)
+        for config in self._ordered_column_configs:
+            column_name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            if column_type == "TEXT":
+                coerced[column_name] = MISSING_VALUE_STRING
+        return coerced
+
+    def _merge_text_only_row(self, structured_row: Dict[str, Any], candidate_row: Dict[str, Any]) -> Dict[str, Any]:
+        merged: Dict[str, Any] = {}
+        for config in self._ordered_column_configs:
+            column_name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            if column_type == "TEXT":
+                merged[column_name] = candidate_row.get(column_name, structured_row.get(column_name))
+                continue
+            merged[column_name] = structured_row.get(column_name)
+        return merged
 
     def _coerce_value(self, column_name: str, column_type: str, value: Any) -> Any:
         if column_type == "BOOLEAN":

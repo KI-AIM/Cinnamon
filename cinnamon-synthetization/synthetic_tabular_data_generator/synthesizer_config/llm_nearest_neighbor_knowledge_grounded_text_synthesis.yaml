@@ -2,7 +2,7 @@ name: llm_nearest_neighbor_knowledge_grounded_text_synthesis
 version: "0.1"
 type: cross-sectional
 display_name: LLM Knowledge-grounded Text Synthesis
-description: Generate synthetic medical free-text fields using an LLM with dynamically selected similar original examples. Knowledge-base grounding is not implemented yet and is currently exposed only as NOT_IMPLEMENTED.
+description: Generate synthetic medical free-text fields in two sequential LLM steps. In the first step, the model optionally repairs inconsistent non-TEXT values using nearest-neighbor original rows as structured references. In the second step, it generates the free-text fields from the repaired row using nearest-neighbor reference texts from the original data as semantic and stylistic guidance. Knowledge-base grounding is not implemented yet and is currently exposed only as NOT_IMPLEMENTED.
 URL: /start_synthetization_process/llm_nearest_neighbor_knowledge_grounded_text_synthesis
 processing_capabilities:
   supports_structured_data: false

@@ -2,7 +2,7 @@ name: llm_tabular
 version: "0.1"
 type: cross-sectional
 display_name: LLM Dataset Generator
-description: Generate fully synthetic datasets from existing source data using a configurable Ollama or OpenAI-compatible language model.
+description: Generate fully synthetic datasets from existing source data using a configurable Ollama or OpenAI-compatible language model in two sequential LLM steps. In the first step, the model generates the structured non-TEXT values for each synthetic row using dataset profiles and randomly sampled example rows. In the second step, it generates the free-text fields from the already generated structured row using the same example rows as textual guidance.
 URL: /start_synthetization_process/llm_tabular
 processing_capabilities:
   supports_structured_data: true

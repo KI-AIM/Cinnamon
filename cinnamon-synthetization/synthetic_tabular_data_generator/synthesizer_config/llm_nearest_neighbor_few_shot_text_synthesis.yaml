@@ -2,7 +2,7 @@ name: llm_nearest_neighbor_few_shot_text_synthesis
 version: "0.1"
 type: cross-sectional
 display_name: LLM Nearest-neighbor Few-shot Text Synthesis
-description: Generate TEXT fields for synthetic tabular rows using original data as semantic context and allow minimal structured corrections when combinations of the structured data are implausible.
+description: Generate TEXT fields for synthetic tabular rows in two sequential LLM steps. In the first step, the model optionally repairs inconsistent non-TEXT values using similar original rows as structured references. In the second step, it generates the free-text fields from the repaired row using nearest-neighbor reference texts from the original data as semantic and stylistic guidance.
 URL: /start_synthetization_process/llm_nearest_neighbor_few_shot_text_synthesis
 processing_capabilities:
   supports_structured_data: false

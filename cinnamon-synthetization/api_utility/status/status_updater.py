@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import tempfile
 from contextlib import contextmanager
 
 import yaml
@@ -22,6 +23,7 @@ def initialize_status_file(file_path, session_key, synthesizer_name):
         "session_key": str(session_key),
         "synthesizer_name": str(synthesizer_name),
         "status": _build_initial_steps(),
+        "components": _build_initial_components(),
     }
 
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -51,6 +53,46 @@ def update_status(file_path, step, duration=None, completed=None, remaining_time
     _write_status_file(file_path, data)
 
 
+def update_component_status(
+    file_path,
+    component_name,
+    *,
+    synthesizer_name=None,
+    duration=None,
+    initialization_duration=None,
+    fitting_duration=None,
+    sampling_duration=None,
+    completed=None,
+    remaining_time=None,
+):
+    """
+    Update the stage-specific synthesis component block in the YAML status file.
+    """
+    data = _read_status_file(file_path)
+    components = data.setdefault("components", _build_initial_components())
+    component = components.get(component_name)
+    if component is None:
+        component = _build_component_status()
+        components[component_name] = component
+
+    if synthesizer_name is not None:
+        component["synthesizer_name"] = str(synthesizer_name)
+    if duration is not None:
+        component["duration"] = str(duration)
+    if initialization_duration is not None:
+        component["initialization_duration"] = str(initialization_duration)
+    if fitting_duration is not None:
+        component["fitting_duration"] = str(fitting_duration)
+    if sampling_duration is not None:
+        component["sampling_duration"] = str(sampling_duration)
+    if completed is not None:
+        component["completed"] = _stringify_completed(completed)
+    if remaining_time is not None:
+        component["remaining_time"] = str(remaining_time)
+
+    _write_status_file(file_path, data)
+
+
 def extract_remaining_time(message):
     estimated_match = _ESTIMATED_REMAINING_TIME_PATTERN.search(message)
     if estimated_match is not None:
@@ -65,12 +107,22 @@ def extract_remaining_time(message):
 
 
 @contextmanager
-def intercept_standard_streams(file_path, process_stage):
+def intercept_standard_streams(file_path, process_stage, component_name=None):
     original_stdout = sys.stdout
     original_stderr = sys.stderr
     try:
-        sys.stdout = InterceptStream(file_path, process_stage, terminal=original_stdout)
-        sys.stderr = InterceptStream(file_path, process_stage, terminal=original_stderr)
+        sys.stdout = InterceptStream(
+            file_path,
+            process_stage,
+            terminal=original_stdout,
+            component_name=component_name,
+        )
+        sys.stderr = InterceptStream(
+            file_path,
+            process_stage,
+            terminal=original_stderr,
+            component_name=component_name,
+        )
         yield
     finally:
         sys.stdout = original_stdout
@@ -82,10 +134,11 @@ class InterceptStream:
     Mirror a stream while extracting remaining-time updates for a process stage.
     """
 
-    def __init__(self, file_path, process_stage, terminal=None):
+    def __init__(self, file_path, process_stage, terminal=None, component_name=None):
         self.terminal = sys.stdout if terminal is None else terminal
         self.file_path = file_path
         self.process_stage = process_stage
+        self.component_name = component_name
         self._message_buffer = ""
         self._last_remaining_time = None
 
@@ -98,6 +151,12 @@ class InterceptStream:
         if remaining_time is not None and remaining_time != self._last_remaining_time:
             self._last_remaining_time = remaining_time
             update_status(self.file_path, step=self.process_stage, remaining_time=remaining_time)
+            if self.component_name is not None:
+                update_component_status(
+                    self.file_path,
+                    self.component_name,
+                    remaining_time=remaining_time,
+                )
 
     def flush(self):
         self.terminal.flush()
@@ -135,6 +194,25 @@ def _build_initial_steps():
     ]
 
 
+def _build_component_status():
+    return {
+        "synthesizer_name": WAITING,
+        "duration": WAITING,
+        "initialization_duration": WAITING,
+        "fitting_duration": WAITING,
+        "sampling_duration": WAITING,
+        "remaining_time": WAITING,
+        "completed": STATUS_FALSE,
+    }
+
+
+def _build_initial_components():
+    return {
+        "structured_synthesis": _build_component_status(),
+        "llm_synthesis": _build_component_status(),
+    }
+
+
 def _stringify_completed(value):
     if isinstance(value, str):
         return value
@@ -147,8 +225,14 @@ def _read_status_file(file_path):
 
 
 def _write_status_file(file_path, data):
-    with open(file_path, "w", encoding="utf-8") as handle:
+    directory = os.path.dirname(file_path) or "."
+    os.makedirs(directory, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=directory, delete=False) as handle:
         yaml.dump(data, handle, allow_unicode=True, default_flow_style=False)
+        temp_path = handle.name
+
+    os.replace(temp_path, file_path)
 
 
 def _duration_to_seconds(duration_text):

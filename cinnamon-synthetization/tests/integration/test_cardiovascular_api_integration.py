@@ -112,6 +112,13 @@ def _status_step(data: dict, step_name: str) -> dict:
     raise AssertionError(f"Missing step: {step_name}")
 
 
+def _status_component(data: dict, component_name: str) -> dict:
+    component = data.get("components", {}).get(component_name)
+    if component is None:
+        raise AssertionError(f"Missing component: {component_name}")
+    return component
+
+
 def _cleanup_cardio_status_files():
     if not STATUS_DIR.exists():
         return
@@ -245,5 +252,11 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
     assert status_path.exists()
     status = _load_yaml(status_path)
     assert _status_step(status, "callback")["completed"] is True
+    assert _status_component(status, "structured_synthesis")["completed"] == "True"
+    assert _status_component(status, "llm_synthesis")["completed"] == "True"
+    assert _status_component(status, "structured_synthesis")["remaining_time"] == "0"
+    assert _status_component(status, "llm_synthesis")["remaining_time"] == "0"
+    assert _status_component(status, "structured_synthesis")["synthesizer_name"] == "cardiovascular_mock"
+    assert _status_component(status, "llm_synthesis")["synthesizer_name"] == "dummy_text_synth"
 
     status_path.unlink(missing_ok=True)

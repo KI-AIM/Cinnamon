@@ -105,20 +105,45 @@
                                         <div *ngIf="pageData.stage && pageData.stage.processes[i].status as status; else noStatus">
                                             <div
                                                 *ngIf="getSynthetizationStatus(status) as synthetizationProcess; else statusIsString">
-                                                <table class="table">
-                                                    <thead>
-                                                    <th>Step</th>
-                                                    <th>Finished</th>
-                                                    <th>Remaining Time/ Duration</th>
-                                                    </thead>
-                                                    <tbody>
-                                                    <tr *ngFor="let step of synthetizationProcess.status">
-                                                        <td>{{ step.step }}</td>
-                                                        <td>{{ step?.completed }}</td>
-                                                        <td>{{ formatTime(step) }}</td>
-                                                    </tr>
-                                                    </tbody>
-                                                </table>
+                                                <ng-container *ngIf="hasSynthetizationComponents(synthetizationProcess); else legacySynthetizationStatus">
+                                                    <div class="synthetization-components">
+                                                        <div *ngFor="let component of getSynthetizationComponents(synthetizationProcess)" class="synthetization-component">
+                                                            <div class="synthetization-component-title">
+                                                                {{ getComponentTitle(component.value, component.label) }}
+                                                            </div>
+                                                            <table class="table">
+                                                                <thead>
+                                                                <th>Step</th>
+                                                                <th>Finished</th>
+                                                                <th>Remaining Time/ Duration</th>
+                                                                </thead>
+                                                                <tbody>
+                                                                <tr *ngFor="let step of component.rows">
+                                                                    <td>{{ step.step }}</td>
+                                                                    <td>{{ step.completed }}</td>
+                                                                    <td>{{ formatTime(step) }}</td>
+                                                                </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </ng-container>
+                                                <ng-template #legacySynthetizationStatus>
+                                                    <table class="table">
+                                                        <thead>
+                                                        <th>Step</th>
+                                                        <th>Finished</th>
+                                                        <th>Remaining Time/ Duration</th>
+                                                        </thead>
+                                                        <tbody>
+                                                        <tr *ngFor="let step of getSynthetizationRows(synthetizationProcess)">
+                                                            <td>{{ step.step }}</td>
+                                                            <td>{{ step?.completed }}</td>
+                                                            <td>{{ formatTime(step) }}</td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </ng-template>
                                             </div>
                                             <ng-template #statusIsString>
                                                 {{ status }}

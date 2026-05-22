@@ -15,6 +15,7 @@ from flask_cors import CORS
 
 from api_utility.status.status_updater import initialize_status_file
 from api_utility.status.status_updater import intercept_standard_streams
+from api_utility.status.status_updater import update_component_status
 from api_utility.status.status_updater import update_status
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
@@ -344,11 +345,25 @@ def run_synthesizer_stage(
     replace_text_with_pending=True,
     fill_text_with_pending=True,
     session_key=None,
+    status_component_name=None,
 ):
     stage_init_time = time.time()
 
     synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
     print(f"[{stage_label}] Synthesizer class initialized: {synthesizer_name}")
+
+    def _handle_progress_update(step, remaining_time):
+        if remaining_time is None:
+            return
+        update_status(file_path_status, step=step, remaining_time=str(remaining_time))
+        if status_component_name is not None:
+            update_component_status(
+                file_path_status,
+                status_component_name,
+                remaining_time=str(remaining_time),
+            )
+
+    synthesizer_class.set_progress_callback(_handle_progress_update)
 
     synthesizer_class.initialize_anonymization_configuration(stage_algorithm_config)
     print(f"[{stage_label}] Anonymization configuration initialized.")
@@ -393,15 +408,23 @@ def run_synthesizer_stage(
     
     stage_init_duration = time.time() - stage_init_time
     update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True)
+    if status_component_name is not None:
+        update_component_status(
+            file_path_status,
+            status_component_name,
+            synthesizer_name=synthesizer_name,
+            initialization_duration=stage_init_duration,
+            completed=False,
+        )
 
     fit_time = time.time()
-    with intercept_standard_streams(file_path_status, "fitting"):
+    with intercept_standard_streams(file_path_status, "fitting", component_name=status_component_name):
         synthesizer_class.fit()
     fit_duration = time.time() - fit_time
     print(f"[{stage_label}] Synthesizer fitted.")
 
     sample_time = time.time()
-    with intercept_standard_streams(file_path_status, "sampling"):
+    with intercept_standard_streams(file_path_status, "sampling", component_name=status_component_name):
         samples = synthesizer_class.sample()
     sample_duration = time.time() - sample_time
     print(f"[{stage_label}] Data sampled.")
@@ -417,7 +440,38 @@ def run_synthesizer_stage(
     synthesizer_model = synthesizer_class.get_model()
     print(f"[{stage_label}] Model retrieved.")
 
+    if status_component_name is not None:
+        update_component_status(
+            file_path_status,
+            status_component_name,
+            synthesizer_name=synthesizer_name,
+            duration=stage_init_duration + fit_duration + sample_duration,
+            initialization_duration=stage_init_duration,
+            fitting_duration=fit_duration,
+            sampling_duration=sample_duration,
+            remaining_time="0",
+            completed=True,
+        )
+
     return samples, synthesizer_model, stage_init_duration, fit_duration, sample_duration
+
+
+def update_pipeline_totals(file_path_status, total_init_duration, total_fit_duration, total_sample_duration, *, completed):
+    update_status(file_path_status, step='initialization', duration=total_init_duration, completed=completed)
+    update_status(
+        file_path_status,
+        'fitting',
+        duration=total_fit_duration,
+        completed=completed,
+        remaining_time="0" if completed else None,
+    )
+    update_status(
+        file_path_status,
+        'sampling',
+        duration=total_sample_duration,
+        completed=completed,
+        remaining_time="0" if completed else None,
+    )
 
 
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
@@ -491,10 +545,18 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 replace_text_with_pending=False,
                 fill_text_with_pending=False,
                 session_key=session_key,
+                status_component_name="llm_synthesis",
             )
             total_init_duration += init_duration
             total_fit_duration += fit_duration
             total_sample_duration += sample_duration
+            update_pipeline_totals(
+                file_path_status,
+                total_init_duration,
+                total_fit_duration,
+                total_sample_duration,
+                completed=True,
+            )
 
         # 2) Selected synthesizer does not support free text:
         #    first synthesize structured columns, then synthesize text via the default few-shot text synthesizer.
@@ -517,10 +579,18 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                     replace_text_with_pending=True,
                     fill_text_with_pending=True,
                     session_key=session_key,
+                    status_component_name="structured_synthesis",
                 )
                 total_init_duration += init_duration
                 total_fit_duration += fit_duration
                 total_sample_duration += sample_duration
+                update_pipeline_totals(
+                    file_path_status,
+                    total_init_duration,
+                    total_fit_duration,
+                    total_sample_duration,
+                    completed=False,
+                )
 
             if structured_base is None:
                 print("No structured synthesis executed. Using input dataset as base for text synthesis.")
@@ -546,10 +616,18 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 replace_text_with_pending=False,
                 fill_text_with_pending=False,
                 session_key=session_key,
+                status_component_name="llm_synthesis",
             )
             total_init_duration += init_duration
             total_fit_duration += fit_duration
             total_sample_duration += sample_duration
+            update_pipeline_totals(
+                file_path_status,
+                total_init_duration,
+                total_fit_duration,
+                total_sample_duration,
+                completed=True,
+            )
 
             if final_model is None:
                 final_model = structured_model
@@ -568,19 +646,31 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 replace_text_with_pending=not is_llm_synthesizer(synthesizer_name),
                 fill_text_with_pending=not is_llm_synthesizer(synthesizer_name),
                 session_key=session_key,
+                status_component_name="llm_synthesis" if is_llm_synthesizer(synthesizer_name) else "structured_synthesis",
             )
             total_init_duration += init_duration
             total_fit_duration += fit_duration
             total_sample_duration += sample_duration
+            update_pipeline_totals(
+                file_path_status,
+                total_init_duration,
+                total_fit_duration,
+                total_sample_duration,
+                completed=True,
+            )
 
         if final_samples is None or final_model is None:
             raise RuntimeError("Pipeline did not produce synthetic data and model output.")
 
         final_samples = order_dataframe_by_config(final_samples, attribute_config.get("configurations", []))
 
-        update_status(file_path_status, step='initialization', duration=total_init_duration, completed=True)
-        update_status(file_path_status, 'fitting', duration=total_fit_duration, completed=True, remaining_time="0")
-        update_status(file_path_status, 'sampling', duration=total_sample_duration, completed=True, remaining_time="0")
+        update_pipeline_totals(
+            file_path_status,
+            total_init_duration,
+            total_fit_duration,
+            total_sample_duration,
+            completed=True,
+        )
 
         try:
             files = prepare_callback_data(final_samples, final_model)

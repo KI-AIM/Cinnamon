@@ -8,7 +8,9 @@ import { ProcessStatus } from "../../../../core/enums/process-status";
 import { Steps } from "../../../../core/enums/steps";
 import { TitleService } from "../../../../core/services/title-service.service";
 import { ExecutionStep } from "../../../../shared/model/execution-step";
+import { ProcessProgress } from "../../../../shared/model/process-progress";
 import { SynthetizationProcess } from "../../../../shared/model/synthetization-process";
+import { SynthetizationComponentProgress } from "../../../../shared/model/synthetization-component-progress";
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 import { StageDefinition } from "../../../../shared/services/execution-step.service";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
@@ -119,6 +121,137 @@ export class ExecutionComponent implements OnInit {
             maximumFractionDigits: 0,
             unit: "s"
         });
+    }
+
+    protected hasSynthetizationComponents(process: SynthetizationProcess | null | undefined): boolean {
+        return !!(
+            process?.components?.structured_synthesis ||
+            process?.components?.llm_synthesis
+        );
+    }
+
+    protected getSynthetizationRows(process: SynthetizationProcess | null | undefined): ProcessProgress[] {
+        return [...(process?.status ?? [])];
+    }
+
+    protected getSynthetizationComponents(process: SynthetizationProcess | null | undefined): Array<{
+        key: string,
+        label: string,
+        value: SynthetizationComponentProgress,
+        rows: ProcessProgress[],
+    }> {
+        if (!process?.components) {
+            return [];
+        }
+
+        const components: Array<{
+            key: string,
+            label: string,
+            value: SynthetizationComponentProgress,
+            rows: ProcessProgress[],
+        }> = [];
+
+        if (process.components.structured_synthesis) {
+            components.push({
+                key: "structured_synthesis",
+                label: "Structured Synthesis",
+                value: process.components.structured_synthesis,
+                rows: this.getComponentRows(process.components.structured_synthesis),
+            });
+        }
+
+        if (process.components.llm_synthesis) {
+            components.push({
+                key: "llm_synthesis",
+                label: "LLM Synthesis",
+                value: process.components.llm_synthesis,
+                rows: this.getComponentRows(process.components.llm_synthesis),
+            });
+        }
+
+        return components;
+    }
+
+    protected getComponentTitle(component: SynthetizationComponentProgress, label: string): string {
+        return label;
+    }
+
+    private getComponentRows(component: SynthetizationComponentProgress): ProcessProgress[] {
+        if (this.isUnusedComponent(component)) {
+            return [
+                this.buildProgressRow("Initialization", component.completed, "N/A"),
+                this.buildProgressRow("Fitting", component.completed, "N/A"),
+                this.buildProgressRow("Sampling", component.completed, "N/A", "N/A"),
+                this.buildProgressRow("Total", component.completed, "N/A"),
+            ];
+        }
+
+        const samplingStarted = this.hasSamplingStarted(component);
+        const initializationDuration = this.withSamplingFallback(component.initialization_duration, samplingStarted);
+        const fittingDuration = this.withSamplingFallback(component.fitting_duration, samplingStarted);
+
+        return [
+            this.buildProgressRow(
+                "Initialization",
+                this.getRowCompleted(initializationDuration),
+                initializationDuration,
+            ),
+            this.buildProgressRow(
+                "Fitting",
+                this.getRowCompleted(fittingDuration),
+                fittingDuration,
+            ),
+            this.buildProgressRow(
+                "Sampling",
+                this.getRowCompleted(component.sampling_duration),
+                component.sampling_duration,
+                component.remaining_time,
+            ),
+            this.buildProgressRow("Total", this.getRowCompleted(component.duration), component.duration),
+        ];
+    }
+
+    private hasSamplingStarted(component: SynthetizationComponentProgress): boolean {
+        return this.hasUsableValue(component.sampling_duration) || this.hasUsableValue(component.remaining_time);
+    }
+
+    private withSamplingFallback(value: string | null | undefined, samplingStarted: boolean): string | null | undefined {
+        if (this.hasUsableValue(value) || !samplingStarted) {
+            return value;
+        }
+        return "1";
+    }
+
+    private hasUsableValue(value: string | null | undefined): boolean {
+        return value != null && value !== "" && value !== "Waiting" && value !== "N/A";
+    }
+
+    private isUnusedComponent(component: SynthetizationComponentProgress): boolean {
+        return !this.hasUsableValue(component.synthesizer_name)
+            && component.completed !== "True"
+            && !this.hasUsableValue(component.duration)
+            && !this.hasUsableValue(component.initialization_duration)
+            && !this.hasUsableValue(component.fitting_duration)
+            && !this.hasUsableValue(component.sampling_duration)
+            && !this.hasUsableValue(component.remaining_time);
+    }
+
+    private getRowCompleted(value: string | null | undefined): string {
+        return this.hasUsableValue(value) ? "True" : "False";
+    }
+
+    private buildProgressRow(
+        step: string,
+        completed: string,
+        duration: string | null | undefined,
+        remainingTime?: string | null | undefined,
+    ): ProcessProgress {
+        return {
+            step,
+            completed,
+            duration: duration ?? null,
+            remaining_time: remainingTime ?? null,
+        };
     }
 
     protected getJobName(job: string): string {

@@ -122,3 +122,26 @@ def test_coerce_date_accepts_human_readable_date_strings():
     )
 
     assert value == 1704067200
+
+
+def test_build_prompt_profile_line_formats_date_statistics_for_prompts():
+    support = _SupportHarness()
+
+    line = support.build_prompt_profile_line(
+        {"name": "event_date", "type": "DATE", "configurations": [{"dateFormatter": "yyyy-MM-dd"}]},
+        {
+            "kind": "numeric",
+            "available": True,
+            "min": 1704067200.0,
+            "max": 1704240000.0,
+            "mean": 1704153600.0,
+            "std": 86400.0,
+            "missing_ratio": 0.0,
+        },
+    )
+
+    assert "min=2024-01-01" in line
+    assert "mean=2024-01-02" in line
+    assert "max=2024-01-03" in line
+    assert "std_days=1.0" in line
+    assert "1704067200" not in line

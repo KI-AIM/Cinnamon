@@ -403,7 +403,11 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         ]
 
     def _profile_line(self, column_name: str, column_type: str, profile: Dict[str, Any]) -> str:
-        line = self.build_profile_line(column_name, column_type, profile)
+        matching_config = next(
+            (config for config in self._ordered_column_configs if config["name"] == column_name),
+            {"name": column_name, "type": column_type},
+        )
+        line = self.build_prompt_profile_line(matching_config, profile)
         line = line.replace("no observed values.", "no observed training values.")
         line = line.replace("frequent_values=", "frequent values ")
         return line

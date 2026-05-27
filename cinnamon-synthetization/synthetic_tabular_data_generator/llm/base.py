@@ -428,8 +428,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         profile_lines = []
         for config in self._ordered_column_configs:
             name = config["name"]
-            column_type = str(config.get("type", "STRING")).upper()
-            line = self.build_profile_line(name, column_type, self._column_profiles.get(name, {}))
+            line = self.build_prompt_profile_line(config, self._column_profiles.get(name, {}))
             profile_lines.append(line.replace("no observed values.", "no observed reference values."))
 
         return build_non_text_repair_prompt_prefix(

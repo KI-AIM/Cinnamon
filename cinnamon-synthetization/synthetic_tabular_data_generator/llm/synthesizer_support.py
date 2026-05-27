@@ -114,6 +114,27 @@ class LlmSynthesizerSupport:
         )
         return f"- {column_name} ({column_type}): frequent_values=[{values_repr}], missing_ratio={missing_ratio}"
 
+    def build_prompt_profile_line(self, column_config: Dict[str, Any], profile: Dict[str, Any]) -> str:
+        column_name = str(column_config.get("name", ""))
+        column_type = str(column_config.get("type", "STRING")).upper()
+        if column_type != "DATE":
+            return self.build_profile_line(column_name, column_type, profile)
+        if not profile or not profile.get("available", False):
+            return f"- {column_name} ({column_type}): no observed values."
+        if profile.get("kind") != "numeric":
+            return self.build_profile_line(column_name, column_type, profile)
+
+        date_format = get_date_format(column_config)
+        min_value = self._format_profile_date_stat(profile.get("min"), date_format)
+        max_value = self._format_profile_date_stat(profile.get("max"), date_format)
+        mean_value = self._format_profile_date_stat(profile.get("mean"), date_format)
+        std_days = self._format_profile_date_std_days(profile.get("std"))
+        missing_ratio = profile.get("missing_ratio", 0.0)
+        return (
+            f"- {column_name} ({column_type}): min={min_value}, max={max_value}, "
+            f"mean={mean_value}, std_days={std_days}, missing_ratio={missing_ratio}"
+        )
+
     @staticmethod
     def parse_json_with_fallback(text: str) -> Any:
         try:
@@ -343,6 +364,19 @@ class LlmSynthesizerSupport:
         if pd.isna(parsed):
             return None
         return int(parsed)
+
+    def _format_profile_date_stat(self, value: Any, date_format: str) -> Any:
+        numeric_value = self.to_float(value)
+        if numeric_value is None:
+            return value
+        return parse_to_date_format(numeric_value, date_format)
+
+    @staticmethod
+    def _format_profile_date_std_days(value: Any) -> Any:
+        numeric_value = LlmSynthesizerSupport.to_float(value)
+        if numeric_value is None:
+            return value
+        return round(numeric_value / 86400.0, 2)
 
     def report_remaining_time(self, sample_start_time: Optional[float], generated: int, total: int) -> None:
         if sample_start_time is None:

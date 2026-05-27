@@ -6,6 +6,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from synthetic_tabular_data_generator.llm.prompt_builders import build_tabular_generation_prompt
+from synthetic_tabular_data_generator.llm.prompt_builders import build_text_enrichment_prompt_from_prefix
 
 
 def test_build_tabular_generation_prompt_uses_singular_for_one_row():
@@ -35,3 +36,15 @@ def test_build_tabular_generation_prompt_uses_plural_for_multiple_rows():
     assert "Return exactly 3 rows in the rows array." in prompt
     assert "Reference examples from original data" not in prompt
     assert "REFERENCE EXAMPLES" not in prompt
+
+
+def test_prompt_builders_keep_umlauts_readable_in_json_blocks():
+    prompt = build_text_enrichment_prompt_from_prefix(
+        "prefix\n",
+        base_row={"geschlecht": "männlich"},
+        reference_examples=[{"geschlecht": "weiblich"}],
+    )
+
+    assert '"geschlecht": "männlich"' in prompt
+    assert '"geschlecht": "weiblich"' in prompt
+    assert "\\u00e4" not in prompt

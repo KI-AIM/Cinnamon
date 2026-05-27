@@ -95,3 +95,30 @@ def test_report_remaining_time_reports_zero_when_finished():
     support.report_remaining_time(sample_start_time=1.0, generated=3, total=3)
 
     assert support.updates[-1] == ("sampling", 0)
+
+
+def test_serialize_row_for_prompt_formats_date_columns_using_configured_date_format():
+    support = _SupportHarness()
+
+    serialized = support.serialize_row_for_prompt(
+        {"event_date": 1704067200, "group": "A"},
+        [
+            {"name": "event_date", "type": "DATE", "configurations": [{"dateFormatter": "yyyy-MM-dd"}]},
+            {"name": "group", "type": "STRING"},
+        ],
+    )
+
+    assert serialized == {"event_date": "2024-01-01", "group": "A"}
+
+
+def test_coerce_date_accepts_human_readable_date_strings():
+    support = _SupportHarness()
+
+    value = support.coerce_date(
+        "event_date",
+        "2024-01-01",
+        {},
+        column_config={"name": "event_date", "type": "DATE", "configurations": [{"dateFormatter": "yyyy-MM-dd"}]},
+    )
+
+    assert value == 1704067200

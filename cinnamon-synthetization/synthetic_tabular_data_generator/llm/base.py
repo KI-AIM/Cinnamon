@@ -403,7 +403,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
 
         return build_non_text_repair_prompt_from_prefix(
             prompt_prefix,
-            base_row=self.serialize_row_values(base_row),
+            base_row=self.serialize_row_for_prompt(base_row, self._ordered_column_configs),
             primary_reference_row=primary_reference_row,
             reference_examples=reference_examples,
             knowledge_chunks=self._build_knowledge_chunks(base_row),
@@ -416,7 +416,7 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
 
         return build_text_enrichment_prompt_from_prefix(
             prompt_prefix,
-            base_row=self.serialize_row_values(repaired_row),
+            base_row=self.serialize_row_for_prompt(repaired_row, self._ordered_column_configs),
             primary_reference_row=primary_reference_row,
             reference_examples=reference_examples,
             knowledge_chunks=self._build_knowledge_chunks(repaired_row),
@@ -522,6 +522,18 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
     def _coerce_value(self, column_name: str, column_type: str, value: Any, base_value: Any) -> Any:
         if column_type == "BOOLEAN":
             return self.coerce_boolean(value, fallback_value=base_value)
+        if column_type == "DATE":
+            matching_config = next(
+                (config for config in self._ordered_column_configs if config["name"] == column_name),
+                None,
+            )
+            return self.coerce_date(
+                column_name,
+                value,
+                {},
+                fallback_value=base_value,
+                column_config=matching_config,
+            )
         if column_type in self.NUMERIC_TYPES:
             return self.coerce_numeric(
                 column_name,
@@ -553,12 +565,12 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
                 missing_value_string=self._missing_value_string(),
                 neighbor_index=self._few_shot_neighbor_index,
             )
-            return [self.serialize_row_values(row) for row in selected_rows]
+            return [self.serialize_row_for_prompt(row, self._ordered_column_configs) for row in selected_rows]
 
         del base_row
         n_examples = min(few_shot_rows, len(self._few_shot_source_df))
         sampled = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
-        return [self.serialize_row_values(row) for row in sampled]
+        return [self.serialize_row_for_prompt(row, self._ordered_column_configs) for row in sampled]
 
     def _build_repair_reference_context(
         self,

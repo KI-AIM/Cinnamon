@@ -377,7 +377,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         prompt_prefix = self._text_prompt_prefix or self._build_text_completion_prompt_prefix()
         return build_tabular_text_completion_prompt_from_prefix(
             prompt_prefix,
-            base_row=self.serialize_row_values(structured_row),
+            base_row=self.serialize_row_for_prompt(structured_row, self._ordered_column_configs),
             reference_examples=self._text_only_examples(few_shot_examples),
         )
 
@@ -391,7 +391,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
 
         n_examples = min(few_shot_rows, len(self._few_shot_source_df))
         examples = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
-        return [self.serialize_row_values(example) for example in examples]
+        return [self.serialize_row_for_prompt(example, self._ordered_column_configs) for example in examples]
 
     def _text_only_examples(self, examples: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
         text_columns = [
@@ -571,6 +571,18 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
     def _coerce_value(self, column_name: str, column_type: str, value: Any) -> Any:
         if column_type == "BOOLEAN":
             return self.coerce_boolean(value)
+
+        if column_type == "DATE":
+            matching_config = next(
+                (config for config in self._ordered_column_configs if config["name"] == column_name),
+                None,
+            )
+            return self.coerce_date(
+                column_name,
+                value,
+                self._column_profiles,
+                column_config=matching_config,
+            )
 
         if column_type in self.NUMERIC_TYPES:
             return self.coerce_numeric(column_name, column_type, value, self._column_profiles)

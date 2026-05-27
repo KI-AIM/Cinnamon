@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Sequence
 import pandas as pd
 
 from data_processing.utils import BOOLEAN_MAP, MISSING_BOOLEAN, MISSING_VALUE_STRING
+from data_processing.utils import get_date_format, parse_to_date_format, parse_to_unix
 
 
 @dataclass(frozen=True)
@@ -260,6 +261,88 @@ class LlmSynthesizerSupport:
 
     def serialize_row_values(self, row: Dict[str, Any]) -> Dict[str, Any]:
         return {key: self.serialize_value(value) for key, value in row.items()}
+
+    def serialize_row_for_prompt(
+        self,
+        row: Dict[str, Any],
+        column_configs: Sequence[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        serialized = self.serialize_row_values(row)
+        date_formats = self._date_format_by_column(column_configs)
+        if not date_formats:
+            return serialized
+
+        prompt_row = dict(serialized)
+        for column_name, date_format in date_formats.items():
+            if column_name not in prompt_row:
+                continue
+            prompt_row[column_name] = self._format_date_for_prompt(prompt_row[column_name], date_format)
+        return prompt_row
+
+    def coerce_date(
+        self,
+        column_name: str,
+        value: Any,
+        column_profiles: Dict[str, Dict[str, Any]],
+        *,
+        fallback_value: Any = None,
+        column_config: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        numeric_value = self.coerce_numeric(
+            column_name,
+            "DATE",
+            value,
+            column_profiles,
+            fallback_value=fallback_value,
+        )
+        if self.to_float(value) is not None or column_config is None:
+            return numeric_value
+
+        parsed_value = self._parse_date_to_unix(value, column_config)
+        parsed_fallback = self._parse_date_to_unix(fallback_value, column_config)
+        if parsed_value is None and parsed_fallback is None:
+            return numeric_value
+
+        return self.coerce_numeric(
+            column_name,
+            "DATE",
+            parsed_value,
+            column_profiles,
+            fallback_value=parsed_fallback,
+        )
+
+    @staticmethod
+    def _date_format_by_column(column_configs: Sequence[Dict[str, Any]]) -> Dict[str, str]:
+        formats: Dict[str, str] = {}
+        for column_config in column_configs:
+            column_name = column_config.get("name")
+            column_type = str(column_config.get("type", "STRING")).upper()
+            if not isinstance(column_name, str) or column_type != "DATE":
+                continue
+            formats[column_name] = get_date_format(column_config)
+        return formats
+
+    def _format_date_for_prompt(self, value: Any, date_format: str) -> Any:
+        numeric_value = self.to_float(value)
+        if numeric_value is None:
+            return self.serialize_value(value)
+        return parse_to_date_format(numeric_value, date_format)
+
+    @staticmethod
+    def _parse_date_to_unix(value: Any, column_config: Dict[str, Any]) -> Optional[int]:
+        if value is None:
+            return None
+        if isinstance(value, float) and math.isnan(value):
+            return None
+
+        normalized = str(value).strip()
+        if not normalized or normalized.lower() in LlmSynthesizerSupport._NULL_LIKE_STRINGS:
+            return None
+
+        parsed = parse_to_unix(normalized, get_date_format(column_config))
+        if pd.isna(parsed):
+            return None
+        return int(parsed)
 
     def report_remaining_time(self, sample_start_time: Optional[float], generated: int, total: int) -> None:
         if sample_start_time is None:

@@ -18,7 +18,7 @@ def _section_heading(title: str) -> str:
 
 
 def _json_block(payload: Dict[str, Any]) -> str:
-    return json.dumps(payload, ensure_ascii=True, indent=2)
+    return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
 def _reference_examples_block(examples: Optional[Sequence[Dict[str, Any]]], heading: str) -> str:
@@ -76,7 +76,7 @@ def build_non_text_repair_prompt_prefix(
         f"- Include all columns exactly in this list: {list(column_order)}\n"
         f"- For missing strings/text use '{missing_value_string}'\n"
         "- BOOLEAN values must be true/false.\n"
-        "- DATE values must be UNIX timestamps in seconds.\n"
+        "- DATE values must use the same human-readable date format shown in the examples.\n"
         "\n"
         "Column profiles derived from original data:\n"
         f"{profile_block}\n"
@@ -184,7 +184,7 @@ def build_text_enrichment_prompt_prefix(
         f"- Include all columns exactly in this list: {list(column_order)}\n"
         f"- For missing strings/text use '{missing_value_string}'\n"
         "- BOOLEAN values must be true/false.\n"
-        "- DATE values must be UNIX timestamps in seconds.\n"
+        "- DATE values must use the same human-readable date format shown in the examples.\n"
         "\n"
     )
 
@@ -258,7 +258,7 @@ def build_tabular_non_text_generation_prompt_prefix(
     domain_context: str = "",
 ) -> str:
     shape_example = {column_name: "<value>" for column_name in ordered_columns}
-    shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=True)
+    shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=False)
     profile_block = "\n".join(profile_lines)
 
     return (
@@ -288,7 +288,7 @@ def build_tabular_non_text_generation_prompt_prefix(
         "Type rules:\n"
         "- INTEGER: integer number\n"
         "- DECIMAL: decimal number\n"
-        "- DATE: UNIX timestamp in seconds as number\n"
+        "- DATE: human-readable date string in the same format shown in the examples\n"
         "- BOOLEAN: true or false\n"
         f"- STRING: plain text, use '{missing_value_string}' for missing\n"
         f"- TEXT: always use '{missing_value_string}' in this step\n"
@@ -307,7 +307,7 @@ def build_tabular_non_text_generation_prompt_from_prefix(
     requested_row_count = _row_count_phrase(num_rows)
     reference_block = ""
     if few_shot_examples:
-        reference_block = f"{_section_heading('REFERENCE EXAMPLES')}{json.dumps(list(few_shot_examples), ensure_ascii=True, indent=2)}\n\n"
+        reference_block = f"{_section_heading('REFERENCE EXAMPLES')}{json.dumps(list(few_shot_examples), ensure_ascii=False, indent=2)}\n\n"
 
     return (
         f"{prompt_prefix}"
@@ -349,7 +349,7 @@ def build_tabular_text_completion_prompt_prefix(
         f"- Include all columns exactly in this list: {list(column_order)}\n"
         f"- For missing strings/text use '{missing_value_string}'\n"
         "- BOOLEAN values must be true/false.\n"
-        "- DATE values must be UNIX timestamps in seconds.\n"
+        "- DATE values must use the same human-readable date format shown in the examples.\n"
         "\n"
     )
 
@@ -376,7 +376,7 @@ def build_tabular_generation_prompt_prefix(
     domain_context: str = "",
 ) -> str:
     shape_example = {column_name: "<value>" for column_name in ordered_columns}
-    shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=True)
+    shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=False)
     profile_block = "\n".join(profile_lines)
 
     return (
@@ -422,7 +422,7 @@ def build_tabular_generation_prompt_prefix(
         "Type rules:\n"
         "- INTEGER: integer number\n"
         "- DECIMAL: decimal number\n"
-        "- DATE: UNIX timestamp in seconds as number\n"
+        "- DATE: human-readable date string in the same format shown in the examples\n"
         "- BOOLEAN: true or false\n"
         f"- STRING: plain text, use '{missing_value_string}' for missing\n"
         f"- TEXT: realistic free text, use '{missing_value_string}' for missing\n"
@@ -441,7 +441,7 @@ def build_tabular_generation_prompt_from_prefix(
     requested_row_count = _row_count_phrase(num_rows)
     reference_block = ""
     if few_shot_examples:
-        reference_block = f"{_section_heading('REFERENCE EXAMPLES')}{json.dumps(list(few_shot_examples), ensure_ascii=True, indent=2)}\n\n"
+        reference_block = f"{_section_heading('REFERENCE EXAMPLES')}{json.dumps(list(few_shot_examples), ensure_ascii=False, indent=2)}\n\n"
 
     return (
         f"{prompt_prefix}"

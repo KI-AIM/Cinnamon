@@ -20,7 +20,8 @@ def _attribute_config() -> dict:
         "configurations": [
             {"index": 0, "name": "age", "type": "INTEGER"},
             {"index": 1, "name": "group", "type": "STRING"},
-            {"index": 2, "name": "notes", "type": "TEXT"},
+            {"index": 2, "name": "event_date", "type": "DATE", "configurations": [{"dateFormatter": "yyyy-MM-dd"}]},
+            {"index": 3, "name": "notes", "type": "TEXT"},
         ]
     }
 
@@ -83,6 +84,7 @@ def _synthetic_input() -> pd.DataFrame:
         {
             "age": [999, 50],
             "group": ["A", "B"],
+            "event_date": [1704067200, 1704153600],
             "notes": [MISSING_VALUE_STRING, MISSING_VALUE_STRING],
         }
     )
@@ -93,6 +95,7 @@ def _original_input() -> pd.DataFrame:
         {
             "age": [40, 52, 61],
             "group": ["A", "B", "A"],
+            "event_date": [1703980800, 1704067200, 1704153600],
             "notes": [
                 "Patient stable after treatment.",
                 "Requires follow-up in two weeks.",
@@ -122,11 +125,13 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
                 repair_prompts.append(prompt)
                 assert "MOST SIMILAR REFERENCE ROW" in prompt or "NEIGHBORING REFERENCE ROWS" in prompt
                 assert "Column profiles derived from original data" in prompt
+                assert '"event_date": "2024-01-01"' in prompt
+                assert '"event_date": 1704067200' not in prompt
                 assert '"notes": "Requires follow-up in two weeks."' not in prompt
                 assert '"notes": "Patient stable after treatment."' not in prompt
                 if len(repair_prompts) == 1:
-                    return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": MISSING_VALUE_STRING}})})
-                return _DummyResponse({"response": json.dumps({"row": {"age": 51, "group": "B", "notes": MISSING_VALUE_STRING}})})
+                    return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "event_date": "2024-01-01", "notes": MISSING_VALUE_STRING}})})
+                return _DummyResponse({"response": json.dumps({"row": {"age": 51, "group": "B", "event_date": "2024-01-02", "notes": MISSING_VALUE_STRING}})})
 
             text_prompts.append(prompt)
             assert "You generate TEXT values for a repaired synthetic table row." in prompt
@@ -134,9 +139,10 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
             assert "NEIGHBORING EXAMPLES" in prompt
             assert "Generate realistic values for TEXT columns: notes" in prompt
             assert "Column profiles derived from original data" not in prompt
+            assert '"event_date": "2024-01-01"' in prompt or '"event_date": "2024-01-02"' in prompt
             if len(text_prompts) == 1:
-                return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "notes": "Stable clinical status."}})})
-            return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "notes": "Follow-up appointment recommended."}})})
+                return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "event_date": "2024-01-01", "notes": "Stable clinical status."}})})
+            return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "event_date": "2024-01-02", "notes": "Follow-up appointment recommended."}})})
 
         raise AssertionError(f"Unexpected request: {method} {url}")
 
@@ -160,6 +166,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
     ]
     assert sample["age"].tolist() == [45, 51]
     assert sample["group"].tolist() == ["A", "B"]
+    assert sample["event_date"].tolist() == [1704067200, 1704153600]
 
 
 def test_llm_nearest_neighbor_few_shot_text_synthesis_marks_failed_text_after_invalid_responses(monkeypatch):

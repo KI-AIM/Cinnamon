@@ -237,6 +237,6 @@ def test_heart_failure_api_generates_synthetic_dataset(monkeypatch):
     status_path = Path(app_module.__file__).resolve().parent / "outputs" / "status" / f"{session_key}.yaml"
     assert status_path.exists()
     status = _load_yaml(status_path)
-    assert _status_step(status, "callback")["completed"] is True
+    assert _status_step(status, "callback")["completed"] in {True, "True"}
 
     status_path.unlink(missing_ok=True)

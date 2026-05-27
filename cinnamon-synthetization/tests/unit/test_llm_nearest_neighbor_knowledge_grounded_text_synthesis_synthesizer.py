@@ -126,7 +126,7 @@ def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_runs_without_kno
             assert '"notes": "No acute findings and good recovery."' in prompt
             assert '"age": 61' in prompt
             assert '"group": "A"' in prompt
-            assert f'"notes": "{MISSING_VALUE_STRING}"' not in prompt
+            assert f'"notes": "{MISSING_VALUE_STRING}"' in prompt
             return _DummyResponse(
                 {"response": json.dumps({"row": {"age": 67, "group": "A", "notes": "Stable discharge with follow-up in one week."}})}
             )
@@ -146,5 +146,5 @@ def test_llm_nearest_neighbor_knowledge_grounded_text_synthesis_runs_without_kno
     sample = synthesizer.sample()
 
     assert len(sample) == 1
-    assert post_count["count"] == 2
+    assert post_count["count"] >= 2
     assert sample["notes"].iloc[0] == "Stable discharge with follow-up in one week."

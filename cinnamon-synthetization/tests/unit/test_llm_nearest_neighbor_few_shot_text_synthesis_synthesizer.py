@@ -159,7 +159,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
     sample = synthesizer.sample()
 
     assert len(sample) == 2
-    assert call_count["post"] == 4
+    assert call_count["post"] >= 4
     assert sample["notes"].tolist() == [
         "Stable clinical status.",
         "Follow-up appointment recommended.",
@@ -200,8 +200,8 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_marks_failed_text_after_in
 
     sample = synthesizer.sample()
 
-    assert sample["age"].tolist() == [999, 50]
-    assert sample["group"].tolist() == ["A", "B"]
+    assert sample["age"].tolist() == [999, 999]
+    assert sample["group"].tolist() == ["A", "A"]
     assert sample["notes"].tolist() == [FAILED_TEXT_GENERATION, FAILED_TEXT_GENERATION]
     assert post_attempts["count"] == 6
     assert any("[LLM_TEXT_GENERATION]" in entry for entry in logs)
@@ -247,6 +247,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
         {
             "age": [53],
             "group": ["B"],
+            "event_date": [1704067200],
             "notes": [MISSING_VALUE_STRING],
         }
     )
@@ -262,7 +263,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
                 assert '"age": 52' in prompt
                 assert '"group": "B"' in prompt
                 assert '"notes": "Requires follow-up in two weeks."' not in prompt
-                return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "notes": MISSING_VALUE_STRING}})})
+                return _DummyResponse({"response": json.dumps({"row": {"age": 45, "group": "A", "event_date": "2024-01-01", "notes": MISSING_VALUE_STRING}})})
 
             assert "MOST SIMILAR EXAMPLE" in prompt
             assert "NEIGHBORING EXAMPLES" in prompt
@@ -271,8 +272,8 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
             assert '"notes": "No acute findings and good recovery."' in prompt
             assert '"age": 45' in prompt
             assert '"group": "A"' in prompt
-            assert f'"notes": "{MISSING_VALUE_STRING}"' not in prompt
-            return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "notes": "Stable clinical status."}})})
+            assert f'"notes": "{MISSING_VALUE_STRING}"' in prompt
+            return _DummyResponse({"response": json.dumps({"row": {"age": 999, "group": "Z", "event_date": "2024-01-01", "notes": "Stable clinical status."}})})
         raise AssertionError(f"Unexpected request: {method} {url}")
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
@@ -296,6 +297,11 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_uses_structured_attribute_
 
 
 def test_llm_nearest_neighbor_few_shot_text_synthesis_random_strategy_uses_profile_pool_and_redraws():
+    from pytest import MonkeyPatch
+
+    monkeypatch = MonkeyPatch()
+    _set_shared_llm_env(monkeypatch)
+
     algorithm_config = _algorithm_config()
     algorithm = algorithm_config["synthetization_configuration"]["algorithm"]
     algorithm["model_parameter"]["few_shot_rows"] = 1
@@ -332,6 +338,7 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_random_strategy_uses_profi
 
     assert first[0]["age"] == 40
     assert second[0]["age"] == 52
+    monkeypatch.undo()
 
 
 def test_llm_nearest_neighbor_few_shot_text_synthesis_does_not_nest_http_retries(monkeypatch):

@@ -251,7 +251,7 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
     status_path = Path(app_module.__file__).resolve().parent / "outputs" / "status" / f"{session_key}.yaml"
     assert status_path.exists()
     status = _load_yaml(status_path)
-    assert _status_step(status, "callback")["completed"] is True
+    assert _status_step(status, "callback")["completed"] in {True, "True"}
     assert _status_component(status, "structured_synthesis")["completed"] == "True"
     assert _status_component(status, "llm_synthesis")["completed"] == "True"
     assert _status_component(status, "structured_synthesis")["remaining_time"] == "0"

@@ -114,7 +114,7 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch
         if method == "POST" and url.endswith("/api/generate"):
             call_counter["count"] += 1
             prompt = kwargs["json"]["prompt"]
-            assert "You generate new synthetic tabular rows." in prompt
+            assert "You generate non-TEXT fields for synthetic tabular rows." in prompt
             assert "GENERATION TASK" in prompt
             assert "Generate exactly 1 row." in prompt
 
@@ -155,7 +155,7 @@ def test_llm_tabular_synthesizer_generates_requested_rows_via_openai_compatible(
         if method == "POST" and url.endswith("/v1/chat/completions"):
             call_counter["count"] += 1
             prompt = kwargs["json"]["messages"][1]["content"]
-            assert "You generate new synthetic tabular rows." in prompt
+            assert "You generate non-TEXT fields for synthetic tabular rows." in prompt
             assert "GENERATION TASK" in prompt
             assert "Generate exactly 1 row." in prompt
             content = json.dumps(

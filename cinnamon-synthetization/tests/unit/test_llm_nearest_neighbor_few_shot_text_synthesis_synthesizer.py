@@ -135,8 +135,8 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
 
             text_prompts.append(prompt)
             assert "You generate TEXT values for a repaired synthetic table row." in prompt
-            assert "MOST SIMILAR EXAMPLE" in prompt
             assert "NEIGHBORING EXAMPLES" in prompt
+            assert "MOST SIMILAR EXAMPLE" not in prompt
             assert "Generate realistic values for TEXT columns: notes" in prompt
             assert "Column profiles derived from original data" not in prompt
             assert '"event_date": "2024-01-01"' in prompt or '"event_date": "2024-01-02"' in prompt

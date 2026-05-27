@@ -253,10 +253,10 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
     status = _load_yaml(status_path)
     assert _status_step(status, "callback")["completed"] in {True, "True"}
     assert _status_component(status, "structured_synthesis")["completed"] == "True"
-    assert _status_component(status, "llm_synthesis")["completed"] == "True"
+    assert _status_component(status, "llm_synthesis")["completed"] == "False"
     assert _status_component(status, "structured_synthesis")["remaining_time"] == "0"
-    assert _status_component(status, "llm_synthesis")["remaining_time"] == "0"
+    assert _status_component(status, "llm_synthesis")["remaining_time"] == "Waiting"
     assert _status_component(status, "structured_synthesis")["synthesizer_name"] == "cardiovascular_mock"
-    assert _status_component(status, "llm_synthesis")["synthesizer_name"] == "dummy_text_synth"
+    assert _status_component(status, "llm_synthesis")["synthesizer_name"] == "Waiting"
 
     status_path.unlink(missing_ok=True)

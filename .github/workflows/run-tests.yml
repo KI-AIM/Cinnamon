@@ -139,7 +139,8 @@ jobs:
       - name: Install dependencies for synthetization tests
         run: |
           python -m pip install --upgrade pip
-          pip install Flask==3.0.0 Flask-Cors==4.0.1 PyYAML==6.0.1 "pandas>=2.1" numpy==1.26.4 requests==2.32.3 pytest==8.3.3
+          pip install -r cinnamon-synthetization/requirements.txt
+          pip install pytest==8.3.3
 
       - name: Run Pytest and Generate JUnit Report
         run: |

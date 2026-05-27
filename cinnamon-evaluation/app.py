@@ -835,6 +835,27 @@ def evaluate_data(session_key, callback_url, attribute_config, evaluation_config
     return enriched_metrics
 
 
+@app.route('/algorithms', methods=['GET'])
+def get_algorithms():
+    """
+    Retrieves a list of supported algorithms for the application.
+
+    Returns:
+        A list of algorithm names supported by the application.
+    """
+    algorithms = f"""
+    algorithms:
+    - URL: /get_evaluation_metrics/cross-sectional
+      class: <class 'synthetic_tabular_data_generator.algorithms.ctgan.CtganSynthesizer'>
+      description: Metrics used to evaluate the resemblance and utility of synthetic data compared to real data.
+      display_name: Evaluation
+      name: evaluation
+      type: cross-sectional
+      version: '0.1'
+    """
+    return Response(algorithms, mimetype='text/yaml')
+
+
 @app.route('/get_evaluation_metrics/<string:data_format>', methods=['GET'])
 def get_evaluation_metrics(data_format):
     file_path_resemblance = os.path.join(app_dir, 'resemblance', 'overview_resemblance_metrics.yaml')

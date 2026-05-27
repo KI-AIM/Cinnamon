@@ -4,17 +4,19 @@ import org.springframework.http.MediaType;
 
 /**
  * Class for custom media Types that Spring does not provide.
+ *
+ * @author Daniel Preciado-Marquez
  */
 public abstract class CustomMediaType {
 	/**
 	 * Custom media type value for YAML.
 	 */
-	public static final String APPLICATION_YAML_VALUE = "application/x-yaml";
+	public static final String APPLICATION_X_YAML_VALUE = "application/x-yaml";
 
 	/**
 	 * Custom media type for YAML.
 	 */
-	public static final MediaType APPLICATION_YAML = new MediaType("application", "x-yaml");
+	public static final MediaType APPLICATION_X_YAML = MediaType.parseMediaType(APPLICATION_X_YAML_VALUE);
 
 	/**
 	 * Custom media type value for ZIP files.
@@ -30,4 +32,9 @@ public abstract class CustomMediaType {
 	 * Custom media type value for YAML.
 	 */
 	public static final String TEXT_YAML_VALUE = "text/yaml";
+
+	/**
+	 * Custom media type for YAML.
+	 */
+	public static final MediaType TEXT_YAML = MediaType.parseMediaType(TEXT_YAML_VALUE);
 }

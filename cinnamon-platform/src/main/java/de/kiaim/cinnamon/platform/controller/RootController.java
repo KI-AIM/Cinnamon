@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.platform.controller;
 
-import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.dto.CinnamonInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,7 +47,7 @@ public class RootController {
                          description = "Returns the Cinnamon information.",
                          content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                              schema = @Schema(implementation = CinnamonInfo.class)),
-                                    @Content(mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                    @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
                                              schema = @Schema(implementation = CinnamonInfo.class))}),
     })
     @ResponseBody

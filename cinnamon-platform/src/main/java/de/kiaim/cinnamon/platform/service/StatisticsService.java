@@ -45,7 +45,10 @@ public class StatisticsService {
 	@Transactional
 	public StatisticsResponse getStatistics(final ProjectEntity project,
 	                                        final DataSetSource dataSetSource
-	) throws BadStateException, BadDataSetIdException, InternalDataSetPersistenceException, InternalRequestException, InternalIOException, InternalInvalidStateException, InternalMissingHandlingException, BadStepNameException, InternalApplicationConfigurationException {
+	) throws BadStateException, BadDataSetIdException, InternalDataSetPersistenceException, InternalRequestException,
+			         InternalIOException, InternalInvalidStateException, InternalMissingHandlingException,
+			         BadStepNameException, InternalApplicationConfigurationException, BadConfigurationNameException,
+			         BadAlgorithmException {
 		final var dataset = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 		if (!dataset.isStoredData()) {
 			throw new BadStateException(BadStateException.NO_DATA_SET, "No original data set is present.");

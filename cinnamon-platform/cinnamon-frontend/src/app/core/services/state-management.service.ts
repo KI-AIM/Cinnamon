@@ -86,7 +86,6 @@ export class StateManagementService {
         });
 
         if (this.userService.isAuthenticated()) {
-            this.fetchCurrentStep();
             this.initPipeline();
         }
     }
@@ -117,15 +116,11 @@ export class StateManagementService {
                 );
             }),
             switchMap(value => {
-                if (this.userService.isAuthenticated()) {
-                    return this.statusService.status$.pipe(
-                        map(status => {
-                            return {currentStep: value.currentStep, p: value.p, status: status};
-                        }),
-                    );
-                } else {
-                    return of({currentStep: value.currentStep, p: value.p, status: null as Status | null});
-                }
+                return this.statusService.status$.pipe(
+                    map(status => {
+                        return {currentStep: value.currentStep, p: value.p, status: status};
+                    }),
+                );
             }),
             map(value =>{
                 const reasons: LockedReason[] = [];
@@ -239,19 +234,10 @@ export class StateManagementService {
     }
 
     /**
-     * Fetches the state from the backend.
-     */
-    public fetchCurrentStep() {
-        this.statusService.status$.pipe(
-            take(1),
-        ).subscribe();
-    }
-
-    /**
      * Fetches the state from the backend and routes to the current step.
      */
     public fetchAndRouteToCurrentStep() {
-        this.statusService.status$.pipe(
+        this.statusService.statusNonNull$.pipe(
             take(1),
         ).subscribe({
             next: value => {
@@ -315,6 +301,9 @@ export class StateManagementService {
                 this.initPipeline();
                 this.clearCaches();
             }),
+            switchMap(() => {
+                return this.statusService.updateNextStep(unlock);
+            }),
         );
     }
 
@@ -325,7 +314,6 @@ export class StateManagementService {
         this.configurationService.invalidateCache();
         this.fileService.invalidateCache();
         this.dataSetInfoService.invalidateCache();
-        this.statusService.invalidateCache();
 
         // Delete cached algorithm definitions as they can contain injected parameters
         this.anonymizationService.invalidateCachedAlgorithmDefinitions();

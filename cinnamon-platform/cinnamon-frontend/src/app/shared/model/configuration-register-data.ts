@@ -1,6 +1,4 @@
 import { Steps } from "src/app/core/enums/steps";
-import { Observable } from "rxjs";
-import { ImportPipeData } from "./import-pipe-data";
 
 /**
  * Data for registering a configuration.
@@ -17,12 +15,6 @@ export class ConfigurationRegisterData {
     displayName: string;
 
     /**
-     * Function that gets called to fetch the configuration YAML string from the backend.
-     * If null when registering, it will be overwritten with the default function.
-     */
-    fetchConfig: ((configName: string) => Observable<string>) | null;
-
-    /**
      * Step until the configuration upload and download should be available.
      */
     lockedAfterStep: Steps | null;
@@ -36,17 +28,4 @@ export class ConfigurationRegisterData {
      * Position the configuration int the UI.
      */
     orderNumber: number;
-
-    /**
-     * Function that gets called to store the configuration string with the backend.
-     * If null when registering, it will be overwritten with the default function.
-     */
-    storeConfig: ((configName: string, yamlConfigString: string) => Observable<void>) | null;
-
-    /**
-     * Function that should set the configuration in the front end.
-     * Gets called when uploading the configuration.
-     * @param config The configurations as a YAML string.
-     */
-    setConfigCallback: (importData: ImportPipeData) => void;
 }

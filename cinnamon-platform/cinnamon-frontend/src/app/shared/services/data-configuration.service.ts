@@ -1,13 +1,11 @@
 import { Injectable } from '@angular/core';
 import { DataConfiguration } from '../model/data-configuration';
 import { HttpClient } from '@angular/common/http';
-import { map, Observable, ReplaySubject, take } from 'rxjs';
+import { filter, map, Observable, ReplaySubject, take } from 'rxjs';
 import { plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
 import { Steps } from 'src/app/core/enums/steps';
-import { parse, stringify } from "yaml";
-import { ImportPipeData } from "../model/import-pipe-data";
 import { environments } from "src/environments/environment";
 import { ErrorHandlingService } from './error-handling.service';
 
@@ -33,6 +31,16 @@ export class DataConfigurationService {
     ) {
         this.dataConfigurationSubject = new ReplaySubject(1);
         this._dataConfiguration$ = this.dataConfigurationSubject.asObservable();
+
+        configurationService.configImport$.pipe(
+            filter(value => value.configurationName === this.CONFIGURATION_NAME),
+            filter(value => value.configuration !== null),
+        ).subscribe({
+            next: value => {
+                const dataConfig = plainToInstance(DataConfiguration, value.configuration);
+                this.setDataConfiguration(dataConfig);
+            }
+        });
     }
 
     public get dataConfiguration$() {
@@ -58,11 +66,8 @@ export class DataConfigurationService {
         configReg.availableAfterStep = Steps.UPLOAD;
         configReg.lockedAfterStep = Steps.VALIDATION;
         configReg.displayName = "Data Configuration";
-        configReg.fetchConfig = (configName) => this.downloadDataConfigurationAsJson().pipe(map(value => stringify(value)));
         configReg.name = this.CONFIGURATION_NAME;
         configReg.orderNumber = 0;
-        configReg.storeConfig = (configName, yamlConfigString) => this.postDataConfigurationString(yamlConfigString);
-        configReg.setConfigCallback = (config) => this.setConfigCallback(config);
 
         this.configurationService.registerConfiguration(configReg);
     }
@@ -80,18 +85,6 @@ export class DataConfigurationService {
         return this.httpClient.get<DataConfiguration>(this.baseUrl + "?format=json", {params: params}).pipe(
             map(value => plainToInstance(DataConfiguration, value)),
         );
-    }
-
-    public postDataConfigurationString(configString: string): Observable<void> {
-        const formData = new FormData();
-        formData.append("configuration", configString);
-        return this.httpClient.post<void>(this.baseUrl, formData);
-    }
-
-    private setConfigCallback(importData: ImportPipeData): void {
-        const config = parse(importData.yamlConfigString);
-        const dataConfig = plainToInstance(DataConfiguration, config);
-        this.setDataConfiguration(dataConfig);
     }
 }
 

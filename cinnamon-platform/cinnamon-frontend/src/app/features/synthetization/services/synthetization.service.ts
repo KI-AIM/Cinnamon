@@ -30,6 +30,7 @@ export class SynthetizationService extends AlgorithmService {
         const config: any = {
             synthetization_configuration: {
                 algorithm: {
+                    id: selectedAlgorithm.name,
                     synthesizer: selectedAlgorithm.name,
                     type: selectedAlgorithm.type,
                     version: selectedAlgorithm.version,
@@ -48,6 +49,7 @@ export class SynthetizationService extends AlgorithmService {
     public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg[configurationName]["algorithm"]["synthesizer"]);
         const config = {...arg[configurationName]["algorithm"]};
+        delete config["id"];
         delete config["synthesizer"];
         delete config["type"];
         delete config["version"];
@@ -64,12 +66,9 @@ export class SynthetizationService extends AlgorithmService {
         configReg.availableAfterStep = Steps.SYNTHETIZATION;
         configReg.lockedAfterStep = Steps.EXECUTION;
         configReg.displayName = "Synthetization Configuration";
-        configReg.fetchConfig = null;
         // TODO fetch from server, user must be logged in for authentication
         configReg.name = "synthetization_configuration";
         configReg.orderNumber = 2;
-        configReg.storeConfig = null;
-        configReg.setConfigCallback = (config) => this.setConfigWait(config);
 
         this.configurationService.registerConfiguration(configReg);
     }

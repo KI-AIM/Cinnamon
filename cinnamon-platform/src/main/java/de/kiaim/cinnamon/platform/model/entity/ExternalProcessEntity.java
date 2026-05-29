@@ -28,7 +28,7 @@ public abstract class ExternalProcessEntity extends BackgroundProcessEntity {
 	 * Detailed status information.
 	 * Can have any form.
 	 */
-	@Column(length = 1000)
+	@Column(length = 2000)
 	@Nullable
 	private String status;
 

@@ -1,11 +1,10 @@
 package de.kiaim.cinnamon.anonymization.processor;
 
 import de.kiaim.cinnamon.anonymization.exception.processor.JALDataGenerationException;
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
-import de.kiaim.cinnamon.model.enumeration.DataType;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

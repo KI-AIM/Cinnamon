@@ -172,14 +172,12 @@ export class ConfigurationService {
 
     /**
      * Stores the given configuration under the given name into the database.
-     * @param configurationName Identifier of the configuration to load.
      * @param configuration Configuration to store in form of a string.
      * @returns Observable returning containing the ID of the dataset.
      */
-    public storeConfig(configurationName: String, configuration: String): Observable<void> {
+    public storeConfig(configuration: String): Observable<void> {
         const formData = new FormData();
         formData.append("configuration", configuration.toString());
-        formData.append("configurationName", configurationName.toString());
         return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
     }
 

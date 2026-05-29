@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.test.util;
 
-import de.kiaim.cinnamon.model.configuration.data.*;
+import de.kiaim.cinnamon.model.configuration.data.attributes.*;
 import de.kiaim.cinnamon.model.data.DateData;
 import de.kiaim.cinnamon.model.data.DateTimeData;
 import de.kiaim.cinnamon.model.data.IntegerData;
@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import static de.kiaim.cinnamon.test.util.YamlUtil.indentYaml;
 
 public class DataConfigurationTestHelper {
 
@@ -119,5 +121,19 @@ public class DataConfigurationTestHelper {
 				  - name: "StringPatternConfiguration"
 				    pattern: ".*"
 				""";
+	}
+
+	public static String generateAttributeConfigurationAsYaml() {
+		return """
+		       attributes:
+		       """ + indentYaml(DataConfigurationTestHelper.generateDataConfigurationAsYaml());
+	}
+
+	public static String generateDatasetConfigurationAsYaml() {
+		return """
+		       dataset:
+		         createHoldOutSplit: false
+		         holdOutSplitPercentage: 0.0
+		       """;
 	}
 }

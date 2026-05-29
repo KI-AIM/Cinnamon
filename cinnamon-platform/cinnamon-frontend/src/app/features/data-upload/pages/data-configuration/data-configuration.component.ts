@@ -175,7 +175,7 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     confirmConfiguration() {
-        const config = plainToInstance(DataConfiguration, this.attributeConfigurationform.value);
+        const config = plainToInstance(DataConfiguration, this.attributeConfigurationform.getRawValue());
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
         this.dataService.storeData(config).pipe(

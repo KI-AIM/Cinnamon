@@ -78,7 +78,7 @@ export class StateManagementService {
 
         this._pipelineObserver$ = interval(2000).pipe(
             switchMap(() => this.fetchPipelineInformation()),
-            tap(value => this.updatePipeline(value)),
+            tap(value => this.doUpdatePipeline(value)),
         );
 
         this.userService.logout$().subscribe(() => {
@@ -180,7 +180,7 @@ export class StateManagementService {
      *
      * @param pipeline The updated pipeline.
      */
-    public updatePipeline(pipeline: PipelineInformation): void {
+    private doUpdatePipeline(pipeline: PipelineInformation): void {
         this._pipelineSubject.next(pipeline);
         if (pipeline.currentStageIndex == null) {
             this.stopListenToPipeline();
@@ -201,7 +201,21 @@ export class StateManagementService {
         this.pipelineInitialized = true;
         this.fetchPipelineInformation().subscribe({
             next: value => {
-                this.updatePipeline(value);
+                this.doUpdatePipeline(value);
+            },
+            error: error => {
+                this.pipelineInitialized = false;
+            }
+        });
+    }
+
+    /**
+     * Updates the status of the entire pipeline.
+     */
+    public updatePipeline(): void {
+        this.fetchPipelineInformation().subscribe({
+            next: value => {
+                this.doUpdatePipeline(value);
             },
             error: error => {
                 this.pipelineInitialized = false;

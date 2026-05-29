@@ -1,10 +1,11 @@
 package de.kiaim.cinnamon.test.util;
 
+import de.kiaim.cinnamon.model.configuration.data.file.*;
+import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.file.*;
 
 public class FileConfigurationTestHelper {
 	public static FileConfiguration generateFileConfiguration() {
@@ -21,6 +22,8 @@ public class FileConfigurationTestHelper {
 
 	public static FileConfiguration generateFileConfiguration(final boolean hasHeader, final FileType fileType) {
 		return new FileConfiguration(
+				DataSourceType.LOCAL,
+				null,
 				fileType,
 				new CsvFileConfiguration(",", "\n", '"', hasHeader),
 				new XlsxFileConfiguration(hasHeader),
@@ -36,5 +39,18 @@ public class FileConfigurationTestHelper {
 			case FHIR -> new FhirFileConfigurationEntity(dto.getFhirFileConfiguration());
 			case XLSX -> new XlsxFileConfigurationEntity(dto.getXlsxFileConfiguration());
 		};
+	}
+
+	public static String generateFileConfigurationAsYaml() {
+		return """
+		       dataSource:
+		         dataSourceType: "LOCAL"
+		         fileType: "CSV"
+		         csvFileConfiguration:
+		           columnSeparator: ","
+		           lineSeparator: "\\n"
+		           quoteChar: "\\""
+		           hasHeader: true
+		       """;
 	}
 }

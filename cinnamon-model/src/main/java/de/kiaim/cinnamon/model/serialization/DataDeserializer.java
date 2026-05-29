@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonStreamContext;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataBuilder;
 import de.kiaim.cinnamon.model.enumeration.DataType;

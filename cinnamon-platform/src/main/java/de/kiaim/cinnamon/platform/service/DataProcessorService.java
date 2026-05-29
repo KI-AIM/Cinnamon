@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.BadFileException;
 import de.kiaim.cinnamon.platform.exception.InternalMissingHandlingException;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -30,7 +30,17 @@ public class DataProcessorService {
 	 */
 	public FileType getFileType(final MultipartFile file) throws BadFileException {
 		validateFileOrThrow(file);
-		final String fileName = file.getOriginalFilename();
+		return getFileTypeByFileName(file.getOriginalFilename());
+	}
+
+	/**
+	 * Gets the file type of the given file name by analyzing the file extension.
+	 *
+	 * @param fileName The name of the file.
+	 * @return The file type of the file.
+	 * @throws BadFileException If the file extension is not supported.
+	 */
+	public FileType getFileTypeByFileName(final String fileName) throws BadFileException {
 		final String fileExtension = getFileExtension(fileName);
 		return getFileType(fileExtension);
 	}
@@ -63,12 +73,18 @@ public class DataProcessorService {
 
 	/**
 	 * Validates the given file.
+	 * Checks if the file is not null, not empty and has a valid file name.
+	 *
 	 * @param file File to be validated.
 	 * @throws BadFileException If the file is not valid.
 	 */
 	public void validateFileOrThrow(@Nullable final MultipartFile file) throws BadFileException {
 		if (file == null) {
 			throw new BadFileException(BadFileException.MISSING_FILE, "Missing file");
+		}
+
+		if (file.isEmpty()) {
+			throw new BadFileException(BadFileException.EMPTY_FILE, "The file is empty");
 		}
 
 		final String fileName = file.getOriginalFilename();

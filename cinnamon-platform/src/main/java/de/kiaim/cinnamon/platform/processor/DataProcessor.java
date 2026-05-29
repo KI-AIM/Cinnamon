@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.processor;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.BadFileException;
@@ -10,7 +10,7 @@ import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 
 import java.io.InputStream;
 import java.io.OutputStream;

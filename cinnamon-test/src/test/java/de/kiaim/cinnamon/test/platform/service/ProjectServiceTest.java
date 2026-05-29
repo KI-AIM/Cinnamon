@@ -1,46 +1,33 @@
 package de.kiaim.cinnamon.test.platform.service;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
-import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
+import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
-import de.kiaim.cinnamon.platform.model.TransformationResult;
-import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
-import de.kiaim.cinnamon.platform.model.file.FileType;
-import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
-import de.kiaim.cinnamon.platform.service.DataProcessorService;
-import de.kiaim.cinnamon.platform.service.DatabaseService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
-import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
-import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;
-import de.kiaim.cinnamon.test.util.ResourceHelper;
+import de.kiaim.cinnamon.test.util.WithMockWebServer;
+import mockwebserver3.MockResponse;
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import static org.junit.jupiter.api.Assertions.*;
 
+@WithMockWebServer
 public class ProjectServiceTest extends DatabaseTest {
 
 	@Autowired CinnamonConfiguration cinnamonConfiguration;
 	@Autowired UserRepository userRepository;
-	@Autowired DatabaseService databaseService;
-	@Autowired DataProcessorService dataProcessorService;
 	@Autowired ProjectService projectService;
 	@Autowired UserService userService;
+
+	private MockWebServer mockBackEnd;
 
 	@Test
 	public void createProject() {
@@ -62,18 +49,18 @@ public class ProjectServiceTest extends DatabaseTest {
 		var exec = pipeline.getStageByStep(stage);
 
 		assertEquals(exec.getStage(), stage, "Unexpected step!");
-		assertEquals(ProcessStatus.NOT_STARTED, exec.getStatus(), "Unexpected process status!");
+		assertEquals(StageStatus.NOT_STARTED, exec.getStatus(), "Unexpected process status!");
 		assertNull(exec.getCurrentProcessIndex(), "No step has been created!");
 		assertEquals(2, exec.getProcesses().size(), "Unexpected number of processes!");
 		var firstProcess = exec.getProcess(0);
 
-		assertEquals(firstProcess.getExternalProcessStatus(), ProcessStatus.NOT_STARTED , "Unexpected status!");
+		assertEquals(ProcessStatus.NOT_STARTED, firstProcess.getExternalProcessStatus(), "Unexpected status!");
 	}
 
 	@Test
 	public void getExistingProject() {
 		final UserEntity user = getTestUser();
-		ProjectEntity initialProject = new ProjectEntity();
+		ProjectEntity initialProject = assertDoesNotThrow(() -> projectService.createProject(0L));
 		initialProject.getStatus().setCurrentStep(Step.VALIDATION);
 		user.setProject(initialProject);
 		initialProject = userRepository.save(user).getProject();
@@ -81,92 +68,36 @@ public class ProjectServiceTest extends DatabaseTest {
 		final ProjectEntity project = projectService.getProject(user);
 
 		assertEquals(initialProject.getId(), project.getId(), "The returned project is not equal to the users project!");
-		assertEquals(project.getStatus().getCurrentStep(), Step.VALIDATION, "The initial status is wrong!");
+		assertEquals(Step.VALIDATION, project.getStatus().getCurrentStep(), "The initial status is wrong!");
 	}
 
 	@Test
-	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalApplicationConfigurationException, BadConfigurationNameException, InternalIOException {
-		// Preparation
-		final var project = projectService.createProject(System.currentTimeMillis());
-		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
-		final var file = ResourceHelper.loadCsvFile();
-		final var csvFileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
-		final var fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+	public void resetProject() {
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final ProjectEntity project = createProject(stage, ProcessStatus.FINISHED);
 
-		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(csvFileConfiguration.getFileType());
-		final TransformationResult transformationResult = assertDoesNotThrow(
-				() -> dataProcessor.read(file.getInputStream(), csvFileConfiguration, configuration));
-		assertDoesNotThrow(() -> databaseService.storeFile(project, file, fileConfiguration));
-		databaseService.storeOriginalTransformationResult(transformationResult, project);
-		databaseService.storeConfiguration("anonymization", "key = value", project);
+		assertDoesNotThrow(() -> projectService.resetProject(project, null));
+		ExecutionStepEntity executionStep = project.getPipelines().get(0).getStages().get(0);
 
-		var pipeline = new PipelineEntity();
-		project.addPipeline(pipeline);
+		assertEquals(StageStatus.NOT_STARTED, executionStep.getStatus(), "Status should be NOT_STARTED");
 
-		var execution = new ExecutionStepEntity();
-		pipeline.addStage(stage, execution);
+		ExternalProcessEntity externalProcess = executionStep.getProcess(0);
+		assertEquals(ProcessStatus.NOT_STARTED, externalProcess.getExternalProcessStatus(),
+		             "Status should be NOT_STARTED");
+		assertTrue(externalProcess.getResultFiles().isEmpty(), "Result files should be empty!");
+		assertNull(externalProcess.getStatus(), "Status should be null!");
+	}
 
-		for (final var processStep : stage.getJobList()) {
-			final var process = new DataProcessingEntity();
-			process.setJob(processStep);
-			execution.addProcess(process);
-		}
+	@Test
+	public void resetProjectRunning() {
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final ProjectEntity project = createProject(stage, ProcessStatus.RUNNING);
 
-		execution = projectService.saveProject(project).getPipelines().get(0).getStages().get(0);
+		mockBackEnd.enqueue(new MockResponse.Builder().code(200).build());
 
-		var otherFile = ResourceHelper.loadCsvFileWithErrors();
-		final TransformationResult otherTransformationResult = assertDoesNotThrow(
-				() -> dataProcessor.read(otherFile.getInputStream(), csvFileConfiguration, configuration));
-		databaseService.storeTransformationResult(otherTransformationResult,
-		                                          (DataProcessingEntity) execution.getProcesses().get(0),
-		                                          List.of(stage.getJobList().get(0)));
-
-		// The test
-		var out = new ByteArrayOutputStream();
-		var parameter = new ProjectExportParameter(false, FileType.CSV, HoldOutSelector.ALL,
-		                                           List.of("pipeline.execution.anonymization.dataset",
-		                                                   "configuration.configurations", "original.dataset",
-		                                                   "configuration.anonymization"));
-		assertDoesNotThrow(() -> projectService.createZipFile(project, out, parameter));
-
-		List<String> expectedFiles = new ArrayList<>(List.of("anonymization-dataset.csv", "original-attribute_config.yaml", "original-dataset.csv", "anonymization.yaml"));
-
-		try (final var zipInputStream = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
-
-			var buffer = new byte[1024];
-			int read = 0;
-			ZipEntry zipEntry;
-
-			while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-				var stringBuilder = new StringBuilder();
-				while((read = zipInputStream.read(buffer, 0 , buffer.length)) > 0) {
-					stringBuilder.append(new String(buffer, 0 , read));
-				}
-
-				if (zipEntry.getName().equals("anonymization-dataset.csv")) {
-					var result = ResourceHelper.loadCsvFileWithErrorsAsString();
-					var resultBuilder = new StringBuilder(result);
-					resultBuilder.delete(result.length() - 24, result.length() - 15);
-
-					assertEquals(resultBuilder.toString(), stringBuilder.toString(), "Unexpected anonymized data!");
-				} else if (zipEntry.getName().equals("original-attribute_config.yaml")) {
-					assertEquals(DataConfigurationTestHelper.generateDataConfigurationAsYaml(), stringBuilder.toString(), "Unexpected data configuration!");
-				} else if(zipEntry.getName().equals("original-dataset.csv")) {
-					assertEquals(ResourceHelper.loadCsvFileAsString(), stringBuilder.toString(), "Unexpected original data!");
-				} else if(zipEntry.getName().equals("anonymization.yaml")) {
-					assertEquals("key = value", stringBuilder.toString(), "Unexpected anonymization configuration!");
-				} else {
-					fail("Unexpected ZIP entry: " + zipEntry.getName());
-				}
-
-				expectedFiles.remove(zipEntry.getName());
-			}
-		}
-
-		if (!expectedFiles.isEmpty()) {
-			fail("The following files have not been found in the ZIP file: " + String.join(", ", expectedFiles));
-		}
+		BadStateException exception = assertThrows(BadStateException.class,
+		                                           () -> projectService.resetProject(project, null));
+		assertEquals("PLATFORM_1_8_1", exception.getErrorCode(), "Unexpected error code!");
 	}
 
 }

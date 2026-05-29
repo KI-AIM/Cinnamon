@@ -46,6 +46,10 @@ public class InternalRequestException extends InternalException {
 		super(exceptionCode, message);
 	}
 
+	public InternalRequestException(final String exceptionCode, final String message, final Throwable cause) {
+		super(exceptionCode, message, cause);
+	}
+
 	public InternalRequestException(final String exceptionCode,
 	                                final String message,
 	                                final ErrorDetails errorDetails,

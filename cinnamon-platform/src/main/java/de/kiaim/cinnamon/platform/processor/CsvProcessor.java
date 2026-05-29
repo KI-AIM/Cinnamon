@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.processor;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
@@ -15,9 +15,9 @@ import de.kiaim.cinnamon.platform.model.enumeration.CsvQuote;
 import de.kiaim.cinnamon.platform.model.enumeration.CsvRecordSeparator;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
-import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
-import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.service.DataSetService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -77,7 +77,8 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	@Override
 	public int getNumberColumns(final InputStream data,
 	                            final FileConfigurationEntity fileConfiguration) throws InternalIOException {
-		return getFirstRow(data, fileConfiguration).size();
+		final List<String> firstRow = getFirstRow(data, fileConfiguration);
+		return firstRow.size();
 	}
 
 	/**
@@ -178,6 +179,9 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	public List<String> getFirstRow(final InputStream data,
 	                                final FileConfigurationEntity fileConfiguration) throws InternalIOException {
 		final Iterator<CSVRecord> recordIterator = getRecords(data, fileConfiguration);
+		if (!recordIterator.hasNext()) {
+			return Collections.emptyList();
+		}
 		return recordIterator.next().toList();
 	}
 

@@ -20,6 +20,11 @@ public class BadDataSetIdException extends BadRequestException {
 	 */
 	public static final String ALREADY_STORED = "3";
 
+	/**
+	 * Exception code for data set IDs that already have a corresponding data set confirmed.
+	 */
+	public static final String ALREADY_CONFIRMED = "4";
+
 	public BadDataSetIdException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

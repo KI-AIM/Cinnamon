@@ -8,6 +8,10 @@ import java.nio.charset.StandardCharsets;
 
 public class ResourceHelper {
 
+	public static MockMultipartFile emptyFile(final String paramName) {
+		return new MockMultipartFile(paramName, "empty.csv", null, new byte[0]);
+	}
+
 	public static MockMultipartFile loadCsvFile() throws IOException {
 		return loadCsvFile("file");
 	}

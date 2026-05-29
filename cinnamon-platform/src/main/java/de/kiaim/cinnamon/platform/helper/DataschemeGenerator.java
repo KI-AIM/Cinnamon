@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.helper;
 
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.mapper;
 
-import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.model.dto.PipelineInformation;
 import de.kiaim.cinnamon.platform.model.entity.ExecutionStepEntity;
 import de.kiaim.cinnamon.platform.model.entity.PipelineEntity;
@@ -41,7 +41,7 @@ public abstract class PipelineMapper {
 	protected Integer toCurrentStageIndex(final List<ExecutionStepEntity> stages) {
 		for (int i = 0; i < stages.size(); i++) {
 			final ExecutionStepEntity stage = stages.get(i);
-			if (stage.getStatus() == ProcessStatus.RUNNING || stage.getStatus() == ProcessStatus.SCHEDULED) {
+			if (stage.getStatus() == StageStatus.RUNNING) {
 				return i;
 			}
 		}

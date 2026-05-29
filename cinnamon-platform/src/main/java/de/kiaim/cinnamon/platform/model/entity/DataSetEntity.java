@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.platform.converter.StepListAttributeConverter;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -43,6 +43,20 @@ public class DataSetEntity extends ProcessOwner {
 	@Column(nullable = false)
 	@Setter
 	private boolean storedData = false;
+
+	/**
+	 * If the data has hold-out split.
+	 */
+	@Column(nullable = false)
+	@Setter
+	private boolean hasHoldOut = false;
+
+	/**
+	 * Seed that is used for generating the hold-out split.
+	 */
+	@Column(nullable = false)
+	@Setter
+	private int holdOutSeed = 0;
 
 	/**
 	 * If the data has been stored and confirmed.

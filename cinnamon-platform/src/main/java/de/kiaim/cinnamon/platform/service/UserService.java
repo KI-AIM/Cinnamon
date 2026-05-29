@@ -1,11 +1,10 @@
 package de.kiaim.cinnamon.platform.service;
 
-import de.kiaim.cinnamon.platform.exception.BadStateException;
-import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
+@Log4j2
 public class UserService implements UserDetailsService {
 
 	private final UserRepository userRepository;
@@ -39,6 +39,11 @@ public class UserService implements UserDetailsService {
 		return userRepository.findById(email).orElse(null);
 	}
 
+	public UserEntity getUserByEmailOrThrow(final String email) throws BadUserException {
+		return userRepository.findById(email).orElseThrow(
+				() -> new BadUserException(BadUserException.NOT_FOUND, "User with email " + email + " not found"));
+	}
+
 	public boolean doesUserWithEmailExist(final String email) {
 		return userRepository.existsById(email);
 	}
@@ -49,6 +54,7 @@ public class UserService implements UserDetailsService {
 		if (user.isEmpty()) {
 			userEntity = new UserEntity();
 			userEntity.setPassword(passwordEncoder.encode(rawPassword));
+			log.debug("Creating new user with email '{}'", email);
 		} else {
 			userEntity = user.get();
 		}
@@ -80,27 +86,58 @@ public class UserService implements UserDetailsService {
 	 * Deletes the given user.
 	 *
 	 * @param user The user.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If a running process has no server instance assigned.
 	 */
 	@Transactional
-	public void deleteUser(final UserEntity user) throws BadStateException, InternalDataSetPersistenceException {
-		projectService.deleteProject(user);
+	public void deleteUser(final UserEntity user)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		deleteUserData(user);
 		userRepository.delete(user);
+		log.debug("Deleting user with email '{}'", user.getEmail());
+	}
+
+	/**
+	 * Deletes all projects of the given user.
+	 *
+	 * @param user The user.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If a running process has no server instance assigned.
+	 */
+	@Transactional
+	public void deleteUserData(final UserEntity user)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		projectService.deleteProject(user);
+		deleteWorkflows(user);
 	}
 
 	/**
 	 * Deletes all users.
 	 *
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If a running process has no server instance assigned.
 	 */
 	@Transactional
-	public void deleteAllUsers() throws BadStateException, InternalDataSetPersistenceException {
+	public void deleteAllUsers() throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		final var users = userRepository.findAll();
 		for (final var user : users) {
 			deleteUser(user);
 		}
+	}
+
+	/**
+	 * Cancels and deletes all workflows of the given user.
+	 *
+	 * @param user The user.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
+	 */
+	private void deleteWorkflows(final UserEntity user)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		for (final var workflow : user.getWorkflows()) {
+			projectService.resetEntireProject(workflow.getProject());
+		}
+		user.getWorkflows().clear();
 	}
 
 	//==============================

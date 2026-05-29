@@ -1,16 +1,16 @@
 package de.kiaim.cinnamon.platform.controller;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.service.*;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
-import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
@@ -37,9 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -155,8 +153,10 @@ public class DataController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 
-		final FileInformation fileInformation = databaseService.storeFile(projectEntity, requestData.getFile(),
-		                                                                  requestData.getFileConfiguration());
+		databaseService.deleteOriginalData(projectEntity);
+		databaseService.storeFileConfiguration(projectEntity, requestData.getFileConfiguration());
+		final FileInformation fileInformation = databaseService.storeFile(projectEntity, requestData.getFile());
+
 		return ResponseEntity.ok(fileInformation);
 	}
 
@@ -385,7 +385,12 @@ public class DataController {
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity = projectService.getProject(user);
-		databaseService.createHoldOutSplit(projectEntity, request.getHoldOutPercentage());
+
+		final DatasetConfiguration datasetConfiguration = databaseService.getDatasetConfiguration(projectEntity);
+		datasetConfiguration.setHoldOutSplitPercentage(request.getHoldOutPercentage());
+		datasetConfiguration.setCreateHoldOutSplit(true);
+		databaseService.updateDatasetConfiguration(projectEntity, datasetConfiguration);
+
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
@@ -533,26 +538,7 @@ public class DataController {
 				result = null;
 			}
 			case ESTIMATE -> {
-				final var file = projectEntity.getOriginalData().getFile();
-				if (file == null) {
-					throw new BadStateException(BadStateException.NO_DATASET_FILE,
-					                            "Estimating the data configuration requires the file for the dataset to be selected!");
-				}
-
-				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
-						file.getFileConfiguration().getFileType());
-				final InputStream inputStream = new ByteArrayInputStream(file.getFile());
-				DataConfigurationEstimation estimation = dataProcessor.estimateDataConfiguration(inputStream,
-				                                                                                 file.getFileConfiguration(),
-				                                                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
-				result = estimation;
-
-				try {
-					databaseService.storeOriginalDataConfiguration(estimation.getDataConfiguration(), projectEntity);
-				} catch (final BadDataConfigurationException e) {
-					throw new InternalInvalidResultException(InternalInvalidResultException.INVALID_ESTIMATION,
-					                                         "Estimation created an invalid configuration!", e);
-				}
+				result = databaseService.estimateOriginalDataConfiguration(projectEntity);
 			}
 			case INFO -> {
 				result = databaseService.getInfo(projectEntity, dataSetSource);
@@ -580,11 +566,8 @@ public class DataController {
 				result = null;
 			}
 			case STORE_DATE_SET -> {
-				final var file = projectEntity.getOriginalData().getFile();
-				if (file == null) {
-					throw new BadStateException(BadStateException.NO_DATASET_FILE,
-					                            "Storing the dataset requires the file for the dataset to be selected!");
-				}
+				// Delete the existing dataset
+				databaseService.deleteOriginalDataset(projectEntity);
 
 				// Store configuration
 				// It is important to validate and store the configuration,
@@ -592,14 +575,7 @@ public class DataController {
 				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);
 
 				// Store data set
-				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(
-						file.getFileConfiguration().getFileType());
-				final InputStream inputStream = new ByteArrayInputStream(file.getFile());
-
-				final TransformationResult transformationResult = dataProcessor.read(inputStream,
-				                                                                     file.getFileConfiguration(),
-				                                                                     configuration);
-				result = databaseService.storeOriginalTransformationResult(transformationResult, projectEntity);
+				result = databaseService.storeOriginalDataset(projectEntity);
 			}
 			default -> {
 				throw new InternalMissingHandlingException(InternalMissingHandlingException.REQUEST_TYPE,

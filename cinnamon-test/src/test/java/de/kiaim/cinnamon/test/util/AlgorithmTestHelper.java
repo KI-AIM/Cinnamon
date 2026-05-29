@@ -68,16 +68,19 @@ public class AlgorithmTestHelper {
 		return """
 		       anonymization:
 		         algorithm:
-		           id: algorithmA
-		           version: 1.0.1
+		           id: "algorithmA"
+		           version: "1.0.0"
 		         privacyModels:
-		         - name: algorithmA
+		         - name: "algorithmA"
+		           type: "tabular"
+		         attributeConfiguration:
+		         - attributeProtection: "MICRO_AGGREGATION"
 		       """;
 	}
 
 	public static String generateAlgorithmConfigurationJson() {
 		return """
-		       {"anonymization":{"algorithm":{"id":"algorithmA","version":"1.0.1"},"privacyModels":[{"name":"algorithmA"}]}}""";
+		       {"anonymization":{"algorithm":{"id":"algorithmA","version":"1.0.0"},"privacyModels":[{"name":"algorithmA","type":"tabular"}],"attributeConfiguration":[{"attributeProtection":"MICRO_AGGREGATION"}]}}""";
 	}
 
 	public static AvailableAlgorithms generateAvailableAlgorithms2() {
@@ -93,10 +96,30 @@ public class AlgorithmTestHelper {
 	public static String generateAlgorithmConfiguration2() {
 		return """
 		       synthetization_configuration:
-		          algorithm:
-		              id: ctgan
-		              version: "1.0.1"
-		              synthesizer: ctgan
+		         algorithm:
+		           id: "ctgan"
+		           version: "1.0.1"
+		           synthesizer: "ctgan"
+		       """;
+	}
+
+	public static String generateAlgorithmConfiguration3() {
+		return """
+		       evaluation_configuration:
+		         algorithm:
+		           id: "ctgan"
+		           version: "1.0.1"
+		           synthesizer: "ctgan"
+		       """;
+	}
+
+	public static String generateAlgorithmConfiguration4() {
+		return """
+		       risk_assessment_configuration:
+		         algorithm:
+		           id: "ctgan"
+		           version: "1.0.1"
+		           synthesizer: "ctgan"
 		       """;
 	}
 }

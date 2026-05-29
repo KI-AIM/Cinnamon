@@ -35,6 +35,11 @@ public class BadFileException extends BadRequestException {
 	 */
 	public static final String INVALID_FHIR = "6";
 
+	/**
+	 * Exception code for files that are empty.
+	 */
+	public static final String EMPTY_FILE = "7";
+
 	public BadFileException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

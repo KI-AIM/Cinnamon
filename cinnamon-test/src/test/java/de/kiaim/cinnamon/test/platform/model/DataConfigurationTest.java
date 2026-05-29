@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.test.platform.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
 import org.junit.jupiter.api.Test;

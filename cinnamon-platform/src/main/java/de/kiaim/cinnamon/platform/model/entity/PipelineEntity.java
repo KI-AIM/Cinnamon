@@ -6,7 +6,6 @@ import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
@@ -34,6 +33,14 @@ public class PipelineEntity {
 	 */
 	@Getter @Setter
 	private Integer pipelineIndex;
+
+	/**
+	 * If true, after finishing the current stage, all following stages will be executed.
+	 * Otherwise, only one stage will be executed at a time.
+	 */
+	@Column(nullable = false)
+	@Getter @Setter
+	private boolean runAllStages = false;
 
 	/**
 	 * Stages of this pipeline.

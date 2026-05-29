@@ -1,9 +1,9 @@
 package de.kiaim.cinnamon.model.data;
 
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.Configuration;
-import de.kiaim.cinnamon.model.configuration.data.DateTimeFormatConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.RangeConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.Configuration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DateTimeFormatConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.DateTimeFormatException;
 import de.kiaim.cinnamon.model.exception.ValueNotInRangeException;

@@ -37,6 +37,13 @@ public class BadStateException extends BadRequestException {
 	 */
 	public static final String NO_ORIGINAL_DATA_CONFIGURATION = "7";
 
+	/**
+	 * Exception code for actions that require the file configuration of the original dataset to be set.
+	 */
+	public static final String NO_DATASET_FILE_CONFIGURATION = "8";
+
+	public static final String PRECEDING_STAGE_NOT_FINISHED = "9";
+
 	public BadStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

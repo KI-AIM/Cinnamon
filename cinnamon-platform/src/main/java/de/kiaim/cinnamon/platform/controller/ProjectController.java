@@ -5,14 +5,14 @@ import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
-import de.kiaim.cinnamon.platform.model.dto.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.StatusEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
-import de.kiaim.cinnamon.platform.model.mapper.ProjectConfigurationMapper;
+import de.kiaim.cinnamon.platform.service.ExportService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.StepService;
 import de.kiaim.cinnamon.platform.service.UserService;
@@ -33,28 +33,24 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.time.LocalDate;
-
 @RestController
 @RequestMapping("/api/project")
 @Tag(name = "/api/project", description = "API for managing projects.")
 public class ProjectController {
 
+	private final ExportService exportService;
 	private final ProjectService projectService;
 	private final StepService stepService;
 	private final UserService userService;
 
-	private final ProjectConfigurationMapper projectConfigurationMapper;
-
-	public ProjectController(final ProjectService projectService, final StepService stepService,
-	                         final UserService userService,
-	                         final ProjectConfigurationMapper projectConfigurationMapper) {
+	public ProjectController(final ExportService exportService,
+	                         final ProjectService projectService,
+	                         final StepService stepService,
+	                         final UserService userService) {
+		this.exportService = exportService;
 		this.projectService = projectService;
 		this.stepService = stepService;
 		this.userService = userService;
-		this.projectConfigurationMapper = projectConfigurationMapper;
 	}
 
 	@Operation(summary = "Creates a projects with the given mode.",
@@ -122,7 +118,8 @@ public class ProjectController {
 			@Parameter(description = "Target identifier to reset. If missing or empty, the entire project is reset.")
 			@RequestParam(required = false) final String target,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadArgumentException, BadStateException, BadStepNameException, InternalDataSetPersistenceException {
+	) throws BadArgumentException, BadStateException, BadStepNameException, InternalDataSetPersistenceException,
+			         InternalInvalidStateException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 		projectService.resetProject(project, target);
@@ -140,7 +137,7 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) {
 		final var project = projectService.getProject(requestUser);
-		return projectConfigurationMapper.toDto(project.getProjectConfiguration());
+		return projectService.exportProjectConfiguration(project);
 	}
 
 	@Operation(summary = "Updates the configuration of the user's project.",
@@ -156,8 +153,7 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) {
 		final var project = projectService.getProject(requestUser);
-		projectConfigurationMapper.updateEntity(project.getProjectConfiguration(), projectConfigurationDTO);
-		projectService.saveProject(project);
+		projectService.updateProjectConfiguration(project, projectConfigurationDTO);
 	}
 
 
@@ -183,24 +179,12 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser,
 			@ParameterObject final ProjectExportParameter projectExportParameter,
 			final HttpServletResponse response
-	) throws BadConfigurationNameException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
+	) throws BadConfigurationNameException, BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
 
-		response.setContentType("application/zip");
-		response.setHeader("Content-Disposition", "attachment; filename=\"" + user.getEmail() + "_Cinnamon-export_" + LocalDate.now() + ".zip\"");
-
-		final OutputStream outputStream;
-		try {
-			outputStream = response.getOutputStream();
-		} catch (final IOException e) {
-			throw new InternalIOException(InternalIOException.ZIP_CREATION, "Could not get Outputstream", e);
-		}
-
-		projectService.createZipFile(project, outputStream, projectExportParameter);
-
-		return ResponseEntity.ok().build();
+		return exportService.createZipFile(project, response, projectExportParameter);
 	}
 
 	@Operation(summary = "Returns a file of the result of the specified job.",

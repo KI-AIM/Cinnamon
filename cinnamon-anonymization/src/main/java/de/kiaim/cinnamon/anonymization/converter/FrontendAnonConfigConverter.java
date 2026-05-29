@@ -5,7 +5,7 @@ import de.kiaim.cinnamon.anonymization.exception.ConvertToJALConfigException;
 import de.kiaim.cinnamon.anonymization.helper.DatasetAnalyzer;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAttributeConfig;
-import de.kiaim.cinnamon.model.configuration.data.*;
+import de.kiaim.cinnamon.model.configuration.data.attributes.*;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;

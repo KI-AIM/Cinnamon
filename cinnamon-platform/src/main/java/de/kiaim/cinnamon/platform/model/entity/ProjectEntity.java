@@ -54,7 +54,7 @@ public class ProjectEntity {
 	 */
 	@OneToOne(optional = false, fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
 	@JoinColumn(name = "project_configuration_id", referencedColumnName = "id")
-	private ProjectConfigurationEntity projectConfiguration = new ProjectConfigurationEntity(this);
+	private final ProjectConfigurationEntity projectConfiguration = new ProjectConfigurationEntity(this);
 
 	/**
 	 * The original data.
@@ -79,9 +79,19 @@ public class ProjectEntity {
 
 	/**
 	 * User that owns this configuration and the corresponding data set.
+	 * Can be null if the project is part of a workflow.
 	 */
 	@OneToOne(mappedBy = "project", optional = false, orphanRemoval = false, cascade = CascadeType.PERSIST)
-	private UserEntity user;
+	@Nullable
+	private UserEntity user = null;
+
+	/**
+	 * Workflow associated with this project.
+	 * Can be null if this project is not part of a workflow.
+	 */
+	@OneToOne(mappedBy = "project", cascade = CascadeType.PERSIST)
+	@Nullable
+	private WorkflowEntity workflow = null;
 
 	/**
 	 * Creates a new project with the given seed.
@@ -123,6 +133,21 @@ public class ProjectEntity {
 	}
 
 	/**
+	 * Links the given workflow with this project.
+	 * @param newWorkflow The workflow to link.
+	 */
+	public void setWorkflow(@Nullable final WorkflowEntity newWorkflow) {
+		final WorkflowEntity oldWorkflow = this.workflow;
+		this.workflow = newWorkflow;
+		if (oldWorkflow != null && oldWorkflow.getProject() == this) {
+			oldWorkflow.setProject(null);
+		}
+		if (newWorkflow != null && newWorkflow.getProject() != this) {
+			newWorkflow.setProject(this);
+		}
+	}
+
+	/**
 	 * Returns the configuration list for the given definition.
 	 * The list will be created if it doesn't exist yet.
 	 *
@@ -156,16 +181,14 @@ public class ProjectEntity {
 	}
 
 	/**
-	 * Creates a random double using the seed of the project.
+	 * Creates a random integer using the seed of the project.
 	 *
-	 * @param origin The min value (inclusive).
-	 * @param bound  The max value (exclusive).
-	 * @return The random double.
+	 * @return The random integer.
 	 */
-	public double randomDouble(final double origin, final double bound) {
+	public int randomInt() {
 		Random random = prepareRandom();
 		randomCalls++;
-		return random.nextDouble(origin, bound);
+		return random.nextInt();
 	}
 
 	private Random prepareRandom() {

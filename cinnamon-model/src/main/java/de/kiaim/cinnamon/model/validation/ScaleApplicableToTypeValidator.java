@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.model.validation;
 
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import jakarta.validation.ConstraintValidator;

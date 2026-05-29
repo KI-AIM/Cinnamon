@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
-import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

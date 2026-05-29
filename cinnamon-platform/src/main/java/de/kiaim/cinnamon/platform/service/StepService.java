@@ -92,8 +92,18 @@ public class StepService {
 		return cinnamonConfiguration.getStages().get(stageName.toLowerCase());
 	}
 
+	/**
+	 * Checks if the given configuration name is an external configuration.
+	 *
+	 * @param configurationName The configuration name.
+	 * @return If the configuration is an external configuration.
+	 */
+	public boolean isExternalConfiguration(final String configurationName) {
+		return cinnamonConfiguration.getExternalConfiguration().containsKey(configurationName.toLowerCase());
+	}
+
 	public ExternalConfiguration getExternalConfiguration(final String configurationName) throws BadConfigurationNameException {
-		if (!cinnamonConfiguration.getExternalConfiguration().containsKey(configurationName.toLowerCase())) {
+		if (!isExternalConfiguration(configurationName)) {
 			throw new BadConfigurationNameException(BadConfigurationNameException.NOT_FOUND,
 			                                        "No configuration with name '" + configurationName +
 			                                        "' registered!");

@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.model.data;
 
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.Configuration;
-import de.kiaim.cinnamon.model.configuration.data.StringPatternConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.Configuration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.StringPatternException;
 import lombok.AllArgsConstructor;

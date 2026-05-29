@@ -2,7 +2,8 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmDefinition;
 import de.kiaim.cinnamon.model.configuration.algorithms.AvailableAlgorithms;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
@@ -20,7 +21,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,18 +32,15 @@ public class ConfigurationController {
 
 	private final ConfigurationService configurationService;
 	private final ExternalConfigurationService externalConfigurationService;
-	private final DatabaseService databaseService;
 	private final ProjectService projectService;
 	private final UserService userService;
 
 	public ConfigurationController(final ConfigurationService configurationService,
 	                               final ExternalConfigurationService externalConfigurationService,
-	                               final DatabaseService databaseService,
 	                               final ProjectService projectService,
 	                               final UserService userService) {
 		this.configurationService = configurationService;
 		this.externalConfigurationService = externalConfigurationService;
-		this.databaseService = databaseService;
 		this.projectService = projectService;
 		this.userService = userService;
 	}
@@ -92,12 +89,11 @@ public class ConfigurationController {
 	public void store(
 			@Valid @ParameterObject ConfigurationRequest configurationRequest,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadConfigurationNameException, BadStateException {
+	) throws BadAlgorithmException, BadConfigurationFileException, BadConfigurationNameException, BadStateException, InternalIOException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-		databaseService.storeConfiguration(configurationRequest.getConfigurationName(),
-		                                   configurationRequest.getConfiguration(), project);
+		configurationService.importExternalConfiguration(project, configurationRequest.getConfiguration());
 	}
 
 	@Operation(summary = "Imports all configurations defined in the given file.",
@@ -133,10 +129,15 @@ public class ConfigurationController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully loaded the configuration. Returns the content of the configuration",
-			             content = {@Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
-			                                 schema = @Schema(implementation = String.class)),
-			                        @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = DataConfiguration.class))
+			             content = {
+					             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+					                      schema = @Schema(implementation = ProjectConfigurationDTO.class)),
+					             @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
+					                      schema = @Schema(implementation = ProjectConfigurationDTO.class)),
+					             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+					                      schema = @Schema(implementation = DataConfiguration.class)),
+					             @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
+					                      schema = @Schema(implementation = DataConfiguration.class)),
 			}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored configurations or no configuration with the give name.",
@@ -144,8 +145,7 @@ public class ConfigurationController {
 			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "",
-	            produces = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE,
-	                        MediaType.APPLICATION_YAML_VALUE})
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public Object load(
 			@Parameter(description = "Name of the configuration to be loaded.",
 			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
@@ -153,26 +153,11 @@ public class ConfigurationController {
 			           required = true)
 			@RequestParam(name = "name") final String configurationName,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadStateException, InternalIOException, BadConfigurationNameException {
+	) throws BadStateException, InternalIOException, BadConfigurationNameException, InternalInvalidStateException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project = projectService.getProject(user);
-
-		final Object configuration = configurationService.loadConfiguration(configurationName, project);
-
-		if (configuration instanceof DataConfiguration dataConfiguration) {
-			return ResponseEntity.ok()
-			                     .contentType(MediaType.APPLICATION_JSON)
-			                     .body(dataConfiguration);
-		}
-
-		if (configuration instanceof String textConfiguration) {
-			return ResponseEntity.ok()
-			                     .contentType(MediaType.TEXT_PLAIN)
-			                     .body(textConfiguration);
-		}
-
-		return ResponseEntity.ok(configuration);
+		return configurationService.loadConfiguration(configurationName, project);
 	}
 
 	@Operation(summary = "Loads available algorithm from the server corresponding to the given configuration name.",

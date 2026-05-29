@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.test.platform.repository;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;

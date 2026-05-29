@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationComponentStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
@@ -31,6 +32,7 @@ import org.apache.commons.fileupload2.core.DiskFileItemFactory;
 import org.apache.commons.fileupload2.core.FileItemFactory;
 import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +42,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 
 import java.io.ByteArrayInputStream;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -118,7 +119,6 @@ public class ProcessControllerTest extends ControllerTest {
 	@Test
 	public void configure() throws Exception {
 		mockMvc.perform(post("/api/config")
-				                .param("configurationName", ANON_JOB)
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -128,7 +128,6 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		mockMvc.perform(post("/api/config")
-				                .param("configurationName", "synthetization_configuration")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -155,8 +154,7 @@ public class ProcessControllerTest extends ControllerTest {
 	@Test
 	public void configureSkipWithConfiguration() throws Exception {
 		mockMvc.perform(post("/api/config")
-				                .param("configurationName", ANON_JOB)
-				                .param("configuration", "configuration")
+				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/process/configure")
@@ -455,12 +453,13 @@ public class ProcessControllerTest extends ControllerTest {
 		                    )
 		                    .andExpect(status().isOk())
 		                    .andExpect(header().exists("Content-Disposition"))
-		                    .andExpect(header().string("Content-Disposition", "attachment; filename=\"test_user_Cinnamon-export_" + LocalDate.now() + ".zip\""))
+		                    .andExpect(header().string("Content-Disposition", Matchers.matchesPattern(
+				                    "attachment; filename=\"test_user_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}_Cinnamon\\.zip\"")))
 		                    .andExpect(content().contentType("application/zip"))
 		                    .andReturn();
 
 		final var expectedEntries = new java.util.HashMap<>(Map.ofEntries(
-				Map.entry("original-attribute_config.yaml",
+				Map.entry("configurations.yaml",
 				          MutablePair.of(false, DataConfigurationTestHelper.generateDataConfigurationAsYaml())),
 				Map.entry("original-dataset.csv", MutablePair.of(false, ResourceHelper.loadCsvFileAsString())),
 				Map.entry("anonymization.yaml",
@@ -617,8 +616,6 @@ public class ProcessControllerTest extends ControllerTest {
 		postData(false, "test_user_3");
 		mockMvc.perform(post("/api/config")
 				                .with(httpBasic("test_user_3", "changeme"))
-				                .param("configurationName", ANON_JOB)
-				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -630,8 +627,6 @@ public class ProcessControllerTest extends ControllerTest {
 
 		mockMvc.perform(post("/api/config")
 				                .with(httpBasic("test_user_3", "changeme"))
-				                .param("configurationName", "synthetization_configuration")
-				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -698,7 +693,7 @@ public class ProcessControllerTest extends ControllerTest {
 		// Test state changes
 		var updateTestProject = getTestProject();
 		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
-		assertEquals(ProcessStatus.ERROR, process.getExecutionStep().getStatus());
+		assertEquals(StageStatus.ERROR, process.getExecutionStep().getStatus());
 		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertNull(process.getServerInstance(), "Server instance has not been reset!");

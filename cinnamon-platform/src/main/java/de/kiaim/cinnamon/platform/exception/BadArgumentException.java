@@ -17,6 +17,11 @@ public class BadArgumentException extends BadRequestException {
 	 */
 	public static final String INVALID_RESOURCE_KEY = "2";
 
+	/**
+	 * Exception code for an invalid workflow ID.
+	 */
+	public static final String INVALID_WORKFLOW_ID = "3";
+
 	public BadArgumentException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

@@ -84,6 +84,16 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String ALGORITHM = "15";
 
+	/**
+	 * Error class code for {@link BadUserException}.
+	 */
+	public static final String USER = "16";
+
+	/**
+	 * Error class code for {@link BadWorkflowException}.
+	 */
+	public static final String WORKFLOW = "17";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

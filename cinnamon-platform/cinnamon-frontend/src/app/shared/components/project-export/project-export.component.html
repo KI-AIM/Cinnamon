@@ -11,6 +11,42 @@
                     <div class="settings-label">
                         Configurations to export
                     </div>
+
+                    <div><span>
+                        <mat-checkbox #resource color="primary"
+                                      [value]="'configuration.project'"
+                                      [checked]="selectedResources.includes('configuration.project')"
+                                      (input)="updateChecked()">
+                            Project Configuration
+                        </mat-checkbox>
+                    </span></div>
+                    <div><span>
+                        <mat-checkbox #resource color="primary"
+                                      [value]="'configuration.dataSource'"
+                                      [checked]="selectedResources.includes('configuration.dataSource')"
+                                      [disabled]="!statusService.isStepCompleted(Steps.UPLOAD)"
+                                      (input)="updateChecked()">
+                            Data Source Configuration
+                        </mat-checkbox>
+                    </span></div>
+                    <div><span>
+                        <mat-checkbox #resource color="primary"
+                                      [value]="'configuration.dataset'"
+                                      [checked]="selectedResources.includes('configuration.dateset')"
+                                      [disabled]="!statusService.isStepCompleted(Steps.DATA_CONFIG)"
+                                      (input)="updateChecked()">
+                            Dataset Configuration
+                        </mat-checkbox>
+                    </span></div>
+                    <div><span>
+                        <mat-checkbox #resource color="primary"
+                                      [value]="'configuration.pipeline'"
+                                      [checked]="selectedResources.includes('configuration.pipeline')"
+                                      (input)="updateChecked()">
+                            Pipeline Configuration
+                        </mat-checkbox>
+                    </span></div>
+
                     <div *ngFor="let config of configurationService.getRegisteredConfigurations()">
                         <span>
                             <mat-checkbox #resource color="primary"

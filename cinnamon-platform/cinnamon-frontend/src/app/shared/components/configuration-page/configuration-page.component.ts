@@ -504,9 +504,8 @@ export class ConfigurationPageComponent implements OnInit {
      * @private
      */
     private postConfig(configuration: Object): Observable<void> {
-        const configurationName = this.algorithmService.getConfigurationName();
         const configurationString = stringify(this.algorithmService.createConfiguration(configuration, this.selection.selectedOption));
-        return this.configurationService.storeConfig(configurationName, configurationString);
+        return this.configurationService.storeConfig(configurationString);
     }
 
     /**

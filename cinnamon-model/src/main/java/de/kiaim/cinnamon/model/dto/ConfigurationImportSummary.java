@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.ConstraintViolation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,9 @@ import lombok.Setter;
 import org.springframework.lang.Nullable;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Import summary for all configurations contained in a file.
@@ -45,7 +48,8 @@ public class ConfigurationImportSummary {
 	 */
 	public void addSuccess(final String configurationName) {
 		configurationImportSummaries.add(
-				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.SUCCESS, null));
+				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.SUCCESS, null,
+				                                   null, null));
 		updateStatus();
 	}
 
@@ -56,7 +60,8 @@ public class ConfigurationImportSummary {
 	 */
 	public void addIgnored(final String configurationName) {
 		configurationImportSummaries.add(
-				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.IGNORED, null));
+				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.IGNORED, null,
+				                                   null, null));
 	}
 
 	/**
@@ -64,10 +69,37 @@ public class ConfigurationImportSummary {
 	 *
 	 * @param configurationName The name of the configuration that caused the error.
 	 * @param errorCode         The cause of the error.
+	 * @param message           Human-readable error message.
 	 */
-	public void addError(final String configurationName, final String errorCode) {
+	public void addError(final String configurationName, final String errorCode, final String message) {
 		configurationImportSummaries.add(
-				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.ERROR, errorCode));
+				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.ERROR, errorCode,
+				                                   message, null));
+		updateStatus();
+	}
+
+	/**
+	 * Adds an error to the import summary.
+	 *
+	 * @param configurationName The name of the configuration that caused the error.
+	 * @param errorCode         The cause of the error.
+	 * @param validationErrors  Map containing the paths of values that failed validation and the validation errors.
+	 */
+	public <T> void addError(final String configurationName,
+	                         final String errorCode,
+	                         final Set<ConstraintViolation<T>> validationErrors) {
+		final Map<String, Set<String>> validationErrorsMap = validationErrors.stream()
+		                                                                     .collect(Collectors.groupingBy(
+				                                                                     a -> a.getPropertyPath()
+				                                                                           .toString(),
+				                                                                     Collectors.mapping(
+						                                                                     ConstraintViolation::getMessage,
+						                                                                     Collectors.toSet())));
+
+		configurationImportSummaries.add(
+				new ConfigurationImportSummaryPart(configurationName, ConfigurationImportPartStatus.ERROR, errorCode,
+				                                   "Validation failed. See validation errors for more details.",
+				                                   validationErrorsMap));
 		updateStatus();
 	}
 
@@ -151,5 +183,21 @@ public class ConfigurationImportSummary {
 		@Nullable
 		@Schema(description = "Null if the import was successful or ignored. Contains the error code if the import failed.")
 		private String errorCode;
+
+		/**
+		 * Human-readable error message.
+		 * Null if the import was successful or ignored.
+		 */
+		@Nullable
+		@Schema(description = "Human-readable error message. Null if the import was successful or ignored.")
+		private String errorMessage;
+
+		/**
+		 * Map containing the paths of values that failed validation and the validation errors.
+		 * Null if no validation errors occurred.
+		 */
+		@Nullable
+		@Schema(description = "Map containing the paths of values that failed validation and the validation errors. Null if no validation errors occurred.")
+		private Map<String, Set<String>> validationErrors;
 	}
 }

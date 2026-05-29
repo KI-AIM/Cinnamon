@@ -3,8 +3,8 @@ package de.kiaim.cinnamon.anonymization.service;
 import de.kiaim.cinnamon.anonymization.exception.CompatibilityAssuranceException;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAttributeConfig;
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 

@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.RangeConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.StringPatternConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
 import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
@@ -13,8 +13,8 @@ import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
-import de.kiaim.cinnamon.platform.model.file.FhirFileConfiguration;
-import de.kiaim.cinnamon.platform.model.file.FileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.util.*;
@@ -30,6 +30,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,7 +63,7 @@ class DataControllerTest extends ControllerTest {
 	void getFileNoFile() throws Exception {
 		mockMvc.perform(get("/api/data/file"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{name: null, type: null, numberOfAttributes: null}"));
+		       .andExpect(content().json("{name: null, type: null, numberOfAttributes: 0}"));
 	}
 
 	@Test
@@ -220,7 +222,7 @@ class DataControllerTest extends ControllerTest {
 		configuration.getConfigurations().get(3).setName("invalid");
 		var string = jsonMapper.writeValueAsString(configuration);
 
-		mockMvc.perform(multipart("/api/data/configuration")
+		mockMvc.perform(multipart("/api/data")
 				                .param("configuration", string))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
@@ -302,8 +304,8 @@ class DataControllerTest extends ControllerTest {
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 
-		final DataSetEntity deletedDataSet = dataSetRepository.findById(dataSetId).orElse(null);
-		assertFalse(deletedDataSet.isStoredData(), "Flag that the data is stored should be false!");
+		final Optional<DataSetEntity> deletedDataSet = dataSetRepository.findById(dataSetId);
+		assertFalse(deletedDataSet.isPresent(), "Dataset should have been deleted!");
 	}
 
 	@Test
@@ -321,12 +323,10 @@ class DataControllerTest extends ControllerTest {
 
 		final DataConfiguration configurationUpdate = DataConfigurationTestHelper.generateDataConfiguration("[0-9]*");
 		mockMvc.perform(multipart("/api/data/configuration")
-				                .param("configuration",
-				                       objectMapper.writeValueAsString(
-						                       configurationUpdate)))
-		       .andExpect(status().isOk());
+				                .param("configuration", objectMapper.writeValueAsString(configurationUpdate)))
+		       .andExpect(status().isBadRequest());
 
-		assertFalse(dataset.isStoredData(), "Dataset should have been deleted!");
+		assertTrue(dataset.isStoredData(), "Dataset should have been deleted!");
 	}
 
 	@Test
@@ -409,8 +409,8 @@ class DataControllerTest extends ControllerTest {
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
-		final DataSetEntity deletedDataSet = dataSetRepository.findById(dataSetId).get();
-		assertFalse(deletedDataSet.isConfirmedData(), "Flag that the data is confirmed should be false!");
+		final Optional<DataSetEntity> deletedDataSet = dataSetRepository.findById(dataSetId);
+		assertFalse(deletedDataSet.isPresent(), "Dataset should have been deleted!");
 	}
 
 	@Test
@@ -437,7 +437,7 @@ class DataControllerTest extends ControllerTest {
 				                       objectMapper.writeValueAsString(
 						                       configurationUpdate)))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("The data has already been confirmed!"));
+		       .andExpect(errorMessage("The data has already been stored!"));
 	}
 
 	@Test
@@ -608,7 +608,7 @@ class DataControllerTest extends ControllerTest {
 
 		final ProjectEntity project = getTestProject();
 		assertTrue(project.getOriginalData().isHasHoldOut(), "Hold-out split should have been generated!");
-		assertEquals(holdOutPercentage, project.getOriginalData().getHoldOutPercentage(),
+		assertEquals(holdOutPercentage, project.getOriginalData().getDatasetConfiguration().getHoldOutSplitPercentage(),
 		             "Hold-out percentage not set correctly!");
 
 		mockMvc.perform(get("/api/data/data")
@@ -949,7 +949,7 @@ class DataControllerTest extends ControllerTest {
 				                .param("formatErrorEncoding", "$value"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
-				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[true,'2023-11-20',null,4.2,'forty two','Hello World!']],'transformationErrors':[{'index':1,'dataTransformationErrors':[{'index':2,'errorType':'MISSING_VALUE',rawValue:''},{'index':4,'errorType':'FORMAT_ERROR',rawValue:'forty two'}]}],'rowNumbers':[0,2],'page':1,'perPage':10,total:2,'totalPages':1}"));
+				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[0,1],'page':1,'perPage':10,total:2,'totalPages':1}"));
 	}
 
 	private String wrapInQuotes(final String value) {

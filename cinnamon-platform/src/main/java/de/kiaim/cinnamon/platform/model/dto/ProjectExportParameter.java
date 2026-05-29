@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -33,11 +33,13 @@ public class ProjectExportParameter {
 
 	/**
 	 * Results to export.
+	 * If empty or null, all results will be exported.
+	 * <br>
 	 * Each entry must have one of the following forms:
 	 * <ul>
-	 *     <li>configuration.[name]</li>
+	 *     <li>configuration.['project' | 'dataSource' | 'configurations' | 'dataset' | 'pipeline' | external-configuration]</li>
 	 *     <li>pipeline.[stage].[job].['dataset' | 'statistics' | 'other']</li>
-	 *     <li>original.['dataset' | 'statistics']</li>
+	 *     <li>original.['file' | 'dataset' | 'statistics']</li>
 	 * </ul>
 	 */
 	private List<String> resources = new ArrayList<>();

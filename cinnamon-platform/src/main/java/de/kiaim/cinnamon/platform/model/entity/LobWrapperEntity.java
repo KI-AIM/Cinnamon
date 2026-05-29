@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.ByteArrayInputStream;
+
 /**
  * Wrapper class for a Lob string to prevent issues with auto-commit mode.
  *
@@ -51,5 +53,14 @@ public class LobWrapperEntity {
 	 */
 	public String getLobString() {
 		return new String(lob);
+	}
+
+	/**
+	 * Returns the lob as a stream.
+	 *
+	 * @return The LOB. As a stream.
+	 */
+	public ByteArrayInputStream getLobStream() {
+		return new ByteArrayInputStream(lob);
 	}
 }

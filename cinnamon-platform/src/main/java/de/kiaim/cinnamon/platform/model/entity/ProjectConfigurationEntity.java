@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
+import de.kiaim.cinnamon.model.configuration.project.MetricConfiguration;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -55,7 +56,7 @@ public class ProjectConfigurationEntity {
 	 */
 	@Type(JsonType.class)
 	@Column(columnDefinition = "json")
-	private Object metricConfiguration;
+	private MetricConfiguration metricConfiguration;
 
 	/**
 	 * The corresponding project.

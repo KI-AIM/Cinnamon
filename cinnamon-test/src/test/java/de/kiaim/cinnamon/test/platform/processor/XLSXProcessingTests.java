@@ -1,9 +1,9 @@
 package de.kiaim.cinnamon.test.platform.processor;
 
 
-import de.kiaim.cinnamon.model.configuration.data.ColumnConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.DateFormatConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DateFormatConfiguration;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
@@ -12,7 +12,7 @@ import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.XlsxProcessor;
 import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;

@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
-import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;

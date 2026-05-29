@@ -11,8 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 
 @Entity
 @Getter
@@ -28,12 +27,19 @@ public class UserEntity implements UserDetails {
 	private String password;
 
 	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
 	private final UserRole userRole = UserRole.ROLE_USER;
 
 	@Nullable
-	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = false, cascade = CascadeType.ALL)
+	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	@JoinColumn(name = "project_id", referencedColumnName = "id")
 	private ProjectEntity project = null;
+
+	/**
+	 * The workflows owned by this user.
+	 */
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Set<WorkflowEntity> workflows = new HashSet<>();
 
 	/**
 	 * Links the given project with this user.
@@ -47,6 +53,46 @@ public class UserEntity implements UserDetails {
 		}
 		if (newProject != null && newProject.getUser() != this) {
 			newProject.setUser(this);
+		}
+	}
+
+	public WorkflowEntity getWorkflow(final UUID workflowId) {
+		for (final WorkflowEntity workflow : workflows) {
+			if (workflow.getWorkflowId().equals(workflowId)) {
+				return workflow;
+			}
+		}
+		return null;
+	}
+
+	public void setWorkflows(final Set<WorkflowEntity> newWorkflows) {
+		for (final WorkflowEntity workflow : new HashSet<>(workflows)) {
+			removeWorkflow(workflow);
+		}
+		if (newWorkflows != null) {
+			for (final WorkflowEntity workflow : newWorkflows) {
+				addWorkflow(workflow);
+			}
+		}
+	}
+
+	public void addWorkflow(final WorkflowEntity workflow) {
+		if (workflow == null || workflows.contains(workflow)) {
+			return;
+		}
+		workflows.add(workflow);
+		if (workflow.getUser() != this) {
+			workflow.setUser(this);
+		}
+	}
+
+	public void removeWorkflow(final WorkflowEntity workflow) {
+		if (workflow == null || !workflows.contains(workflow)) {
+			return;
+		}
+		workflows.remove(workflow);
+		if (workflow.getUser() == this) {
+			workflow.setUser(null);
 		}
 	}
 

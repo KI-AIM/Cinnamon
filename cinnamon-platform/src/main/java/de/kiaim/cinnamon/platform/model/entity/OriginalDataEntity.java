@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.lang.Nullable;
 
 /**
@@ -29,9 +28,13 @@ public class OriginalDataEntity {
 	 */
 	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	@JoinColumn(name = "file_id", referencedColumnName = "id")
-	@Setter
-	@Nullable
-	private FileEntity file = null;
+	private final FileEntity file = new FileEntity();
+
+	/**
+	 * Configuration for the dataset.
+	 */
+	@Embedded
+	private final DatasetConfigurationEntity datasetConfiguration = new DatasetConfigurationEntity();
 
 	/**
 	 * The imported data set.
@@ -40,27 +43,6 @@ public class OriginalDataEntity {
 	@JoinColumn(name = "data_set_id", referencedColumnName = "id")
 	@Nullable
 	private DataSetEntity dataSet = null;
-
-	/**
-	 * If the data set has a hold-out split.
-	 */
-	@Column(nullable = false)
-	@Setter
-	private boolean hasHoldOut = false;
-
-	/**
-	 * Seed that is used for generating the hold-out split.
-	 */
-	@Column(nullable = false)
-	@Setter
-	private double holdOutSeed = 0.0f;
-
-	/**
-	 * The percentage or rows that are assigned to the hold-out split.
-	 */
-	@Column(nullable = false)
-	@Setter
-	private float holdOutPercentage = 0.0f;
 
 	/**
 	 * The corresponding project.
@@ -90,5 +72,13 @@ public class OriginalDataEntity {
 		if (newDataSet != null && newDataSet.getOriginalData() != this) {
 			newDataSet.setOriginalData(this);
 		}
+	}
+
+	/**
+	 * Whether the dataset has a hold-out split.
+	 * @return True if the dataset has a hold-out split.
+	 */
+	public boolean isHasHoldOut() {
+		return this.dataSet != null && this.dataSet.isHasHoldOut();
 	}
 }

@@ -1,6 +1,6 @@
 package de.kiaim.cinnamon.test.platform.processor;
 
-import de.kiaim.cinnamon.model.configuration.data.*;
+import de.kiaim.cinnamon.model.configuration.data.attributes.*;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
@@ -10,7 +10,7 @@ import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.DataTransformationError;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;
 import org.junit.jupiter.api.Test;

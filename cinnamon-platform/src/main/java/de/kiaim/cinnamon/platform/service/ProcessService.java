@@ -4,11 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.algorithms.Algorithm;
-import de.kiaim.cinnamon.model.configuration.data.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.pipeline.JobConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.pipeline.PipelineConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
@@ -18,8 +22,8 @@ import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
-import de.kiaim.cinnamon.platform.model.file.CsvFileConfiguration;
-import de.kiaim.cinnamon.platform.model.file.FileType;
+import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
@@ -29,8 +33,9 @@ import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
@@ -65,7 +70,7 @@ import java.util.stream.Collectors;
  * Service class for managing processes.
  */
 @Service
-@Slf4j
+@Log4j2
 public class ProcessService {
 
 	private static final String PROCESS_ID_PLACEHOLDER = "PROCESS_ID";
@@ -158,7 +163,7 @@ public class ProcessService {
 		final PipelineEntity pipeline = project.getPipelines().get(0);
 
 		for (final ExecutionStepEntity stage : pipeline.getStages()) {
-			if (stage.getStatus() == ProcessStatus.RUNNING) {
+			if (stage.getStatus() == StageStatus.RUNNING) {
 				getStatus(project, stage.getStage());
 				break;
 			}
@@ -181,7 +186,7 @@ public class ProcessService {
 	public ExecutionStepEntity getStatus(final ProjectEntity project, final Stage stage) throws InternalInvalidStateException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
-		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
+		if (executionStep.getStatus() == StageStatus.RUNNING) {
 			final var process = executionStep.getCurrentProcess();
 
 			try {
@@ -203,6 +208,43 @@ public class ProcessService {
 	}
 
 	/**
+	 * Configures the pipelines of the given project.
+	 * Currently, always uses the first pipeline because multiple pipelines are not supported yet.
+	 * The algorithm configuration is also ignored because only one configuration is supported.
+	 *
+	 * @param project   The project to be configured.
+	 * @param pipelines The configuration of the pipelines.
+	 * @throws BadStepNameException          If a job in the configuration is not part of the pipeline.
+	 * @throws BadStateException             If the pipeline is running or scheduled.
+	 * @throws InternalInvalidStateException If the pipeline was not initialized correctly.
+	 */
+	@Transactional
+	public void configurePipelines(final ProjectEntity project,
+	                               final PipelinesConfigurationDTO pipelines)
+			throws BadStepNameException, BadStateException, InternalInvalidStateException {
+
+		// Currently, always only use the first pipeline because multiple pipelines are not supported yet
+		final List<JobConfigurationDTO> jobs = pipelines.getPipelines().get(0).getJobs();
+		final Set<String> jobNames = new HashSet<>();
+
+		// Configure jobs from the config
+		for (final JobConfigurationDTO job : jobs) {
+			configureProcess(project, stepService.getStepConfiguration(job.getName()), !job.getEnabled());
+			jobNames.add(job.getName());
+		}
+
+		// Set all other job to be skipped
+		for (final Stage stage : cinnamonConfiguration.getPipeline().getStageList()) {
+			for (final Job job : stage.getJobList()) {
+				if (jobNames.contains(job.getName())) {
+					continue;
+				}
+				configureProcess(project, job, true);
+			}
+		}
+	}
+
+	/**
 	 * Configures the job by setting the configuration and the skip flag.
 	 * Currently, always uses the first configuration for the job.
 	 * If skip is true, errors for missing configurations are ignored.
@@ -218,7 +260,7 @@ public class ProcessService {
 	public void configureProcess(final ProjectEntity project, final Job job, final boolean skip)
 			throws BadStateException, InternalInvalidStateException {
 		// Get process entity
-		final Optional<ExternalProcessEntity> optional = project.getPipelines().get(0).getStageByJob(job);;
+		final Optional<ExternalProcessEntity> optional = project.getPipelines().get(0).getStageByJob(job);
 		if (optional.isEmpty()) {
 			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
 			                                        "No process entity for step '" + job.getName() + "' available!");
@@ -265,8 +307,37 @@ public class ProcessService {
 			databaseService.markProcessOutdated(externalProcess);
 		}
 
+		log.debug("Configured process for job '{}': Skip is {}", externalProcess.getJob().getName(), skip);
+
 		// Save project
 		projectRepository.save(project);
+	}
+
+	/**
+	 * Creates a pipeline configuration from the current state of the project.
+	 *
+	 * @param project The project to create the configuration for.
+	 * @return The pipeline configuration.
+	 */
+	public PipelinesConfigurationDTO exportPipelinesConfiguration(final ProjectEntity project) {
+		final PipelinesConfigurationDTO config = new PipelinesConfigurationDTO();
+
+		// Currently, always only use the first pipeline because multiple pipelines are not supported yet
+		final PipelineEntity pipeline = project.getPipelines().get(0);
+		final PipelineConfigurationDTO pipelineConfig = new PipelineConfigurationDTO();
+
+		for (final ExecutionStepEntity stage : pipeline.getStages()) {
+			for (final ExternalProcessEntity process : stage.getProcesses()) {
+				final JobConfigurationDTO jobConfig = new JobConfigurationDTO();
+				jobConfig.setName(process.getJob().getName());
+				jobConfig.setEnabled(!process.isSkip());
+				pipelineConfig.getJobs().add(jobConfig);
+			}
+		}
+
+		config.getPipelines().add(pipelineConfig);
+
+		return config;
 	}
 
 	/**
@@ -293,26 +364,39 @@ public class ProcessService {
 					       InternalApplicationConfigurationException, InternalDataSetPersistenceException,
 					       InternalInvalidStateException, InternalIOException, InternalMissingHandlingException,
 					       InternalRequestException, BadConfigurationNameException, BadAlgorithmException {
-		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
+		final var pipeline = project.getPipelines().get(0);
+		final var executionStep = pipeline.getStageByStep(stage);
 
-		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
+		if (executionStep.getStatus() == StageStatus.RUNNING) {
 			return executionStep;
 		}
 
-		executionStep.setStatus(ProcessStatus.RUNNING);
-
 		// Start the first step
 		try {
-			if (job != null) {
-				startJob(executionStep, job);
-			} else {
-				// Reset status from potential previous execution
-				for (final ExternalProcessEntity externalProcessEntity : executionStep.getProcesses()) {
-					resetProcess(externalProcessEntity);
-				}
+			int jobIndex = 0;
 
-				startNext(executionStep);
+			if (job != null) {
+				final var process = executionStep.getProcess(job);
+				if (process.isEmpty()) {
+					throw new BadStepNameException(BadStepNameException.NOT_IN_STAGE,
+					                               "Job " + job.getName() + " is not contained in stage " +
+					                               executionStep.getStage().getStageName());
+				}
+				jobIndex = process.get().getJobIndex();
 			}
+
+			// Reset status from potential previous execution
+			for (int i = jobIndex; i < executionStep.getProcesses().size(); i++) {
+				resetProcess(executionStep.getProcesses().get(i));
+			}
+			if (pipeline.isRunAllStages()) {
+				for (int i = executionStep.getStageIndex() + 1; i < pipeline.getStages().size(); i++) {
+					resetStage(pipeline.getStages().get(i));
+				}
+			}
+
+			startNext(executionStep, jobIndex);
+
 		} catch (final ApiException e) {
 			var stageInfo = executionStepMapper.toDto(executionStep);
 			e.getErrorDetails().setStageInfo(stageInfo);
@@ -330,61 +414,95 @@ public class ProcessService {
 	}
 
 	/**
+	 * Starts the pipeline.
+	 * Previous results are removed.
+	 *
+	 * @param pipeline The pipeline to start.
+	 * @throws BadAlgorithmException                     If the algorithm is not available.
+	 * @throws BadConfigurationNameException             If the configuration name used by the process is not valid.
+	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
+	 * @throws BadStateException                         If a process of the stage is running.
+	 *                                                   If no original dataset exists but is required by a process.
+	 * @throws BadStepNameException                      If the given job is not part of the given stage.
+	 * @throws InternalApplicationConfigurationException If the given step is not configured.
+	 * @throws InternalDataSetPersistenceException       If a dataset table could not be deleted.
+	 *                                                   If the dataset could not be exported due to an internal error.
+	 * @throws InternalInvalidStateException             If no ExternalProcessEntity exists for the given step.
+	 *                                                   If a finished process does not contain a dataset.
+	 * @throws InternalIOException                       If the request body could not be created.
+	 * @throws InternalMissingHandlingException          If no implementation exists for a valid configuration.
+	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
+	 */
+	@Transactional
+	public void start(final PipelineEntity pipeline)
+			throws BadAlgorithmException, BadConfigurationNameException, BadDataSetIdException, BadStateException,
+					       BadStepNameException, InternalApplicationConfigurationException,
+					       InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException,
+					       InternalMissingHandlingException, InternalRequestException {
+		// Start the pipeline from the first job
+		final Stage firstStage = pipeline.getStages().get(0).getStage();
+		start(pipeline.getProject(), firstStage, null);
+	}
+
+	/**
 	 * Cancels the execution of the given stage in the given project.
 	 *
 	 * @param project The project.
 	 * @param stage   The step.
 	 * @return The updated execution entity.
-	 * @throws InternalApplicationConfigurationException If the step is not configured.
-	 * @throws InternalInvalidStateException If the process has no server instance.
+	 * @throws InternalInvalidStateException If the process to be canceled has no server instance assigned.
 	 */
 	@Transactional
 	public ExecutionStepEntity cancel(final ProjectEntity project, final Stage stage)
-			throws InternalApplicationConfigurationException, InternalInvalidStateException {
+			throws InternalInvalidStateException {
 		final var executionStep = project.getPipelines().get(0).getStageByStep(stage);
-
-		if (executionStep.getStatus() == ProcessStatus.RUNNING) {
-			// Cancel the current process
-			cancelProcess(executionStep.getCurrentProcess());
-
-			// Update
-			executionStep.setStatus(ProcessStatus.CANCELED);
-			executionStep.setCurrentProcessIndex(null);
-
-			projectRepository.save(project);
-		}
-
+		cancelStage(executionStep);
 		return executionStep;
+	}
+
+	/**
+	 * Cancels the pipeline by canceling all running processes.
+	 *
+	 * @param pipeline The pipeline to cancel.
+	 * @throws InternalInvalidStateException If the process to be canceled has no server instance assigned.
+	 */
+	@Transactional
+	public void cancel(final PipelineEntity pipeline) throws InternalInvalidStateException {
+		for (final ExecutionStepEntity stage : pipeline.getStages()) {
+			if (stage.getStatus() == StageStatus.RUNNING) {
+				cancel(pipeline.getProject(), stage.getStage());
+				break;
+			}
+		}
 	}
 
 	/**
 	 * Deletes the pipeline of the given project by deleting all stages.
 	 *
 	 * @param project The project.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
+	@Transactional
 	public void deletePipeline(final ProjectEntity project)
-			throws InternalDataSetPersistenceException, BadStateException {
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		final PipelineEntity pipeline = project.getPipelines().get(0);
 		for (final ExecutionStepEntity stage : pipeline.getStages()) {
 			deleteStage(stage);
 		}
-		projectRepository.save(project);
 	}
 
 	/**
-	 * Resets the given and all following stages by deleting all results and resetting the status.
+	 * Deletes all results and configurations of the given stage.
 	 *
 	 * @param project The project.
 	 * @param stage   The step.
-	 * @return The updated execution entity.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
 	@Transactional
-	public ExecutionStepEntity deleteStage(final ProjectEntity project, final Stage stage)
-			throws BadStateException, InternalDataSetPersistenceException {
+	public void deleteStage(final ProjectEntity project, final Stage stage)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		// Check if the pipeline contains the given stage.
 		final ExecutionStepEntity executionStep = project.getPipelines().get(0).getStageByStep(stage);
 
@@ -396,7 +514,22 @@ public class ProcessService {
 		}
 
 		projectRepository.save(project);
-		return executionStep;
+	}
+
+	/**
+	 * Checks if the given pipeline is running.
+	 *
+	 * @param pipeline The pipeline to check.
+	 * @return True if the pipeline is running, false otherwise.
+	 */
+	public boolean isPipelineRunning(final PipelineEntity pipeline) {
+		for (final var stage : pipeline.getStages()) {
+			if (stage.getStatus() == StageStatus.RUNNING) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -436,17 +569,25 @@ public class ProcessService {
 		final boolean containsError = tryFinishProcess(process, resultFiles, errorRequest);
 
 		if (process instanceof ExternalProcessEntity externalProcess) {
+			final Map<String, String> contextMap = MDC.getCopyOfContextMap();
 			// Create an async task so the callback can be finished, to free up the connection to the external server
 			taskScheduler.schedule(() -> {
-				// Start the next step of this process
-				if (!containsError) {
-					transactionTemplate.executeWithoutResult(
-							status -> tryStartNext(externalProcess.getExecutionStep().getId()));
+				if (contextMap != null) {
+					MDC.setContextMap(contextMap);
 				}
+				try {
+					// Start the next step of this process
+					if (!containsError) {
+						transactionTemplate.executeWithoutResult(
+								status -> tryStartNext(externalProcess.getExecutionStep().getId(), process.getJobIndex() + 1));
+					}
 
-				// Start the next process of the same step
-				transactionTemplate.executeWithoutResult(
-						status -> startScheduledProcess(externalProcess.getJob().getEndpoint(), instance));
+					// Start the next process of the same step
+					transactionTemplate.executeWithoutResult(
+							status -> startScheduledProcess(externalProcess.getJob().getEndpoint(), instance));
+				} finally {
+					MDC.clear();
+				}
 			}, Instant.now().plusSeconds(DELAY_START_NEXT));
 		}
 	}
@@ -474,10 +615,10 @@ public class ProcessService {
 		return containsError;
 	}
 
-	private void tryStartNext(final Long stageId) {
+	private void tryStartNext(final Long stageId, final Integer jobIndex) {
 		try {
 			final ExecutionStepEntity stage = executionStepRepository.findById(stageId).orElseThrow();
-			startNext(stage);
+			startNext(stage, jobIndex);
 		} catch (final Exception e) {
 			log.error("Failed to start process!", e);
 		}
@@ -623,6 +764,7 @@ public class ProcessService {
 		if (containsError) {
 			setProcessError(process, errorMessage);
 		} else {
+			log.debug("Finished process '{}'", process.getUuid());
 			process.setExternalProcessStatus(ProcessStatus.FINISHED);
 			process.setServerInstance(null);
 		}
@@ -661,6 +803,7 @@ public class ProcessService {
 	 *
 	 * @param externalProcess The process to be started.
 	 * @throws BadAlgorithmException               If the algorithm is not available.
+	 * @throws BadConfigurationNameException       If the configuration name used by the process is not valid.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
 	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
@@ -678,6 +821,10 @@ public class ProcessService {
 		                                                       .get(externalProcess.getEndpoint());
 		final ExternalServer server = endpoint.getServer();
 
+		// Generate new UUID
+		final UUID uuid = UUID.randomUUID();
+		externalProcess.setUuid(uuid);
+
 		final ExternalServerInstance instance = externalServerInstanceService.findAvailableExternalServerInstance(server, false);
 		if (instance != null) {
 			doStartBackgroundProcess(externalProcess, instance);
@@ -692,6 +839,7 @@ public class ProcessService {
 	 *
 	 * @param externalProcess The process to be started.
 	 * @throws BadAlgorithmException               If the algorithm is not available.
+	 * @throws BadConfigurationNameException       If the configuration name used by the process is not valid.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
 	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
@@ -755,26 +903,93 @@ public class ProcessService {
 			formData.add("pid", backgroundProcess.getExternalId());
 
 			// Do the request
-			final WebClient webClient = WebClient.builder().baseUrl(serverUrl).build();
+			final HttpClient client = HttpClient.create()
+			                                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+			                                            cinnamonConfiguration.getRequestsCancelConnectionTimeout())
+			                                    .responseTimeout(Duration.ofMillis(
+			                                            cinnamonConfiguration.getRequestsCancelResponseTimeout()));
+			final WebClient webClient = WebClient.builder()
+			                                     .clientConnector(new ReactorClientHttpConnector(client))
+			                                     .baseUrl(serverUrl)
+			                                     .build();
 			webClient.method(ese.getCancelHttpMethod().asHttpMethod())
 			         .uri(cancelEndpoint)
 			         .body(BodyInserters.fromFormData(formData))
 			         .retrieve()
 			         .onStatus(HttpStatusCode::isError,
 			                   b -> {
-				                   log.warn("Failed to cancel the process! Got status of {}", b.statusCode());
+				                   log.warn("Failed to cancel the process on the external module! Got status of {}",
+				                            b.statusCode());
 				                   return null;
 			                   })
 			         .toBodilessEntity()
-			         .onErrorComplete()
+			         .onErrorComplete(throwable -> {
+						 log.warn("Failed to cancel the process on the external module!", throwable);
+				         return true;
+			         })
 			         .block();
 		}
 
 		backgroundProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
 		backgroundProcess.setServerInstance(null);
+		log.debug("Canceled process '{}'", backgroundProcess.getUuid());
+
 		startScheduledProcess(ese, esi);
 
 		backgroundProcessRepository.save(backgroundProcess);
+	}
+
+	/**
+	 * Continues the pipeline starting from the process with the given index in the given stage.
+	 *
+	 * @param executionStep The stage to start from.
+	 * @param jobIndex The job index to start from.
+	 * @throws BadAlgorithmException               If the algorithm is not available.
+	 * @throws BadConfigurationNameException       If the configuration name used by the process to start is not valid.
+	 * @throws BadStateException                   If no original data set exist.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
+	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
+	 *                                             If a finished process does not contain a dataset.
+	 * @throws InternalIOException                 If the request could not be created.
+	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
+	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
+	 */
+	private void startNext(final ExecutionStepEntity executionStep, final Integer jobIndex)
+			throws BadAlgorithmException, BadConfigurationNameException, BadStateException,
+					       InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException,
+					       InternalMissingHandlingException, InternalRequestException {
+		final PipelineEntity pipeline = executionStep.getPipeline();
+
+		int targetStage = executionStep.getStageIndex();
+
+		// Check if previous stages are finished
+		for (int i = 0; i < targetStage; i++) {
+			final var stage = pipeline.getStages().get(i);
+			if (stage.getStatus() != StageStatus.FINISHED) {
+				throw new BadStateException(BadStateException.PRECEDING_STAGE_NOT_FINISHED,
+				                            "The preceding stage '" + stage.getStage().getStageName() +
+				                            "' is not finished!");
+			}
+		}
+
+		// Start the next job
+		executionStep.setStatus(StageStatus.RUNNING);
+		startNextJob(executionStep, jobIndex);
+
+		// Search for job in next stages
+		if (executionStep.getStatus() == StageStatus.FINISHED && pipeline.isRunAllStages()) {
+			for (int i = targetStage + 1; i < pipeline.getStages().size(); i++) {
+				final var stage = pipeline.getStages().get(i);
+
+				stage.setStatus(StageStatus.RUNNING);
+				log.debug("Starting next stage '{}'...", stage.getStage().getStageName());
+				startNextJob(stage, 0);
+
+				if (stage.getStatus() == StageStatus.RUNNING) {
+					break;
+				}
+			}
+		}
 	}
 
 	/**
@@ -782,131 +997,41 @@ public class ProcessService {
 	 * Results of the following jobs are cleared.
 	 *
 	 * @param executionStep The stage.
-	 * @param job The job to start.
+	 * @param jobIndex      The job to start.
 	 * @throws BadAlgorithmException               If the algorithm is not available.
+	 * @throws BadConfigurationNameException       If the configuration name used by the process is not valid.
 	 * @throws BadStateException                   If no original data set exist.
-	 * @throws BadStepNameException                If the given job is not part of the given stage.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
 	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
-	 *                                             If a finished process does not contain data set.
+	 *                                             If a finished process does not contain a dataset.
 	 * @throws InternalIOException                 If the request could not be created.
 	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
 	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
-	 *
 	 */
-	private void startJob(final ExecutionStepEntity executionStep, final Job job)
-			throws BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalIOException,
-					       InternalInvalidStateException, InternalMissingHandlingException, InternalRequestException,
-					       BadConfigurationNameException, BadAlgorithmException {
+	private void startNextJob(final ExecutionStepEntity executionStep, final Integer jobIndex)
+			throws BadAlgorithmException, BadConfigurationNameException, BadStateException,
+					       InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException,
+					       InternalMissingHandlingException, InternalRequestException {
+		// Check that previous jobs are finished
+		for (int i = 0; i < jobIndex; i++) {
+			final ExternalProcessEntity processCandidate = executionStep.getProcesses().get(i);
+			if (processCandidate.getExternalProcessStatus() != ProcessStatus.FINISHED &&
+			    processCandidate.getExternalProcessStatus() != ProcessStatus.SKIPPED) {
+				throw new BadStateException(BadStateException.PRECEDING_JOB_NOT_FINISHED,
+				                            "The preceding job '" + processCandidate.getJob().getName() +
+				                            "' is not finished or skipped!");
+			}
+		}
 
+		// Search next job to start
 		ExternalProcessEntity process = null;
-		boolean foundNext = false;
 
-		for (final var processCandidate : executionStep.getProcesses()) {
-			if (process == null && processCandidate.getJob().getName().equals(job.getName())) {
-				process = processCandidate;
-			}
+		for (int i = jobIndex; i < executionStep.getProcesses().size(); i++) {
+			final ExternalProcessEntity processCandidate = executionStep.getProcesses().get(i);
 
-			if (process == null) {
-				// Validate that preceding jobs are finished or skipped
-				if (processCandidate.getExternalProcessStatus() != ProcessStatus.FINISHED &&
-				    processCandidate.getExternalProcessStatus() != ProcessStatus.SKIPPED) {
-					throw new BadStateException(BadStateException.PRECEDING_JOB_NOT_FINISHED,
-					                            "The preceding job '" + processCandidate.getJob().getName() +
-					                            "' is not finished or skipped!");
-				}
-			} else {
-				// Reset status from potential previous execution for the following steps
-				resetProcess(processCandidate);
-
-				if (!foundNext) {
-					if (processCandidate.isSkip()) {
-						processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
-					} else {
-						// Check if a hold-out split is required and present.
-						final boolean requiresHoldOut = stepService.requiresHoldOutSplit(processCandidate.getJob());
-						final boolean hasHoldOut = processCandidate.getProject().getOriginalData().isHasHoldOut();
-
-						if (requiresHoldOut && !hasHoldOut) {
-							processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
-							processCandidate.setStatus("The process requires a hold out split, but no hold out split is present!");
-						} else {
-							foundNext = true;
-						}
-					}
-				}
-			}
-		}
-
-		if (process == null) {
-			throw new BadStepNameException(BadStepNameException.NOT_IN_STAGE,
-			                               "Job " + job.getName() + " is not contained in stage " +
-			                               executionStep.getStage().getStageName());
-		}
-
-		if (foundNext) {
-			executionStep.setCurrentProcessIndex(process.getJobIndex());
-			startOrScheduleProcess(process);
-		} else {
-			executionStep.setStatus(ProcessStatus.FINISHED);
-		}
-
-	}
-
-	/**
-	 * Starts the next process of the given ExecutionStep.
-	 * If the execution is not started, the first step will be started.
-	 * If a process requires a hold-out split but none exists, the step will be skipped regardless of the configuration.
-	 * If the last step is finished, the execution will be finished.
-	 *
-	 * @param executionStep The execution step.
-	 * @throws BadAlgorithmException               If the algorithm is not available.
-	 * @throws BadStateException                   If no original data set exist.
-	 * @throws InternalDataSetPersistenceException If the data set could not be exported.
-	 * @throws InternalInvalidStateException       If no ExternalProcessEntity exists for the given step.
-	 *                                             If a finished process does not contain data set.
-	 * @throws InternalIOException                 If the request could not be created.
-	 * @throws InternalMissingHandlingException    If no implementation exists for a valid configuration.
-	 * @throws InternalRequestException            If the request to the external server for starting the process failed.
-	 */
-	private void startNext(final ExecutionStepEntity executionStep)
-			throws BadStateException, InternalDataSetPersistenceException, InternalInvalidStateException,
-					       InternalIOException, InternalMissingHandlingException, InternalRequestException,
-					       BadConfigurationNameException, BadAlgorithmException {
-		// Get the next step
-		Integer nextJob = null;
-		ExternalProcessEntity nextProcess = null;
-
-		Integer lastJob = executionStep.getCurrentProcessIndex();
-		int jobCandidate;
-		ExternalProcessEntity processCandidate;
-		boolean foundNext = false;
-
-		while (!foundNext) {
-			if (lastJob == null) {
-				jobCandidate = 0;
-			} else {
-				final var lastStepStatus = executionStep.getProcess(lastJob).getExternalProcessStatus();
-				if (!(lastStepStatus == ProcessStatus.FINISHED || lastStepStatus == ProcessStatus.SKIPPED)) {
-					throw new InternalInvalidStateException(InternalInvalidStateException.LAST_STEP_NOT_FINISHED,
-					                                        "Cannot start a process if the previous process is not finished or skipped!");
-				}
-
-				if (lastJob < executionStep.getProcesses().size() - 1) {
-					// Start the next process
-					jobCandidate = lastJob + 1;
-				} else {
-					break;
-				}
-			}
-
-			executionStep.setCurrentProcessIndex(jobCandidate);
-			processCandidate = executionStep.getProcess(jobCandidate);
-
-			// Check if the process should be skipped
 			if (processCandidate.isSkip()) {
+				log.debug("Skipped job '{}'", processCandidate.getJob().getName());
 				processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
-				lastJob = jobCandidate;
 			} else {
 				// Check if a hold-out split is required and present.
 				final boolean requiresHoldOut = stepService.requiresHoldOutSplit(processCandidate.getJob());
@@ -914,23 +1039,23 @@ public class ProcessService {
 
 				if (requiresHoldOut && !hasHoldOut) {
 					processCandidate.setExternalProcessStatus(ProcessStatus.SKIPPED);
-					processCandidate.setStatus("The process requires a hold out split, but no hold out split is present!");
-					lastJob = jobCandidate;
+					processCandidate.setStatus(
+							"The process requires a hold out split, but no hold out split is present!");
 				} else {
-					foundNext = true;
-					nextJob = jobCandidate;
-					nextProcess = processCandidate;
+					process = processCandidate;
+					break;
 				}
 			}
 		}
 
-		// Update the execution
-		executionStep.setCurrentProcessIndex(nextJob);
-
-		if (nextJob != null) {
-			startOrScheduleProcess(nextProcess);
+		if (process !=  null) {
+			log.debug("Starting next job '{}'...", process.getJob().getName());
+			executionStep.setCurrentProcessIndex(process.getJobIndex());
+			startOrScheduleProcess(process);
 		} else {
-			executionStep.setStatus(ProcessStatus.FINISHED);
+			executionStep.setCurrentProcessIndex(null);
+			executionStep.setStatus(StageStatus.FINISHED);
+			log.debug("Finished stage '{}'", executionStep.getStage().getStageName());
 		}
 	}
 
@@ -986,6 +1111,7 @@ public class ProcessService {
 	private void scheduleProcess(final BackgroundProcessEntity externalProcess) {
 		externalProcess.setScheduledTime(Timestamp.valueOf(LocalDateTime.now()));
 		externalProcess.setExternalProcessStatus(ProcessStatus.SCHEDULED);
+		log.debug("Scheduling process '{}'...", externalProcess.getUuid());
 	}
 
 	/**
@@ -1013,12 +1139,10 @@ public class ProcessService {
 			try {
 				doStartBackgroundProcess(externalProcess, instance);
 				externalProcess.setScheduledTime(null);
-				projectRepository.save(externalProcess.getProject());
 				break;
 			} catch (final ApiException e) {
 				log.warn("Failed to start scheduled process!", e);
 				setProcessError(externalProcess, e.getMessage());
-				projectRepository.save(externalProcess.getProject());
 			}
 		}
 	}
@@ -1029,6 +1153,7 @@ public class ProcessService {
 	 * @param externalProcess The process to be started.
 	 * @param instance        The instance to be used.
 	 * @throws BadAlgorithmException               If the algorithm is not available.
+	 * @throws BadConfigurationNameException       If the configuration name used by the process is not valid.
 	 * @throws BadStateException                   If no original data set exist.
 	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
 	 * @throws InternalInvalidStateException       If a finished process does not contain a dataset.
@@ -1040,6 +1165,11 @@ public class ProcessService {
 			throws InternalDataSetPersistenceException, InternalIOException, InternalRequestException,
 					       BadStateException, InternalInvalidStateException, InternalMissingHandlingException,
 					       BadConfigurationNameException, BadAlgorithmException {
+		if (externalProcess.getUuid() == null) {
+			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_UUID,
+			                                        "The process has no UUID!");
+		}
+
 		final var endpoint = cinnamonConfiguration.getExternalServerEndpoints().get(externalProcess.getEndpoint());
 
 		// Prepare body
@@ -1054,11 +1184,7 @@ public class ProcessService {
 			httpService.addConfig(configuration, endpoint, bodyBuilder);
 		}
 
-		// Generate new UUID
-		final UUID uuid = UUID.randomUUID();
-		externalProcess.setUuid(uuid);
-
-		bodyBuilder.part("session_key", uuid.toString());
+		bodyBuilder.part("session_key", externalProcess.getUuid().toString());
 		final String callbackHost = instance.getCallbackHost();
 		final var serverAddress = ServletUriComponentsBuilder.newInstance()
 		                                                     .scheme(this.sslEnabled ? "https" : "http")
@@ -1068,16 +1194,18 @@ public class ProcessService {
 		                                                     .build()
 		                                                     .toUriString();
 
-		bodyBuilder.part(endpoint.getCallbackPartName(), serverAddress + "/api/process/" + uuid + "/callback");
+		bodyBuilder.part(endpoint.getCallbackPartName(),
+		                 serverAddress + "/api/process/" + externalProcess.getUuid() + "/callback");
+
+		// Build the URL
+		final String serverUrl = instance.getUrl();
+		String url = endpoint.getProcessEndpoint().isBlank()
+		             ? getProcessUrl(externalProcess.getConfigurationString(), endpoint.getConfigurationName())
+		             : endpoint.getProcessEndpoint();
+		url = injectUrlParameter(url, externalProcess);
 
 		// Do the request
 		try {
-			final String serverUrl = instance.getUrl();
-			String url = endpoint.getProcessEndpoint().isBlank()
-			             ? getProcessUrl(externalProcess.getConfigurationString(), endpoint.getConfigurationName())
-			             : endpoint.getProcessEndpoint();
-			url = injectUrlParameter(url, externalProcess);
-
 			HttpClient client = HttpClient.create()
 			                              .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
 			                              .responseTimeout(Duration.ofSeconds(10));
@@ -1102,6 +1230,8 @@ public class ProcessService {
 			externalProcess.setExternalId(response.getPid());
 			externalProcess.setExternalProcessStatus(ProcessStatus.RUNNING);
 			externalProcess.setServerInstance(instance.getId());
+			log.debug("Started process '{}' with external ID '{}' on server instance '{}'!", externalProcess.getUuid(),
+			          response.getPid(), instance.getId());
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "start the process");
 			throw new InternalRequestException(InternalRequestException.PROCESS_START, message);
@@ -1195,6 +1325,7 @@ public class ProcessService {
 	}
 
 	public void setProcessError(final BackgroundProcessEntity process, final String message) {
+		log.debug("Aborted process '{}' due to an error", process.getUuid());
 		process.setExternalProcessStatus(ProcessStatus.ERROR);
 		process.setServerInstance(null);
 		process.setScheduledTime(null);
@@ -1204,7 +1335,7 @@ public class ProcessService {
 			externalProcess.setStatus(message);
 
 			final ExecutionStepEntity executionStep = externalProcess.getExecutionStep();
-			executionStep.setStatus(ProcessStatus.ERROR);
+			executionStep.setStatus(StageStatus.ERROR);
 			executionStep.setCurrentProcessIndex(null);
 		}
 	}
@@ -1219,7 +1350,7 @@ public class ProcessService {
 			currentProcess.setStatus(message);
 		}
 
-		executionStep.setStatus(ProcessStatus.ERROR);
+		executionStep.setStatus(StageStatus.ERROR);
 		executionStep.setCurrentProcessIndex(null);
 	}
 
@@ -1228,19 +1359,18 @@ public class ProcessService {
 	}
 
 	/**
-	 * Resets the given stage by deleting all results and resetting the status.
+	 * Deletes all results and configurations of the given stage.
+	 * If the stage is running, the process is aborted.
 	 *
 	 * @param executionStep Stage to delete.
-	 * @return The updated execution entity.
-	 * @throws BadStateException                   If a process of the stage is running.
 	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
-	private ExecutionStepEntity deleteStage(final ExecutionStepEntity executionStep)
-			throws BadStateException, InternalDataSetPersistenceException {
-		if (executionStep.getStatus() == ProcessStatus.RUNNING ||
-		    executionStep.getStatus() == ProcessStatus.SCHEDULED) {
-			throw new BadStateException(BadStateException.PROCESS_STARTED,
-			                            "Stage cannot be deleted because processes are running");
+	@Transactional
+	protected void deleteStage(final ExecutionStepEntity executionStep)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		if (executionStep.getStatus() == StageStatus.RUNNING) {
+			cancelStage(executionStep);
 		}
 
 		for (final ExternalProcessEntity externalProcessEntity : executionStep.getProcesses()) {
@@ -1249,9 +1379,44 @@ public class ProcessService {
 		}
 
 		executionStep.setCurrentProcessIndex(null);
-		executionStep.setStatus(ProcessStatus.NOT_STARTED);
+		executionStep.setStatus(StageStatus.NOT_STARTED);
+	}
 
-		return executionStep;
+	@Transactional
+	protected void cancelStage(final ExecutionStepEntity executionStep) throws InternalInvalidStateException {
+		if (executionStep.getStatus() != StageStatus.RUNNING) {
+			return;
+		}
+
+		// Cancel the current process
+		cancelProcess(executionStep.getCurrentProcess());
+
+		// Update
+		executionStep.setStatus(StageStatus.CANCELED);
+		executionStep.setCurrentProcessIndex(null);
+	}
+
+	/**
+	 * Resets the results of previous runs for the given stage.
+	 * Configurations are kept.
+	 *
+	 * @param executionStep The stage to reset.
+	 * @throws BadStateException                   If a process of the stage is running.
+	 * @throws InternalDataSetPersistenceException If a dataset table could not be deleted.
+	 */
+	private void resetStage(final ExecutionStepEntity executionStep)
+			throws BadStateException, InternalDataSetPersistenceException {
+		if (executionStep.getStatus() == StageStatus.RUNNING) {
+			throw new BadStateException(BadStateException.PROCESS_STARTED,
+			                            "Stage cannot be reset because processes are running");
+		}
+
+		executionStep.setCurrentProcessIndex(null);
+		executionStep.setStatus(StageStatus.NOT_STARTED);
+
+		for (final ExternalProcessEntity externalProcessEntity : executionStep.getProcesses()) {
+			resetProcess(externalProcessEntity);
+		}
 	}
 
 	/**

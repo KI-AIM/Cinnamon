@@ -107,10 +107,22 @@
                 </ng-container>
                 <ng-template #stringInput>
                     <mat-form-field class="input">
-                        <input type="text" [formControlName]="configurationInputDefinition.name"
-                               [id]="configurationInputDefinition.name"
-                               (change)="form.controls[configurationInputDefinition.name].setValue(form.controls[configurationInputDefinition.name].value.trim());"
-                               matInput/>
+                        <ng-container *ngIf="isMultilineStringInput(); else plainTextInput">
+                            <textarea
+                                matInput
+                                class="input-textarea"
+                                [formControlName]="configurationInputDefinition.name"
+                                [id]="configurationInputDefinition.name"
+                                [rows]="configurationInputDefinition.rows || 4"
+                                (change)="form.controls[configurationInputDefinition.name].setValue(form.controls[configurationInputDefinition.name].value.trim());">
+                            </textarea>
+                        </ng-container>
+                        <ng-template #plainTextInput>
+                            <input type="text" [formControlName]="configurationInputDefinition.name"
+                                   [id]="configurationInputDefinition.name"
+                                   (change)="form.controls[configurationInputDefinition.name].setValue(form.controls[configurationInputDefinition.name].value.trim());"
+                                   matInput/>
+                        </ng-template>
                         <mat-error *ngIf="form.controls[configurationInputDefinition.name].hasError('required')">
                             Value must not be empty
                         </mat-error>

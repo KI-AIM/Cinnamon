@@ -5,7 +5,10 @@ import { TitleService } from "@core/services/title-service.service";
 import {
     AnonymizationAttributeConfigurationService
 } from "@features/anonymization/services/anonymization-attribute-configuration.service";
-import { AnonymizationAttributeRowConfiguration } from "@shared/model/anonymization-attribute-config";
+import {
+    AnonymizationAttributeRowConfiguration,
+    ConfigurationObject
+} from "@shared/model/anonymization-attribute-config";
 import { AlgorithmService, ConfigurationInfo } from "@shared/services/algorithm.service";
 import { Observable } from "rxjs";
 import {
@@ -53,7 +56,9 @@ export class AnonymizationConfigurationComponent implements OnInit {
                 "Attribute Anonymization Configuration",
                 "Define anonymization settings for each attribute. Each attribute requires a protection strategy and an interval size if applicable.",
                 this.anonymizationAttributeConfigurationService.formGroupName,
-                (form: FormGroup, configs: AnonymizationAttributeRowConfiguration[] | null, disabled: boolean) => this.anonymizationAttributeConfigurationService.initForm(form, configs, disabled),
+                (form: FormGroup, configs: ConfigurationObject[] | null, disabled: boolean) => {
+                    this.anonymizationAttributeConfigurationService.initForm(form, configs as AnonymizationAttributeRowConfiguration[] | null, disabled);
+                },
             ),
         );
         this.additionalConfigs = new ConfigurationAdditionalConfigs(configs);

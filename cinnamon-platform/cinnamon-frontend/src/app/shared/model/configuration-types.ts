@@ -2,12 +2,14 @@ import { DateFormatConfiguration } from "./date-format-configuration";
 import { DateTimeFormatConfiguration } from "./date-time-format-configuration";
 import { StringPatternConfiguration } from "./string-pattern-configuration";
 import { RangeConfiguration } from "./range-configuration";
+import { TextLanguageConfiguration } from "./text-language-configuration";
 
 export enum ConfigurationType {
 	DATEFORMAT = "DATEFORMAT",
 	DATETIMEFORMAT = "DATETIMEFORMAT",
 	RANGE = "RANGE",
 	STRINGPATTERN = "STRINGPATTERN",
+	TEXTLANGUAGE = "TEXTLANGUAGE",
 }
 
 /**
@@ -24,6 +26,8 @@ export function getConfigurationTypeForConfigurationName(configurationName: stri
             return ConfigurationType.RANGE;
         case StringPatternConfiguration.name:
             return ConfigurationType.STRINGPATTERN;
+        case TextLanguageConfiguration.name:
+            return ConfigurationType.TEXTLANGUAGE;
         default:
                 return null;
     }
@@ -52,6 +56,9 @@ export const ConfigurationTypeMetadata: Record<ConfigurationType, ConfigurationT
     [ConfigurationType.STRINGPATTERN]: {
         displayName: "String Pattern",
     },
+    [ConfigurationType.TEXTLANGUAGE]: {
+        displayName: "Text Language",
+    },
 }
 
 export function getConfigurationForConfigurationType(
@@ -66,5 +73,7 @@ export function getConfigurationForConfigurationType(
 			return RangeConfiguration.name;
 		case ConfigurationType.STRINGPATTERN:
 			return StringPatternConfiguration.name;
+		case ConfigurationType.TEXTLANGUAGE:
+			return TextLanguageConfiguration.name;
 	}
 }

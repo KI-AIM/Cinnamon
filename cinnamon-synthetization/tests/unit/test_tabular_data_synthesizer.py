@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from synthetic_tabular_data_generator.tabular_data_synthesizer import (
+    SynthesizerOperationError,
     TabularDataSynthesizer,
 )
 
@@ -66,6 +67,8 @@ def test_public_methods_delegate_to_private_methods():
     assert sample.equals(synth.sample_result)
     assert model == b"model"
     assert loaded is synth
+    assert synth.is_initialized_for_fit is True
+    assert synth.is_ready_for_sampling is True
     assert synth.called == [
         ("anonymization", config),
         ("attribute", config),
@@ -82,8 +85,37 @@ def test_public_methods_delegate_to_private_methods():
 def test_error_handler_wraps_exceptions():
     synth = ErrorSynthesizer()
 
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(SynthesizerOperationError) as excinfo:
+        synth.initialize_anonymization_configuration({})
+        synth.initialize_attribute_configuration({})
+        synth.initialize_dataset(pd.DataFrame({"a": [1]}))
+        synth.initialize_synthesizer()
         synth.fit()
 
-    assert "Error in fitting the synthesizer" in str(excinfo.value)
+    assert "Error during fitting" in str(excinfo.value)
     assert isinstance(excinfo.value.__cause__, ValueError)
+
+
+def test_fit_requires_full_initialization():
+    synth = DummySynthesizer()
+
+    with pytest.raises(SynthesizerOperationError) as excinfo:
+        synth.fit()
+
+    assert "must be initialized with anonymization configuration" in str(excinfo.value)
+
+
+def test_sample_requires_fit_before_sampling():
+    synth = DummySynthesizer()
+    config = {"k": "v"}
+    dataset = pd.DataFrame({"a": [1]})
+
+    synth.initialize_anonymization_configuration(config)
+    synth.initialize_attribute_configuration(config)
+    synth.initialize_dataset(dataset)
+    synth.initialize_synthesizer()
+
+    with pytest.raises(SynthesizerOperationError) as excinfo:
+        synth.sample()
+
+    assert "must be fitted before sampling" in str(excinfo.value)

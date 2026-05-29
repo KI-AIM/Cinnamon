@@ -45,6 +45,7 @@ public class DataTransformationHelper {
             case DATE_TIME -> new DateTimeData(null);
             case DECIMAL -> new DecimalData(null);
             case INTEGER -> new IntegerData(null);
+            case TEXT -> new TextData(null);
             case STRING -> new StringData(null);
             case UNDEFINED -> null;
         };
@@ -66,6 +67,7 @@ public class DataTransformationHelper {
             case DATE_TIME -> new DateTimeData.DateTimeDataBuilder();
             case DECIMAL -> new DecimalData.DecimalDataBuilder();
             case INTEGER -> new IntegerData.IntegerDataBuilder();
+            case TEXT -> new TextData.TextDataBuilder();
             case STRING -> new StringData.StringDataBuilder();
             case UNDEFINED -> null;
         };

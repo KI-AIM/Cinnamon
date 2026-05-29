@@ -9,7 +9,7 @@ import {
     ViewChild,
     ViewChildren
 } from '@angular/core';
-import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
+import { FormArray, FormControl, FormGroup, ValidatorFn, Validators } from "@angular/forms";
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
 import { DataConfiguration } from "@shared/model/data-configuration";
 import { catchError, Observable, of, tap } from "rxjs";
@@ -65,11 +65,12 @@ export class ConfigurationFormComponent implements OnInit {
      * @protected
      */
     protected algorithmDefinition: AlgorithmDefinition | null = null;
+    protected applicableAdditionalConfigs: ConfigurationAdditionalConfigs | null = null;
     /**
      * Dynamically created form for the configuration.
      * @protected
      */
-    protected form: FormGroup;
+    public form: FormGroup;
 
     /**
      * Observable that loads the configurations and creates the form group.
@@ -101,6 +102,7 @@ export class ConfigurationFormComponent implements OnInit {
                 this.algorithmDefinition = value
             }),
             tap(value => {
+                this.applicableAdditionalConfigs = this.resolveAdditionalConfigs(this.additionalConfigs);
                 this.form = this.createForm(value, this.initialConfigurationData.config, this.dataConfiguration);
 
                 this.fixAttributeLists(value, this.initialConfigurationData.config, this.form, this.dataConfiguration);
@@ -235,8 +237,8 @@ export class ConfigurationFormComponent implements OnInit {
     private createForm(algorithmDefinition: AlgorithmDefinition, initialValues: any, dataConfig: DataConfiguration): FormGroup {
         const form = this.createGroup(algorithmDefinition, initialValues, dataConfig);
 
-        if (this.additionalConfigs) {
-            for (const additionalConfig of this.additionalConfigs.configs) {
+        if (this.applicableAdditionalConfigs) {
+            for (const additionalConfig of this.applicableAdditionalConfigs.configs) {
                 const config = initialValues[additionalConfig.formGroupName] ? initialValues[additionalConfig.formGroupName] : null;
                 additionalConfig.initializeForm(form, config, this.disabled);
             }
@@ -258,6 +260,7 @@ export class ConfigurationFormComponent implements OnInit {
 
         if (groupDefinition.parameters) {
             groupDefinition.parameters.forEach(inputDefinition => {
+                const mandatory = this.isMandatory(inputDefinition);
                 if (inputDefinition.type === ConfigurationInputType.LIST) {
                     const initialValue = initialValues[inputDefinition.name] ?? inputDefinition.default_value;
 
@@ -269,18 +272,21 @@ export class ConfigurationFormComponent implements OnInit {
                         }, Validators.required));
                     }
 
-                    group[inputDefinition.name] = new FormArray(controls, Validators.required);
+                    group[inputDefinition.name] = new FormArray(controls, mandatory ? Validators.required : null);
                 } else if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
-                    group[inputDefinition.name] = new FormArray([], Validators.required);
+                    group[inputDefinition.name] = new FormArray([], mandatory ? Validators.required : null);
                     if (inputDefinition.invert) {
-                        group[inputDefinition.invert] = new FormArray([], Validators.required);
+                        group[inputDefinition.invert] = new FormArray([], mandatory ? Validators.required : null);
                         for (const attribute of dataConfig.configurations) {
                             group[inputDefinition.invert].push(new FormControl(attribute.name));
                         }
                     }
                 } else {
                     // Add validators of the input
-                    const validators = [Validators.required];
+                    const validators: ValidatorFn[] = [];
+                    if (mandatory && inputDefinition.type !== ConfigurationInputType.BOOLEAN) {
+                        validators.push(Validators.required);
+                    }
                     if (inputDefinition.min_value !== null) {
                         validators.push(Validators.min(inputDefinition.min_value));
                     }
@@ -302,6 +308,31 @@ export class ConfigurationFormComponent implements OnInit {
         }
 
         return new FormGroup(group);
+    }
+
+    private isMandatory(inputDefinition: { mandatory?: boolean | null }): boolean {
+        return inputDefinition.mandatory !== false;
+    }
+
+    private resolveAdditionalConfigs(additionalConfigs: ConfigurationAdditionalConfigs | null): ConfigurationAdditionalConfigs | null {
+        if (additionalConfigs === null) {
+            return null;
+        }
+
+        const configs = additionalConfigs.configs.filter(config => {
+            const matchesAlgorithmName = config.applicableAlgorithmNames === null
+                || config.applicableAlgorithmNames.includes(this.algorithm.name);
+            const matchesPredicate = config.predicate == null
+                || config.predicate(this.algorithm, this.dataConfiguration);
+
+            return matchesAlgorithmName && matchesPredicate;
+        });
+
+        if (configs.length === 0) {
+            return null;
+        }
+
+        return new ConfigurationAdditionalConfigs(configs);
     }
 
     /**

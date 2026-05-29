@@ -4,6 +4,9 @@ type: cross-sectional
 display_name: Bayesian Network for Generative Modeling
 description: A Bayesian Network model for generating data, implemented using the pgmpy backend.
 URL: /start_synthetization_process/bayesian_network
+processing_capabilities:
+  supports_structured_data: true
+  supports_free_text_data: false
 configurations:
   model_parameter:
     display_name: Model Architecture
@@ -45,3 +48,4 @@ configurations:
         default_value: 1000
         min_value: 1
         max_value: 1000000
+

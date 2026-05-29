@@ -61,8 +61,11 @@
                 <ng-container *ngIf="attributeStatistics.plot.density">
                     Density/Histogram
                 </ng-container>
-                <ng-container *ngIf="attributeStatistics.plot.frequency_plot">
-                    Frequency
+                <ng-container *ngIf="(attributeStatistics.plot.frequency_plot || attributeStatistics.plot.text_length_distribution) && graphType !== 'wordcloud' && graphType !== 'wordcloud_independent'">
+                    {{ isTextAttribute() ? 'Text Length' : 'Frequency' }}
+                </ng-container>
+                <ng-container *ngIf="(attributeStatistics.plot.wordcloud || attributeStatistics.plot.wordcloud_independent) && (graphType === 'wordcloud' || graphType === 'wordcloud_independent')">
+                    {{ graphType === 'wordcloud' ? 'Wordcloud Match' : 'Wordcloud Split' }}
                 </ng-container>
             </div>
             <div class="w-100 h-100" *ngIf="metricConfig$ | async as mc">
@@ -75,10 +78,11 @@
                         </button>
                         <app-chart-select [comparison]="hasSynthetic" [continuous]="isContinuous()"
                                           [dataType]="attributeStatistics.attribute_information.type"
+                                          [showWordcloudIndependent]="!!getWordcloudIndependentPlotData()"
                                           [(graph)]="graphType" style="margin-left: auto;"></app-chart-select>
                     </div>
 
-                    <ng-container *ngIf="graphType === 'correlation' && hasSynthetic">
+                    <ng-container *ngIf="graphType === 'correlation' && hasSynthetic && !isTextAttribute()">
                         <app-chart-correlation [colorScheme]="mc.colorScheme"
                                                [columnConfiguration]="attributeStatistics.attribute_information"
                                                [data]="attributeStatistics.plot.visualize_columnwise_correlations!"
@@ -103,12 +107,26 @@
                         </app-chart-frequency>
                     </ng-container>
 
-                    <ng-container *ngIf="graphType === 'frequency' && !isContinuous()">
+                    <ng-container *ngIf="graphType === 'frequency' && !isContinuous() && getFrequencyPlotData()">
                         <app-chart-frequency [colorScheme]="mc.colorScheme"
                                              [columnConfiguration]="attributeStatistics.attribute_information"
-                                             [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
+                                             [data]="getFrequencyPlotData()!" [limit]="null"
                                              [originalSeriesLabel]="originalDisplayName"
                                              [syntheticSeriesLabel]="datasetDisplayName"></app-chart-frequency>
+                    </ng-container>
+                    <ng-container *ngIf="graphType === 'wordcloud' && getWordcloudPlotData()">
+                        <app-chart-wordcloud [colorScheme]="mc.colorScheme"
+                                             [columnConfiguration]="attributeStatistics.attribute_information"
+                                             [data]="getWordcloudPlotData()!"
+                                             [originalSeriesLabel]="originalDisplayName"
+                                             [syntheticSeriesLabel]="datasetDisplayName"></app-chart-wordcloud>
+                    </ng-container>
+                    <ng-container *ngIf="graphType === 'wordcloud_independent' && getWordcloudIndependentPlotData()">
+                        <app-chart-wordcloud [colorScheme]="mc.colorScheme"
+                                             [columnConfiguration]="attributeStatistics.attribute_information"
+                                             [data]="getWordcloudIndependentPlotData()!"
+                                             [originalSeriesLabel]="originalDisplayName"
+                                             [syntheticSeriesLabel]="datasetDisplayName"></app-chart-wordcloud>
                     </ng-container>
 
                     <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">

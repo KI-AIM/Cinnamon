@@ -1,181 +1,246 @@
 import os
-import yaml
+import re
 import sys
+import tempfile
+from contextlib import contextmanager
+
+import yaml
+
+
+WAITING = "Waiting"
+STATUS_TRUE = "True"
+STATUS_FALSE = "False"
+
+_ESTIMATED_REMAINING_TIME_PATTERN = re.compile(r"Estimated remaining time:\s*([0-9]+(?:\.[0-9]+)?)")
+_TQDM_REMAINING_TIME_PATTERN = re.compile(r"<(?P<remaining>\d{1,2}:\d{2}(?::\d{2})?)")
 
 
 def initialize_status_file(file_path, session_key, synthesizer_name):
     """
     Create and initialize a YAML file to track the status of a process.
-
-    This function sets up a status file with predefined steps and their default states,
-    including initialization, fitting, sampling, and callback stages.
-
-    Args:
-        file_path (str): The file path where the YAML status file will be created.
-        session_key (str): A unique identifier for the session.
-        synthesizer_name (str): The name of the synthesizer being tracked.
-
-    Returns:
-        None
     """
     yaml_status = {
         "session_key": str(session_key),
         "synthesizer_name": str(synthesizer_name),
-        "status": [
-            {
-                "step": "initialization",
-                "duration": "Waiting",
-                "completed": "False"
-            },
-            {
-                "step": "fitting",
-                "duration": "Waiting",
-                "completed": "False",
-                "remaining_time": "Waiting",
-            },
-            {
-                "step": "sampling",
-                "duration": "Waiting",
-                "completed": "False",
-                "remaining_time": "Waiting",
-            },
-            {
-                "step": "callback",
-                "completed": "False"
-            }
-        ]
+        "status": _build_initial_steps(),
+        "components": _build_initial_components(),
     }
 
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-    with open(file_path, 'w') as f:
-        yaml.dump(yaml_status, f, allow_unicode=True, default_flow_style=False)
+    _write_status_file(file_path, yaml_status)
 
 
-def update_status(file_name, step, duration=None, completed=None, remaining_time=None):
+def update_status(file_path, step, duration=None, completed=None, remaining_time=None):
     """
     Update the status of a specific step in the YAML status file.
-
-    This function modifies the status file to update the duration, completion status,
-    and remaining time for a specified step.
-
-    Args:
-        file_name (str): The file path of the YAML status file to be updated.
-        step (str): The name of the step to update (e.g., "fitting" or "sampling").
-        duration (str, optional): The duration to set for the step.
-        completed (str, optional): The completion status to set for the step.
-        remaining_time (str, optional): The estimated remaining time to set for the step.
-
-    Returns:
-        None
     """
-    # Read the current YAML file to get the latest status
-    with open(file_name, 'r') as f:
-        data = yaml.safe_load(f)
+    data = _read_status_file(file_path)
 
-    # Find the specific step in the status list
-    for status_step in data['status']:
-        if status_step['step'] == step:
-            # Update the duration if a value is provided
-            if duration is not None:
-                status_step['duration'] = str(duration)
+    for status_step in data["status"]:
+        if status_step["step"] != step:
+            continue
 
-            # Update the completion status if a value is provided
-            if completed is not None:
-                status_step['completed'] = str(completed)
+        if duration is not None:
+            status_step["duration"] = str(duration)
 
-            # Update the remaining time if a value is provided and the field exists
-            if 'remaining_time' in status_step and remaining_time is not None:
-                status_step['remaining_time'] = str(remaining_time)
-            break
+        if completed is not None:
+            status_step["completed"] = _stringify_completed(completed)
 
-    # Write the updated data back to the file
-    with open(file_name, 'w') as f:
-        yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
+        if "remaining_time" in status_step and remaining_time is not None:
+            status_step["remaining_time"] = str(remaining_time)
+        break
+
+    _write_status_file(file_path, data)
 
 
-class InterceptStdOut:
+def update_component_status(
+    file_path,
+    component_name,
+    *,
+    synthesizer_name=None,
+    duration=None,
+    initialization_duration=None,
+    fitting_duration=None,
+    sampling_duration=None,
+    completed=None,
+    remaining_time=None,
+):
     """
-    A class to intercept and process stdout messages during a specific process stage.
-
-    This class captures standard output messages, extracts relevant information
-    (e.g., remaining time), and updates a corresponding YAML status file.
-
-    Args:
-        file_name (str): The file path of the YAML status file to update.
-        process_stage (str): The name of the process stage being monitored
-        (e.g., "fitting" or "sampling").
+    Update the stage-specific synthesis component block in the YAML status file.
     """
-    def __init__(self, file_name, process_stage):
-        self.terminal = sys.stdout
-        self.file_name = file_name
-        self.process_stage = process_stage  # 'fitting' or 'sampling'
+    data = _read_status_file(file_path)
+    components = data.setdefault("components", _build_initial_components())
+    component = components.get(component_name)
+    if component is None:
+        component = _build_component_status()
+        components[component_name] = component
+
+    if synthesizer_name is not None:
+        component["synthesizer_name"] = str(synthesizer_name)
+    if duration is not None:
+        component["duration"] = str(duration)
+    if initialization_duration is not None:
+        component["initialization_duration"] = str(initialization_duration)
+    if fitting_duration is not None:
+        component["fitting_duration"] = str(fitting_duration)
+    if sampling_duration is not None:
+        component["sampling_duration"] = str(sampling_duration)
+    if completed is not None:
+        component["completed"] = _stringify_completed(completed)
+    if remaining_time is not None:
+        component["remaining_time"] = str(remaining_time)
+
+    _write_status_file(file_path, data)
+
+
+def extract_remaining_time(message):
+    estimated_match = _ESTIMATED_REMAINING_TIME_PATTERN.search(message)
+    if estimated_match is not None:
+        return estimated_match.group(1)
+
+    tqdm_matches = list(_TQDM_REMAINING_TIME_PATTERN.finditer(message))
+    if not tqdm_matches:
+        return None
+
+    remaining_text = tqdm_matches[-1].group("remaining")
+    return str(_duration_to_seconds(remaining_text))
+
+
+@contextmanager
+def intercept_standard_streams(file_path, process_stage, component_name=None):
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    try:
+        sys.stdout = InterceptStream(
+            file_path,
+            process_stage,
+            terminal=original_stdout,
+            component_name=component_name,
+        )
+        sys.stderr = InterceptStream(
+            file_path,
+            process_stage,
+            terminal=original_stderr,
+            component_name=component_name,
+        )
+        yield
+    finally:
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
+
+
+class InterceptStream:
+    """
+    Mirror a stream while extracting remaining-time updates for a process stage.
+    """
+
+    def __init__(self, file_path, process_stage, terminal=None, component_name=None):
+        self.terminal = sys.stdout if terminal is None else terminal
+        self.file_path = file_path
+        self.process_stage = process_stage
+        self.component_name = component_name
+        self._message_buffer = ""
+        self._last_remaining_time = None
 
     def write(self, message):
-        """
-        Write a message to both the terminal and the YAML status file.
-
-        If the message contains "Estimated remaining time:", the remaining time is
-        extracted and the YAML file is updated.
-
-        Args:
-            message (str): The message to write.
-
-        Returns:
-            None
-        """
         self.terminal.write(message)
-        if "Estimated remaining time:" in message:
-            # Extract the remaining time from the message
-            remaining_time = message.split("Estimated remaining time:")[1].strip().split(" ")[0]
-            self.update_yaml_file(remaining_time)
+        self.terminal.flush()
+        self._message_buffer = (self._message_buffer + message)[-2048:]
+
+        remaining_time = extract_remaining_time(self._message_buffer)
+        if remaining_time is not None and remaining_time != self._last_remaining_time:
+            self._last_remaining_time = remaining_time
+            update_status(self.file_path, step=self.process_stage, remaining_time=remaining_time)
+            if self.component_name is not None:
+                update_component_status(
+                    self.file_path,
+                    self.component_name,
+                    remaining_time=remaining_time,
+                )
 
     def flush(self):
-        """
-        Flush the stdout buffer.
-
-        This ensures all buffered messages are written out.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
         self.terminal.flush()
 
-    def update_yaml_file(self, remaining_time):
-        """
-        Update the remaining time for the monitored process stage in the YAML status file.
-
-        Args:
-            remaining_time (str): The estimated remaining time to set in the YAML file.
-
-        Returns:
-            None
-        """
-        # Read the current YAML file
-        with open(self.file_name, 'r') as f:
-            data = yaml.safe_load(f)
-
-        # Find the specific step in the status list and update it
-        for status_step in data['status']:
-            if status_step['step'] == self.process_stage:
-                status_step['remaining_time'] = remaining_time
-                break
-
-        # Write the updated data back to the file
-        with open(self.file_name, 'w') as f:
-            yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-
     def close(self):
-        """
-        Flush the stdout buffer and ensure all resources are released.
+        self.flush()
 
-        Args:
-            None
 
-        Returns:
-            None
-        """
-        self.flush()  # Ensure all buffers are flushed
+InterceptStdOut = InterceptStream
+
+
+def _build_initial_steps():
+    return [
+        {
+            "step": "initialization",
+            "duration": WAITING,
+            "completed": STATUS_FALSE,
+        },
+        {
+            "step": "fitting",
+            "duration": WAITING,
+            "completed": STATUS_FALSE,
+            "remaining_time": WAITING,
+        },
+        {
+            "step": "sampling",
+            "duration": WAITING,
+            "completed": STATUS_FALSE,
+            "remaining_time": WAITING,
+        },
+        {
+            "step": "callback",
+            "completed": STATUS_FALSE,
+        },
+    ]
+
+
+def _build_component_status():
+    return {
+        "synthesizer_name": WAITING,
+        "duration": WAITING,
+        "initialization_duration": WAITING,
+        "fitting_duration": WAITING,
+        "sampling_duration": WAITING,
+        "remaining_time": WAITING,
+        "completed": STATUS_FALSE,
+    }
+
+
+def _build_initial_components():
+    return {
+        "structured_synthesis": _build_component_status(),
+        "llm_synthesis": _build_component_status(),
+    }
+
+
+def _stringify_completed(value):
+    if isinstance(value, str):
+        return value
+    return STATUS_TRUE if value else STATUS_FALSE
+
+
+def _read_status_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle)
+
+
+def _write_status_file(file_path, data):
+    directory = os.path.dirname(file_path) or "."
+    os.makedirs(directory, exist_ok=True)
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=directory, delete=False) as handle:
+        yaml.dump(data, handle, allow_unicode=True, default_flow_style=False)
+        temp_path = handle.name
+
+    os.replace(temp_path, file_path)
+
+
+def _duration_to_seconds(duration_text):
+    parts = [int(part) for part in duration_text.split(":")]
+    if len(parts) == 2:
+        minutes, seconds = parts
+        return minutes * 60 + seconds
+    if len(parts) == 3:
+        hours, minutes, seconds = parts
+        return hours * 3600 + minutes * 60 + seconds
+    raise ValueError(f"Unsupported duration format: {duration_text}")

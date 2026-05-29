@@ -2,7 +2,12 @@ import { Component, Input, OnInit } from '@angular/core';
 import {
     MetricTableType
 } from "@shared/components/data-inspection-metric-table/data-inspection-metric-table.component";
-import { AttributeStatistics, GraphType, } from "../../model/statistics";
+import {
+    AttributeStatistics,
+    GraphType,
+    HistogramPlotData,
+    StatisticsData
+} from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { MetricImportance, MetricSettings } from "../../model/project-settings";
@@ -46,7 +51,12 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.graphType = this.isContinuous() ? 'histogram' : 'frequency';
+        const isTextAttribute = this.attributeStatistics.attribute_information.type === DataType.TEXT;
+        this.graphType = isTextAttribute
+            ? (this.getWordcloudPlotData()
+                ? 'wordcloud'
+                : (this.getWordcloudIndependentPlotData() ? 'wordcloud_independent' : 'frequency'))
+            : (this.isContinuous() ? 'histogram' : 'frequency');
         this.hasSynthetic = this.mainData == 'synthetic';
 
         if (this.hasSynthetic) {
@@ -58,7 +68,7 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
         }
 
         this.originalDisplayName = this.statisticsService.getOriginalName(this.sourceDataset);
-        this.datasetDisplayName = this.statisticsService.getSyntheticName(this.processingSteps)
+        this.datasetDisplayName = this.statisticsService.getSyntheticName(this.processingSteps);
         this.metricConfig$ = this.projectConfigService.projectSettings$.pipe(
             map(val => val.metricConfiguration)
         );
@@ -66,5 +76,21 @@ export class DataInspectionAttributeDetailsComponent implements OnInit {
 
     protected isContinuous(): boolean {
         return this.attributeStatistics.plot.density != null;
+    }
+
+    protected isTextAttribute(): boolean {
+        return this.attributeStatistics.attribute_information.type === DataType.TEXT;
+    }
+
+    protected getFrequencyPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.text_length_distribution ?? this.attributeStatistics.plot.frequency_plot;
+    }
+
+    protected getWordcloudPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.wordcloud;
+    }
+
+    protected getWordcloudIndependentPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.wordcloud_independent;
     }
 }

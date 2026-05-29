@@ -26,7 +26,7 @@ def post_process_dataframe(df: pd.DataFrame, config):
         column_name = column_config['name']
         column_type = column_config['type']
 
-        if column_type == 'STRING':
+        if column_type in ['STRING', 'TEXT']:
             df[column_name] = df[column_name].astype(dtype='string')
             continue
 

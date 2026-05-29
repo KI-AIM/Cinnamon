@@ -4,6 +4,9 @@ type: cross-sectional
 display_name: Robust Variational Autoencoder
 description: An implementation of Robust Variational Autoencoder for data generation using beta divergence learning.
 URL: /start_synthetization_process/rtvae
+processing_capabilities:
+  supports_structured_data: true
+  supports_free_text_data: false
 configurations:
   model_parameter:
     display_name: Model Architecture
@@ -66,3 +69,4 @@ configurations:
         default_value: 1000
         min_value: 1
         max_value: 1000000
+

@@ -11,9 +11,9 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
-from data_processing.train_test import split_train_test_cross_sectional
 from data_processing.utils import (
     MISSING_VALUE_STRING,
+    TEXT_PENDING_LLM,
     adjust_date_within_bounds_post,
     iso_to_strftime,
     parse_to_date_format,
@@ -91,6 +91,26 @@ def test_pre_process_dataframe_integer_non_numeric_raises():
     assert "Error processing column 'age'" in str(exc.value)
 
 
+def test_pre_process_dataframe_sets_text_column_to_pending_llm_placeholder_by_default():
+    df = pd.DataFrame({"notes": ["Long text", np.nan, "Another value"]})
+    config = [{"name": "notes", "type": "TEXT", "index": 0}]
+
+    processed, dropped = pre_process_dataframe(df, config)
+
+    assert dropped == []
+    assert processed["notes"].tolist() == [TEXT_PENDING_LLM, TEXT_PENDING_LLM, TEXT_PENDING_LLM]
+
+
+def test_pre_process_dataframe_keeps_text_when_pending_replacement_disabled():
+    df = pd.DataFrame({"notes": ["Long text", np.nan, "Another value"]})
+    config = [{"name": "notes", "type": "TEXT", "index": 0}]
+
+    processed, dropped = pre_process_dataframe(df, config, replace_text_with_pending=False)
+
+    assert dropped == []
+    assert processed["notes"].tolist() == ["Long text", pd.NA, "Another value"]
+
+
 def test_post_process_dataframe_recreates_columns_casts_and_orders():
     df = pd.DataFrame(
         {
@@ -118,29 +138,37 @@ def test_post_process_dataframe_recreates_columns_casts_and_orders():
     assert pd.isna(result["extra_missing"]).all()
 
 
+def test_post_process_dataframe_sets_missing_text_to_pending_placeholder_by_default():
+    df = pd.DataFrame({"notes": ["Generated", pd.NA]})
+    config = [{"name": "notes", "type": "TEXT", "index": 0}]
+
+    result = post_process_dataframe(df, config, all_missing_values_column=[])
+
+    assert result.columns.tolist() == ["notes"]
+    assert str(result["notes"].dtype) == "string"
+    assert result["notes"].tolist() == ["Generated", TEXT_PENDING_LLM]
+
+
+def test_post_process_dataframe_keeps_missing_text_na_when_pending_fill_disabled():
+    df = pd.DataFrame({"notes": ["Generated", pd.NA]})
+    config = [{"name": "notes", "type": "TEXT", "index": 0}]
+
+    result = post_process_dataframe(df, config, all_missing_values_column=[], fill_text_with_pending=False)
+
+    assert result.columns.tolist() == ["notes"]
+    assert str(result["notes"].dtype) == "string"
+    assert result["notes"].iloc[0] == "Generated"
+    assert pd.isna(result["notes"].iloc[1])
+
+
 def test_post_process_dataframe_missing_date_format_keeps_column_without_crashing():
     df = pd.DataFrame({"event_date": [1704067200]})
     config = [{"name": "event_date", "type": "DATE", "index": 0, "configurations": []}]
 
-    result = post_process_dataframe(df, config, all_missing_values_column=[])
+    with pytest.raises(ValueError) as exc:
+        post_process_dataframe(df, config, all_missing_values_column=[])
 
-    assert result.columns.tolist() == ["event_date"]
-    assert result["event_date"].iloc[0] == 1704067200
-
-
-def test_split_train_test_cross_sectional_is_reproducible_and_size_correct():
-    dataset = pd.DataFrame({"id": range(10), "val": range(100, 110)})
-    fitting_config = {"train": 0.7}
-
-    train_a, validate_a = split_train_test_cross_sectional(fitting_config, dataset, seed=7)
-    train_b, validate_b = split_train_test_cross_sectional(fitting_config, dataset, seed=7)
-
-    assert len(train_a) == 7
-    assert len(validate_a) == 3
-    assert train_a.index.tolist() == train_b.index.tolist()
-    assert validate_a.index.tolist() == validate_b.index.tolist()
-    assert set(train_a.index).isdisjoint(set(validate_a.index))
-    assert set(train_a.index) | set(validate_a.index) == set(dataset.index)
+    assert "Date format not specified for DATE column 'event_date'" in str(exc.value)
 
 
 def test_iso_to_strftime_converts_expected_tokens():

@@ -110,11 +110,12 @@
                 </button>
                 <app-chart-select [comparison]="hasSynthetic" [continuous]="isContinuous()"
                                   [dataType]="attributeStatistics.attribute_information.type" [(graph)]="graphType"
+                                  [showWordcloudIndependent]="!!getWordcloudIndependentPlotData()"
                                   [simple]="true" style="margin-left: auto">
                 </app-chart-select>
             </div>
 
-            <ng-container *ngIf="graphType === 'correlation' && hasSynthetic">
+            <ng-container *ngIf="graphType === 'correlation' && hasSynthetic && !isTextAttribute()">
                 <app-chart-correlation [colorScheme]="pageData.projectSettings.metricConfiguration.colorScheme"
                                        [columnConfiguration]="attributeStatistics.attribute_information"
                                        [data]="attributeStatistics.plot.visualize_columnwise_correlations!"
@@ -137,12 +138,26 @@
                                      [originalSeriesLabel]="originalDisplayName" [simple]="true"
                                      [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
             </ng-container>
-            <ng-container *ngIf="graphType === 'frequency' && !isContinuous()">
+            <ng-container *ngIf="graphType === 'frequency' && !isContinuous() && getFrequencyPlotData()">
                 <app-chart-frequency [colorScheme]="pageData.projectSettings.metricConfiguration.colorScheme"
                                      [columnConfiguration]="attributeStatistics.attribute_information"
-                                     [data]="attributeStatistics.plot.frequency_plot!" [limit]="null"
+                                     [data]="getFrequencyPlotData()!" [limit]="null"
                                      [originalSeriesLabel]="originalDisplayName" [simple]="true"
                                      [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-frequency>
+            </ng-container>
+            <ng-container *ngIf="graphType === 'wordcloud' && getWordcloudPlotData()">
+                <app-chart-wordcloud [colorScheme]="pageData.projectSettings.metricConfiguration.colorScheme"
+                                     [columnConfiguration]="attributeStatistics.attribute_information"
+                                     [data]="getWordcloudPlotData()!"
+                                     [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                     [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-wordcloud>
+            </ng-container>
+            <ng-container *ngIf="graphType === 'wordcloud_independent' && getWordcloudIndependentPlotData()">
+                <app-chart-wordcloud [colorScheme]="pageData.projectSettings.metricConfiguration.colorScheme"
+                                     [columnConfiguration]="attributeStatistics.attribute_information"
+                                     [data]="getWordcloudIndependentPlotData()!"
+                                     [originalSeriesLabel]="originalDisplayName" [simple]="true"
+                                     [syntheticSeriesLabel]="syntheticDisplayName"></app-chart-wordcloud>
             </ng-container>
             <ng-container *ngIf="attributeStatistics.attribute_information.type === DataType.DATE && graphType === 'heatmap'">
                 <app-chart-calendar [columnConfiguration]="attributeStatistics.attribute_information"

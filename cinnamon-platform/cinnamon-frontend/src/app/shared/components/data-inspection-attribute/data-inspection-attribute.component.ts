@@ -6,7 +6,7 @@ import {
 import { MatDialog } from "@angular/material/dialog";
 import { areEnumValuesEqual } from "src/app/shared/helper/enum-helper";
 import { DataScale } from "src/app/shared/model/data-scale";
-import { AttributeStatistics, GraphType, StatisticsValueTypes } from "../../model/statistics";
+import { AttributeStatistics, GraphType, HistogramPlotData, StatisticsData, StatisticsValueTypes } from "../../model/statistics";
 import { StatisticsService } from "../../services/statistics.service";
 import { DataType } from "../../model/data-type";
 import { combineLatest, Observable } from "rxjs";
@@ -45,7 +45,12 @@ export class DataInspectionAttributeComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.graphType = this.isContinuous() ? 'histogram' : 'frequency';
+        const isTextAttribute = this.attributeStatistics.attribute_information.type === DataType.TEXT;
+        this.graphType = isTextAttribute
+            ? (this.getWordcloudPlotData()
+                ? 'wordcloud'
+                : (this.getWordcloudIndependentPlotData() ? 'wordcloud_independent' : 'frequency'))
+            : (this.isContinuous() ? 'histogram' : 'frequency');
         this.hasSynthetic = this.mainData == 'synthetic';
         this.metrics = this.projectConfigService.getAllMetrics(this.attributeStatistics);
         this.originalDisplayName = this.statisticsService.getOriginalName(this.sourceDataset);
@@ -58,6 +63,22 @@ export class DataInspectionAttributeComponent implements OnInit {
 
     protected isContinuous(): boolean {
         return this.attributeStatistics.plot.density != null;
+    }
+
+    protected isTextAttribute(): boolean {
+        return this.attributeStatistics.attribute_information.type === DataType.TEXT;
+    }
+
+    protected getFrequencyPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.text_length_distribution ?? this.attributeStatistics.plot.frequency_plot;
+    }
+
+    protected getWordcloudPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.wordcloud;
+    }
+
+    protected getWordcloudIndependentPlotData(): StatisticsData<HistogramPlotData> | undefined {
+        return this.attributeStatistics.plot.wordcloud_independent;
     }
 
     protected openDetailsDialog(templateRef: TemplateRef<any>) {

@@ -61,6 +61,15 @@ export class PlotData {
     @Type(() => StatisticsData<HistogramPlotData>)
     frequency_plot?: StatisticsData<HistogramPlotData>;
 
+    @Type(() => StatisticsData<HistogramPlotData>)
+    text_length_distribution?: StatisticsData<HistogramPlotData>;
+
+    @Type(() => StatisticsData<HistogramPlotData>)
+    wordcloud?: StatisticsData<HistogramPlotData>;
+
+    @Type(() => StatisticsData<HistogramPlotData>)
+    wordcloud_independent?: StatisticsData<HistogramPlotData>;
+
     @Type(() => StatisticsData<CorrelationPlotData>)
     visualize_columnwise_correlations?: StatisticsData<CorrelationPlotData>;
 }
@@ -233,7 +242,7 @@ export class OverallCorrelation extends StatisticsData<Array<Array<number>>> {
 
 export type UtilityMetricDataObject = { [key: string]: UtilityMetricData2 | UtilityMetricData3 };
 
-export type GraphType = 'correlation' | 'density' | 'frequency' | 'histogram' | 'heatmap';
+export type GraphType = 'correlation' | 'density' | 'frequency' | 'histogram' | 'heatmap' | 'wordcloud' | 'wordcloud_independent';
 
 function transformStatisticsValuesRecord(params: TransformFnParams): Record<string, StatisticsValueTypes> {
     if (!params.value) {

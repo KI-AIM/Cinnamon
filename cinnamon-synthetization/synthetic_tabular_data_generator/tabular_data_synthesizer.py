@@ -1,131 +1,181 @@
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Callable, TypeVar
-import pandas as pd
-import traceback
-import functools
+from __future__ import annotations
 
-# Define generic return type for method decorators
-T = TypeVar('T')
+from abc import ABC, abstractmethod
+from functools import wraps
+from typing import Any, Callable, Dict, Optional, TypeVar
+
+import pandas as pd
+
+
+ConfigurationDict = Dict[str, Any]
+T = TypeVar("T")
+
+
+class SynthesizerOperationError(RuntimeError):
+    def __init__(self, operation: str, message: str) -> None:
+        self.operation = operation
+        super().__init__(f"Error during {operation}: {message}")
+
 
 class TabularDataSynthesizer(ABC):
-    """
-    Abstract base class for tabular data synthesizers with enhanced error handling.
-    
-    This base class provides standardized error handling with stack trace capture
-    for all core synthesizer operations, reducing code duplication in subclasses.
-    """
+    def __init__(
+        self,
+        attribute_configuration: Optional[ConfigurationDict],
+        anonymization_configuration: Optional[ConfigurationDict],
+    ) -> None:
+        self.attribute_configuration: Optional[ConfigurationDict] = attribute_configuration
+        self.anonymization_configuration: Optional[ConfigurationDict] = anonymization_configuration
+        self.dataset: Optional[pd.DataFrame] = None
+        self.synthesizer: Any = None
+        self._progress_callback: Optional[Callable[[str, Any], None]] = None
+        self._anonymization_configuration_initialized = anonymization_configuration is not None
+        self._attribute_configuration_initialized = attribute_configuration is not None
+        self._dataset_initialized = False
+        self._synthesizer_initialized = False
+        self._fit_completed = False
 
-    def __init__(self, attribute_configuration, anonymization_configuration):
-        self.attribute_configuration = attribute_configuration
-        self.anonymization_configuration = anonymization_configuration
-    
+    def set_progress_callback(self, callback: Optional[Callable[[str, Any], None]]) -> None:
+        self._progress_callback = callback
+
+    def _report_remaining_time(self, stage: str, remaining_time: Any) -> None:
+        if callable(self._progress_callback):
+            self._progress_callback(stage, remaining_time)
+
+    @property
+    def is_initialized_for_fit(self) -> bool:
+        return (
+            self._anonymization_configuration_initialized
+            and self._attribute_configuration_initialized
+            and self._dataset_initialized
+            and self._synthesizer_initialized
+        )
+
+    @property
+    def is_ready_for_sampling(self) -> bool:
+        return self.is_initialized_for_fit and self._fit_completed
+
     @staticmethod
-    def error_handler(method_name: str) -> Callable:
-        """
-        Decorator for capturing detailed error information including stack traces.
-        
-        Args:
-            method_name: Name of the method being wrapped for error reporting
-            
-        Returns:
-            Decorated function with enhanced error handling
-        """
+    def error_handler(operation: str) -> Callable[[Callable[..., T]], Callable[..., T]]:
         def decorator(func: Callable[..., T]) -> Callable[..., T]:
-            @functools.wraps(func)
-            def wrapper(self, *args, **kwargs) -> T:
+            @wraps(func)
+            def wrapper(self: "TabularDataSynthesizer", *args: Any, **kwargs: Any) -> T:
                 try:
                     return func(self, *args, **kwargs)
-                except Exception as e:
-                    # Capture full stack trace
-                    stack_trace = traceback.format_exc()
-                    
-                    # Print the detailed error with stack trace
-                    print(f"Error in {method_name}: {str(e)}")
-                    print(f"Stack trace: {stack_trace}")
-                    
-                    # Raise a new exception with both the original error and method info
-                    raise RuntimeError(f"Error in {method_name}: {str(e)}") from e
+                except SynthesizerOperationError:
+                    raise
+                except Exception as exc:
+                    raise SynthesizerOperationError(operation, str(exc)) from exc
+
             return wrapper
+
         return decorator
 
-    @error_handler("initializing anonymization configuration")
-    def initialize_anonymization_configuration(self, configuration_file: Dict[str, Any]) -> None:
-        """Public method to initialize anonymization configuration with enhanced error handling."""
-        self._initialize_anonymization_configuration(configuration_file)
+    @error_handler("anonymization configuration initialization")
+    def initialize_anonymization_configuration(self, configuration: ConfigurationDict) -> None:
+        self._initialize_anonymization_configuration(configuration)
+        self.anonymization_configuration = configuration
+        self._anonymization_configuration_initialized = True
+        self._synthesizer_initialized = False
+        self._fit_completed = False
 
-    @error_handler("initializing attribute configuration")
-    def initialize_attribute_configuration(self, configuration_file: Dict[str, Any]) -> None:
-        """Public method to initialize attribute configuration with enhanced error handling."""
-        self._initialize_attribute_configuration(configuration_file)
+    @error_handler("attribute configuration initialization")
+    def initialize_attribute_configuration(self, configuration: ConfigurationDict) -> None:
+        self._initialize_attribute_configuration(configuration)
+        self.attribute_configuration = configuration
+        self._attribute_configuration_initialized = True
+        self._fit_completed = False
 
-    @error_handler("initializing dataset")
+    @error_handler("dataset initialization")
     def initialize_dataset(self, dataset: pd.DataFrame) -> None:
-        """Public method to initialize the dataset with enhanced error handling."""
         self._initialize_dataset(dataset)
+        if self.dataset is None:
+            self.dataset = dataset
+        self._dataset_initialized = True
+        self._fit_completed = False
 
-    @error_handler("initializing synthesizer")
+    @error_handler("synthesizer initialization")
     def initialize_synthesizer(self) -> None:
-        """Public method to initialize the synthesizer with enhanced error handling."""
+        self._require_anonymization_configuration()
         self._initialize_synthesizer()
+        self._synthesizer_initialized = True
+        self._fit_completed = False
 
-    @error_handler("fitting the synthesizer")
+    @error_handler("fitting")
     def fit(self) -> None:
-        """Public method to fit the synthesizer with enhanced error handling."""
+        self._require_initialized_for_fit()
         self._fit()
+        self._fit_completed = True
 
-    @error_handler("sampling data from the synthesizer")
+    @error_handler("sampling")
     def sample(self) -> pd.DataFrame:
-        """Public method to sample data with enhanced error handling."""
+        self._require_ready_for_sampling()
         return self._sample()
 
-    @error_handler("retrieving the model")
+    @error_handler("model retrieval")
     def get_model(self) -> bytes:
-        """Public method to get the model with enhanced error handling."""
         return self._get_model()
 
-    @error_handler("loading the model from file")
-    def load_model(self, filepath: str) -> 'TabularDataSynthesizer':
-        """Public method to load a model with enhanced error handling."""
+    @error_handler("model loading")
+    def load_model(self, filepath: str) -> "TabularDataSynthesizer":
         return self._load_model(filepath)
 
-    @error_handler("saving data to file")
+    @error_handler("data saving")
     def save_data(self, sample: pd.DataFrame, filename: str) -> None:
-        """Public method to save data with enhanced error handling."""
         self._save_data(sample, filename)
 
-    # Abstract methods to be implemented by subclasses
-    @abstractmethod
-    def _initialize_anonymization_configuration(self, configuration_file: Dict[str, Any]) -> None:
-        pass
+    def _require_anonymization_configuration(self) -> None:
+        if not self._anonymization_configuration_initialized:
+            raise ValueError("Anonymization configuration must be initialized before initializing the synthesizer.")
+
+    def _require_initialized_for_fit(self) -> None:
+        if self.is_initialized_for_fit:
+            return
+        raise ValueError(
+            "Synthesizer must be initialized with anonymization configuration, "
+            "attribute configuration, dataset, and synthesizer instance before fitting."
+        )
+
+    def _require_ready_for_sampling(self) -> None:
+        if self.is_ready_for_sampling:
+            return
+        if not self.is_initialized_for_fit:
+            raise ValueError(
+                "Synthesizer must be fully initialized before sampling."
+            )
+        raise ValueError("Synthesizer must be fitted before sampling.")
 
     @abstractmethod
-    def _initialize_attribute_configuration(self, configuration_file: Dict[str, Any]) -> None:
-        pass
+    def _initialize_anonymization_configuration(self, configuration: ConfigurationDict) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _initialize_attribute_configuration(self, configuration: ConfigurationDict) -> None:
+        raise NotImplementedError
 
     @abstractmethod
     def _initialize_dataset(self, dataset: pd.DataFrame) -> None:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _initialize_synthesizer(self) -> None:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _fit(self) -> None:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _sample(self) -> pd.DataFrame:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _get_model(self) -> bytes:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def _load_model(self, filepath: str) -> 'TabularDataSynthesizer':
-        pass
+    def _load_model(self, filepath: str) -> "TabularDataSynthesizer":
+        raise NotImplementedError
 
     @abstractmethod
     def _save_data(self, sample: pd.DataFrame, filename: str) -> None:
-        pass
+        raise NotImplementedError

@@ -181,7 +181,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
                         }
                     } catch (Exception ignored) {}
                 }
-                case STRING, BOOLEAN -> {
+                case STRING, TEXT, BOOLEAN -> {
                     return r.getCellRawValue(index).orElse(null);
                 }
             }
@@ -281,6 +281,8 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
                         worksheet.value(rowIndex + 1, columnIndex, integerData.getValue());
                     } else if (data instanceof StringData stringData) {
                         worksheet.value(rowIndex + 1, columnIndex, stringData.getValue());
+                    } else if (data instanceof TextData textData) {
+                        worksheet.value(rowIndex + 1, columnIndex, textData.getValue());
                     }
                 }
             }

@@ -4,8 +4,40 @@ from data_processing.post_process import (
     transform_variance_in_time_distance,
 )
 from typing import Dict, Any, List, Union, Optional
-
 from .quality_ranges import determine_quality_range
+
+TEXT_ALLOWED_METRICS = {
+    "missing_values_count",
+    "distinct_values",
+}
+
+TEXT_EXCLUSIVE_METRICS = {
+    "average_text_length",
+    "text_length_fifth_percentile",
+    "text_length_q1",
+    "text_length_median",
+    "text_length_q3",
+    "text_length_ninety_fifth_percentile",
+    "text_length_distribution",
+    "text_length_hellinger_distance",
+    "wordcloud",
+    "wordcloud_independent",
+}
+
+
+def is_metric_applicable_to_attribute(metric_name: str, attribute_type: Optional[str]) -> bool:
+    """
+    Returns whether a metric should be attached to a specific attribute type.
+    """
+    normalized_type = (attribute_type or "").upper()
+
+    if normalized_type == "TEXT":
+        return metric_name in TEXT_ALLOWED_METRICS or metric_name in TEXT_EXCLUSIVE_METRICS
+
+    if metric_name in TEXT_EXCLUSIVE_METRICS:
+        return False
+
+    return True
 
 
 def group_metrics_by_visualization_type(overview_metrics):
@@ -92,8 +124,11 @@ def add_metrics_to_config(config, metrics, metric_categories):
     """
     for attribute_entry in config["resemblance"]:
         attribute_name = attribute_entry["attribute_information"]["name"]
+        attribute_type = attribute_entry["attribute_information"].get("type")
         for metric_category, metric_list in metric_categories.items():
             for metric in metric_list:
+                if not is_metric_applicable_to_attribute(metric, attribute_type):
+                    continue
                 if metric in metrics["resemblance"]:
                     real_values = metrics["resemblance"][metric].get("real", {})
                     synthetic_values = metrics["resemblance"][metric].get("synthetic", {})

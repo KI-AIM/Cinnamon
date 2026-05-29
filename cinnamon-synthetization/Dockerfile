@@ -7,6 +7,13 @@ WORKDIR /app
 # Copy the requirements file into the working directory
 COPY requirements.txt ./
 
+# Install system dependencies for packages that need compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    g++ \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install any needed packages specified in requirements.txt
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
@@ -21,6 +28,3 @@ ENV FLASK_APP=app.py
 
 # Run the application using Gunicorn when the container launches, timeout is set to one day
 CMD ["gunicorn", "--workers=4", "--bind=0.0.0.0:5000", "--timeout=86400", "app:app"]
-
-
-

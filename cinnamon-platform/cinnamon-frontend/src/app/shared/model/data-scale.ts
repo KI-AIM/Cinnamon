@@ -27,7 +27,7 @@ interface DataScaleAttributes {
  */
 export const DataScaleMetadata: Record<DataScale, DataScaleAttributes> = {
     [DataScale.NOMINAL]: {
-        applicableTo: [DataType.BOOLEAN, DataType.DECIMAL, DataType.INTEGER, DataType.STRING],
+        applicableTo: [DataType.BOOLEAN, DataType.DECIMAL, DataType.INTEGER, DataType.TEXT, DataType.STRING],
         displayName: 'Nominal',
     },
     [DataScale.ORDINAL]: {

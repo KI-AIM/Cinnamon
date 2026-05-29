@@ -1,7 +1,7 @@
 <form *ngIf="configurationData$ | async" [formGroup]="form">
     <ng-container *ngIf="algorithmDefinition">
         <app-configuration-group [form]="form" [fromGroupName]="''" [group]="algorithmDefinition" [disabled]="disabled"
-                                 [isOption]="false" [additionalConfigs]="additionalConfigs">
+                                 [isOption]="false" [additionalConfigs]="applicableAdditionalConfigs">
         </app-configuration-group>
     </ng-container>
 </form>

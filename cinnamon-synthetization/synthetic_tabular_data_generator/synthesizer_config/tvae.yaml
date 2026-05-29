@@ -4,6 +4,9 @@ type: cross-sectional
 display_name: Tabular Variational Autoencoder
 description: Is a VAE for synthesizing cross-sectional data.
 URL: /start_synthetization_process/tvae
+processing_capabilities:
+  supports_structured_data: true
+  supports_free_text_data: false
 configurations:
   model_parameter:
     display_name: Model Architecture
@@ -16,16 +19,20 @@ configurations:
         default_value: 128
         min_value: 1
         max_value: 1000
-      - name: compress_dims
-        type: list
-        label: Compress Dimensions
-        description: Fewer or smaller layers make the model train faster, but the generated data might miss complex patterns.
-        default_value: [128, 128]
-      - name: decompress_dims
-        type: list
-        label: Decompress Dimensions
-        description: Fewer or smaller layers make the model faster, but the generated data might miss complex patterns. To keep training balanced, Decompress Dimensions should have similar dimensions and values as Compress Dimensions. 
-        default_value: [128, 128]
+      - name: number_of_layers
+        type: integer
+        label: Hidden Layers
+        description: Number of hidden layers used in both encoder and decoder.
+        default_value: 2
+        min_value: 1
+        max_value: 10
+      - name: number_of_units_in_layers
+        type: integer
+        label: Hidden Units
+        description: Width of hidden layers used in both encoder and decoder.
+        default_value: 128
+        min_value: 16
+        max_value: 4096
   model_fitting:
     display_name: Training Parameters
     description: Define the parameters, that are used for training the model.
@@ -55,3 +62,4 @@ configurations:
         default_value: 1000
         min_value: 1
         max_value: 1000000
+

@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.status.synthetization.SynthetizationComponentStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
@@ -373,7 +374,8 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("stages[0].processes[0].step").value(ANON_JOB))
 		       .andExpect(jsonPath("stages[0].processes[0].processSteps[0]").value(ANON_JOB))
 		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("stages[0].processes[1].status").value("{\"status\":[{\"completed\":\"False\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"))
+		       .andExpect(jsonPath("stages[0].processes[1].status").value("""
+		                                                                  {"components":{"TabularSynthesizer":{"completed":"False","duration":null,"fitting_duration":null,"initialization_duration":null,"remaining_time":null,"sampling_duration":null,"synthesizer_name":"ctgan"}},"status":[{"completed":"False","duration":null,"step":"callback","remaining_time":null}],"session_key":null,"synthesizer_name":null}"""))
 		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
 		       .andExpect(jsonPath("stages[0].processes[1].processSteps").value(nullValue()));
 		var recordedRequest = mockBackEnd.takeRequest();
@@ -422,7 +424,8 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("stages[0].processes[0].processSteps[0]").value(ANON_JOB))
 		       .andExpect(jsonPath("stages[0].processes[0].processSteps[1]").doesNotExist())
 		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("stages[0].processes[1].status").value("{\"status\":[{\"completed\":\"True\",\"duration\":null,\"step\":\"callback\",\"remaining_time\":null}],\"session_key\":null,\"synthesizer_name\":null}"))
+		       .andExpect(jsonPath("stages[0].processes[1].status").value("""
+		                                                                  {"components":{"TabularSynthesizer":{"completed":"False","duration":null,"fitting_duration":null,"initialization_duration":null,"remaining_time":null,"sampling_duration":null,"synthesizer_name":"ctgan"}},"status":[{"completed":"True","duration":null,"step":"callback","remaining_time":null}],"session_key":null,"synthesizer_name":null}"""))
 		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
 		       .andExpect(jsonPath("stages[0].processes[1].processSteps[0]").value(ANON_JOB))
 		       .andExpect(jsonPath("stages[0].processes[1].processSteps[1]").value(SYNTH_JOB))
@@ -505,6 +508,10 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private void enqueueSynthStatus() throws JsonProcessingException {
 		var synthStatus = new SynthetizationStatus();
+		var synthComponentStatus = new SynthetizationComponentStatus();
+		synthComponentStatus.setCompleted("False");
+		synthComponentStatus.setSynthesizerName("ctgan");
+		synthStatus.getComponents().put("TabularSynthesizer", synthComponentStatus);
 		var synthStepStatus = new SynthetizationStepStatus();
 		synthStepStatus.setStep("callback");
 		synthStepStatus.setCompleted("False");

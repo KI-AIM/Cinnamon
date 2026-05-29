@@ -7,6 +7,129 @@ from scipy.spatial import distance
 from scipy.stats import gaussian_kde
 import phik 
 import math
+from wordcloud import WordCloud
+
+MISSING_REPRESENTATION_STRINGS = {"NA", "NaN", "N/A", "<NA>", "", "None", "null", "NULL", "nan"}
+
+
+def get_declared_columns_by_type(real: pd.DataFrame, synthetic: pd.DataFrame, target_type: str) -> List[str]:
+    """
+    Resolve columns by declared type from dataframe metadata.
+    """
+    configured_columns = []
+
+    for df in (real, synthetic):
+        column_types = df.attrs.get("column_types")
+        if isinstance(column_types, dict):
+            configured_columns.extend(
+                column_name
+                for column_name, column_type in column_types.items()
+                if str(column_type).upper() == target_type.upper()
+            )
+
+    return [
+        column_name for column_name in dict.fromkeys(configured_columns)
+        if column_name in real.columns and column_name in synthetic.columns
+    ]
+
+
+def get_text_columns(real: pd.DataFrame, synthetic: pd.DataFrame) -> List[str]:
+    """
+    Resolve TEXT columns strictly from declared dataframe metadata.
+
+    Falling back to all object/string columns is unsafe because it causes
+    plain STRING attributes to be treated as TEXT whenever metadata is absent.
+    """
+    return get_declared_columns_by_type(real, synthetic, "TEXT")
+
+
+def prepare_text_series(series: pd.Series) -> pd.Series:
+    """
+    Normalizes text values and removes representations of missing values.
+    """
+    normalized = series.astype("string").str.strip()
+    normalized = normalized.replace(list(MISSING_REPRESENTATION_STRINGS), pd.NA)
+    return normalized.dropna()
+
+
+def extract_word_frequencies(series: pd.Series) -> Dict[str, int]:
+    """
+    Extracts word frequencies using the wordcloud tokenizer and built-in stopword handling.
+    """
+    if series.empty:
+        return {}
+
+    combined_text = " ".join(series.astype(str).tolist())
+    if not combined_text.strip():
+        return {}
+
+    # Use the wordcloud parser so tokenization and stopword behavior is centralized.
+    wc = WordCloud(
+        collocations=False,
+        normalize_plurals=False,
+        regexp=r"\b[\w'-]+\b",
+    )
+
+    frequencies = wc.process_text(combined_text)
+    return {word: int(count) for word, count in frequencies.items()}
+
+
+def calculate_text_length_quantile(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame,
+    quantile: float
+) -> Dict[str, Dict[str, Union[float, str]]]:
+    """
+    Calculates a quantile of text lengths (in characters) for each TEXT attribute.
+    """
+    quantile_values: Dict[str, Dict[str, Union[float, str]]] = {"real": {}, "synthetic": {}}
+
+    for column in get_text_columns(real, synthetic):
+        real_text = prepare_text_series(real[column])
+        synthetic_text = prepare_text_series(synthetic[column])
+
+        real_lengths = real_text.str.len().astype(float)
+        synthetic_lengths = synthetic_text.str.len().astype(float)
+
+        quantile_values["real"][column] = (
+            float(real_lengths.quantile(quantile)) if not real_lengths.empty else "NA"
+        )
+        quantile_values["synthetic"][column] = (
+            float(synthetic_lengths.quantile(quantile)) if not synthetic_lengths.empty else "NA"
+        )
+
+    return quantile_values
+
+
+def drop_declared_text_columns(real: pd.DataFrame, synthetic: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Drops declared TEXT columns from both dataframes.
+    """
+    text_columns = get_declared_text_columns(real, synthetic)
+    if not text_columns:
+        return real, synthetic
+    return real.drop(columns=text_columns, errors="ignore"), synthetic.drop(columns=text_columns, errors="ignore")
+
+
+def get_declared_text_columns(real: pd.DataFrame, synthetic: pd.DataFrame) -> List[str]:
+    """
+    Returns TEXT columns that are explicitly declared in metadata.
+    """
+    return get_declared_columns_by_type(real, synthetic, "TEXT")
+
+
+def to_valid_correlation(value: Any) -> float:
+    """
+    Converts correlation values to finite floats. Invalid values become 0.0.
+    """
+    try:
+        numeric_value = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+    if np.isnan(numeric_value) or np.isinf(numeric_value):
+        return 0.0
+    return numeric_value
 
 
 def validate_numeric_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame) -> tuple:
@@ -61,8 +184,8 @@ def validate_categorical_dataframes(real: pd.DataFrame, synthetic: pd.DataFrame)
         raise TypeError("Both inputs must be pandas DataFrames")
 
     try:
-        real_categorical = real.select_dtypes(include=['object'])
-        synthetic_categorical = synthetic.select_dtypes(include=['object'])
+        real_categorical = real.select_dtypes(include=['object', 'string', 'category'])
+        synthetic_categorical = synthetic.select_dtypes(include=['object', 'string', 'category'])
     except TypeError as e:
         raise TypeError(f"Error selecting categorical columns: {str(e)}")
 
@@ -825,8 +948,12 @@ def calculate_frequencies(real, synthetic):
     """
     freq_results = {'real': {}, 'synthetic': {}}
 
-    real_categorical = real.select_dtypes(include=['object'])
-    synthetic_categorical = synthetic.select_dtypes(include=['object'])
+    real_categorical = real.select_dtypes(include=['object', 'string', 'category'])
+    synthetic_categorical = synthetic.select_dtypes(include=['object', 'string', 'category'])
+    text_columns = get_declared_text_columns(real, synthetic)
+    if text_columns:
+        real_categorical = real_categorical.drop(columns=text_columns, errors='ignore')
+        synthetic_categorical = synthetic_categorical.drop(columns=text_columns, errors='ignore')
 
     for column in real_categorical.columns:
         freq_real = (real_categorical[column].value_counts() / len(real_categorical)) * 100
@@ -906,8 +1033,12 @@ def calculate_frequencies_plot(real, synthetic):
     top_categories = 25
     freq_results = {'real': {}, 'synthetic': {}}
 
-    real_categorical = real.select_dtypes(include=['object'])
-    synthetic_categorical = synthetic.select_dtypes(include=['object'])
+    real_categorical = real.select_dtypes(include=['object', 'string', 'category'])
+    synthetic_categorical = synthetic.select_dtypes(include=['object', 'string', 'category'])
+    text_columns = get_declared_text_columns(real, synthetic)
+    if text_columns:
+        real_categorical = real_categorical.drop(columns=text_columns, errors='ignore')
+        synthetic_categorical = synthetic_categorical.drop(columns=text_columns, errors='ignore')
 
     for column in real_categorical.columns:
         real_counts = real_categorical[column].value_counts()
@@ -970,6 +1101,445 @@ def calculate_frequencies_plot(real, synthetic):
     return freq_results
 
 
+def calculate_average_text_length(real: pd.DataFrame, synthetic: pd.DataFrame) -> Dict[str, Dict[str, Union[float, str]]]:
+    """
+    Calculates the average text length in characters for each TEXT attribute.
+    """
+    average_length = {"real": {}, "synthetic": {}}
+
+    try:
+        for column in get_text_columns(real, synthetic):
+            real_text = prepare_text_series(real[column])
+            synthetic_text = prepare_text_series(synthetic[column])
+
+            average_length["real"][column] = (
+                float(real_text.str.len().mean()) if not real_text.empty else "NA"
+            )
+            average_length["synthetic"][column] = (
+                float(synthetic_text.str.len().mean()) if not synthetic_text.empty else "NA"
+            )
+
+        return average_length
+    except Exception as e:
+        raise ValueError(f"Error calculating average text length: {str(e)}")
+
+
+def calculate_text_length_fifth_percentile(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, Union[float, str]]]:
+    """
+    Calculates the 5th percentile of text lengths for each TEXT attribute.
+    """
+    try:
+        return calculate_text_length_quantile(real, synthetic, 0.05)
+    except Exception as e:
+        raise ValueError(f"Error calculating text length 5th percentile: {str(e)}")
+
+
+def calculate_text_length_q1(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, Union[float, str]]]:
+    """
+    Calculates the first quartile (Q1) of text lengths for each TEXT attribute.
+    """
+    try:
+        return calculate_text_length_quantile(real, synthetic, 0.25)
+    except Exception as e:
+        raise ValueError(f"Error calculating text length Q1: {str(e)}")
+
+
+def calculate_text_length_median(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, Union[float, str]]]:
+    """
+    Calculates the median (Q2) of text lengths for each TEXT attribute.
+    """
+    try:
+        return calculate_text_length_quantile(real, synthetic, 0.5)
+    except Exception as e:
+        raise ValueError(f"Error calculating text length median: {str(e)}")
+
+
+def calculate_text_length_q3(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, Union[float, str]]]:
+    """
+    Calculates the third quartile (Q3) of text lengths for each TEXT attribute.
+    """
+    try:
+        return calculate_text_length_quantile(real, synthetic, 0.75)
+    except Exception as e:
+        raise ValueError(f"Error calculating text length Q3: {str(e)}")
+
+
+def calculate_text_length_ninety_fifth_percentile(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, Union[float, str]]]:
+    """
+    Calculates the 95th percentile of text lengths for each TEXT attribute.
+    """
+    try:
+        return calculate_text_length_quantile(real, synthetic, 0.95)
+    except Exception as e:
+        raise ValueError(f"Error calculating text length 95th percentile: {str(e)}")
+
+
+def calculate_text_length_distribution(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame,
+    max_bins: int = 15
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """
+    Calculates a frequency-style distribution plot of text lengths for each TEXT attribute.
+    """
+
+    def get_color_index(perc_difference: float) -> int:
+        capped_diff = min(100, max(0, perc_difference))
+        return min(10, max(1, int(capped_diff / 10) + 1))
+
+    def calculate_percentage_diff(real_value: float, synthetic_value: float) -> float:
+        if real_value == 0:
+            return 100 if synthetic_value > 0 else 0
+        return abs((synthetic_value - real_value) / real_value * 100)
+
+    def format_edge(value: float) -> str:
+        if float(value).is_integer():
+            return str(int(value))
+        return f"{value:.2f}".rstrip("0").rstrip(".")
+
+    def create_bin_label(start: float, end: float) -> str:
+        return f"{format_edge(start)} | {format_edge(end)}"
+
+    results = {"real": {}, "synthetic": {}}
+
+    try:
+        for column in get_text_columns(real, synthetic):
+            real_text = prepare_text_series(real[column])
+            synthetic_text = prepare_text_series(synthetic[column])
+
+            real_lengths = real_text.str.len().astype(float)
+            synthetic_lengths = synthetic_text.str.len().astype(float)
+
+            empty_result = {
+                "frequencies": [],
+                "x_axis": "Text Length (Characters)",
+                "y_axis": "Percentage"
+            }
+
+            if real_lengths.empty and synthetic_lengths.empty:
+                results["real"][column] = empty_result
+                results["synthetic"][column] = empty_result
+                continue
+
+            combined_lengths = pd.concat([real_lengths, synthetic_lengths], ignore_index=True)
+            if combined_lengths.empty:
+                results["real"][column] = empty_result
+                results["synthetic"][column] = empty_result
+                continue
+
+            min_length = float(combined_lengths.min())
+            max_length = float(combined_lengths.max())
+
+            if min_length == max_length:
+                bins = np.array([max(0.0, min_length - 0.5), max_length + 0.5])
+            else:
+                try:
+                    bins = np.histogram_bin_edges(combined_lengths, bins='sturges')
+                except Exception:
+                    unique_lengths = max(1, int(combined_lengths.nunique()))
+                    bin_count = min(max_bins, max(5, unique_lengths))
+                    bins = np.linspace(min_length, max_length, bin_count + 1)
+
+                if len(bins) < 2:
+                    bins = np.array([max(0.0, min_length - 0.5), max_length + 0.5])
+
+                if len(bins) - 1 > max_bins:
+                    bins = np.linspace(min_length, max_length, max_bins + 1)
+
+            real_histogram, _ = np.histogram(real_lengths, bins=bins)
+            synthetic_histogram, _ = np.histogram(synthetic_lengths, bins=bins)
+
+            real_percentages = (
+                real_histogram / len(real_lengths) * 100
+                if len(real_lengths) > 0 else np.zeros_like(real_histogram, dtype=float)
+            )
+            synthetic_percentages = (
+                synthetic_histogram / len(synthetic_lengths) * 100
+                if len(synthetic_lengths) > 0 else np.zeros_like(synthetic_histogram, dtype=float)
+            )
+
+            bin_labels = [
+                create_bin_label(bins[index], bins[index + 1])
+                for index in range(len(bins) - 1)
+            ]
+
+            real_frequencies = []
+            synthetic_frequencies = []
+
+            for index, label in enumerate(bin_labels):
+                real_value = float(real_percentages[index])
+                synthetic_value = float(synthetic_percentages[index])
+                color_index = get_color_index(calculate_percentage_diff(real_value, synthetic_value))
+
+                real_frequencies.append({
+                    "label": label,
+                    "value": real_value,
+                    "color_index": 0
+                })
+                synthetic_frequencies.append({
+                    "label": label,
+                    "value": synthetic_value,
+                    "color_index": color_index
+                })
+
+            results["real"][column] = {
+                "frequencies": real_frequencies,
+                "x_axis": "Text Length (Characters)",
+                "y_axis": "Percentage"
+            }
+            results["synthetic"][column] = {
+                "frequencies": synthetic_frequencies,
+                "x_axis": "Text Length (Characters)",
+                "y_axis": "Percentage"
+            }
+
+        return results
+    except Exception as e:
+        raise ValueError(f"Error calculating text length distribution: {str(e)}")
+
+
+def calculate_text_length_hellinger_distance(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame
+) -> Dict[str, Dict[str, float]]:
+    """
+    Calculates the Hellinger distance between text-length distributions for each TEXT attribute.
+    """
+    hellinger_distances = {"real": {}, "synthetic": {}}
+
+    try:
+        for column in get_text_columns(real, synthetic):
+            real_text = prepare_text_series(real[column])
+            synthetic_text = prepare_text_series(synthetic[column])
+
+            real_lengths = real_text.str.len().astype(int)
+            synthetic_lengths = synthetic_text.str.len().astype(int)
+
+            if real_lengths.empty and synthetic_lengths.empty:
+                hellinger_dist = 0.0
+            elif real_lengths.empty or synthetic_lengths.empty:
+                hellinger_dist = 1.0
+            else:
+                real_counts = real_lengths.value_counts()
+                synthetic_counts = synthetic_lengths.value_counts()
+
+                all_lengths = sorted(set(real_counts.index).union(set(synthetic_counts.index)))
+                real_total = float(real_counts.sum())
+                synthetic_total = float(synthetic_counts.sum())
+
+                real_probs = np.array([real_counts.get(length, 0) / real_total for length in all_lengths], dtype=float)
+                synthetic_probs = np.array(
+                    [synthetic_counts.get(length, 0) / synthetic_total for length in all_lengths],
+                    dtype=float
+                )
+
+                hellinger_dist = float(
+                    distance.euclidean(np.sqrt(real_probs), np.sqrt(synthetic_probs)) / np.sqrt(2)
+                )
+
+            hellinger_distances["real"][column] = 0.0
+            hellinger_distances["synthetic"][column] = hellinger_dist
+
+        return hellinger_distances
+    except Exception as e:
+        raise ValueError(f"Error calculating text length Hellinger distance: {str(e)}")
+
+
+def calculate_wordcloud(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame,
+    top_words: int = 50
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """
+    Calculates normalized top-word frequencies for each TEXT attribute as wordcloud input data.
+    """
+
+    def get_color_index(perc_difference: float) -> int:
+        capped_diff = min(100, max(0, perc_difference))
+        return min(10, max(1, int(capped_diff / 10) + 1))
+
+    def calculate_percentage_diff(real_value: float, synthetic_value: float) -> float:
+        if real_value == 0:
+            return 100 if synthetic_value > 0 else 0
+        return abs((synthetic_value - real_value) / real_value * 100)
+
+    results = {"real": {}, "synthetic": {}}
+
+    try:
+        for column in get_text_columns(real, synthetic):
+            real_text = prepare_text_series(real[column])
+            synthetic_text = prepare_text_series(synthetic[column])
+
+            real_counter = extract_word_frequencies(real_text)
+            synthetic_counter = extract_word_frequencies(synthetic_text)
+
+            total_real = sum(real_counter.values())
+            total_synthetic = sum(synthetic_counter.values())
+
+            empty_result = {
+                "frequencies": [],
+                "x_axis": "Words",
+                "y_axis": "Relative Frequency (%)"
+            }
+
+            if total_real == 0 and total_synthetic == 0:
+                results["real"][column] = empty_result
+                results["synthetic"][column] = empty_result
+                continue
+
+            real_percentages = {
+                word: (count / total_real) * 100
+                for word, count in real_counter.items()
+            } if total_real > 0 else {}
+            synthetic_percentages = {
+                word: (count / total_synthetic) * 100
+                for word, count in synthetic_counter.items()
+            } if total_synthetic > 0 else {}
+
+            if total_real > 0:
+                top_words_list = [
+                    word for word, _ in sorted(
+                        real_counter.items(),
+                        key=lambda item: item[1],
+                        reverse=True
+                    )[:top_words]
+                ]
+            else:
+                top_words_list = [
+                    word for word, _ in sorted(
+                        synthetic_counter.items(),
+                        key=lambda item: item[1],
+                        reverse=True
+                    )[:top_words]
+                ]
+
+            real_frequencies = []
+            synthetic_frequencies = []
+
+            for word in top_words_list:
+                real_value = float(real_percentages.get(word, 0.0))
+                synthetic_value = float(synthetic_percentages.get(word, 0.0))
+                color_index = get_color_index(calculate_percentage_diff(real_value, synthetic_value))
+
+                real_frequencies.append({
+                    "label": word,
+                    "value": real_value,
+                    "color_index": 0
+                })
+                synthetic_frequencies.append({
+                    "label": word,
+                    "value": synthetic_value,
+                    "color_index": color_index
+                })
+
+            results["real"][column] = {
+                "frequencies": real_frequencies,
+                "x_axis": "Words",
+                "y_axis": "Relative Frequency (%)"
+            }
+            results["synthetic"][column] = {
+                "frequencies": synthetic_frequencies,
+                "x_axis": "Words",
+                "y_axis": "Relative Frequency (%)"
+            }
+
+        return results
+    except Exception as e:
+        raise ValueError(f"Error calculating wordcloud data: {str(e)}")
+
+
+def calculate_wordcloud_independent(
+    real: pd.DataFrame,
+    synthetic: pd.DataFrame,
+    top_words: int = 50
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """
+    Calculates independent top-word frequencies for real and synthetic TEXT attributes.
+    """
+    results = {"real": {}, "synthetic": {}}
+
+    def build_real_frequency_list(counter: Dict[str, int], top_n: int) -> List[Dict[str, Union[str, float, int]]]:
+        total = sum(counter.values())
+        if total <= 0:
+            return []
+
+        top_list = sorted(counter.items(), key=lambda item: item[1], reverse=True)[:top_n]
+        frequencies: List[Dict[str, Union[str, float, int]]] = []
+        for word, count in top_list:
+            frequencies.append({
+                "label": word,
+                "value": float((count / total) * 100),
+                # Left cloud (original) should always be shown in blue.
+                "color_index": 0,
+            })
+        return frequencies
+
+    def build_synthetic_frequency_list(
+        counter: Dict[str, int],
+        real_vocabulary: set[str],
+        top_n: int
+    ) -> List[Dict[str, Union[str, float, int]]]:
+        total = sum(counter.values())
+        if total <= 0:
+            return []
+
+        top_list = sorted(counter.items(), key=lambda item: item[1], reverse=True)[:top_n]
+        frequencies: List[Dict[str, Union[str, float, int]]] = []
+        for word, count in top_list:
+            frequencies.append({
+                "label": word,
+                "value": float((count / total) * 100),
+                # Right cloud: green if word exists in original, red otherwise.
+                "color_index": 1 if word in real_vocabulary else 10,
+            })
+        return frequencies
+
+    try:
+        for column in get_text_columns(real, synthetic):
+            real_text = prepare_text_series(real[column])
+            synthetic_text = prepare_text_series(synthetic[column])
+
+            real_counter = extract_word_frequencies(real_text)
+            synthetic_counter = extract_word_frequencies(synthetic_text)
+
+            real_frequencies = build_real_frequency_list(real_counter, top_words)
+            synthetic_frequencies = build_synthetic_frequency_list(
+                synthetic_counter,
+                set(real_counter.keys()),
+                top_words
+            )
+
+            results["real"][column] = {
+                "frequencies": real_frequencies,
+                "x_axis": "Words",
+                "y_axis": "Relative Frequency (%)"
+            }
+            results["synthetic"][column] = {
+                "frequencies": synthetic_frequencies,
+                "x_axis": "Words",
+                "y_axis": "Relative Frequency (%)"
+            }
+
+        return results
+    except Exception as e:
+        raise ValueError(f"Error calculating independent wordcloud data: {str(e)}")
+
+
 def calculate_mode(real, synthetic):
     """
     Calculates the mode of a categorical column in a dataframe.
@@ -985,7 +1555,10 @@ def calculate_mode(real, synthetic):
         real_categorical, synthetic_categorical = validate_categorical_dataframes(real, synthetic)
         modes = {'real': {}, 'synthetic': {}}
 
+        text_columns = set(get_declared_text_columns(real, synthetic))
         for column in real_categorical.columns:
+            if column in text_columns:
+                continue
             modes['real'][column] = real_categorical[column].mode().iloc[0] if not real_categorical[
                 column].mode().empty else None
             modes['synthetic'][column] = synthetic_categorical[column].mode().iloc[0] if not synthetic_categorical[
@@ -1193,6 +1766,7 @@ def calculate_columnwise_correlations(
 
     Handles columns with constant values by assigning them a correlation of 0.0,
     properly managing both numerical and categorical data types.
+    Any pair involving a declared TEXT column is forced to 0.0.
 
     Args:
         real (pd.DataFrame): The real data table.
@@ -1203,17 +1777,29 @@ def calculate_columnwise_correlations(
               column names as second-level keys, and a single correlation value for each column.
     """
     column_correlations = {"real": {}, "synthetic": {}}
+    text_columns = set(get_declared_text_columns(real, synthetic))
 
     try:
-        for df, df_name in [(real, "real"), (synthetic, "synthetic")]:
-            constant_cols = [
-                col for col in df.columns if df[col].nunique(dropna=False) <= 1
-            ]
-            # Identify columns that are NOT constant
-            varying_cols = [col for col in df.columns if col not in constant_cols]
+        def calculate_pairwise_correlation(df: pd.DataFrame, col_a: str, col_b: str, df_name: str) -> float:
+            try:
+                pair_corr_matrix = df[[col_a, col_b]].phik_matrix()
+                return to_valid_correlation(pair_corr_matrix.loc[col_a, col_b])
+            except Exception as fallback_error:
+                print(
+                    f"Warning: Pairwise PhiK calculation failed for {col_a}-{col_b} "
+                    f"in {df_name}: {fallback_error}. Using 0.0."
+                )
+                return 0.0
 
-            # Calculate the full phik matrix once for all varying columns
-            # This is the primary optimization for speed
+        for df, df_name in [(real, "real"), (synthetic, "synthetic")]:
+            constant_cols = {
+                col for col in df.columns if df[col].nunique(dropna=False) <= 1
+            }
+            varying_cols = [
+                col for col in df.columns
+                if col not in constant_cols and col not in text_columns
+            ]
+
             full_phik_matrix = pd.DataFrame()
             if len(varying_cols) > 1:
                 try:
@@ -1223,77 +1809,36 @@ def calculate_columnwise_correlations(
                         f"Warning: Error calculating full phik_matrix for {df_name} data: {e}. "
                         "Falling back to pairwise calculation where possible."
                     )
-                    full_phik_matrix = pd.DataFrame() # Reset to empty if full matrix calculation fails
+                    full_phik_matrix = pd.DataFrame()
 
             for current_col in df.columns:
-                if current_col in constant_cols:
+                if current_col in constant_cols or current_col in text_columns:
                     column_correlations[df_name][current_col] = 0.0
-                else:
-                    correlation_values = []
-                    for other_col in df.columns:
-                        if current_col == other_col:
-                            continue # Skip self-correlation
+                    continue
 
-                        if other_col in constant_cols:
-                            correlation_values.append(0.0)
-                            continue
+                correlation_values: List[float] = []
+                for other_col in df.columns:
+                    if current_col == other_col:
+                        continue
 
-                        # Prioritize fetching from the pre-calculated full matrix
-                        if (
-                            not full_phik_matrix.empty
-                            and current_col in full_phik_matrix.index
-                            and other_col in full_phik_matrix.columns
-                        ):
-                            try:
-                                corr_val = float(
-                                    full_phik_matrix.loc[current_col, other_col]
-                                )
-                                correlation_values.append(corr_val)
-                            except Exception as inner_e:
-                                # This block handles cases where value might be missing from matrix,
-                                # even if index/columns are present (e.g., NaN internal to matrix)
-                                print(
-                                    f"Warning: Could not get correlation for {current_col}-{other_col} "
-                                    f"from pre-calculated matrix in {df_name}: {inner_e}. Falling back."
-                                )
-                                # Fallback to direct pairwise calculation
-                                try:
-                                    temp_df = df[[current_col, other_col]]
-                                    pair_corr_matrix = temp_df.phik_matrix()
-                                    pair_corr_val = float(
-                                        pair_corr_matrix.loc[current_col, other_col]
-                                    )
-                                    correlation_values.append(pair_corr_val)
-                                except Exception as fallback_e:
-                                    print(
-                                        f"Warning: Fallback pairwise calculation failed for {current_col}-{other_col} "
-                                        f"in {df_name}: {fallback_e}. Setting to NaN."
-                                    )
-                                    correlation_values.append('NA')
-                        else:
-                            try:
-                                temp_df = df[[current_col, other_col]]
-                                pair_corr_matrix = temp_df.phik_matrix()
-                                pair_corr_val = float(
-                                    pair_corr_matrix.loc[current_col, other_col]
-                                )
-                                correlation_values.append(pair_corr_val)
-                            except Exception as fallback_e:
-                                print(
-                                    f"Warning: Direct pairwise calculation failed for {current_col}-{other_col} "
-                                    f"in {df_name}: {fallback_e}. Setting to NaN."
-                                )
-                                correlation_values.append('NA')
+                    if other_col in constant_cols or other_col in text_columns:
+                        correlation_values.append(0.0)
+                        continue
 
-                    # Calculate the mean, ignoring NaNs introduced by problematic correlations
-                    if correlation_values:
-                        mean_val = float(np.mean(correlation_values))
-                        if np.isnan(mean_val):
-                            column_correlations[df_name][current_col] = 0.0
-                        else:
-                            column_correlations[df_name][current_col] = mean_val
+                    if (
+                        not full_phik_matrix.empty
+                        and current_col in full_phik_matrix.index
+                        and other_col in full_phik_matrix.columns
+                    ):
+                        corr_val = to_valid_correlation(full_phik_matrix.loc[current_col, other_col])
                     else:
-                        column_correlations[df_name][current_col] = 0.0
+                        corr_val = calculate_pairwise_correlation(df, current_col, other_col, df_name)
+
+                    correlation_values.append(corr_val)
+
+                column_correlations[df_name][current_col] = (
+                    float(np.mean(correlation_values)) if correlation_values else 0.0
+                )
 
         return column_correlations
 
@@ -1321,6 +1866,7 @@ def calculate_columnwise_correlations_distance(
     Handles columns with constant values by assigning them a correlation of 0.0.
     If a pairwise correlation cannot be calculated (e.g., due to constant columns
     or other Phik issues), its difference is treated as 0 for averaging purposes.
+    Any pair involving a declared TEXT column is forced to 0.0.
 
     Args:
         real (pd.DataFrame): The real data table.
@@ -1332,11 +1878,18 @@ def calculate_columnwise_correlations_distance(
                                      as top-level keys, and column names as
                                      second-level keys.
     """
+    text_columns = set(get_declared_text_columns(real, synthetic))
     real_phik_matrix = pd.DataFrame()
     synthetic_phik_matrix = pd.DataFrame()
 
-    real_varying_cols = [col for col in real.columns if real[col].nunique(dropna=False) > 1]
-    synthetic_varying_cols = [col for col in synthetic.columns if synthetic[col].nunique(dropna=False) > 1]
+    real_varying_cols = [
+        col for col in real.columns
+        if real[col].nunique(dropna=False) > 1 and col not in text_columns
+    ]
+    synthetic_varying_cols = [
+        col for col in synthetic.columns
+        if synthetic[col].nunique(dropna=False) > 1 and col not in text_columns
+    ]
 
     if len(real_varying_cols) > 1:
         try:
@@ -1362,42 +1915,40 @@ def calculate_columnwise_correlations_distance(
 
         for other_col in all_columns:
             if current_col == other_col:
-                continue # Skip self-correlation
+                continue
 
-            real_corr_val = 0.0 # Default if column is constant or not present in real
-            synthetic_corr_val = 0.0 # Default if column is constant or not present in synthetic
+            if current_col in text_columns or other_col in text_columns:
+                pairwise_differences.append(0.0)
+                continue
+
+            real_corr_val = 0.0
+            synthetic_corr_val = 0.0
 
             if current_col in real.columns and other_col in real.columns:
                 if real[current_col].nunique(dropna=False) <= 1 or real[other_col].nunique(dropna=False) <= 1:
                     real_corr_val = 0.0
                 elif not real_phik_matrix.empty and current_col in real_phik_matrix.index and other_col in real_phik_matrix.columns:
-                    try:
-                        real_corr_val = float(real_phik_matrix.loc[current_col, other_col])
-                    except ValueError: # phik might return NaN or non-numeric if calculation failed
-                        real_corr_val = 0.0 # Treat failed correlation as 0 for difference
-                else: # Fallback if full matrix not used or failed
+                    real_corr_val = to_valid_correlation(real_phik_matrix.loc[current_col, other_col])
+                else:
                     try:
                         temp_df = real[[current_col, other_col]]
                         pair_corr_matrix = temp_df.phik_matrix()
-                        real_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                        real_corr_val = to_valid_correlation(pair_corr_matrix.loc[current_col, other_col])
                     except Exception:
-                        real_corr_val = 0.0 # Treat failed correlation as 0 for difference
+                        real_corr_val = 0.0
 
             if current_col in synthetic.columns and other_col in synthetic.columns:
                 if synthetic[current_col].nunique(dropna=False) <= 1 or synthetic[other_col].nunique(dropna=False) <= 1:
                     synthetic_corr_val = 0.0
                 elif not synthetic_phik_matrix.empty and current_col in synthetic_phik_matrix.index and other_col in synthetic_phik_matrix.columns:
-                    try:
-                        synthetic_corr_val = float(synthetic_phik_matrix.loc[current_col, other_col])
-                    except ValueError:
-                        synthetic_corr_val = 0.0 
-                else: 
+                    synthetic_corr_val = to_valid_correlation(synthetic_phik_matrix.loc[current_col, other_col])
+                else:
                     try:
                         temp_df = synthetic[[current_col, other_col]]
                         pair_corr_matrix = temp_df.phik_matrix()
-                        synthetic_corr_val = float(pair_corr_matrix.loc[current_col, other_col])
+                        synthetic_corr_val = to_valid_correlation(pair_corr_matrix.loc[current_col, other_col])
                     except Exception:
-                        synthetic_corr_val = 0.0 
+                        synthetic_corr_val = 0.0
 
             pairwise_differences.append(abs(real_corr_val - synthetic_corr_val))
 
@@ -1406,9 +1957,9 @@ def calculate_columnwise_correlations_distance(
             if valid_diffs:
                 mean_abs_difference = float(np.mean(valid_diffs))
             else:
-                mean_abs_difference = 0.0 
+                mean_abs_difference = 0.0
         else:
-            mean_abs_difference = 0.0 
+            mean_abs_difference = 0.0
 
         final_correlations["synthetic"][current_col] = mean_abs_difference
 
@@ -1419,6 +1970,7 @@ def visualize_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFram
     """
     Creates a visualization format for column-wise correlations that can be interpreted
     as a heat map in the frontend.
+    Any pair involving a declared TEXT column is forced to 0.0.
 
     Args:
         real (pd.DataFrame): The real data table.
@@ -1428,8 +1980,8 @@ def visualize_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFram
         dict: A dictionary containing visualization data for real and synthetic correlations.
             Each dataset has x_values (column names) and correlation_values.
     """
-    # Initialize result dictionary
     visualization_data = {'real': {}, 'synthetic': {}}
+    text_columns = set(get_declared_text_columns(real, synthetic))
 
     try:
         matrix_data = calculate_full_correlation_matrix(real, synthetic)
@@ -1438,15 +1990,37 @@ def visualize_columnwise_correlations(real: pd.DataFrame, synthetic: pd.DataFram
         synthetic_matrix = matrix_data.get("synthetic", [])
 
         for idx, column in enumerate(labels):
+            real_row = real_matrix[idx] if idx < len(real_matrix) else [0.0] * len(labels)
+            synthetic_row = synthetic_matrix[idx] if idx < len(synthetic_matrix) else [0.0] * len(labels)
+
+            normalized_real_values: List[float] = []
+            normalized_synthetic_values: List[float] = []
+
+            for col_idx, other_column in enumerate(labels):
+                if column in text_columns or other_column in text_columns:
+                    normalized_real_values.append(0.0)
+                    normalized_synthetic_values.append(0.0)
+                    continue
+
+                if column == other_column:
+                    normalized_real_values.append(1.0)
+                    normalized_synthetic_values.append(1.0)
+                    continue
+
+                real_value = real_row[col_idx] if col_idx < len(real_row) else 0.0
+                synthetic_value = synthetic_row[col_idx] if col_idx < len(synthetic_row) else 0.0
+                normalized_real_values.append(to_valid_correlation(real_value))
+                normalized_synthetic_values.append(to_valid_correlation(synthetic_value))
+
             visualization_data['real'][column] = {
                 "x_values": labels,
-                "correlation_values": real_matrix[idx] if idx < len(real_matrix) else [0.0] * len(labels),
+                "correlation_values": normalized_real_values,
                 "x_axis": "Attributes",
                 "y_axis": "Correlation Strength",
             }
             visualization_data['synthetic'][column] = {
                 "x_values": labels,
-                "correlation_values": synthetic_matrix[idx] if idx < len(synthetic_matrix) else [0.0] * len(labels),
+                "correlation_values": normalized_synthetic_values,
                 "x_axis": "Attributes",
                 "y_axis": "Correlation Strength",
             }

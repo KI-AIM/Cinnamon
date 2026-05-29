@@ -62,15 +62,18 @@ TOP_LEVEL_KEYS = {
     "display_name",
     "description",
     "URL",
+    "processing_capabilities",
     "configurations",
 }
-CONFIG_SECTIONS = {"model_parameter", "model_fitting", "sampling"}
+CONFIG_REQUIRED_SECTIONS = {"model_fitting"}
+CONFIG_OPTIONAL_SECTIONS = {"llm_profile", "model_parameter", "sampling"}
+CONFIG_ALLOWED_SECTIONS = CONFIG_REQUIRED_SECTIONS | CONFIG_OPTIONAL_SECTIONS
 SECTION_KEYS = {"display_name", "description", "parameters"}
 
 PARAM_REQUIRED_KEYS = {"name", "type", "label", "description", "default_value"}
-PARAM_OPTIONAL_KEYS = {"min_value", "max_value", "values"}
+PARAM_OPTIONAL_KEYS = {"min_value", "max_value", "values", "mandatory", "multiline", "rows"}
 PARAM_ALLOWED_KEYS = PARAM_REQUIRED_KEYS | PARAM_OPTIONAL_KEYS
-ALLOWED_PARAM_TYPES = {"integer", "float", "string", "list"}
+ALLOWED_PARAM_TYPES = {"integer", "float", "string", "list", "boolean"}
 
 
 def _load_yaml(path: Path) -> dict:
@@ -97,9 +100,12 @@ def test_top_level_structure_and_filename_match():
         assert isinstance(config["display_name"], str) and config["display_name"]
         assert isinstance(config["description"], str) and config["description"]
         assert isinstance(config["URL"], str) and config["URL"]
+        assert isinstance(config["processing_capabilities"], dict)
         assert config["URL"].startswith("/start_synthetization_process/")
         assert config["URL"].endswith(f"/{config['name']}")
-        assert set(config["configurations"].keys()) == CONFIG_SECTIONS
+        section_names = set(config["configurations"].keys())
+        assert CONFIG_REQUIRED_SECTIONS.issubset(section_names)
+        assert section_names <= CONFIG_ALLOWED_SECTIONS
 
 
 def test_configuration_sections_and_parameters():
@@ -107,11 +113,11 @@ def test_configuration_sections_and_parameters():
         config = _load_yaml(path)
 
         for section_name, section in config["configurations"].items():
-            assert section_name in CONFIG_SECTIONS
+            assert section_name in CONFIG_ALLOWED_SECTIONS
             assert set(section.keys()) == SECTION_KEYS
             assert isinstance(section["display_name"], str) and section["display_name"]
             assert isinstance(section["description"], str) and section["description"]
-            assert isinstance(section["parameters"], list) and section["parameters"]
+            assert isinstance(section["parameters"], list)
 
             seen_names = set()
             for param in section["parameters"]:
@@ -137,10 +143,22 @@ def test_configuration_sections_and_parameters():
                     assert isinstance(default_value, str)
                 elif param_type == "list":
                     assert isinstance(default_value, list)
+                elif param_type == "boolean":
+                    assert isinstance(default_value, bool)
 
                 if "values" in param:
-                    assert isinstance(param["values"], list) and param["values"]
-                    assert default_value in param["values"]
+                    assert isinstance(param["values"], list)
+                    if param["values"]:
+                        assert default_value in param["values"]
+
+                if "mandatory" in param:
+                    assert isinstance(param["mandatory"], bool)
+
+                if "multiline" in param:
+                    assert isinstance(param["multiline"], bool)
+
+                if "rows" in param:
+                    assert isinstance(param["rows"], int) and param["rows"] > 0
 
                 if _is_number(default_value):
                     assert "min_value" in param and "max_value" in param

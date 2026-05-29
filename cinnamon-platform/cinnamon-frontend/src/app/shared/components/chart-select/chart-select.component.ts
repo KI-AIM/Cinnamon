@@ -15,6 +15,7 @@ export class ChartSelectComponent {
     @Input() dataType!: DataType;
     @Input() simple: boolean = false;
     @Input() graph!: GraphType;
+    @Input() showWordcloudIndependent: boolean = true;
     @Output() graphChange: EventEmitter<string> = new EventEmitter<string>();
 
     protected update(v : MatSelectChange): void {

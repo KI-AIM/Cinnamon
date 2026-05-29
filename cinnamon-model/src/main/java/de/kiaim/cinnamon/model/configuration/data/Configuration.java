@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 		@JsonSubTypes.Type(DateTimeFormatConfiguration.class),
 		@JsonSubTypes.Type(RangeConfiguration.class),
 		@JsonSubTypes.Type(StringPatternConfiguration.class),
+		@JsonSubTypes.Type(TextLanguageConfiguration.class),
 })
 public interface Configuration {
 }

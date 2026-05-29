@@ -37,6 +37,14 @@ export class AdditionalConfigurationComponent implements OnInit {
 
     protected readonly ConfigurationTypeMetadata = ConfigurationTypeMetadata;
     protected readonly DataType = DataType;
+    protected readonly textLanguages = [
+        "ENGLISH",
+        "GERMAN",
+        "FRENCH",
+        "SPANISH",
+        "ITALIAN",
+        "PORTUGUESE",
+    ];
 
     private cache: Array<{ name: string }> = [];
 
@@ -134,7 +142,6 @@ export class AdditionalConfigurationComponent implements OnInit {
                 break;
             }
             case ConfigurationType.DATETIMEFORMAT: {
-                console.log("adding");
                 this.getConfigurations().push(
                     this.formBuilder.group({
                         name: ["DateTimeFormatConfiguration"],
@@ -160,6 +167,16 @@ export class AdditionalConfigurationComponent implements OnInit {
                     this.formBuilder.group({
                         name: ["StringPatternConfiguration"],
                         pattern: ["", {validators: [Validators.required]}],
+                    })
+                );
+                this.selected = "standardSelection";
+                break;
+            }
+            case ConfigurationType.TEXTLANGUAGE: {
+                this.getConfigurations().push(
+                    this.formBuilder.group({
+                        name: ["TextLanguageConfiguration"],
+                        language: ["ENGLISH", {validators: [Validators.required]}],
                     })
                 );
                 this.selected = "standardSelection";

@@ -1,125 +1,108 @@
-import numpy as np
 import pandas as pd
 from typing import Tuple, List, Dict, Any
 
-from data_processing.utils import iso_to_strftime, handle_date_column
-from data_processing.utils import BOOLEAN_MAP, MISSING_VALUE_STRING, MISSING_BOOLEAN
+from data_processing.utils import (
+    BOOLEAN_MAP,
+    MISSING_BOOLEAN,
+    MISSING_VALUE_STRING,
+    TEXT_PENDING_LLM,
+    get_column_name,
+    get_column_type,
+    get_date_format,
+    handle_date_column,
+    normalize_string_series,
+    set_text_columns_to_pending,
+    validate_column_configurations,
+)
 
 
-def pre_process_dataframe(df: pd.DataFrame, config: List[Dict[str, Any]]) -> Tuple[pd.DataFrame, List[str]]:
-    """
-    Preprocess a df based on the provided configuration.
-
-    This function applies column-specific preprocessing steps such as type
-    conversion, handling missing values, and dropping unnecessary columns.
-    It also identifies and removes columns with 100% missing values.
-
-    Args:
-        df (pd.DataFrame): The df to be preprocessed.
-        config (List[Dict[str, Any]]): A list of dictionaries containing column configurations.
-            Each dictionary should include:
-                - name (str): The column name.
-                - type (str): The target data type or category of the column
-                  ("STRING", "BOOLEAN", "ID", "DATE", "DECIMAL", or "INTEGER").
-                - configurations (List[Dict[str, Any]], optional): Additional configurations for
-                  specific column types, such as date formatting.
-
-    Returns:
-        Tuple[pd.DataFrame, List[str]]:
-            - pd.DataFrame: The preprocessed df with updated column values and data types.
-            - List[str]: A list of column names that had 100% missing values and were dropped.
-            
-    Raises:
-        ValueError: If a required column is missing or if column type is invalid.
-        TypeError: If data type conversion fails.
-        Exception: For other unexpected preprocessing errors.
-    """
-    all_missing_values_column = []
-    
-    # Check for columns with 100% missing values
-    for column in df.columns:
-        if df[column].isna().all():
-            all_missing_values_column.append(column)
-    
-    # Drop columns with 100% missing values
+def pre_process_dataframe(
+    df: pd.DataFrame,
+    config: List[Dict[str, Any]],
+    replace_text_with_pending: bool = True,
+) -> Tuple[pd.DataFrame, List[str]]:
+    validate_column_configurations(config, dataframe_columns=df.columns)
+    all_missing_values_column = [column for column in df.columns if df[column].isna().all()]
     if all_missing_values_column:
         df = df.drop(columns=all_missing_values_column)
-        print(f"Dropped columns with 100% missing values: {all_missing_values_column}")
-    
+
+    if replace_text_with_pending:
+        df = set_text_columns_to_pending(df, config)
+
     for column_config in config:
-        column_name = column_config['name']
-        column_type = column_config['type']
-        
-        # Skip processing if column was dropped due to all missing values
+        column_name = get_column_name(column_config)
+        column_type = get_column_type(column_config)
+
         if column_name in all_missing_values_column:
             continue
-            
-        # Check if column exists in dataframe
-        if column_name not in df.columns:
-            raise ValueError(f"Column '{column_name}' specified in config does not exist in the dataframe")
 
         try:
-            if column_type == 'STRING':
-                df[column_name] = df[column_name].astype(str)
-                df[column_name] = df[column_name].replace(['nan', ''], MISSING_VALUE_STRING)
+            if column_type in {"STRING", "ID"}:
+                df[column_name] = _preprocess_string_like(df[column_name])
                 continue
 
-            if column_type == 'BOOLEAN':
-                df[column_name] = df[column_name].astype(str)
-                df[column_name] = df[column_name].replace(['nan', ''], MISSING_BOOLEAN)
-                df[column_name] = df[column_name].map(BOOLEAN_MAP)
+            if column_type == "TEXT":
+                if replace_text_with_pending:
+                    df[column_name] = pd.Series(TEXT_PENDING_LLM, index=df.index, dtype="string")
+                else:
+                    df[column_name] = normalize_string_series(df[column_name])
                 continue
 
-            if column_type == 'DATE':
-                try:
-                    date_format = next(
-                        (cfg.get('dateFormatter') or cfg.get('dateTimeFormatter') for cfg in column_config.get('configurations', [])),
-                        None)
-                    if date_format is None:
-                        raise ValueError(f"Date format not specified for DATE column '{column_name}'")
-                    date_format = iso_to_strftime(date_format)
-                    handle_date_column(df, column_name, date_format)
-
-                    # Ensure numeric dtype before fillna to avoid pandas future downcasting warnings
-                    df[column_name] = pd.to_numeric(df[column_name], errors='coerce')
-                    
-                    # Check if date values are imputed
-                    if df[column_name].isna().any():
-                        column_mean = df[column_name].mean()
-                        df[column_name] = df[column_name].fillna(column_mean)
-                except Exception as e:
-                    raise ValueError(f"Error processing DATE column '{column_name}': {str(e)}")
+            if column_type == "BOOLEAN":
+                df[column_name] = _preprocess_boolean(df[column_name])
                 continue
 
-            if column_type == 'DECIMAL':
-                try:
-                    df[column_name] = pd.to_numeric(df[column_name], errors='coerce')
-                    column_mean = df[column_name].mean()
-                    if pd.isna(column_mean):
-                        raise ValueError(f"Cannot calculate mean for DECIMAL column '{column_name}', all values are non-numeric")
-                    df[column_name] = df[column_name].fillna(column_mean)
-                except Exception as e:
-                    raise TypeError(f"Error converting '{column_name}' to DECIMAL: {str(e)}")
+            if column_type == "DATE":
+                df[column_name] = _preprocess_date(df[column_name], column_config)
                 continue
 
-            if column_type == 'INTEGER':
-                try:
-                    df[column_name] = pd.to_numeric(df[column_name], errors='coerce')
-                    column_mean = df[column_name].mean()
-                    if pd.isna(column_mean):
-                        raise ValueError(f"Cannot calculate mean for INTEGER column '{column_name}', all values are non-numeric")
-                    df[column_name] = df[column_name].fillna(round(column_mean))
-                    df[column_name] = df[column_name].astype(float).astype(int)  # Use regular int instead of Int64
-                except Exception as e:
-                    raise TypeError(f"Error converting '{column_name}' to INTEGER: {str(e)}")
+            if column_type == "DECIMAL":
+                df[column_name] = _preprocess_decimal(df[column_name], column_name)
                 continue
-                
-            # If column type is not recognized
-            raise ValueError(f"Invalid column type '{column_type}' for column '{column_name}'")
-            
-        except Exception as e:
-            # Catch-all for unexpected errors during processing of each column
-            raise Exception(f"Error processing column '{column_name}': {str(e)}")
-    
+
+            if column_type == "INTEGER":
+                df[column_name] = _preprocess_integer(df[column_name], column_name)
+                continue
+
+        except Exception as exc:
+            raise type(exc)(f"Error processing column '{column_name}': {exc}") from exc
 
     return df, all_missing_values_column
+
+
+def _preprocess_string_like(series: pd.Series) -> pd.Series:
+    normalized = normalize_string_series(series)
+    return normalized.fillna(MISSING_VALUE_STRING)
+
+
+def _preprocess_boolean(series: pd.Series) -> pd.Series:
+    normalized = normalize_string_series(series)
+    mapped = normalized.map(BOOLEAN_MAP)
+    return mapped.apply(lambda value: MISSING_BOOLEAN if pd.isna(value) else bool(value)).astype(bool)
+
+
+def _preprocess_date(series: pd.Series, column_config: Dict[str, Any]) -> pd.Series:
+    working_series = series.copy()
+    date_format = get_date_format(column_config)
+    working_df = pd.DataFrame({"value": working_series})
+    handle_date_column(working_df, "value", date_format)
+    numeric = pd.to_numeric(working_df["value"], errors="coerce")
+    return _fill_numeric_missing_with_mean(numeric, get_column_name(column_config), "DATE")
+
+
+def _preprocess_decimal(series: pd.Series, column_name: str) -> pd.Series:
+    numeric = pd.to_numeric(series, errors="coerce")
+    return _fill_numeric_missing_with_mean(numeric, column_name, "DECIMAL")
+
+
+def _preprocess_integer(series: pd.Series, column_name: str) -> pd.Series:
+    numeric = pd.to_numeric(series, errors="coerce")
+    filled = _fill_numeric_missing_with_mean(numeric, column_name, "INTEGER")
+    return filled.round().astype(int)
+
+
+def _fill_numeric_missing_with_mean(series: pd.Series, column_name: str, column_type: str) -> pd.Series:
+    column_mean = series.mean()
+    if pd.isna(column_mean):
+        raise ValueError(f"Cannot calculate mean for {column_type} column '{column_name}', all values are non-numeric")
+    return series.fillna(column_mean)

@@ -80,6 +80,21 @@ services:
             - "127.0.0.1:5000:5000"
         networks:
             - synthetization-network
+        env_file:
+            - .env
+        environment:
+            CINNAMON_LLM_PROVIDER: ${CINNAMON_LLM_PROVIDER:-}
+            CINNAMON_LLM_MODEL_NAME: ${CINNAMON_LLM_MODEL_NAME:-}
+            CINNAMON_LLM_BASE_URL: ${CINNAMON_LLM_BASE_URL:-}
+            CINNAMON_LLM_ENDPOINT_PATH: ${CINNAMON_LLM_ENDPOINT_PATH:-}
+            CINNAMON_LLM_HEALTHCHECK_PATH: ${CINNAMON_LLM_HEALTHCHECK_PATH:-}
+            CINNAMON_LLM_API_KEY: ${CINNAMON_LLM_API_KEY:-}
+            CINNAMON_LLM_TIMEOUT_SECONDS: ${CINNAMON_LLM_TIMEOUT_SECONDS:-120}
+            CINNAMON_LLM_MAX_RETRIES: ${CINNAMON_LLM_MAX_RETRIES:-3}
+            CINNAMON_LLM_VERIFY_SSL: ${CINNAMON_LLM_VERIFY_SSL:-true}
+            CINNAMON_LLM_TEMPERATURE: ${CINNAMON_LLM_TEMPERATURE:-}
+            CINNAMON_LLM_TOP_P: ${CINNAMON_LLM_TOP_P:-}
+            CINNAMON_LLM_MAX_TOKENS: ${CINNAMON_LLM_MAX_TOKENS:-}
     cinnamon-evaluation:
         image: ghcr.io/ki-aim/cinnamon-evaluation:latest
         container_name: cinnamon-evaluation

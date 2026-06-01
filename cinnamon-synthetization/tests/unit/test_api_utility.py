@@ -56,6 +56,7 @@ def test_initialize_status_file_creates_expected_structure(tmp_path):
         "step": "initialization",
         "duration": "Waiting",
         "completed": "False",
+        "remaining_time": "Waiting",
     }
     assert _get_step(data, "fitting") == {
         "step": "fitting",
@@ -78,7 +79,9 @@ def test_initialize_status_file_creates_expected_structure(tmp_path):
         "duration": "Waiting",
         "initialization_duration": "Waiting",
         "fitting_duration": "Waiting",
+        "fitting_remaining_time": "Waiting",
         "sampling_duration": "Waiting",
+        "sampling_remaining_time": "Waiting",
         "remaining_time": "Waiting",
         "completed": "False",
     }
@@ -87,7 +90,9 @@ def test_initialize_status_file_creates_expected_structure(tmp_path):
         "duration": "Waiting",
         "initialization_duration": "Waiting",
         "fitting_duration": "Waiting",
+        "fitting_remaining_time": "Waiting",
         "sampling_duration": "Waiting",
+        "sampling_remaining_time": "Waiting",
         "remaining_time": "Waiting",
         "completed": "False",
     }
@@ -114,6 +119,7 @@ def test_update_status_updates_only_target_step(tmp_path):
     assert fitting["remaining_time"] == "10"
     assert initialization["duration"] == "Waiting"
     assert initialization["completed"] == "False"
+    assert initialization["remaining_time"] == "Waiting"
 
 
 def test_update_status_does_not_add_remaining_time_to_callback_step(tmp_path):
@@ -153,7 +159,9 @@ def test_update_component_status_updates_only_target_component(tmp_path):
         "duration": "3.5",
         "initialization_duration": "0.5",
         "fitting_duration": "1.0",
+        "fitting_remaining_time": "Waiting",
         "sampling_duration": "2.0",
+        "sampling_remaining_time": "Waiting",
         "remaining_time": "0",
         "completed": "True",
     }
@@ -189,6 +197,7 @@ def test_intercept_stdout_updates_component_remaining_time_when_configured(monke
     data = _read_status(status_path)
     assert _get_step(data, "sampling")["remaining_time"] == "7"
     assert _get_component(data, "llm_synthesis")["remaining_time"] == "7"
+    assert _get_component(data, "llm_synthesis")["sampling_remaining_time"] == "7"
 
 
 def test_intercept_stdout_updates_remaining_time_from_tqdm_output(monkeypatch, tmp_path):

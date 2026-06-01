@@ -61,7 +61,9 @@ def update_component_status(
     duration=None,
     initialization_duration=None,
     fitting_duration=None,
+    fitting_remaining_time=None,
     sampling_duration=None,
+    sampling_remaining_time=None,
     completed=None,
     remaining_time=None,
 ):
@@ -83,8 +85,12 @@ def update_component_status(
         component["initialization_duration"] = str(initialization_duration)
     if fitting_duration is not None:
         component["fitting_duration"] = str(fitting_duration)
+    if fitting_remaining_time is not None:
+        component["fitting_remaining_time"] = str(fitting_remaining_time)
     if sampling_duration is not None:
         component["sampling_duration"] = str(sampling_duration)
+    if sampling_remaining_time is not None:
+        component["sampling_remaining_time"] = str(sampling_remaining_time)
     if completed is not None:
         component["completed"] = _stringify_completed(completed)
     if remaining_time is not None:
@@ -155,7 +161,9 @@ class InterceptStream:
                 update_component_status(
                     self.file_path,
                     self.component_name,
-                    remaining_time=remaining_time,
+                    fitting_remaining_time=remaining_time if self.process_stage == "fitting" else None,
+                    sampling_remaining_time=remaining_time if self.process_stage == "sampling" else None,
+                    remaining_time=remaining_time if self.process_stage == "sampling" else None,
                 )
 
     def flush(self):
@@ -174,6 +182,7 @@ def _build_initial_steps():
             "step": "initialization",
             "duration": WAITING,
             "completed": STATUS_FALSE,
+            "remaining_time": WAITING,
         },
         {
             "step": "fitting",
@@ -200,7 +209,9 @@ def _build_component_status():
         "duration": WAITING,
         "initialization_duration": WAITING,
         "fitting_duration": WAITING,
+        "fitting_remaining_time": WAITING,
         "sampling_duration": WAITING,
+        "sampling_remaining_time": WAITING,
         "remaining_time": WAITING,
         "completed": STATUS_FALSE,
     }

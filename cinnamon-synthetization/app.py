@@ -4,7 +4,7 @@ import sys
 import time
 from copy import deepcopy
 from functools import lru_cache
-from multiprocessing import Process
+from multiprocessing import get_context
 from threading import Event
 
 import pandas as pd
@@ -31,6 +31,8 @@ app = Flask(__name__)
 tasks = {}
 task_locks = {}
 CORS(app)
+
+PROCESS_CONTEXT = get_context("spawn")
 
 CALLBACK_TIMEOUT_SECONDS = 30.0
 ERROR_CALLBACK_TIMEOUT_SECONDS = 5.0
@@ -360,7 +362,9 @@ def run_synthesizer_stage(
             update_component_status(
                 file_path_status,
                 status_component_name,
-                remaining_time=str(remaining_time),
+                fitting_remaining_time=str(remaining_time) if step == "fitting" else None,
+                sampling_remaining_time=str(remaining_time) if step == "sampling" else None,
+                remaining_time=str(remaining_time) if step == "sampling" else None,
             )
 
     synthesizer_class.set_progress_callback(_handle_progress_update)
@@ -407,13 +411,15 @@ def run_synthesizer_stage(
                 print(f"[{stage_label}] Warning: Failed to set session key for prompt logging: {e}")
     
     stage_init_duration = time.time() - stage_init_time
-    update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True)
+    update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True, remaining_time="0")
     if status_component_name is not None:
         update_component_status(
             file_path_status,
             status_component_name,
             synthesizer_name=synthesizer_name,
             initialization_duration=stage_init_duration,
+            fitting_remaining_time="Waiting",
+            sampling_remaining_time="Waiting",
             completed=False,
         )
 
@@ -422,6 +428,16 @@ def run_synthesizer_stage(
         synthesizer_class.fit()
     fit_duration = time.time() - fit_time
     print(f"[{stage_label}] Synthesizer fitted.")
+    if status_component_name is not None:
+        update_component_status(
+            file_path_status,
+            status_component_name,
+            synthesizer_name=synthesizer_name,
+            initialization_duration=stage_init_duration,
+            fitting_duration=fit_duration,
+            fitting_remaining_time="0",
+            completed=False,
+        )
 
     sample_time = time.time()
     with intercept_standard_streams(file_path_status, "sampling", component_name=status_component_name):
@@ -449,6 +465,8 @@ def run_synthesizer_stage(
             initialization_duration=stage_init_duration,
             fitting_duration=fit_duration,
             sampling_duration=sample_duration,
+            fitting_remaining_time="0",
+            sampling_remaining_time="0",
             remaining_time="0",
             completed=True,
         )
@@ -457,20 +475,26 @@ def run_synthesizer_stage(
 
 
 def update_pipeline_totals(file_path_status, total_init_duration, total_fit_duration, total_sample_duration, *, completed):
-    update_status(file_path_status, step='initialization', duration=total_init_duration, completed=completed)
+    update_status(
+        file_path_status,
+        step='initialization',
+        duration=total_init_duration,
+        completed=completed,
+        remaining_time="0" if total_init_duration > 0 else None,
+    )
     update_status(
         file_path_status,
         'fitting',
         duration=total_fit_duration,
         completed=completed,
-        remaining_time="0" if completed else None,
+        remaining_time="0" if total_fit_duration > 0 else None,
     )
     update_status(
         file_path_status,
         'sampling',
         duration=total_sample_duration,
         completed=completed,
-        remaining_time="0" if completed else None,
+        remaining_time="0" if total_sample_duration > 0 else None,
     )
 
 
@@ -737,7 +761,7 @@ def start_synthetization_process(synthesizer_name):
         print('Data successfully loaded')
 
         # Create and start the process
-        task_process = Process(
+        task_process = PROCESS_CONTEXT.Process(
             target=synthesize_data,
             args=(synthesizer_name, file_path_status, attribute_config, algorithm_config,
                   data.copy(), original_data.copy() if original_data is not None else None, callback_url, session_key)  # Note the data.copy()

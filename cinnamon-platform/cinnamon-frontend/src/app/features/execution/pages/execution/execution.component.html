@@ -115,13 +115,15 @@
                                                                 <thead>
                                                                 <th>Step</th>
                                                                 <th>Finished</th>
-                                                                <th>Remaining Time/ Duration</th>
+                                                                <th>Remaining Time</th>
+                                                                <th>Step Duration</th>
                                                                 </thead>
                                                                 <tbody>
                                                                 <tr *ngFor="let step of component.rows">
                                                                     <td>{{ step.step }}</td>
                                                                     <td>{{ step.completed }}</td>
-                                                                    <td>{{ formatTime(step) }}</td>
+                                                                    <td>{{ formatRemainingTime(step) }}</td>
+                                                                    <td>{{ formatStepDuration(step) }}</td>
                                                                 </tr>
                                                                 </tbody>
                                                             </table>
@@ -133,13 +135,15 @@
                                                         <thead>
                                                         <th>Step</th>
                                                         <th>Finished</th>
-                                                        <th>Remaining Time/ Duration</th>
+                                                        <th>Remaining Time</th>
+                                                        <th>Step Duration</th>
                                                         </thead>
                                                         <tbody>
                                                         <tr *ngFor="let step of getSynthetizationRows(synthetizationProcess)">
                                                             <td>{{ step.step }}</td>
                                                             <td>{{ step?.completed }}</td>
-                                                            <td>{{ formatTime(step) }}</td>
+                                                            <td>{{ formatRemainingTime(step) }}</td>
+                                                            <td>{{ formatStepDuration(step) }}</td>
                                                         </tr>
                                                         </tbody>
                                                     </table>

@@ -118,8 +118,19 @@ export class ExecutionComponent implements OnInit {
         return plainToInstance(SynthetizationProcess, JSON.parse(value));
     }
 
-    protected formatTime(step: any): string {
-        return this.statisticsService.formatNumber((step?.completed === "True") ? step?.duration : step?.remaining_time, {
+    protected formatStepDuration(step: ProcessProgress): string {
+        return this.formatDurationValue(step?.duration);
+    }
+
+    protected formatRemainingTime(step: ProcessProgress): string {
+        if (step.step === "Initialization" && !this.hasUsableValue(step?.remaining_time)) {
+            return this.formatDurationValue("0");
+        }
+        return this.formatDurationValue(step?.remaining_time);
+    }
+
+    private formatDurationValue(value: string | null | undefined): string {
+        return this.statisticsService.formatNumber(value, {
             maximumFractionDigits: 0,
             unit: "s"
         });
@@ -153,7 +164,7 @@ export class ExecutionComponent implements OnInit {
             rows: ProcessProgress[],
         }> = [];
 
-        if (process.components.structured_synthesis) {
+        if (process.components.structured_synthesis && !this.isUnusedComponent(process.components.structured_synthesis)) {
             components.push({
                 key: "structured_synthesis",
                 label: "Structured Synthesis",
@@ -162,7 +173,7 @@ export class ExecutionComponent implements OnInit {
             });
         }
 
-        if (process.components.llm_synthesis) {
+        if (process.components.llm_synthesis && !this.isUnusedComponent(process.components.llm_synthesis)) {
             components.push({
                 key: "llm_synthesis",
                 label: "LLM Synthesis",
@@ -184,48 +195,60 @@ export class ExecutionComponent implements OnInit {
                 this.buildProgressRow("Initialization", component.completed, "N/A"),
                 this.buildProgressRow("Fitting", component.completed, "N/A"),
                 this.buildProgressRow("Sampling", component.completed, "N/A", "N/A"),
-                this.buildProgressRow("Total", component.completed, "N/A"),
+                this.buildProgressRow("Total", component.completed, "N/A", component.completed === "True" ? "0" : "Waiting"),
             ];
         }
-
-        const samplingStarted = this.hasSamplingStarted(component);
-        const initializationDuration = this.withSamplingFallback(component.initialization_duration, samplingStarted);
-        const fittingDuration = this.withSamplingFallback(component.fitting_duration, samplingStarted);
 
         return [
             this.buildProgressRow(
                 "Initialization",
-                this.getRowCompleted(initializationDuration),
-                initializationDuration,
+                this.getRowCompleted(component.initialization_duration),
+                component.initialization_duration,
+                "0",
             ),
             this.buildProgressRow(
                 "Fitting",
-                this.getRowCompleted(fittingDuration),
-                fittingDuration,
+                this.getRowCompleted(component.fitting_duration),
+                component.fitting_duration,
+                this.getComponentStepRemainingTime(component, "fitting"),
             ),
             this.buildProgressRow(
                 "Sampling",
                 this.getRowCompleted(component.sampling_duration),
                 component.sampling_duration,
-                component.remaining_time,
+                this.getComponentStepRemainingTime(component, "sampling"),
             ),
-            this.buildProgressRow("Total", this.getRowCompleted(component.duration), component.duration),
+            this.buildProgressRow(
+                "Total",
+                this.getRowCompleted(component.duration),
+                component.duration,
+                this.getRowCompleted(component.duration) === "True" ? "0" : "Waiting",
+            ),
         ];
-    }
-
-    private hasSamplingStarted(component: SynthetizationComponentProgress): boolean {
-        return this.hasUsableValue(component.sampling_duration) || this.hasUsableValue(component.remaining_time);
-    }
-
-    private withSamplingFallback(value: string | null | undefined, samplingStarted: boolean): string | null | undefined {
-        if (this.hasUsableValue(value) || !samplingStarted) {
-            return value;
-        }
-        return "1";
     }
 
     private hasUsableValue(value: string | null | undefined): boolean {
         return value != null && value !== "" && value !== "Waiting" && value !== "N/A";
+    }
+
+    private getComponentStepRemainingTime(
+        component: SynthetizationComponentProgress,
+        step: "fitting" | "sampling",
+    ): string | null | undefined {
+        if (step === "fitting") {
+            if (this.hasUsableValue(component.fitting_remaining_time)) {
+                return component.fitting_remaining_time;
+            }
+            return this.hasUsableValue(component.fitting_duration) ? "0" : "Waiting";
+        }
+
+        if (this.hasUsableValue(component.sampling_remaining_time)) {
+            return component.sampling_remaining_time;
+        }
+        if (this.hasUsableValue(component.remaining_time)) {
+            return component.remaining_time;
+        }
+        return this.hasUsableValue(component.sampling_duration) ? "0" : "Waiting";
     }
 
     private isUnusedComponent(component: SynthetizationComponentProgress): boolean {

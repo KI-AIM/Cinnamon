@@ -53,6 +53,24 @@ def update_status(file_path, step, duration=None, completed=None, remaining_time
     _write_status_file(file_path, data)
 
 
+def update_total_synthesis_status(file_path, *, duration=None, completed=None, remaining_time=None):
+    data = _read_status_file(file_path)
+    components = data.setdefault("components", _build_initial_components())
+    total_synthesis = components.get("total_synthesis")
+    if total_synthesis is None:
+        total_synthesis = _build_total_synthesis_status()
+        components["total_synthesis"] = total_synthesis
+
+    if duration is not None:
+        total_synthesis["duration"] = str(duration)
+    if completed is not None:
+        total_synthesis["completed"] = _stringify_completed(completed)
+    if remaining_time is not None:
+        total_synthesis["remaining_time"] = str(remaining_time)
+
+    _write_status_file(file_path, data)
+
+
 def update_component_status(
     file_path,
     component_name,
@@ -217,10 +235,20 @@ def _build_component_status():
     }
 
 
+def _build_total_synthesis_status():
+    return {
+        "step": "Total",
+        "duration": WAITING,
+        "remaining_time": WAITING,
+        "completed": STATUS_FALSE,
+    }
+
+
 def _build_initial_components():
     return {
         "structured_synthesis": _build_component_status(),
         "llm_synthesis": _build_component_status(),
+        "total_synthesis": _build_total_synthesis_status(),
     }
 
 

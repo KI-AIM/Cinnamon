@@ -13,6 +13,7 @@ from api_utility.status.status_updater import (
     initialize_status_file,
     update_component_status,
     update_status,
+    update_total_synthesis_status,
 )
 
 
@@ -96,6 +97,12 @@ def test_initialize_status_file_creates_expected_structure(tmp_path):
         "remaining_time": "Waiting",
         "completed": "False",
     }
+    assert _get_component(data, "total_synthesis") == {
+        "step": "Total",
+        "duration": "Waiting",
+        "remaining_time": "Waiting",
+        "completed": "False",
+    }
 
 
 def test_update_status_updates_only_target_step(tmp_path):
@@ -167,6 +174,31 @@ def test_update_component_status_updates_only_target_component(tmp_path):
     }
     assert structured_component["duration"] == "Waiting"
     assert structured_component["completed"] == "False"
+
+
+def test_update_total_synthesis_status_updates_total_summary_only(tmp_path):
+    status_path = tmp_path / "outputs" / "status" / "total_component.yaml"
+    initialize_status_file(str(status_path), session_key="total", synthesizer_name="ctgan")
+
+    update_total_synthesis_status(
+        str(status_path),
+        duration=4.5,
+        remaining_time="0",
+        completed=True,
+    )
+
+    data = _read_status(status_path)
+    total_component = _get_component(data, "total_synthesis")
+    llm_component = _get_component(data, "llm_synthesis")
+
+    assert total_component == {
+        "step": "Total",
+        "duration": "4.5",
+        "remaining_time": "0",
+        "completed": "True",
+    }
+    assert llm_component["duration"] == "Waiting"
+    assert llm_component["completed"] == "False"
 
 
 def test_intercept_stdout_updates_remaining_time_when_message_matches(monkeypatch, tmp_path):

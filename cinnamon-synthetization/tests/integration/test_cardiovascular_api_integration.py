@@ -164,11 +164,9 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
         return DummyResponse()
 
     app_module.tasks.clear()
-    app_module.task_locks.clear()
 
-    monkeypatch.setattr(app_module, "Process", InlineProcess)
-    monkeypatch.setitem(
-        app_module.start_synthetization_process.__globals__,
+    monkeypatch.setattr(
+        app_module.PROCESS_CONTEXT,
         "Process",
         InlineProcess,
     )
@@ -204,7 +202,12 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
     callback_url = "http://callback.local/test"
 
     client = app_module.app.test_client()
-    with CONFIG_PATH.open("rb") as attribute_config, CONFIG_PATH.open("rb") as algorithm_config, DATA_PATH.open("rb") as data_file:
+    with (
+        CONFIG_PATH.open("rb") as attribute_config,
+        CONFIG_PATH.open("rb") as algorithm_config,
+        DATA_PATH.open("rb") as data_file,
+        DATA_PATH.open("rb") as original_data_file,
+    ):
         response = client.post(
             "/start_synthetization_process/cardiovascular_mock",
             data={
@@ -213,6 +216,7 @@ def test_cardiovascular_api_generates_synthetic_dataset(monkeypatch):
                 "attribute_config": (attribute_config, "attribute_config.yaml"),
                 "algorithm_config": (algorithm_config, "algorithm_config.yaml"),
                 "data": (data_file, "original-dataset.csv"),
+                "original_data": (original_data_file, "original-dataset.csv"),
             },
             content_type="multipart/form-data",
         )

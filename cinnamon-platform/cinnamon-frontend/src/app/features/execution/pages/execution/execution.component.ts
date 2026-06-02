@@ -185,6 +185,18 @@ export class ExecutionComponent implements OnInit {
         return components;
     }
 
+    protected getTotalSynthesisDuration(process: SynthetizationProcess | null | undefined): string {
+        const total = process?.components?.total_synthesis;
+        if (!total || total.completed !== "True" || !this.hasUsableValue(total.duration)) {
+            return "Waiting";
+        }
+        return this.formatDurationValue(total.duration);
+    }
+
+    protected hasSynthetizationTotal(process: SynthetizationProcess | null | undefined): boolean {
+        return !!process?.components?.total_synthesis;
+    }
+
     protected getComponentTitle(component: SynthetizationComponentProgress, label: string): string {
         return label;
     }
@@ -195,7 +207,6 @@ export class ExecutionComponent implements OnInit {
                 this.buildProgressRow("Initialization", component.completed, "N/A"),
                 this.buildProgressRow("Fitting", component.completed, "N/A"),
                 this.buildProgressRow("Sampling", component.completed, "N/A", "N/A"),
-                this.buildProgressRow("Total", component.completed, "N/A", component.completed === "True" ? "0" : "Waiting"),
             ];
         }
 
@@ -217,12 +228,6 @@ export class ExecutionComponent implements OnInit {
                 this.getRowCompleted(component.sampling_duration),
                 component.sampling_duration,
                 this.getComponentStepRemainingTime(component, "sampling"),
-            ),
-            this.buildProgressRow(
-                "Total",
-                this.getRowCompleted(component.duration),
-                component.duration,
-                this.getRowCompleted(component.duration) === "True" ? "0" : "Waiting",
             ),
         ];
     }

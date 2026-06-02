@@ -27,7 +27,7 @@ configurations:
         type: integer
         label: Profile Rows
         description: Maximum number of real rows used to estimate prompt statistics.
-        default_value: 1000
+        default_value: $dataset.original.numberRows
         min_value: 1
         max_value: 100000
       - name: few_shot_rows

@@ -2,31 +2,22 @@ import re
 import threading
 import time
 from typing import Any
+import yaml
 
 import requests
 from requests.auth import HTTPBasicAuth
-
-# CINNAMON_URL = "https://cinnamon-demo.uni-muenster.de/api"
-CINNAMON_URL = "http://localhost:8080/api"
-
-# Heart
-#DATA_FILE = "./resources/heart.csv"
-#CONFIG_FILE = "./resources/config.yaml"
-
-# FHIR bundle
-#DATA_FILE = "./resources/example-bundle.json"
-#CONFIG_FILE = "./resources/config-FHIR-bundle.yaml"
-
-# FHIR Server
-DATA_FILE = None
-CONFIG_FILE = "./resources/config-FHIR-server.yaml"
 
 NUMBER_PROJECTS = 1
 GAP = 0
 
 class CinnamonContext:
+    url: str
     email: str
     password: str
+
+    config_file: str
+    data_file: str
+
     workflow_id: str
 
 
@@ -39,7 +30,7 @@ def create_auth(context: CinnamonContext):
 
 
 def register_user(context: CinnamonContext):
-    url = f"{CINNAMON_URL}/user/register"
+    url = f"{context.url}/user/register"
     form_data = {"email": context.email, "password": context.password, "passwordRepeated": context.password}
     response = requests.post(url, json=form_data)
     if response.status_code == 200:
@@ -49,7 +40,7 @@ def register_user(context: CinnamonContext):
 
 
 def login(context: CinnamonContext) -> bool:
-    url = f"{CINNAMON_URL}/user/login"
+    url = f"{context.url}/user/login"
     response = requests.get(url, auth=create_auth(context))
     if response.status_code == 200:
         print_info(context, f"Login successful: {context.email}")
@@ -60,7 +51,7 @@ def login(context: CinnamonContext) -> bool:
 
 
 def delete_user(context: CinnamonContext):
-    url = f"{CINNAMON_URL}/user/delete"
+    url = f"{context.url}/user/delete"
     files = {"email": (None, context.email), "password": (None, context.password)}
     response = requests.delete(url, auth=create_auth(context), files=files)
     if response.status_code == 200:
@@ -70,15 +61,15 @@ def delete_user(context: CinnamonContext):
 
 
 def post_start_workflow(context: CinnamonContext):
-    url = f"{CINNAMON_URL}/workflow"
+    url = f"{context.url}/workflow"
 
-    if DATA_FILE is None:
-        with open(CONFIG_FILE, "rb") as config_file:
+    if context.data_file is None:
+        with open(context.config_file, "rb") as config_file:
             files = {"configuration": ("config.yaml", config_file, 'multipart/form-data')}
             response = requests.post(url, auth=create_auth(context), files=files)
     else:
-        with open(DATA_FILE, "rb") as data_file:
-            with open(CONFIG_FILE, "rb") as config_file:
+        with open(context.data_file, "rb") as data_file:
+            with open(context.config_file, "rb") as config_file:
                 files = {"data": ('heart.csv', data_file, 'multipart/form-data'),
                          "configuration": ("config.yaml", config_file, 'multipart/form-data')}
                 response = requests.post(url, auth=create_auth(context), files=files)
@@ -93,13 +84,13 @@ def post_start_workflow(context: CinnamonContext):
 
 
 def get_workflow_status(context: CinnamonContext):
-    url = f"{CINNAMON_URL}/workflow/{context.workflow_id}"
+    url = f"{context.url}/workflow/{context.workflow_id}"
     response = requests.get(url, auth=create_auth(context))
     return response.json()
 
 
 def delete_workflow(context: CinnamonContext):
-    url = f"{CINNAMON_URL}/workflow/{context.workflow_id}"
+    url = f"{context.url}/workflow/{context.workflow_id}"
     response = requests.delete(url, auth=create_auth(context))
 
     filename = f"{context.email}.zip"
@@ -133,13 +124,16 @@ def workflow(context: CinnamonContext):
     delete_workflow(context)
 
 
-def main():
+def single_execution(profile):
     threads = []
 
     for project_index in range(NUMBER_PROJECTS):
         context = CinnamonContext()
+        context.url = profile['cinnamon_url']
         context.email = "project" + str(project_index)
         context.password = "Project" + str(project_index)
+        context.config_file = profile["config_file"]
+        context.data_file = profile["data_file"]
 
         thread = threading.Thread(target=workflow, args=(context,))
         threads.append(thread)
@@ -151,6 +145,31 @@ def main():
 
     for project_index in range(NUMBER_PROJECTS):
         threads[project_index].join()
+
+
+def get_active_profile(config):
+    active_profile = config.get("active_profile")
+    for profile in config["profiles"]:
+        if profile["name"] == active_profile:
+            return profile
+    return None
+
+
+def main():
+    # Read the sim-config.yml
+    with open("sim-config.yml", 'r') as file:
+        config = yaml.safe_load(file)
+
+    active_profile = get_active_profile(config)
+    if active_profile is None:
+        print("Active profile not found.")
+
+    print(f"Running with profile: {active_profile['name']}")
+    if active_profile['mode'] == 'single_execution':
+        single_execution(active_profile)
+    else:
+        print(f"Invalid mode: {active_profile['mode']}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,8 @@
+active_profile: heart-local
+profiles:
+  - name: heart-local
+    mode: single_execution
+    cinnamon_url: http://localhost:8080/api
+    # cinnamon_url = "https://cinnamon-demo.uni-muenster.de/api"
+    data_file: "./resources/heart.csv"
+    config_file: "./resources/config.yaml"

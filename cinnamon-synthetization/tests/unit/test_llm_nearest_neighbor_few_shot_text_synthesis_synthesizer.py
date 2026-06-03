@@ -125,7 +125,8 @@ def test_llm_nearest_neighbor_few_shot_text_synthesis_generates_text_and_can_cor
                 repair_prompts.append(prompt)
                 assert "MOST SIMILAR REFERENCE ROW" in prompt or "NEIGHBORING REFERENCE ROWS" in prompt
                 assert "Column profiles derived from original data" in prompt
-                assert '"event_date": "2024-01-01"' in prompt
+                expected_event_date = '"event_date": "2024-01-01"' if len(repair_prompts) == 1 else '"event_date": "2024-01-02"'
+                assert expected_event_date in prompt
                 assert '"event_date": 1704067200' not in prompt
                 assert '"notes": "Requires follow-up in two weeks."' not in prompt
                 assert '"notes": "Patient stable after treatment."' not in prompt

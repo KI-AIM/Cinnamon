@@ -45,7 +45,6 @@ configurations:
         type: integer
         label: Number of Samples
         description: The number of synthetic data samples to generate. A high number of samples will increase the time required for sampling.
-        default_value: 1000
+        default_value: $dataset.original.numberRows
         min_value: 1
         max_value: 1000000
-

@@ -85,6 +85,10 @@ def _is_number(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def _is_placeholder(value) -> bool:
+    return isinstance(value, str) and value.startswith("$")
+
+
 def test_config_files_exist():
     files = sorted(CONFIG_DIR.glob("*.yaml"))
     assert files, "No synthesizer config files found"
@@ -136,9 +140,11 @@ def test_configuration_sections_and_parameters():
 
                 default_value = param["default_value"]
                 if param_type == "integer":
-                    assert isinstance(default_value, int) and not isinstance(default_value, bool)
+                    assert (
+                        isinstance(default_value, int) and not isinstance(default_value, bool)
+                    ) or _is_placeholder(default_value)
                 elif param_type == "float":
-                    assert _is_number(default_value)
+                    assert _is_number(default_value) or _is_placeholder(default_value)
                 elif param_type == "string":
                     assert isinstance(default_value, str)
                 elif param_type == "list":
@@ -170,7 +176,8 @@ def test_configuration_sections_and_parameters():
                         assert _is_number(param["max_value"])
                     if "min_value" in param and "max_value" in param:
                         assert param["min_value"] <= param["max_value"]
-                        assert param["min_value"] <= default_value <= param["max_value"]
+                        if _is_number(default_value):
+                            assert param["min_value"] <= default_value <= param["max_value"]
 
 
 def test_yaml_matches_synthesizer_classes_name_version_type():

@@ -358,7 +358,8 @@ public class ExternalConfigurationService {
 
 				// Inject parameters for the original data set
 				if (project.getOriginalData().getDataSet() != null) {
-					if (Objects.equals(stringValue, "$dataset.original.numberHoldOutRows")) {
+					if (Objects.equals(stringValue, "$dataset.original.numberHoldOutRows") ||
+					    Objects.equals(stringValue, "$dataset.original.numberRows")) {
 						final DataSetInfo info;
 						try {
 							info = databaseService.getInfo(project.getOriginalData().getDataSet());
@@ -366,7 +367,10 @@ public class ExternalConfigurationService {
 							throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET,
 							                                        "Failed to get dataset info!", e);
 						}
-						entry.setValue(yamlMapper.getNodeFactory().numberNode(info.getNumberHoldOutRows()));
+						final int value = Objects.equals(stringValue, "$dataset.original.numberRows")
+						                  ? info.getNumberRows()
+						                  : info.getNumberHoldOutRows();
+						entry.setValue(yamlMapper.getNodeFactory().numberNode(value));
 					}
 				}
 			}

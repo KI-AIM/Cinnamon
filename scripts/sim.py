@@ -2,10 +2,11 @@ import re
 import threading
 import time
 from typing import Any
-import yaml
 
 import requests
 from requests.auth import HTTPBasicAuth
+
+from sim_config import SimConfig, Profile
 
 NUMBER_PROJECTS = 1
 GAP = 0
@@ -16,7 +17,7 @@ class CinnamonContext:
     password: str
 
     config_file: str
-    data_file: str
+    data_file: str | None
 
     workflow_id: str
 
@@ -124,16 +125,16 @@ def workflow(context: CinnamonContext):
     delete_workflow(context)
 
 
-def single_execution(profile):
+def single_execution(profile: Profile):
     threads = []
 
     for project_index in range(NUMBER_PROJECTS):
         context = CinnamonContext()
-        context.url = profile['cinnamon_url']
+        context.url = profile.cinnamon_url
         context.email = "project" + str(project_index)
         context.password = "Project" + str(project_index)
-        context.config_file = profile["config_file"]
-        context.data_file = profile["data_file"]
+        context.config_file = profile.config_file
+        context.data_file = profile.data_file
 
         thread = threading.Thread(target=workflow, args=(context,))
         threads.append(thread)
@@ -147,28 +148,20 @@ def single_execution(profile):
         threads[project_index].join()
 
 
-def get_active_profile(config):
-    active_profile = config.get("active_profile")
-    for profile in config["profiles"]:
-        if profile["name"] == active_profile:
-            return profile
-    return None
-
-
 def main():
     # Read the sim-config.yml
-    with open("sim-config.yml", 'r') as file:
-        config = yaml.safe_load(file)
+    config = SimConfig.from_yaml("sim-config.yml")
 
-    active_profile = get_active_profile(config)
+    active_profile = config.active_profile
     if active_profile is None:
         print("Active profile not found.")
+        return
 
-    print(f"Running with profile: {active_profile['name']}")
-    if active_profile['mode'] == 'single_execution':
+    print(f"Running with profile: {active_profile.name}")
+    if active_profile.mode == 'single_execution':
         single_execution(active_profile)
     else:
-        print(f"Invalid mode: {active_profile['mode']}")
+        print(f"Invalid mode: {active_profile.mode}")
 
 
 if __name__ == "__main__":

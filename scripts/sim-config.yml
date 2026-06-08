@@ -6,3 +6,7 @@ profiles:
     # cinnamon_url = "https://cinnamon-demo.uni-muenster.de/api"
     data_file: "./resources/heart.csv"
     config_file: "./resources/config.yaml"
+  - name: fhir-blaze
+    mode: single_execution
+    cinnamon_url: http://localhost:8080/api
+    config_file: "./resources/config-FHIR-server.yaml"

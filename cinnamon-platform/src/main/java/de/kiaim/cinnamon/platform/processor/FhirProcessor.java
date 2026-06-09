@@ -4,13 +4,10 @@ import ca.uhn.fhir.context.FhirContext;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
-import de.kiaim.cinnamon.platform.exception.BadFileException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
-import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
+import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
@@ -27,7 +24,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -54,40 +50,36 @@ public class FhirProcessor implements DataProcessor {
 		return FileType.FHIR;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
-	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data)
-			throws InternalIOException, BadFileException {
-		final String fhirContent;
-		try {
-			fhirContent = new String(data.readAllBytes(), StandardCharsets.UTF_8);
-		} catch (final IOException e) {
-			throw new InternalIOException(InternalIOException.FHIR_READING,
-			                              "Failed to read the input stream while estimating the FHIR file configuration",
-			                              e);
-		}
-
+	public void checkFileCompatibility(final LobWrapperEntity data, final FileCompatibilityEntity fileCompatibility) {
 		final FhirContext fhirContext = FhirContext.forR4();
 		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
 
 		final Set<String> resourceTypes;
 		try {
-			resourceTypes = bundleTransformer.getResourceTypesInBundle(fhirContent);
-		} catch (final Exception e) {
-			throw new BadFileException(BadFileException.INVALID_FHIR,
-			                           "Failed to read the FHIR bundle while estimating the FHIR file configuration",
-			                           e);
+			resourceTypes = bundleTransformer.getResourceTypesInBundle(data.getLobString());
+		} catch (final Exception ignored) {
+			return;
 		}
 
+		fileCompatibility.getCompatibleFileTypes().add(FileType.FHIR);
+		fileCompatibility.setFhirResourceTypes(resourceTypes);
+	}
+
+	@Override
+	public FileConfigurationEstimation estimateFileConfiguration(final LobWrapperEntity data,
+	                                                             final FileCompatibilityEntity fileCompatibility) {
 		final var fhirFileConfiguration = new FhirFileConfiguration();
+		if (fileCompatibility.getFhirResourceTypes() != null && fileCompatibility.getFhirResourceTypes().size() == 1) {
+			fhirFileConfiguration.setResourceType(fileCompatibility.getFhirResourceTypes().iterator().next());
+		}
+
 		final var fileConfiguration = new FileConfiguration();
 
 		fileConfiguration.setFileType(FileType.FHIR);
 		fileConfiguration.setFhirFileConfiguration(fhirFileConfiguration);
 
-		return new FileConfigurationEstimation(fileConfiguration, resourceTypes);
+		return new FileConfigurationEstimation(fileConfiguration);
 	}
 
 	/**
@@ -96,8 +88,14 @@ public class FhirProcessor implements DataProcessor {
 	@Override
 	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration
 	) throws InternalIOException {
+		final FhirFileConfigurationEntity fhirFileConfiguration = (FhirFileConfigurationEntity) fileConfiguration;
+		if (fhirFileConfiguration.getResourceType() == null) {
+			// The resource type can be null after the estimation
+			return 0;
+		}
+
 		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, (FhirFileConfigurationEntity) fileConfiguration, csvFormat);
+		final String csvString = getCsvString(data, fhirFileConfiguration, csvFormat);
 		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
 		return csvProcessor.getNumberColumns(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
 	}

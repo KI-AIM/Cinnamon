@@ -68,40 +68,49 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void postFile() throws Exception {
+		MockMultipartFile file = ResourceHelper.loadCsvFile();
+		mockMvc.perform(multipart("/api/data/file")
+				                .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
+	}
+
+	@Test
+	void postFileConfiguration() throws Exception {
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		mockMvc.perform(multipart("/api/data/file/configuration")
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: null, type: 'CSV', numberOfAttributes: 0}"));
+	}
+
+	@Test
+	void postFileAndFileConfiguration() throws Exception {
 		postFile(false, false);
 	}
 
 	@Test
 	void postFileMissingFile() throws Exception {
-		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-
-		mockMvc.perform(multipart("/api/data/file")
-				                .param("fileConfiguration",
-				                       objectMapper.writeValueAsString(fileConfiguration)))
+		mockMvc.perform(multipart("/api/data/file"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("file", "Data must be present!"));
 	}
 
 	@Test
-	void postFileMissingFileConfiguration() throws Exception {
-		MockMultipartFile file = ResourceHelper.loadCsvFile();
-
-		mockMvc.perform(multipart("/api/data/file")
-				                .file(file))
+	void postFileConfigurationMissingFileConfiguration() throws Exception {
+		mockMvc.perform(multipart("/api/data/file/configuration"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
 	}
 
 	@Test
-	void postFileWrongFileConfiguration() throws Exception {
-		MockMultipartFile file = ResourceHelper.loadCsvFile();
+	void postFileConfigurationWrongFileConfiguration() throws Exception {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 		fileConfiguration.setCsvFileConfiguration(null);
 
-		mockMvc.perform(multipart("/api/data/file")
-				                .file(file)
+		mockMvc.perform(multipart("/api/data/file/configuration")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -111,13 +120,11 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
-	void postFileInvalidFileConfiguration() throws Exception {
-		MockMultipartFile file = ResourceHelper.loadCsvFile();
+	void postFileConfigurationInvalidFileConfiguration() throws Exception {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 		fileConfiguration.getCsvFileConfiguration().setColumnSeparator(null);
 
-		mockMvc.perform(multipart("/api/data/file")
-				                .file(file)
+		mockMvc.perform(multipart("/api/data/file/configuration")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -127,17 +134,15 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
-	void postFileOtherInvalidFileConfiguration() throws Exception {
-		MockMultipartFile file = ResourceHelper.loadCsvFile();
+	void postFileConfigurationOtherInvalidFileConfiguration() throws Exception {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 		fileConfiguration.setFhirFileConfiguration(new FhirFileConfiguration());
 
-		mockMvc.perform(multipart("/api/data/file")
-				                .file(file)
+		mockMvc.perform(multipart("/api/data/file/configuration")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+		       .andExpect(content().json("{name: null, type: 'CSV', numberOfAttributes: 0}"));
 	}
 
 	@Test
@@ -275,7 +280,7 @@ class DataControllerTest extends ControllerTest {
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
 	void storeDataAndDeleteData() throws Exception {
-		postFile();
+		postFileAndFileConfiguration();
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
 
@@ -310,7 +315,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void storeDataAndUpdateConfig() throws Exception {
-		postFile();
+		postFileAndFileConfiguration();
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
 		var result = mockMvc.perform(multipart("/api/data")
@@ -351,9 +356,11 @@ class DataControllerTest extends ControllerTest {
 		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
 		mockMvc.perform(multipart("/api/data/file")
-				                .file(file)
-				                .param("fileConfiguration",
-				                       objectMapper.writeValueAsString(fileConfiguration)))
+				                .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
+		mockMvc.perform(multipart("/api/data/file/configuration")
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 
@@ -379,9 +386,11 @@ class DataControllerTest extends ControllerTest {
 		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
 		mockMvc.perform(multipart("/api/data/file")
-				                .file(file)
-				                .param("fileConfiguration",
-				                       objectMapper.writeValueAsString(fileConfiguration)))
+				                .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
+		mockMvc.perform(multipart("/api/data/file/configuration")
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 
@@ -415,7 +424,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void confirmDataAndUpdateConfig() throws Exception {
-		postFile();
+		postFileAndFileConfiguration();
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
 		var result = mockMvc.perform(multipart("/api/data")
@@ -957,7 +966,7 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	private void testStoreConfig(final String configuration) throws Exception {
-		postFile();
+		postFileAndFileConfiguration();
 
 		mockMvc.perform(multipart("/api/data/configuration")
 				                .param("configuration", configuration))

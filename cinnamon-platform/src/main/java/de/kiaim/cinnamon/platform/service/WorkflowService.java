@@ -96,6 +96,7 @@ public class WorkflowService {
 	 *                                                   If the request body could not be created.
 	 * @throws InternalMissingHandlingException          If no processor for the file type of the file could be found.
 	 *                                                   If no implementation exists for a valid configuration.
+	 *                                                   If no processor exists for the selected data source type.
 	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 */
 	@Transactional
@@ -125,7 +126,9 @@ public class WorkflowService {
 		configurationService.importConfigurations(project, configurationFile, parameters);
 
 		// 3. Import the data
-		dataFile = databaseService.retrieveFile(project, dataFile);
+		var retrievedDataFile = databaseService.retrieveFile(project);
+		if (retrievedDataFile != null)
+			dataFile = retrievedDataFile.getSecond();
 		databaseService.storeFile(project, dataFile);
 		databaseService.storeOriginalDataset(project);
 		databaseService.confirmDataSet(project);

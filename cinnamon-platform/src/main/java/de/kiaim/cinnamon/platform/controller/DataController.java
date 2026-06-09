@@ -1,13 +1,15 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
+import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
-import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.service.*;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
@@ -15,7 +17,6 @@ import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -35,14 +36,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-// TODO Support different languages
 @RestController
 @RequestMapping("/api/data")
 @Tag(name = "/api/data", description = "API for managing data sets. " +
@@ -51,20 +49,81 @@ import java.util.Map;
 public class DataController {
 
 	private final DatabaseService databaseService;
-	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
 	private final ProjectService projectService;
 	private final UserService userService;
 
 	@Autowired
-	public DataController(final DatabaseService databaseService, final DataProcessorService dataProcessorService,
-	                      final DataSetService dataSetService, final ProjectService projectService,
-	                      final UserService userService) {
+	public DataController(final DatabaseService databaseService, final DataSetService dataSetService,
+	                      final ProjectService projectService, final UserService userService) {
 		this.databaseService = databaseService;
-		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
 		this.projectService = projectService;
 		this.userService = userService;
+	}
+
+	@GetMapping(value = "/file/source",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public DataSourceConfiguration getDataSourceConfiguration(@AuthenticationPrincipal final UserEntity requestUser) {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project =  projectService.getProject(user);
+		return databaseService.exportDataSourceConfiguration(project);
+	}
+
+	@PostMapping(value = "/file/source",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public void storeDataSourceConfiguration(
+			final UploadDataSourceConfigurationRequest request,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project =  projectService.getProject(user);
+		databaseService.storeDataSourceConfiguration(project, request.getDataSourceConfiguration());
+	}
+
+	@PostMapping(value = "/file/retrieve",
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public FileInformation retrieveFile(
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project =  projectService.getProject(user);
+		return databaseService.retrieveAndStoreFile(project);
+	}
+
+	@Operation(summary = "Stores the given file and file configuration.",
+	           description = "Stores the given file and file configuration.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully stored the file and the file configuration.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                 schema = @Schema(implementation = FileInformation.class)),
+			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
+			                                 schema = @Schema(implementation = FileInformation.class))}),
+			@ApiResponse(responseCode = "400",
+			             description = "The file is not supported or could not be read or the dataset has already been confirmed.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500",
+			             description = "The dataset has been stored but not confirmed and could not be deleted.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
+	@PostMapping(value = "/file",
+	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<FileInformation> uploadFile(
+			@ParameterObject @Valid final UploadFileRequest requestData,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity projectEntity =  projectService.getProject(user);
+
+		databaseService.storeDataSourceConfiguration(projectEntity,
+		                                             new DataSourceConfiguration(DataSourceType.LOCAL, null));
+		final FileInformation fileInformation = databaseService.storeFile(projectEntity, requestData.getFile());
+
+		return ResponseEntity.ok(fileInformation);
 	}
 
 	@Operation(summary = "Returns information about the uploaded file.",
@@ -83,7 +142,7 @@ public class DataController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user);
 		final var fileInformation = databaseService.getFileInformation(projectEntity);
 		return ResponseEntity.ok(fileInformation);
 	}
@@ -107,57 +166,36 @@ public class DataController {
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PostMapping(value = "/file/estimation",
-	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public FileConfigurationEstimation estimateFileConfiguration(
-			final MultipartFile file
-	) throws BadFileException, InternalIOException, InternalMissingHandlingException {
-		// TODO should we store the file here already?
-		final FileType fileType = dataProcessorService.getFileType(file);
-		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileType);
-
-		try {
-			return dataProcessor.estimateFileConfiguration(file.getInputStream());
-		} catch (final IOException e) {
-			throw new InternalIOException(InternalIOException.MULTIPART_READING,
-			                              "Failed to read the multipart file while estimating the file configuration!",
-			                              e);
-		}
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity projectEntity =  projectService.getProject(user);
+		return databaseService.estimateAndStoreFileConfiguration(projectEntity);
 	}
 
-	@Operation(summary = "Stores the given file and file configuration.",
-	           description = "Stores the given file and file configuration.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200",
-			             description = "Successfully stored the file and the file configuration.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = FileInformation.class)),
-			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = FileInformation.class))}),
-			@ApiResponse(responseCode = "400",
-			             description = "The file is not supported or could not be read or the dataset has already been confirmed.",
-			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))),
-			@ApiResponse(responseCode = "500",
-			             description = "The dataset has been stored but not confirmed and could not be deleted.",
-			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))),
-	})
-	@PostMapping(value = "/file",
+	@PostMapping(value = "/file/configuration",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<FileInformation> uploadFile(
-			@ParameterObject @Valid final UploadFileRequest requestData,
+	public ResponseEntity<FileInformation> uploadFileConfiguration(
+			@ParameterObject @Valid final UploadFileConfigurationRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 
-		databaseService.deleteOriginalData(projectEntity);
 		databaseService.storeFileConfiguration(projectEntity, requestData.getFileConfiguration());
-		final FileInformation fileInformation = databaseService.storeFile(projectEntity, requestData.getFile());
+		final FileInformation fileInformation = databaseService.getFileInformation(projectEntity);
 
 		return ResponseEntity.ok(fileInformation);
+	}
+
+	@GetMapping(value = "/file/configuration")
+	public FileConfiguration getFileConfiguration(@AuthenticationPrincipal final UserEntity requestUser) {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity projectEntity =  projectService.getProject(user);
+		return databaseService.exportFileConfiguration(projectEntity);
 	}
 
 	@Operation(summary = "Estimates the data configuration of a given data set.",

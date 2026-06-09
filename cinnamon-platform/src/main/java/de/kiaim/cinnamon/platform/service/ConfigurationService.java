@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
+import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
@@ -192,6 +193,8 @@ public class ConfigurationService {
 						importProjectConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY ->
 						importDataSourceConfiguration(project, configEntry, importSummary);
+				case ConfigurationFile.FILE_CONFIGURATION_KEY ->
+						importFileConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.DATA_CONFIGURATION_KEY ->
 						importDataConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.DATASET_CONFIGURATION_KEY ->
@@ -257,6 +260,9 @@ public class ConfigurationService {
 			}
 			case ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY -> {
 				return databaseService.exportDataSourceConfiguration(project);
+			}
+			case ConfigurationFile.FILE_CONFIGURATION_KEY -> {
+				return databaseService.exportFileConfiguration(project);
 			}
 			case ConfigurationFile.DATA_CONFIGURATION_KEY -> {
 				return databaseService.exportOriginalDataConfiguration(project);
@@ -364,10 +370,10 @@ public class ConfigurationService {
 	private void importDataSourceConfiguration(final ProjectEntity project,
 	                                           final JsonNode config,
 	                                           final ConfigurationImportSummary outImportSummary) {
-		// 1. Convert the tree into a FileConfiguration object
-		final FileConfiguration fileConfiguration;
+		// 1. Convert the tree into a DataSourceConfiguration object
+		final DataSourceConfiguration dataSourceConfiguration;
 		try {
-			fileConfiguration = yamlMapper.treeToValue(config, FileConfiguration.class);
+			dataSourceConfiguration = yamlMapper.treeToValue(config, DataSourceConfiguration.class);
 		} catch (final JsonProcessingException e) {
 			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.DATA_SOURCE_CONFIGURATION_DESERIALIZATION,
@@ -377,10 +383,47 @@ public class ConfigurationService {
 			return;
 		}
 
+		// 2. Validate the DataSourceConfiguration
+		final Set<ConstraintViolation<DataSourceConfiguration>> violations = validator.validate(dataSourceConfiguration);
+		if (!violations.isEmpty()) {
+			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY,
+			                          ApiException.assembleErrorCode(ApiException.VALIDATION,
+			                                                         ApiExceptionHandler.VALIDATION_ERROR, "1"),
+			                          violations);
+			return;
+		}
+
+		// 3. Import the DataSourceConfiguration
+		try {
+			databaseService.storeDataSourceConfiguration(project, dataSourceConfiguration);
+			outImportSummary.addSuccess(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY);
+		} catch (final ApiException e) {
+			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY, e.getErrorCode(),
+			                          e.getMessage());
+		}
+
+	}
+
+	private void importFileConfiguration(final ProjectEntity project,
+	                                     final JsonNode config,
+	                                     final ConfigurationImportSummary outImportSummary) {
+		// 1. Convert the tree into a FileConfiguration object
+		final FileConfiguration fileConfiguration;
+		try {
+			fileConfiguration = yamlMapper.treeToValue(config, FileConfiguration.class);
+		} catch (final JsonProcessingException e) {
+			final ApiException cause = new BadConfigurationFileException(
+					BadConfigurationFileException.FILE_CONFIGURATION_DESERIALIZATION,
+					"Failed to deserialize the file configuration!", e);
+			outImportSummary.addError(ConfigurationFile.FILE_CONFIGURATION_KEY, cause.getErrorCode(),
+			                          cause.getMessage());
+			return;
+		}
+
 		// 2. Validate the FileConfiguration
 		final Set<ConstraintViolation<FileConfiguration>> violations = validator.validate(fileConfiguration);
 		if (!violations.isEmpty()) {
-			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY,
+			outImportSummary.addError(ConfigurationFile.FILE_CONFIGURATION_KEY,
 			                          ApiException.assembleErrorCode(ApiException.VALIDATION,
 			                                                         ApiExceptionHandler.VALIDATION_ERROR, "1"),
 			                          violations);
@@ -390,10 +433,9 @@ public class ConfigurationService {
 		// 3. Import the FileConfiguration
 		try {
 			databaseService.storeFileConfiguration(project, fileConfiguration);
-			outImportSummary.addSuccess(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY);
+			outImportSummary.addSuccess(ConfigurationFile.FILE_CONFIGURATION_KEY);
 		} catch (final ApiException e) {
-			outImportSummary.addError(ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY, e.getErrorCode(),
-			                          e.getMessage());
+			outImportSummary.addError(ConfigurationFile.FILE_CONFIGURATION_KEY, e.getErrorCode(), e.getMessage());
 		}
 	}
 

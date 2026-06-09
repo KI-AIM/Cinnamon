@@ -9,7 +9,9 @@ import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.PlatformApplication;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
+import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
@@ -42,9 +44,11 @@ public class CSVProcessingTests {
 	@Test
 	void estimateFileConfigurationRecordSeparatorCR() {
 		String csvData = "id,name,deathdate,smoker,price\r650390,Tonisha Swift,1975-05-08,no,303.23 €";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -55,9 +59,11 @@ public class CSVProcessingTests {
 	@Test
 	void estimateFileConfigurationRecordSeparatorCRLF() {
 		String csvData = "id,name,deathdate,smoker,price\r\n650390,Tonisha Swift,1975-05-08,no,303.23 €";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -68,9 +74,11 @@ public class CSVProcessingTests {
 	@Test
 	void estimateFileConfigurationRecordSeparatorLF() {
 		String csvData = "id,name,deathdate,smoker,price\n650390,Tonisha Swift,1975-05-08,no,303.23 €";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -88,9 +96,11 @@ public class CSVProcessingTests {
 				730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
 				614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
 				""";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -108,9 +118,11 @@ public class CSVProcessingTests {
 				730160;"Heathcote; Nelia";1959-02-03;yes;21.01 €
 				614164;Ms. Chester Keebler;1982-02-20;no;158.79 €
 				""";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -128,9 +140,11 @@ public class CSVProcessingTests {
 				730160,"Heathcote, Nelia",1959-02-03,yes,21.01 €
 				614164,Ms. Chester Keebler,1982-02-20,no,158.79 €
 				""";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -148,9 +162,11 @@ public class CSVProcessingTests {
 				"730160","Heathcote, Nelia","1959-02-03","yes","21.01 €"
 				"614164","Ms. Chester Keebler","1982-02-20","no","158.79 €"
 				""";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -168,9 +184,11 @@ public class CSVProcessingTests {
 				'730160','Heathcote, Nelia','1959-02-03','yes','21.01 €'
 				'614164','Ms. Chester Keebler','1982-02-20','no','158.79 €'
 				""";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -185,8 +203,11 @@ public class CSVProcessingTests {
 				650390,Tonisha Swift,1975-05-08,no,303.23 €
 				208589,Wilson Maggio,1994-02-28,no,23623.18 €
 				""".trim();
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
+
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -201,9 +222,11 @@ public class CSVProcessingTests {
 				id,name,birthdate,smoker,price
 				650390,Tonisha Swift,yesterday,,303.23 €
 				""";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -218,9 +241,11 @@ public class CSVProcessingTests {
 				id,name,deathdate,smoker,price
 				650390,Tonisha Swift,1975-05-08,no,303.23 €
 				""";
-		InputStream stream = new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8));
+		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);
+		final FileCompatibilityEntity fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() -> csvProcessor.estimateFileConfiguration(stream));
+		var estimation = assertDoesNotThrow(
+				() -> csvProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.CSV, estimation.getEstimation().getFileType());
 		var csvConfig = estimation.getEstimation().getCsvFileConfiguration();
@@ -517,6 +542,12 @@ public class CSVProcessingTests {
 		String content = stream.toString(StandardCharsets.UTF_8);
 		String expectedContent = ResourceHelper.loadCsvFileAsString().replaceAll(",2023-11-20,", ",20.11.2023,");
 		assertEquals(expectedContent, content);
+	}
+
+	private static FileCompatibilityEntity getFileCompatibility() {
+		FileCompatibilityEntity compatibility = new FileCompatibilityEntity();
+		compatibility.getCompatibleFileTypes().add(FileType.CSV);
+		return compatibility;
 	}
 
 	private static DataConfiguration getDataConfiguration() {

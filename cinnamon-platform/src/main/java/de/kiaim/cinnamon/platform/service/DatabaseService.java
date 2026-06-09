@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
@@ -10,15 +11,14 @@ import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
-import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.*;
-import de.kiaim.cinnamon.platform.helper.StringMultipartFile;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
+import de.kiaim.cinnamon.platform.model.mapper.DataSourceConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.DatasetConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.FileConfigurationMapper;
 import de.kiaim.cinnamon.platform.processor.FhirProcessor;
@@ -38,6 +38,7 @@ import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -75,6 +76,7 @@ public class DatabaseService {
 	private final ProjectRepository projectRepository;
 
 	private final DatasetConfigurationMapper datasetConfigurationMapper;
+	private final DataSourceConfigurationMapper dataSourceConfigurationMapper;
 	private final FileConfigurationMapper fileConfigurationMapper;
 
 	private final DataschemeGenerator dataschemeGenerator;
@@ -82,8 +84,8 @@ public class DatabaseService {
 
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
+	private final DataSourceProcessorService dataSourceProcessorService;
 	private final FhirProcessor fhirProcessor;
-	private final FhirServerService fhirServerService;
 	private final StepService stepService;
 
 	@Autowired
@@ -92,11 +94,13 @@ public class DatabaseService {
 	                       final SerializationConfig serializationConfig, final DataSetRepository dataSetRepository,
 	                       final ProjectRepository projectRepository,
 	                       final DatasetConfigurationMapper datasetConfigurationMapper,
+	                       final DataSourceConfigurationMapper dataSourceConfigurationMapper,
 	                       final FileConfigurationMapper fileConfigurationMapper,
 	                       final DataschemeGenerator dataschemeGenerator,
-	                       final DataSetService dataSetService, final DataProcessorService dataProcessorService,
+	                       final DataSetService dataSetService,
+	                       final DataProcessorService dataProcessorService,
+	                       final DataSourceProcessorService dataSourceProcessorService,
 	                       final FhirProcessor fhirProcessor,
-	                       final FhirServerService fhirServerService,
 	                       final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.dataProcessingRepository = dataProcessingRepository;
@@ -105,12 +109,13 @@ public class DatabaseService {
 		this.dataSetRepository = dataSetRepository;
 		this.projectRepository = projectRepository;
 		this.datasetConfigurationMapper = datasetConfigurationMapper;
+		this.dataSourceConfigurationMapper = dataSourceConfigurationMapper;
 		this.fileConfigurationMapper = fileConfigurationMapper;
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
+		this.dataSourceProcessorService = dataSourceProcessorService;
 		this.fhirProcessor = fhirProcessor;
-		this.fhirServerService = fhirServerService;
 		this.stepService = stepService;
 	}
 
@@ -125,6 +130,39 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Stores the give data source configuration and associates it with the file of the original data of the given project.
+	 *
+	 * @param project                 The project of which the data source configuration should be stored.
+	 * @param dataSourceConfiguration The data source configuration to be stored.
+	 * @throws BadDataSetIdException               If the dataset is already stored.
+	 * @throws InternalDataSetPersistenceException If the original data was stored and could not be deleted.
+	 */
+	@Transactional
+	public void storeDataSourceConfiguration(
+			final ProjectEntity project,
+			final DataSourceConfiguration dataSourceConfiguration
+	) throws BadDataSetIdException, InternalDataSetPersistenceException {
+		deleteOriginalDataIfNotConfirmed(project);
+
+		final DataSourceConfigurationEntity entity;
+		if (project.getOriginalData().getFile().getDataSourceConfiguration() != null) {
+			entity = project.getOriginalData().getFile().getDataSourceConfiguration();
+		} else {
+			entity = new DataSourceConfigurationEntity();
+			project.getOriginalData().getFile().setDataSourceConfiguration(entity);
+		}
+		dataSourceConfigurationMapper.updateEntity(entity, dataSourceConfiguration);
+
+		log.debug("Stored data source configuration");
+	}
+
+	@Transactional(readOnly = true)
+	public DataSourceConfiguration exportDataSourceConfiguration(final ProjectEntity project) {
+		final DataSourceConfigurationEntity entity = project.getOriginalData().getFile().getDataSourceConfiguration();
+		return dataSourceConfigurationMapper.toDto(entity);
+	}
+
+	/**
 	 * Stores the given file configuration and associates it with the file of the original data of the given project.
 	 * Update the file entity if the file is already stored.
 	 *
@@ -136,8 +174,10 @@ public class DatabaseService {
 	 */
 	@Transactional
 	public void storeFileConfiguration(final ProjectEntity project, final FileConfiguration fileConfiguration)
-			throws BadDataSetIdException, InternalIOException, InternalMissingHandlingException {
-		throwIfStored(project.getOriginalData().getDataSet());
+			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException,
+					       InternalMissingHandlingException {
+		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
+
 		final FileConfigurationEntity entity = fileConfigurationMapper.toEntity(fileConfiguration);
 		project.getOriginalData().getFile().setFileConfiguration(entity);
 		updateFileEntity(project);
@@ -151,7 +191,7 @@ public class DatabaseService {
 	 * @param project The project of which the file configuration should be exported.
 	 * @return The file configuration of the original data of the given project.
 	 */
-	public FileConfiguration exportDataSourceConfiguration(final ProjectEntity project) {
+	public FileConfiguration exportFileConfiguration(final ProjectEntity project) {
 		final FileConfigurationEntity entity = project.getOriginalData().getFile().getFileConfiguration();
 		return fileConfigurationMapper.toDto(entity);
 	}
@@ -232,32 +272,90 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Retrieves the file for the original data and stores it in the database.
+	 *
+	 * @param project The project to retrieve the file for.
+	 * @return General information about the retrieved file.
+	 * @throws BadDataSetIdException            If the dataset is already stored.
+	 * @throws BadFileException                 If the file could not be read.
+	 * @throws BadStateException                If no file configuration is available for the project.
+	 * @throws InternalIOException              If reading the data failed.
+	 * @throws InternalMissingHandlingException If no processor exists for the selected data source type.
+	 * @throws InternalRequestException         If the request retrieving the file from the server failed.
+	 */
+	@Transactional
+	public FileInformation retrieveAndStoreFile(final ProjectEntity project)
+			throws BadDataSetIdException, BadFileException, BadStateException, InternalDataSetPersistenceException,
+					       InternalIOException, InternalMissingHandlingException, InternalRequestException {
+		final Pair<FileType, MultipartFile> result = retrieveFile(project);
+		if (result == null) {
+			throw new BadStateException(BadStateException.NO_EXTERNAL_DATA_SOURCE,
+			                            "Failed to retrieve the file! The data source is set to be a local file.");
+		}
+		storeFile(project, result.getSecond());
+
+		return getFileInformation(project);
+	}
+
+	/**
+	 * Estimates the file configuration for the data file of the given project.
+	 * Stores the estimation in the database.
+	 *
+	 * @param project  The project to estimate the file configuration for.
+	 * @return The estimation result.
+	 * @throws BadDataSetIdException            If the project does not have a data set.
+	 * @throws BadFileException                 If the file could not be processed.
+	 * @throws BadStateException                If no file is available for the project.
+	 * @throws InternalIOException              If an internal I/O error occurred.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
+	 */
+	@Transactional
+	public FileConfigurationEstimation estimateAndStoreFileConfiguration(
+			final ProjectEntity project
+	) throws BadDataSetIdException, BadFileException, BadStateException, InternalDataSetPersistenceException,
+			         InternalIOException, InternalMissingHandlingException {
+		final FileEntity file = project.getOriginalData().getFile();
+
+		if (file.getFile() == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE,
+			                            "Failed to estimate the file configuration! No file is available!");
+		}
+
+		final FileType fileType = dataProcessorService.getFileTypeByFileName(file.getName());
+		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileType);
+		final FileConfigurationEstimation estimation = dataProcessor.estimateFileConfiguration(file.getFile(),
+		                                                                                       file.getCompatibility());
+
+		storeFileConfiguration(project, estimation.getEstimation());
+		return estimation;
+	}
+
+	/**
 	 * Retrieves the file for the original data of the given project.
 	 * If the configuration is not available or the local file should be used, the local given file is returned.
 	 *
 	 * @param project The project to retrieve the file for.
-	 * @param localFile The local file to be used if the file is not available on the server.
-	 * @return The file to be used for the project.
+	 * @return The file type and the file.
 	 * @throws BadStateException If no file configuration is available for the project.
+	 * @throws InternalMissingHandlingException If no processor exists for the selected data source type.
 	 * @throws InternalRequestException If the request retrieving the file from the server failed.
 	 */
 	@Nullable
-	public MultipartFile retrieveFile(final ProjectEntity project, @Nullable final MultipartFile localFile)
-			throws BadStateException, InternalRequestException {
-		var config = project.getOriginalData().getFile().getFileConfiguration();
+	public Pair<FileType, MultipartFile> retrieveFile(final ProjectEntity project)
+			throws BadStateException, InternalMissingHandlingException, InternalRequestException {
+		var config = project.getOriginalData().getFile().getDataSourceConfiguration();
 
 		if (config == null) {
-			throw new BadStateException(BadStateException.NO_DATASET_FILE_CONFIGURATION,
+			throw new BadStateException(BadStateException.NO_DATA_SOURCE_FILE_CONFIGURATION,
 			                            "Retrieving the file requires the file configuration!");
 		}
 
-		if (config.getDataSourceType() != DataSourceType.SERVER || config.getServer() == null) {
-			return localFile;
+		if (config.getDataSourceType() == DataSourceType.LOCAL || config.getServer() == null) {
+			return null;
 		}
 
-		// TODO currently only for FHIR. Could add more abstractions for different servers/ databases
-		final String bundle = fhirServerService.getFhirBundle(config.getServer());
-		return new StringMultipartFile(bundle, "fhir_bundle.json", CustomMediaType.APPLICATION_FHIR_JSON);
+		final var processor = dataSourceProcessorService.getProcessor(config.getDataSourceType());
+		return processor.retrieveFile(config.getServer());
 	}
 
 	/**
@@ -274,8 +372,9 @@ public class DatabaseService {
 	 */
 	@Transactional
 	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file)
-			throws BadDataSetIdException, BadFileException, InternalIOException, InternalMissingHandlingException {
-		throwIfStored(project.getOriginalData().getDataSet());
+			throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalIOException,
+					       InternalMissingHandlingException {
+		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 
 		dataProcessorService.validateFileOrThrow(file);
 
@@ -288,11 +387,31 @@ public class DatabaseService {
 			throw new BadFileException(BadFileException.NOT_READABLE, "Could not read file");
 		}
 
+		determineCompatibleFileTypes(project, fileEntity.getFile());
 		updateFileEntity(project);
 
 		log.debug("Stored file containing original data '{}'", file.getOriginalFilename());
 
 		return getFileInformation(project);
+	}
+
+	/**
+	 * Determines which processors can read the given file.
+	 *
+	 * @param project The project of which the file information should be returned.
+	 * @param file The file to be checked. Must be part of the given project.
+	 */
+	@Transactional
+	protected void determineCompatibleFileTypes(final ProjectEntity project, final LobWrapperEntity file) {
+		final FileEntity fileEntity = project.getOriginalData().getFile();
+
+		final FileCompatibilityEntity compatibility = new FileCompatibilityEntity();
+
+		for (final DataProcessor processor : dataProcessorService.getProcessors()) {
+			processor.checkFileCompatibility(file, compatibility);
+		}
+
+		fileEntity.setCompatibility(compatibility);
 	}
 
 	/**
@@ -309,6 +428,10 @@ public class DatabaseService {
 		final FileEntity file = project.getOriginalData().getFile();
 		fileInformation.setName(file.getName());
 		fileInformation.setNumberOfAttributes(file.getNumberOfAttributes());
+
+		if (file.getCompatibility() != null) {
+			fileInformation.setFhirResourceTypes(file.getCompatibility().getFhirResourceTypes());
+		}
 
 		if (file.getFileConfiguration() != null) {
 			fileInformation.setType(file.getFileConfiguration().getFileType());
@@ -1201,6 +1324,7 @@ public class DatabaseService {
 		project.getOriginalData().getFile().setName(null);
 		project.getOriginalData().getFile().setNumberOfAttributes(0);
 		project.getOriginalData().getFile().setFileConfiguration(null);
+		project.getOriginalData().getFile().setCompatibility(null);
 		project.getOriginalData().getFile().setFile(null);
 
 		project.getOriginalData().getDatasetConfiguration().setCreateHoldOutSplit(false);
@@ -1212,6 +1336,13 @@ public class DatabaseService {
 			deleteDataSet(dataSet);
 			dataSetRepository.delete(dataSet);
 		}
+	}
+
+	@Transactional
+	public void deleteOriginalDataIfNotConfirmed(final ProjectEntity project)
+			throws BadDataSetIdException, InternalDataSetPersistenceException {
+		throwIfConfirmed(project.getOriginalData().getDataSet());
+		deleteOriginalData(project);
 	}
 
 	/**
@@ -1852,19 +1983,11 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data is confirmed.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted.
 	 */
-	private void deleteDataSetIfNotConfirmedOrThrow(
-			@Nullable final DataSetEntity dataSet
-	) throws BadDataSetIdException, InternalDataSetPersistenceException {
-		if (dataSet == null) {
-			return;
-		}
-
-		if (dataSet.isConfirmedData()) {
-			throw new BadDataSetIdException(BadDataSetIdException.ALREADY_STORED, "The data has already been confirmed!");
-		} else if (dataSet.isStoredData()) {
-			deleteDataSet(dataSet);
-			projectRepository.save(dataSet.getProject());
-		}
+	@Transactional
+	protected void deleteDataSetIfNotConfirmedOrThrow(@Nullable final DataSetEntity dataSet)
+			throws BadDataSetIdException, InternalDataSetPersistenceException {
+		throwIfConfirmed(dataSet);
+		deleteDataSet(dataSet);
 	}
 
 	private void convertTransformationErrors(final TransformationResult transformationResult,

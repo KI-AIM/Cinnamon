@@ -1,6 +1,9 @@
 package de.kiaim.cinnamon.test.platform.processor;
 
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
+import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
+import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.platform.processor.FhirProcessor;
@@ -11,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,17 +23,30 @@ public class FhirProcessorTest extends ContextRequiredTest {
 	@Autowired private FhirProcessor fhirProcessor;
 
 	@Test
+	public void checkFileCompatibility() throws IOException {
+		var bundle = ResourceHelper.loadFhirBundleAsString();
+		var lobWrapper = new LobWrapperEntity(bundle);
+
+		var fileCompatibility = new FileCompatibilityEntity();
+		assertDoesNotThrow(() -> fhirProcessor.checkFileCompatibility(lobWrapper, fileCompatibility));
+
+		assertTrue(fileCompatibility.getCompatibleFileTypes().contains(FileType.FHIR));
+		assertNotNull(fileCompatibility.getFhirResourceTypes());
+		assertEquals(2, fileCompatibility.getFhirResourceTypes().size());
+		assertTrue(fileCompatibility.getFhirResourceTypes().contains("Patient"));
+		assertTrue(fileCompatibility.getFhirResourceTypes().contains("Observation"));
+	}
+
+	@Test
 	public void estimateFileConfiguration() throws IOException {
 		var bundle = ResourceHelper.loadFhirBundleAsString();
+		var lobWrapper = new LobWrapperEntity(bundle);
+		var fileCompatibility = getFileCompatibility();
 
-		var estimation = assertDoesNotThrow(() ->
-			fhirProcessor.estimateFileConfiguration(new ByteArrayInputStream(bundle.getBytes()))
-		);
+		var estimation = assertDoesNotThrow(
+				() -> fhirProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
-		assertNotNull(estimation.getFhirResourceTypes());
-		assertEquals(2, estimation.getFhirResourceTypes().size());
-		assertTrue(estimation.getFhirResourceTypes().contains("Patient"));
-		assertTrue(estimation.getFhirResourceTypes().contains("Observation"));
+		assertEquals(FileType.FHIR, estimation.getEstimation().getFileType());
 	}
 
 	@Test
@@ -64,5 +81,12 @@ public class FhirProcessorTest extends ContextRequiredTest {
 				                                              DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 
 		assertEquals(13, estimation.getDataConfiguration().getConfigurations().size());
+	}
+
+	private static FileCompatibilityEntity getFileCompatibility() {
+		FileCompatibilityEntity compatibility = new FileCompatibilityEntity();
+		compatibility.getCompatibleFileTypes().add(FileType.FHIR);
+		compatibility.setFhirResourceTypes(Set.of("Patient", "Observation"));
+		return compatibility;
 	}
 }

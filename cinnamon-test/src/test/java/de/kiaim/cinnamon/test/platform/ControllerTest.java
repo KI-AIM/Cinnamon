@@ -132,12 +132,14 @@ public class ControllerTest extends DatabaseTest {
 			}
 		}
 
-		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-
 		mockMvc.perform(multipart("/api/data/file")
-				                .file(file)
-				                .param("fileConfiguration",
-				                       objectMapper.writeValueAsString(fileConfiguration)))
+				                .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
+
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		mockMvc.perform(multipart("/api/data/file/configuration")
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 	}
@@ -150,15 +152,18 @@ public class ControllerTest extends DatabaseTest {
 			file = ResourceHelper.loadCsvFile();
 		}
 
-		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-
 		mockMvc.perform(multipart("/api/data/file")
 				                .file(file)
-				                .with(httpBasic(user, "changeme"))
-				                .param("fileConfiguration",
-				                       objectMapper.writeValueAsString(fileConfiguration)))
+				                .with(httpBasic(user, "changeme")))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
+		       .andExpect(content().json("{name: 'file.csv', type: null, fhirResourceTypes: null, numberOfAttributes: 0}"));
+
+		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
+		mockMvc.perform(multipart("/api/data/file/configuration")
+				                .with(httpBasic(user, "changeme"))
+				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', fhirResourceTypes: null, numberOfAttributes: 6}"));
 	}
 
 	protected void postFhirFile() throws Exception {
@@ -166,11 +171,15 @@ public class ControllerTest extends DatabaseTest {
 		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.FHIR);
 
 		mockMvc.perform(multipart("/api/data/file")
-				                .file(file)
+				                .file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'file.json', type: null, fhirResourceTypes: ['Patient', 'Observation'], numberOfAttributes: 0}"));
+
+		mockMvc.perform(multipart("/api/data/file/configuration")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{name: 'file.json', type: 'FHIR', numberOfAttributes: 13}"));
+		       .andExpect(content().json("{name: 'file.json', type: 'FHIR', fhirResourceTypes: ['Patient', 'Observation'], numberOfAttributes: 13}"));
 	}
 
 	protected void estimateDataConfiguration() throws Exception {

@@ -13,6 +13,8 @@ import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
+import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
+import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
@@ -41,7 +43,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @Service
-public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
+public class XlsxProcessor extends CommonDataProcessor implements DataProcessor {
 
     private final String cinnamonVersion;
 
@@ -57,9 +59,19 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor{
 	/**
 	 * {@inheritDoc}
 	 */
+    @Override
+    public void checkFileCompatibility(final LobWrapperEntity data, final FileCompatibilityEntity fileCompatibility) {
+        try(final ReadableWorkbook ignoredWb = new ReadableWorkbook(data.getLobStream())) {
+            fileCompatibility.getCompatibleFileTypes().add(FileType.XLSX);
+        } catch (final IOException ignored) {
+        }
+    }
+
 	@Override
-	public FileConfigurationEstimation estimateFileConfiguration(final InputStream data) throws InternalIOException {
-		final List<List<String>> records = getRecords(data, null);
+	public FileConfigurationEstimation estimateFileConfiguration(final LobWrapperEntity data,
+	                                                             final FileCompatibilityEntity fileCompatibility)
+			throws InternalIOException {
+		final List<List<String>> records = getRecords(data.getLobStream(), null);
 
 		final var xlsxFileConfiguration= estimateXlsxFileConfiguration(records);
 		final var fileConfiguration =  new FileConfiguration();

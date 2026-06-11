@@ -502,9 +502,9 @@ def run_synthesizer_stage(
     status_component_name=None,
 ):
     stage_init_time = time.time()
-
-    synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
-    print(f"[{stage_label}] Synthesizer class initialized: {synthesizer_name}")
+    stage_algorithm = stage_algorithm_config.get("synthetization_configuration", {}).get("algorithm", {})
+    tuning_cfg = stage_algorithm.get("hyperparameter_tuning", {}) if isinstance(stage_algorithm, dict) else {}
+    tuning_enabled = isinstance(tuning_cfg, dict) and bool(tuning_cfg.get("enabled", False))
 
     def _handle_progress_update(step, remaining_time):
         if remaining_time is None:
@@ -518,14 +518,6 @@ def run_synthesizer_stage(
                 sampling_remaining_time=str(remaining_time) if step == "sampling" else None,
                 remaining_time=str(remaining_time) if step == "sampling" else None,
             )
-
-    synthesizer_class.set_progress_callback(_handle_progress_update)
-
-    synthesizer_class.initialize_anonymization_configuration(stage_algorithm_config)
-    print(f"[{stage_label}] Anonymization configuration initialized.")
-
-    synthesizer_class.initialize_attribute_configuration(stage_attribute_config)
-    print(f"[{stage_label}] Attribute configuration initialized.")
 
     pre_processed_data, all_missing_values_column = pre_process_dataframe(
         input_data.copy(),
@@ -543,59 +535,173 @@ def run_synthesizer_stage(
         )
         print(f"[{stage_label}] Reference data preprocessed.")
 
-    synthesizer_class.initialize_dataset(pre_processed_data)
-    if pre_processed_reference_data is not None:
-        if not hasattr(synthesizer_class, "initialize_reference_dataset"):
-            raise RuntimeError("Synthesizer does not support reference dataset initialization.")
-        synthesizer_class.initialize_reference_dataset(pre_processed_reference_data)
-    print(f"[{stage_label}] Dataset initialized.")
+    if tuning_enabled:
+        tuning_supported = bool(synthesizer_classes[synthesizer_name].get("tuning_supported"))
+        if not tuning_supported:
+            raise RuntimeError(
+                f"Hyperparameter tuning is not supported for synthesizer '{synthesizer_name}'."
+            )
 
-    synthesizer_class.initialize_synthesizer()
-    print(f"[{stage_label}] Synthesizer initialized.")
-    
-    # Set session key for prompt logging if this is an LLM synthesizer
-    if session_key is not None and hasattr(synthesizer_class, 'synthesizer') and synthesizer_class.synthesizer is not None:
-        if hasattr(synthesizer_class, '_llm_client') and synthesizer_class._llm_client is not None:
-            try:
-                synthesizer_class._llm_client.set_session_key(session_key)
-                print(f"[{stage_label}] Prompt logging enabled for session: {session_key}")
-            except Exception as e:
-                print(f"[{stage_label}] Warning: Failed to set session key for prompt logging: {e}")
-    
-    stage_init_duration = time.time() - stage_init_time
-    update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True, remaining_time="0")
-    if status_component_name is not None:
-        update_component_status(
-            file_path_status,
-            status_component_name,
-            synthesizer_name=synthesizer_name,
-            initialization_duration=stage_init_duration,
-            fitting_remaining_time="Waiting",
-            sampling_remaining_time="Waiting",
-            completed=False,
+        from hyperparameter_tuning.optuna_tuning import (
+            DEFAULT_ARTIFACT_DIR,
+            optimize as run_optuna_study,
         )
 
-    fit_time = time.time()
-    with intercept_standard_streams(file_path_status, "fitting", component_name=status_component_name):
-        synthesizer_class.fit()
-    fit_duration = time.time() - fit_time
-    print(f"[{stage_label}] Synthesizer fitted.")
-    if status_component_name is not None:
-        update_component_status(
-            file_path_status,
-            status_component_name,
-            synthesizer_name=synthesizer_name,
-            initialization_duration=stage_init_duration,
-            fitting_duration=fit_duration,
-            fitting_remaining_time="0",
-            completed=False,
-        )
+        base_algorithm_config = deepcopy(stage_algorithm_config)
+        stage_init_duration = time.time() - stage_init_time
+        update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True, remaining_time="0")
+        if status_component_name is not None:
+            update_component_status(
+                file_path_status,
+                status_component_name,
+                synthesizer_name=synthesizer_name,
+                initialization_duration=stage_init_duration,
+                fitting_remaining_time="Waiting",
+                sampling_remaining_time="Waiting",
+                completed=False,
+            )
 
-    sample_time = time.time()
-    with intercept_standard_streams(file_path_status, "sampling", component_name=status_component_name):
-        samples = synthesizer_class.sample()
-    sample_duration = time.time() - sample_time
-    print(f"[{stage_label}] Data sampled.")
+        fit_time = time.time()
+
+        def _fit_one_trial(trial_algorithm_config):
+            trial_synth = synthesizer_classes[synthesizer_name]['class']()
+            trial_synth.set_progress_callback(_handle_progress_update)
+            trial_synth.initialize_anonymization_configuration(trial_algorithm_config)
+            trial_synth.initialize_attribute_configuration(stage_attribute_config)
+            trial_synth.initialize_dataset(pre_processed_data)
+            if pre_processed_reference_data is not None:
+                if not hasattr(trial_synth, "initialize_reference_dataset"):
+                    raise RuntimeError("Synthesizer does not support reference dataset initialization.")
+                trial_synth.initialize_reference_dataset(pre_processed_reference_data)
+            trial_synth.initialize_synthesizer()
+            return trial_synth.fit()
+
+        sampler = tuning_cfg.get("sampler", "tpe")
+        pruner = tuning_cfg.get("pruner", "median")
+        n_trials = int(tuning_cfg.get("n_trials", 50))
+        raw_timeout = tuning_cfg.get("timeout_minutes")
+        try:
+            timeout_seconds = float(raw_timeout) * 60.0 if raw_timeout else None
+        except (TypeError, ValueError):
+            timeout_seconds = None
+
+        target_variable = tuning_cfg.get("target_variable") or pre_processed_data.columns[-1]
+        tuning_direction = synthesizer_classes[synthesizer_name].get("tuning_direction") or "minimize"
+
+        with intercept_standard_streams(file_path_status, "fitting", component_name=status_component_name):
+            result = run_optuna_study(
+                fit_metric_fn=_fit_one_trial,
+                real=pre_processed_data,
+                target_variable=target_variable,
+                synthesizer=synthesizer_name,
+                sampler=sampler,
+                pruner=pruner,
+                n_trials=n_trials,
+                timeout=timeout_seconds,
+                direction=tuning_direction,
+                random_state=42,
+                algorithm_config_base=base_algorithm_config,
+                artifact_dir=DEFAULT_ARTIFACT_DIR,
+            )
+
+        best_cfg = result.best_algorithm_config
+        if best_cfg is None:
+            raise RuntimeError("Hyperparameter tuning finished without a best algorithm config.")
+
+        best_synth = synthesizer_classes[synthesizer_name]['class']()
+        best_synth.set_progress_callback(_handle_progress_update)
+        best_synth.initialize_anonymization_configuration(best_cfg)
+        best_synth.initialize_attribute_configuration(stage_attribute_config)
+        best_synth.initialize_dataset(pre_processed_data)
+        if pre_processed_reference_data is not None:
+            if not hasattr(best_synth, "initialize_reference_dataset"):
+                raise RuntimeError("Synthesizer does not support reference dataset initialization.")
+            best_synth.initialize_reference_dataset(pre_processed_reference_data)
+        best_synth.initialize_synthesizer()
+        best_synth.fit()
+
+        fit_duration = time.time() - fit_time
+        print(f"[{stage_label}] Hyperparameter tuning completed.")
+        if status_component_name is not None:
+            update_component_status(
+                file_path_status,
+                status_component_name,
+                synthesizer_name=synthesizer_name,
+                initialization_duration=stage_init_duration,
+                fitting_duration=fit_duration,
+                fitting_remaining_time="0",
+                completed=False,
+            )
+
+        sample_time = time.time()
+        with intercept_standard_streams(file_path_status, "sampling", component_name=status_component_name):
+            samples = best_synth.sample()
+        sample_duration = time.time() - sample_time
+        synthesizer_class = best_synth
+        print(f"[{stage_label}] Data sampled from best tuned synthesizer.")
+    else:
+        synthesizer_class = synthesizer_classes[synthesizer_name]['class']()
+        print(f"[{stage_label}] Synthesizer class initialized: {synthesizer_name}")
+        synthesizer_class.set_progress_callback(_handle_progress_update)
+
+        synthesizer_class.initialize_anonymization_configuration(stage_algorithm_config)
+        print(f"[{stage_label}] Anonymization configuration initialized.")
+
+        synthesizer_class.initialize_attribute_configuration(stage_attribute_config)
+        print(f"[{stage_label}] Attribute configuration initialized.")
+
+        synthesizer_class.initialize_dataset(pre_processed_data)
+        if pre_processed_reference_data is not None:
+            if not hasattr(synthesizer_class, "initialize_reference_dataset"):
+                raise RuntimeError("Synthesizer does not support reference dataset initialization.")
+            synthesizer_class.initialize_reference_dataset(pre_processed_reference_data)
+        print(f"[{stage_label}] Dataset initialized.")
+
+        synthesizer_class.initialize_synthesizer()
+        print(f"[{stage_label}] Synthesizer initialized.")
+        
+        if session_key is not None and hasattr(synthesizer_class, 'synthesizer') and synthesizer_class.synthesizer is not None:
+            if hasattr(synthesizer_class, '_llm_client') and synthesizer_class._llm_client is not None:
+                try:
+                    synthesizer_class._llm_client.set_session_key(session_key)
+                    print(f"[{stage_label}] Prompt logging enabled for session: {session_key}")
+                except Exception as e:
+                    print(f"[{stage_label}] Warning: Failed to set session key for prompt logging: {e}")
+
+        stage_init_duration = time.time() - stage_init_time
+        update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True, remaining_time="0")
+        if status_component_name is not None:
+            update_component_status(
+                file_path_status,
+                status_component_name,
+                synthesizer_name=synthesizer_name,
+                initialization_duration=stage_init_duration,
+                fitting_remaining_time="Waiting",
+                sampling_remaining_time="Waiting",
+                completed=False,
+            )
+
+        fit_time = time.time()
+        with intercept_standard_streams(file_path_status, "fitting", component_name=status_component_name):
+            synthesizer_class.fit()
+        fit_duration = time.time() - fit_time
+        print(f"[{stage_label}] Synthesizer fitted.")
+        if status_component_name is not None:
+            update_component_status(
+                file_path_status,
+                status_component_name,
+                synthesizer_name=synthesizer_name,
+                initialization_duration=stage_init_duration,
+                fitting_duration=fit_duration,
+                fitting_remaining_time="0",
+                completed=False,
+            )
+
+        sample_time = time.time()
+        with intercept_standard_streams(file_path_status, "sampling", component_name=status_component_name):
+            samples = synthesizer_class.sample()
+        sample_duration = time.time() - sample_time
+        print(f"[{stage_label}] Data sampled.")
 
     samples = post_process_dataframe(
         samples,
@@ -689,7 +795,6 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             error_message = f"Error: Required text synthesizer '{text_synthesizer_name}' not found"
             send_callback_error(callback_url, session_key, error_message, 500)
             return {'message': error_message, 'session_key': session_key, 'status_code': 500}
-
         structured_configs, text_configs = split_attribute_configurations(attribute_config)
         supports_structured, supports_free_text = get_processing_capabilities(synthesizer_name)
         text_reference_data = original_data if original_data is not None else data
@@ -993,6 +1098,21 @@ def get_synthesizer_config(module_name, filename):
     except Exception as e:
         error_message = str(e)
         return jsonify({'error': error_message}), 500
+
+
+@app.route('/hyperparameter_tuning/study.yaml', methods=['GET'])
+def get_study_yaml():
+    """
+    Serves the Optuna study definition (study.yaml) to the frontend
+    so it can render the hyperparameter-tuning configuration form.
+    """
+    try:
+        directory = os.path.join(os.path.dirname(__file__), 'hyperparameter_tuning')
+        return send_from_directory(directory, 'study.yaml')
+    except FileNotFoundError:
+        return jsonify({'error': 'study.yaml not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/get_status/<session_key>', methods=['GET'])

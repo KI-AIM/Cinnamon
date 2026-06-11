@@ -52,9 +52,24 @@ class BayesianNetworkSynthesizer(TabularDataSynthesizer):
         """Create the synthcity plugin instance."""
         self.synthesizer = Plugins().get("bayesian_network", **self._model_kwargs)
 
-    def _fit(self) -> None:
-        """Fit the synthesizer to the dataset."""
+    def _fit(self) -> Optional[float]:
+        """
+        Core logic for fitting the synthesizer.
+
+        A Bayesian network has no training loss. We score the learned DAG
+        against the training data with the same structure-scoring metric the
+        plugin used to search (k2 / bic / bdeu / bds) — higher is better
+        (Optuna direction ``maximize``). Metric extraction never breaks the
+        normal synthesis path: any failure returns ``None``.
+        """
         self.synthesizer.fit(self.dataset)
+        try:
+            network = self.synthesizer.model.model  # pgmpy BayesianNetwork
+            scorer_cls = self.synthesizer._get_structure_scorer()
+            return float(scorer_cls(data=self.dataset).score(network))
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[bayesian_network] could not extract fit metric: {exc}")
+        return None
 
     def _sample(self) -> pd.DataFrame:
         """Generate synthetic samples."""

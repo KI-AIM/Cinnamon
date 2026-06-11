@@ -195,6 +195,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         ChartFrequencyComponent,
         ColorLegendComponent,
         ConfigurationFormComponent,
+        ConfigurationGroupComponent,
         ConfigurationInputComponent,
         ConfigurationInputInfoComponent,
         ConfigurationPageComponent,

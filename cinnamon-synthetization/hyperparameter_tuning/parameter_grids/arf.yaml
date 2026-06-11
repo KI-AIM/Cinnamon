@@ -1,0 +1,8 @@
+model_parameter:
+  num_trees: [10, 30, 80]
+  min_node_size: [1, 5, 12]
+model_fitting:
+  max_iters: [5, 10, 50]
+sampling:
+  num_samples: [1000]
+

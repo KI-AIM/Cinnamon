@@ -5,11 +5,30 @@ import { ConfigurationRegisterData } from "../../../shared/model/configuration-r
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
 import { Algorithm } from "../../../shared/model/algorithm";
+import { AlgorithmDefinition } from "../../../shared/model/algorithm-definition";
+import { map, Observable, ReplaySubject } from "rxjs";
+import { parse } from "yaml";
+import { plainToInstance } from "class-transformer";
 
 @Injectable({
     providedIn: 'root',
 })
 export class SynthetizationService extends AlgorithmService {
+
+    /** Path to the study definition served by the synthetization backend. */
+    private static readonly STUDY_DEFINITION_PATH = "/hyperparameter_tuning/study.yaml";
+
+    /** Hyperparameter-tuning config set by the synthetization-configuration component. */
+    private _hyperparameterConfig: object = { enabled: false };
+
+    /**
+     * Emits the hyperparameter-tuning block whenever a configuration is read
+     * (import or cached fetch). Replays the latest value so the
+     * synthetization-configuration component can hydrate its form even if it
+     * subscribes after the config was loaded.
+     */
+    private readonly _hyperparameterConfigLoaded = new ReplaySubject<any>(1);
+    public readonly hyperparameterConfigLoaded$ = this._hyperparameterConfigLoaded.asObservable();
 
     constructor(
         http: HttpClient,
@@ -20,6 +39,26 @@ export class SynthetizationService extends AlgorithmService {
 
     public override getConfigurationName(): string {
         return "synthetization_configuration";
+    }
+
+    public setHyperparameterConfig(config: object): void {
+        this._hyperparameterConfig = config;
+    }
+
+    /** Hyperparameter-tuning config, e.g. for hydrating the form after upload. */
+    public getHyperparameterConfig(): any {
+        return this._hyperparameterConfig;
+    }
+
+    /**
+     * Fetches the Optuna study definition (`study.yaml`) as an
+     * {@link AlgorithmDefinition} using the same pipeline as per-algorithm
+     * configs.
+     */
+    public loadStudyDefinition(): Observable<AlgorithmDefinition> {
+        return this.fetchAlgorithmDefinition(SynthetizationService.STUDY_DEFINITION_PATH).pipe(
+            map((value: string) => plainToInstance(AlgorithmDefinition, parse(value))),
+        );
     }
 
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
@@ -34,7 +73,8 @@ export class SynthetizationService extends AlgorithmService {
                     synthesizer: selectedAlgorithm.name,
                     type: selectedAlgorithm.type,
                     version: selectedAlgorithm.version,
-                    ...formData
+                    hyperparameter_tuning: this._hyperparameterConfig,
+                    ...formData,
                 },
             },
         };
@@ -57,6 +97,14 @@ export class SynthetizationService extends AlgorithmService {
         if (arg["text_synthesis_configuration"] != null) {
             config["text_synthesis_configuration"] = arg["text_synthesis_configuration"];
         }
+
+        if (config["hyperparameter_tuning"]) {
+            this.setHyperparameterConfig(config["hyperparameter_tuning"]);
+        } else {
+            this.setHyperparameterConfig({enabled: false});
+        }
+        delete config["hyperparameter_tuning"];
+        this._hyperparameterConfigLoaded.next(this._hyperparameterConfig);
 
         return {config, selectedAlgorithm};
     }

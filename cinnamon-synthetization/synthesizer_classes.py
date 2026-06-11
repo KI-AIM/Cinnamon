@@ -16,15 +16,15 @@ from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
 #   tuning_supported: whether Optuna can optimize this synthesizer's fit metric.
 #   tuning_direction:  'minimize' for a training loss, 'maximize' for a
 #                      goodness-of-fit score; None when unsupported.
-# ctgan/tvae are the standalone (non-synthcity) implementations and are not yet
-# wired for tuning — their synthcity counterparts come later.
+# ctgan/tvae use synthcity's GAN/VAE plugins; their fit metric is the final-epoch
+# training loss (generator loss for ctgan, reconstruction+KL ELBO for tvae).
 synthesizer_classes = {
     'ctgan': {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': CtganSynthesizer,
-        'tuning_supported': False,
-        'tuning_direction': None,
+        'tuning_supported': True,
+        'tuning_direction': 'minimize',  # final-epoch generator loss: lower is better
         'display_name': 'Conditional Tabular GAN',
         'description': 'Conditional Tabular GAN (CTGAN) are a specialized type of generative model designed to create realistic synthetic tabular data, mimicking the statistical properties of original datasets. Leveraging a generator-discriminator framework, CTGANs learn the relationships within your data and generate new rows conditioned on specified parameters, enabling the creation of synthetic datasets that preserve privacy while retaining key analytical insights. This approach is particularly valuable for scenarios requiring data augmentation or secure model development.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/ctgan.yaml'
@@ -33,8 +33,8 @@ synthesizer_classes = {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': TvaeSynthesizer,
-        'tuning_supported': False,
-        'tuning_direction': None,
+        'tuning_supported': True,
+        'tuning_direction': 'minimize',  # reconstruction+KL ELBO loss: lower is better
         'display_name': 'Tabular Variational Autoencoder',
         'description': 'Tabular Variational Autoencoder (TVAE) are a specialized type of generative model designed to create realistic synthetic tabular data, mimicking the statistical properties of original datasets. Leveraging an encoder-decoder architecture, TVAEs learn compressed latent representations of your data and generate new rows by sampling from this latent space, enabling the creation of synthetic datasets that preserve privacy while retaining key analytical insights. TVAE is especially effective for controlled simulations and what-if analysis where smooth plausible data variations are explored.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/tvae.yaml'

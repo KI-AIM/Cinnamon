@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import cloudpickle
 import pandas as pd
@@ -24,19 +24,26 @@ class TvaeSynthesizer(TabularDataSynthesizer):
         self._sampling: Optional[Dict[str, Any]] = None
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
-        """Initialize synthesizer and sampling parameters."""
+        """Initialize synthesizer and sampling parameters.
+
+        The UI exposes ``embedding_dim`` plus the SDV-style ``compress_dims`` /
+        ``decompress_dims`` layer lists. synthcity's TVAE instead takes scalar
+        layer counts/widths, so each list is translated as ``n_layers = len``,
+        ``n_units = first element`` (uniform-width assumption).
+        """
         synth_params = config["synthetization_configuration"]["algorithm"]["model_parameter"]
         training_params = config["synthetization_configuration"]["algorithm"]["model_fitting"]
+
         embedding_dim = int(synth_params["embedding_dim"])
-        hidden_layers = int(synth_params["number_of_layers"])
-        hidden_units = int(synth_params["number_of_units_in_layers"])
+        compress_dims = list(synth_params["compress_dims"])
+        decompress_dims = list(synth_params["decompress_dims"])
 
         self._model_kwargs = {
             "n_units_embedding": embedding_dim,
-            "encoder_n_layers_hidden": hidden_layers,
-            "encoder_n_units_hidden": hidden_units,
-            "decoder_n_layers_hidden": hidden_layers,
-            "decoder_n_units_hidden": hidden_units,
+            "encoder_n_layers_hidden": len(compress_dims),
+            "encoder_n_units_hidden": int(compress_dims[0]),
+            "decoder_n_layers_hidden": len(decompress_dims),
+            "decoder_n_units_hidden": int(decompress_dims[0]),
             "n_iter": int(training_params["epochs"]),
             "batch_size": int(training_params["batch_size"]),
             "lr": float(1e-3),
@@ -60,9 +67,52 @@ class TvaeSynthesizer(TabularDataSynthesizer):
         """Create the synthcity plugin instance."""
         self.synthesizer = Plugins().get("tvae", **self._model_kwargs)
 
-    def _fit(self) -> None:
-        """Fit the synthesizer to the dataset."""
-        self.synthesizer.fit(self.dataset)
+    def _fit(self) -> Optional[float]:
+        """Fit the synthesizer and return the final training loss.
+
+        synthcity's TVAE plugin does not expose its training loss. We capture the
+        VAE objective (reconstruction + KL) computed during fitting by briefly
+        wrapping ``VAE._loss_function`` and return the last value as the final
+        training loss — lower is better (Optuna direction ``minimize``). Trials
+        run sequentially, so the temporary wrapper (restored in ``finally``) is
+        safe. Metric extraction never breaks the normal synthesis path: any
+        failure returns ``None``.
+        """
+        captured: List[float] = []
+
+        # Best-effort instrumentation: wrap the VAE loss to record its values.
+        # A failure to install the hook must not prevent fitting.
+        vae_cls = None
+        original_loss_fn = None
+        try:
+            from synthcity.plugins.core.models.vae import VAE
+            vae_cls = VAE
+            original_loss_fn = VAE._loss_function
+
+            def _capturing_loss_fn(vae_self, *args, **kwargs):
+                loss = original_loss_fn(vae_self, *args, **kwargs)
+                try:
+                    captured.append(float(loss.item()))
+                except Exception:
+                    pass
+                return loss
+
+            VAE._loss_function = _capturing_loss_fn
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[tvae] could not install loss capture: {exc}")
+            vae_cls = None
+
+        # Fit exactly once. Genuine fit errors propagate to the error handler.
+        try:
+            self.synthesizer.fit(self.dataset)
+        finally:
+            if vae_cls is not None and original_loss_fn is not None:
+                vae_cls._loss_function = original_loss_fn
+
+        if captured:
+            return captured[-1]
+        print("[tvae] no training loss captured; no fit metric available.")
+        return None
 
     def _sample(self) -> pd.DataFrame:
         """Generate synthetic samples."""

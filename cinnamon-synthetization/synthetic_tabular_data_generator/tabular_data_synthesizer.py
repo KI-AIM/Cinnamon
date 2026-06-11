@@ -69,9 +69,15 @@ class TabularDataSynthesizer(ABC):
         self._initialize_synthesizer()
 
     @error_handler("fitting the synthesizer")
-    def fit(self) -> None:
-        """Public method to fit the synthesizer with enhanced error handling."""
-        self._fit()
+    def fit(self):
+        """Public method to fit the synthesizer with enhanced error handling.
+
+        Returns whatever ``_fit`` returns. Synthesizers that support
+        hyperparameter tuning return a scalar fit metric (training loss or a
+        goodness-of-fit score) used as the Optuna objective; others return
+        ``None``. The value is ignored by the normal single-shot synthesis path.
+        """
+        return self._fit()
 
     @error_handler("sampling data from the synthesizer")
     def sample(self) -> pd.DataFrame:

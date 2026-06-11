@@ -1,0 +1,16 @@
+model_parameter:
+  scheduler: [cosine, linear]
+  gaussian_loss_type: [mse, kl]
+  model_type: [mlp]
+  n_layers_hidden: [2, 3, 4]
+  n_units_hidden: [64, 128, 256]
+  dim_embed: [32, 64, 128]
+  dropout: [0.0, 0.1]
+model_fitting:
+  batch_size: [64, 128, 256]
+  max_iters: [100, 500, 1000]
+  num_timesteps: [100, 300, 500]
+sampling:
+  num_samples: [1000]
+  sampling_patience: [500]
+

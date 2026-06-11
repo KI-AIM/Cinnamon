@@ -1,0 +1,73 @@
+<!-- ── Enable / disable row ── -->
+<div class="d-flex align-items-center gap-2 mb-3">
+    <mat-checkbox color="primary"
+                  [checked]="enabled"
+                  (change)="enabledChange.emit($event.checked)">
+        Use hyperparameter tuning?
+    </mat-checkbox>
+</div>
+
+<!-- ── Form fields (only shown when enabled) ── -->
+<ng-container *ngIf="enabled && studyGroup">
+
+    <!-- SAMPLER — fill select, label inside, matSuffix info icon -->
+    <mat-form-field style="width: 100%">
+        <mat-label>Sampler</mat-label>
+        <mat-select [formControl]="$any(studyGroup.controls['sampler'])">
+            <mat-option value="tpe">TPE</mat-option>
+            <mat-option value="grid">Grid</mat-option>
+            <mat-option value="nsgaii">NSGA-II</mat-option>
+        </mat-select>
+        <mat-icon matSuffix class="icon-enabled"
+                  (click)="samplerInfoDialog.handleClick($event)">info</mat-icon>
+    </mat-form-field>
+    <app-information-dialog #samplerInfoDialog title="Sampler">
+        <info-explanation>
+            <p>
+                Algorithm used to propose hyperparameter combinations.
+                Grid exhaustively tests all combinations, TPE performs Bayesian
+                optimisation, NSGA-II is a genetic algorithm for multi-objective search.
+            </p>
+        </info-explanation>
+    </app-information-dialog>
+
+    <!-- PRUNER — same style -->
+    <mat-form-field style="width: 100%">
+        <mat-label>Pruner</mat-label>
+        <mat-select [formControl]="$any(studyGroup.controls['pruner'])">
+            <mat-option value="none">None</mat-option>
+            <mat-option value="median">Median</mat-option>
+            <mat-option value="hyperband">Hyperband</mat-option>
+            <mat-option value="successive_halving">Successive Halving</mat-option>
+        </mat-select>
+        <mat-icon matSuffix class="icon-enabled"
+                  (click)="prunerInfoDialog.handleClick($event)">info</mat-icon>
+    </mat-form-field>
+    <app-information-dialog #prunerInfoDialog title="Pruner">
+        <info-explanation>
+            <p>
+                Strategy for early-stopping unpromising trials.
+                "None" lets every trial run to completion;
+                Median stops trials below the median of completed ones;
+                Hyperband and Successive Halving allocate budget adaptively across trials.
+            </p>
+        </info-explanation>
+    </app-information-dialog>
+
+    <!-- N_TRIALS — reuse app-configuration-input (row layout, label outside, fill field) -->
+    <ng-container *ngIf="getParam('n_trials') as nTrialsDef">
+        <app-configuration-input [form]="studyGroup"
+                                 [configurationInputDefinition]="nTrialsDef"
+                                 [disabled]="false">
+        </app-configuration-input>
+    </ng-container>
+
+    <!-- TIMEOUT_MINUTES — same; no required validator so it can be left empty -->
+    <ng-container *ngIf="getParam('timeout_minutes') as timeoutDef">
+        <app-configuration-input [form]="studyGroup"
+                                 [configurationInputDefinition]="timeoutDef"
+                                 [disabled]="false">
+        </app-configuration-input>
+    </ng-container>
+
+</ng-container>

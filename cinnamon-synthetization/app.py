@@ -140,33 +140,47 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 'status_code': 400
             }
 
+        # Determine HPT early so Steps 2/3/5/6 can be skipped when appropriate.
+        # When HPT is enabled the outer synthesizer_class is never fitted/sampled;
+        # each Optuna trial creates a fresh synthesizer with a complete per-trial config.
+        algo_cfg_dict = (algorithm_config or {}).get("synthetization_configuration", {}).get("algorithm", {})
+        tuning_cfg = algo_cfg_dict.get("hyperparameter_tuning", {}) if isinstance(algo_cfg_dict, dict) else {}
+        tuning_enabled = isinstance(tuning_cfg, dict) and bool(tuning_cfg.get("enabled", False))
+
         # Step 2: Initialize anonymization configuration
-        try:
-            synthesizer_class.initialize_anonymization_configuration(algorithm_config)
-            print('Anonymization configuration initialized.')
-        except RuntimeError as e:
-            error_message = f"Error during initialization of anonymization configuration. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 400)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 400
-            }
+        # Skipped for HPT: when HPT is on the frontend omits model_parameter/model_fitting/
+        # sampling from the payload (the form is hidden), so accessing those keys here would
+        # raise a KeyError. Each Optuna trial calls initialize_anonymization_configuration
+        # itself with a complete per-trial config.
+        if not tuning_enabled:
+            try:
+                synthesizer_class.initialize_anonymization_configuration(algorithm_config)
+                print('Anonymization configuration initialized.')
+            except RuntimeError as e:
+                error_message = f"Error during initialization of anonymization configuration. {str(e)}"
+                send_callback_error(callback_url, session_key, error_message, 400)
+                return {
+                    'message': error_message,
+                    'session_key': session_key,
+                    'status_code': 400
+                }
 
         # Step 3: Initialize attribute configuration
-        try:
-            synthesizer_class.initialize_attribute_configuration(attribute_config)
-            print('Attribute configuration initialized.')
-        except RuntimeError as e:
-            error_message = f"Error during attribute configuration. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 400)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 400
-            }
+        # Skipped for HPT: each trial handles this on its own fresh synthesizer.
+        if not tuning_enabled:
+            try:
+                synthesizer_class.initialize_attribute_configuration(attribute_config)
+                print('Attribute configuration initialized.')
+            except RuntimeError as e:
+                error_message = f"Error during attribute configuration. {str(e)}"
+                send_callback_error(callback_url, session_key, error_message, 400)
+                return {
+                    'message': error_message,
+                    'session_key': session_key,
+                    'status_code': 400
+                }
 
-        # Step 4: Pre-process sampled data
+        # Step 4: Pre-process sampled data (always runs — result shared by all HPT trials)
         try:
             pre_processed_data, all_missing_values_column = pre_process_dataframe(data, attribute_config['configurations'])
             print("Dataset preprocessed.")
@@ -180,68 +194,173 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             }
 
         # Step 5: Initialize dataset
-        try:
-            synthesizer_class.initialize_dataset(pre_processed_data)
-            print('Dataset initialized.')
-        except RuntimeError as e:
-            print("Error in Dataset Initialoization")
-            error_message = f"Error during dataset initialization. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 400)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 400
-            }
+        # Skipped for HPT: each trial handles this on its own fresh synthesizer.
+        if not tuning_enabled:
+            try:
+                synthesizer_class.initialize_dataset(pre_processed_data)
+                print('Dataset initialized.')
+            except RuntimeError as e:
+                print("Error in Dataset Initialoization")
+                error_message = f"Error during dataset initialization. {str(e)}"
+                send_callback_error(callback_url, session_key, error_message, 400)
+                return {
+                    'message': error_message,
+                    'session_key': session_key,
+                    'status_code': 400
+                }
 
         # Step 6: Initialize synthesizer
-        try:
-            synthesizer_class.initialize_synthesizer()
-            print('Synthesizer initialized.')
+        # Skipped for HPT: each trial handles this on its own fresh synthesizer.
+        # For HPT we still mark initialization complete (class creation + pre-processing).
+        if not tuning_enabled:
+            try:
+                synthesizer_class.initialize_synthesizer()
+                print('Synthesizer initialized.')
+                init_time = time.time() - init_time
+                update_status(file_path_status, step='initialization', duration=init_time, completed=True)
+            except RuntimeError as e:
+                error_message = f"Error during synthesizer initialization. {str(e)}"
+                send_callback_error(callback_url, session_key, error_message, 500)
+                return {
+                    'message': error_message,
+                    'session_key': session_key,
+                    'status_code': 500
+                }
+        else:
             init_time = time.time() - init_time
             update_status(file_path_status, step='initialization', duration=init_time, completed=True)
-        except RuntimeError as e:
-            error_message = f"Error during synthesizer initialization. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
 
-        # Step 7: Fit the synthesizer
-        try:
-            fit_time = time.time()
-            sys.stdout = InterceptStdOut(file_path_status, 'fitting')
-            synthesizer_class.fit()
-            fit_time = time.time() - fit_time
-            update_status(file_path_status, 'fitting', duration=fit_time, completed=True, remaining_time="0")
-            print('Synthesizer fitted.')
-        except RuntimeError as e:
-            error_message = f"Error during synthesizer fitting. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
+        # Step 6.5: Branch on the hyperparameter-tuning toggle from the request payload.
+        # When enabled the linear fit+sample (Steps 7-8) is replaced by an Optuna study;
+        # otherwise the original single-shot path runs unchanged.
 
-        # Step 8: Sample data
-        try:
-            sample_time = time.time()
-            sys.stdout = sys.__stdout__
-            sys.stdout = InterceptStdOut(file_path_status, 'sampling')
-            samples = synthesizer_class.sample()
-            sample_time = time.time() - sample_time
-            update_status(file_path_status, 'sampling', duration=sample_time, completed=True, remaining_time="0")
-            print('Data sampled.')
-        except RuntimeError as e:
-            error_message = f"Error during data sampling. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {
-                'message': error_message,
-                'session_key': session_key,
-                'status_code': 500
-            }
+        if tuning_enabled:
+            try:
+                from hyperparameter_tuning.optuna_tuning import (
+                    optimize as run_optuna_study,
+                    DEFAULT_ARTIFACT_DIR,
+                )
+
+                sampler = tuning_cfg.get("sampler", "tpe")
+                pruner = tuning_cfg.get("pruner", "median")
+                n_trials = int(tuning_cfg.get("n_trials", 50))
+                raw_timeout = tuning_cfg.get("timeout_minutes")
+                try:
+                    timeout_seconds = float(raw_timeout) * 60.0 if raw_timeout else None
+                except (TypeError, ValueError):
+                    timeout_seconds = None
+                target_variable = tuning_cfg.get("target_variable") or data.columns[-1]
+
+                def _fit_one_trial(trial_algorithm_config):
+                    """Per-trial fit used by Optuna. Fresh state every call.
+
+                    Returns the synthesizer's fit metric (loss or score) that
+                    Optuna optimizes — no sampling/scoring of synthetic data.
+                    """
+                    trial_synth = synthesizer_classes[synthesizer_name]['class']()
+                    trial_synth.initialize_anonymization_configuration(trial_algorithm_config)
+                    trial_synth.initialize_attribute_configuration(attribute_config)
+                    trial_synth.initialize_dataset(pre_processed_data)
+                    trial_synth.initialize_synthesizer()
+                    return trial_synth.fit()
+
+                # Direction comes from the synthesizer registry: a training loss
+                # is minimized, a goodness-of-fit score is maximized. Unsupported
+                # synthesizers (ctgan/tvae) have no direction — their trials
+                # return no metric and prune, so the study yields no result and
+                # the error below is surfaced to the caller.
+                tuning_direction = (
+                    synthesizer_classes[synthesizer_name].get('tuning_direction') or 'minimize'
+                )
+
+                tuning_start = time.time()
+                update_status(file_path_status, "hyperparameter_tuning",
+                              duration="0", completed=False, remaining_time="Waiting")
+                sys.stdout = InterceptStdOut(file_path_status, 'hyperparameter_tuning')
+
+                result = run_optuna_study(
+                    fit_metric_fn=_fit_one_trial,
+                    real=pre_processed_data,
+                    target_variable=target_variable,
+                    synthesizer=synthesizer_name,
+                    sampler=sampler,
+                    pruner=pruner,
+                    n_trials=n_trials,
+                    timeout=timeout_seconds,
+                    direction=tuning_direction,
+                    random_state=42,
+                    artifact_dir=DEFAULT_ARTIFACT_DIR,
+                )
+
+                sys.stdout = sys.__stdout__
+                tuning_time = time.time() - tuning_start
+                update_status(file_path_status, "hyperparameter_tuning",
+                              duration=tuning_time, completed=True, remaining_time="0")
+
+                # Re-fit the best config on a fresh synthesizer so Step 10 (get_model)
+                # produces model bytes that correspond to the returned samples.
+                best_cfg = result.best_algorithm_config
+                if best_cfg is None:
+                    raise RuntimeError("Optuna study finished without a best algorithm config.")
+                best_synth = synthesizer_classes[synthesizer_name]['class']()
+                best_synth.initialize_anonymization_configuration(best_cfg)
+                best_synth.initialize_attribute_configuration(attribute_config)
+                best_synth.initialize_dataset(pre_processed_data)
+                best_synth.initialize_synthesizer()
+                best_synth.fit()
+                synthesizer_class = best_synth  # so Step 10 uses the best trial's model
+
+                samples = result.best_synthetic if result.best_synthetic is not None else best_synth.sample()
+
+                # The original fitting + sampling status entries were absorbed into the
+                # hyperparameter_tuning step; mark them complete with zero duration so
+                # the UI still ticks them off.
+                update_status(file_path_status, 'fitting', duration="0", completed=True, remaining_time="0")
+                update_status(file_path_status, 'sampling', duration="0", completed=True, remaining_time="0")
+            except Exception as e:
+                sys.stdout = sys.__stdout__
+                error_message = f"Error during hyperparameter tuning. {str(e)}"
+                send_callback_error(callback_url, session_key, error_message, 500)
+                return {
+                    'message': error_message,
+                    'session_key': session_key,
+                    'status_code': 500
+                }
+        else:
+            # Step 7: Fit the synthesizer
+            try:
+                fit_time = time.time()
+                sys.stdout = InterceptStdOut(file_path_status, 'fitting')
+                synthesizer_class.fit()
+                fit_time = time.time() - fit_time
+                update_status(file_path_status, 'fitting', duration=fit_time, completed=True, remaining_time="0")
+                print('Synthesizer fitted.')
+            except RuntimeError as e:
+                error_message = f"Error during synthesizer fitting. {str(e)}"
+                send_callback_error(callback_url, session_key, error_message, 500)
+                return {
+                    'message': error_message,
+                    'session_key': session_key,
+                    'status_code': 500
+                }
+
+            # Step 8: Sample data
+            try:
+                sample_time = time.time()
+                sys.stdout = sys.__stdout__
+                sys.stdout = InterceptStdOut(file_path_status, 'sampling')
+                samples = synthesizer_class.sample()
+                sample_time = time.time() - sample_time
+                update_status(file_path_status, 'sampling', duration=sample_time, completed=True, remaining_time="0")
+                print('Data sampled.')
+            except RuntimeError as e:
+                error_message = f"Error during data sampling. {str(e)}"
+                send_callback_error(callback_url, session_key, error_message, 500)
+                return {
+                    'message': error_message,
+                    'session_key': session_key,
+                    'status_code': 500
+                }
 
         # Step 9: Post-process sampled data
         try:
@@ -383,6 +502,21 @@ def get_synthesizer_config(module_name, filename):
     except Exception as e:
         error_message = str(e)
         return jsonify({'error': error_message}), 500
+
+
+@app.route('/hyperparameter_tuning/study.yaml', methods=['GET'])
+def get_study_yaml():
+    """
+    Serves the Optuna study definition (study.yaml) to the frontend
+    so it can render the hyperparameter-tuning configuration form.
+    """
+    try:
+        directory = os.path.join(os.path.dirname(__file__), 'hyperparameter_tuning')
+        return send_from_directory(directory, 'study.yaml')
+    except FileNotFoundError:
+        return jsonify({'error': 'study.yaml not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/get_status/<session_key>', methods=['GET'])

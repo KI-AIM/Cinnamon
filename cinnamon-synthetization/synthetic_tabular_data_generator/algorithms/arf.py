@@ -72,11 +72,27 @@ class AdversarialRandomForestsSynthesizer(TabularDataSynthesizer):
         """
         self.synthesizer = Plugins().get("arf", **self._model_kwargs)
 
-    def _fit(self) -> None:
+    def _fit(self) -> Optional[float]:
         """
         Core logic for fitting the synthesizer.
+
+        ARF has no training loss. It trains an adversarial random forest that
+        tries to distinguish real from synthetic rows; the out-of-bag (OOB)
+        discriminator accuracy converges toward 0.5 when the synthetic data is
+        indistinguishable from the real data. We return the distance of the
+        final OOB accuracy from 0.5 — lower is better (Optuna direction
+        ``minimize``). Metric extraction never breaks the normal synthesis
+        path: any failure returns ``None``.
         """
         self.synthesizer.fit(self.dataset)
+        try:
+            acc = self.synthesizer.model.model.acc  # arfpy per-iteration OOB accuracy
+            if acc:
+                return abs(float(acc[-1]) - 0.5)
+            print("[arf] no OOB accuracy recorded; no fit metric available.")
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[arf] could not extract fit metric: {exc}")
+        return None
 
     def _sample(self) -> pd.DataFrame:
         """

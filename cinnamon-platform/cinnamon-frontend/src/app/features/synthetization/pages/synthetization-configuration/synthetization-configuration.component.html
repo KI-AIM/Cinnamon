@@ -1,3 +1,15 @@
-<app-configuration-page *ngIf="configurationInfo$ | async as configInfo" [configurationInfo]="configInfo"
-                        [step]="Steps.SYNTHETIZATION">
+<app-configuration-page *ngIf="configurationInfo$ | async as configInfo"
+                        [configurationInfo]="configInfo"
+                        [step]="Steps.SYNTHETIZATION"
+                        [intermediateStep]="htStep"
+                        [hideAlgorithmConfigForm]="useHyperparameterTuning">
 </app-configuration-page>
+
+<ng-template #htStep>
+    <app-ht-configuration
+            [enabled]="useHyperparameterTuning"
+            (enabledChange)="setHyperparameterTuning($event)"
+            [htFormGroup]="htFormGroup"
+            [studyDefinition]="studyDefinition">
+    </app-ht-configuration>
+</ng-template>

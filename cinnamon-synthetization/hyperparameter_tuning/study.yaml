@@ -1,0 +1,49 @@
+name: study
+version: "0.1"
+type: hyperparameter_tuning
+display_name: Hyperparameter Tuning Study
+description: Optuna study configuration controlling the search strategy.
+URL: /hyperparameter_tuning/study.yaml
+configurations:
+  study:
+    display_name: Study Settings
+    description: Sampler, pruner, and budget for the Optuna study.
+    parameters:
+      - name: sampler
+        type: string
+        label: Sampler
+        description: Algorithm used to propose hyperparameter combinations. Grid exhaustively tests all combinations, TPE performs Bayesian optimisation, NSGA is a genetic algorithm for multi-objective search.
+        default_value: tpe
+        values:
+          - grid
+          - tpe
+          - nsgaii
+
+      - name: pruner
+        type: string
+        label: Pruner
+        description: Strategy for early-stopping unpromising trials. "none" lets every trial run to completion; Median stops trials below the median of completed ones; Hyperband and Successive Halving allocate budget adaptively across trials.
+        default_value: median
+        values:
+          - none
+          - median
+          - hyperband
+          - successive_halving
+
+      - name: n_trials
+        type: integer
+        label: Number of Trials
+        description: Number of hyperparameter configurations to evaluate. More trials improve the result but take longer.
+        default_value: 50
+        min_value: 1
+        max_value: 10000
+
+      - name: timeout_minutes
+        type: integer
+        label: Timeout (minutes)
+        description: Maximum total runtime in minutes. The study stops after this duration even if not all trials have completed.
+        default_value: 60
+        min_value: 1
+        max_value: 100000
+
+

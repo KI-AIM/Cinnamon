@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
@@ -47,6 +47,27 @@ export class ConfigurationPageComponent implements OnInit {
     @Input() public configurationInfo!: ConfigurationInfo;
     @Input() public step!: Steps;
     @Input() public additionalConfigs: ConfigurationAdditionalConfigs | null = null
+
+    /**
+     * Optional template rendered as an extra workstep between Algorithm Selection
+     * and Algorithm Configuration. Used by the synthetization page to host the
+     * hyperparameter-tuning controls; defaults to null on every other page.
+     */
+    @Input() public intermediateStep: TemplateRef<any> | null = null;
+
+    /**
+     * When true, the Algorithm Configuration box still renders but its body is
+     * replaced by {@link hiddenAlgorithmConfigMessage}. Used when the user opts
+     * into hyperparameter tuning and the form should be auto-optimised.
+     */
+    @Input() public hideAlgorithmConfigForm: boolean = false;
+
+    /**
+     * Message displayed inside the Algorithm Configuration box when
+     * {@link hideAlgorithmConfigForm} is true.
+     */
+    @Input() public hiddenAlgorithmConfigMessage: string =
+        'Algorithm parameters will be automatically optimised by Hyperparameter Tuning.';
 
     protected pageData$: Observable<{
         algorithms: Algorithm[],
@@ -348,7 +369,9 @@ export class ConfigurationPageComponent implements OnInit {
                 }
             );
         } else {
-            const config = this.forms ? this.forms.formData : '';
+            const config = this.hideAlgorithmConfigForm
+                ? {}
+                : (this.forms ? this.forms.formData : '');
             this.postConfig(config).pipe(
                 switchMap(() => {
                     return this.configureJobs();

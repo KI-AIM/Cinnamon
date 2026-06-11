@@ -107,11 +107,24 @@ class DdpmSynthesizer(TabularDataSynthesizer):
         """
         self.synthesizer = Plugins().get("ddpm", **self._model_kwargs)
 
-    def _fit(self) -> None:
+    def _fit(self) -> Optional[float]:
         """
         Core logic for fitting the synthesizer.
+
+        Returns the final-epoch training loss (lower is better — the Optuna
+        direction for ddpm is ``minimize``). Metric extraction never breaks the
+        normal synthesis path: any failure returns ``None``, which the
+        hyperparameter-tuning objective treats as a pruned trial.
         """
         self.synthesizer.fit(self.dataset)
+        try:
+            loss_history = getattr(self.synthesizer, "loss_history", None)
+            if loss_history is not None and len(loss_history) > 0:
+                return float(loss_history["loss"].iloc[-1])
+            print("[ddpm] loss_history empty; no fit metric available.")
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[ddpm] could not extract fit metric: {exc}")
+        return None
 
     def _sample(self) -> pd.DataFrame:
         """

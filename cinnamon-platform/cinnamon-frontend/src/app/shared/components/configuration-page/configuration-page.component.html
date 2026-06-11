@@ -1,8 +1,9 @@
 <ng-container *ngIf="pageData$ | async as data">
     <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
-        <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="4"
-                           [step]="step" [invalid]="(oneEnabled && (!formValid || selectedAlgorithm == null))"
+        <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked"
+                           [numberSteps]="intermediateStep ? 5 : 4"
+                           [step]="step" [invalid]="(oneEnabled && ((!formValid && !hideAlgorithmConfigForm) || selectedAlgorithm == null))"
                            (confirm)="submit()">
             <!-- Activation -->
             <app-workstep-item header="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
@@ -30,31 +31,47 @@
                 </app-configuration-selection>
             </app-workstep-item>
 
+            <!-- Hyperparameter Tuning (optional, injected by the parent page) -->
+            <app-workstep-item *ngIf="intermediateStep" header="Configure hyperparameter tuning"
+                               [locked]="data.locked" [stepIndex]="3">
+                <ng-container *ngTemplateOutlet="intermediateStep"></ng-container>
+            </app-workstep-item>
+
             <!-- Algorithm Configuration -->
             <app-workstep-item header="Configure the algorithm" [locked]="data.locked"
-                               [stepIndex]="3" [invalid]="!formValid">
-                <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
-                    <div class="ms-auto me-auto" style="width: fit-content">
-                        <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
-                            Please select an algorithm in the previous step first.
-                        </ng-container>
-                        <ng-template #noAlgorithmSelection>
-                            No algorithms available.
-                        </ng-template>
+                               [stepIndex]="intermediateStep ? 4 : 3"
+                               [invalid]="!hideAlgorithmConfigForm && !formValid">
+                <ng-container *ngIf="hideAlgorithmConfigForm; else algorithmConfigBody">
+                    <div class="w-100 mt-4">
+                        <div class="ms-auto me-auto" style="width: fit-content">
+                            {{ hiddenAlgorithmConfigMessage }}
+                        </div>
                     </div>
-                </div>
-                <ng-template #configurationForms>
-                    <div *ngFor="let item of data.algorithms" [id]="item">
-                        <ng-container *ngIf="selectedAlgorithm != null && selectedAlgorithm.name === item.name">
-                            <app-configuration-form #form [algorithm]="item"
-                                                    [dataConfiguration]="data.dataConfiguration"
-                                                    [disabled]="data.locked || !oneEnabled"
-                                                    (onChange)="onFormChange($event)"
-                                                    [additionalConfigs]="additionalConfigs"
-                                                    [initialConfigurationData]="data.configurationData">
-                            </app-configuration-form>
-                        </ng-container>
+                </ng-container>
+                <ng-template #algorithmConfigBody>
+                    <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
+                        <div class="ms-auto me-auto" style="width: fit-content">
+                            <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
+                                Please select an algorithm in the previous step first.
+                            </ng-container>
+                            <ng-template #noAlgorithmSelection>
+                                No algorithms available.
+                            </ng-template>
+                        </div>
                     </div>
+                    <ng-template #configurationForms>
+                        <div *ngFor="let item of data.algorithms" [id]="item">
+                            <ng-container *ngIf="selectedAlgorithm != null && selectedAlgorithm.name === item.name">
+                                <app-configuration-form #form [algorithm]="item"
+                                                        [dataConfiguration]="data.dataConfiguration"
+                                                        [disabled]="data.locked || !oneEnabled"
+                                                        (onChange)="onFormChange($event)"
+                                                        [additionalConfigs]="additionalConfigs"
+                                                        [initialConfigurationData]="data.configurationData">
+                                </app-configuration-form>
+                            </ng-container>
+                        </div>
+                    </ng-template>
                 </ng-template>
             </app-workstep-item>
 
@@ -82,34 +99,48 @@
             </app-configuration-selection>
         </app-workstep-box>
 
-        <app-workstep-box header="Algorithm Configuration" [invalid]="selectedAlgorithm !== null && !formValid">
-            <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
-                <div class="ms-auto me-auto" style="width: fit-content">
-                    <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
-                        Please select an algorithm.
-                    </ng-container>
-                    <ng-template #noAlgorithmSelection>
-                        No algorithms available.
-                    </ng-template>
+        <app-workstep-box *ngIf="intermediateStep" header="Hyperparameter Tuning">
+            <ng-container *ngTemplateOutlet="intermediateStep"></ng-container>
+        </app-workstep-box>
+
+        <app-workstep-box header="Algorithm Configuration"
+                          [invalid]="!hideAlgorithmConfigForm && selectedAlgorithm !== null && !formValid">
+            <ng-container *ngIf="hideAlgorithmConfigForm; else algorithmConfigBodyExpert">
+                <div class="w-100 py-3">
+                    <div class="ms-auto me-auto" style="width: fit-content">
+                        {{ hiddenAlgorithmConfigMessage }}
+                    </div>
                 </div>
-            </div>
-            <ng-template #configurationForms>
-                <div *ngFor="let item of data.algorithms" [id]="item">
-                    <ng-container *ngIf="selectedAlgorithm!.name === item.name">
-                        <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
-                                                [dataConfiguration]="data.dataConfiguration"
-                                                [disabled]="data.locked || !oneEnabled"
-                                                [initialConfigurationData]="data.configurationData"
-                                                (onChange)="onFormChange($event)">
-                        </app-configuration-form>
-                    </ng-container>
+            </ng-container>
+            <ng-template #algorithmConfigBodyExpert>
+                <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
+                    <div class="ms-auto me-auto" style="width: fit-content">
+                        <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
+                            Please select an algorithm.
+                        </ng-container>
+                        <ng-template #noAlgorithmSelection>
+                            No algorithms available.
+                        </ng-template>
+                    </div>
                 </div>
+                <ng-template #configurationForms>
+                    <div *ngFor="let item of data.algorithms" [id]="item">
+                        <ng-container *ngIf="selectedAlgorithm!.name === item.name">
+                            <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
+                                                    [dataConfiguration]="data.dataConfiguration"
+                                                    [disabled]="data.locked || !oneEnabled"
+                                                    [initialConfigurationData]="data.configurationData"
+                                                    (onChange)="onFormChange($event)">
+                            </app-configuration-form>
+                        </ng-container>
+                    </div>
+                </ng-template>
             </ng-template>
         </app-workstep-box>
 
         <app-workstep-box header="Confirm your configuration">
             <button type="submit" mat-raised-button color="primary"
-                    [disabled]="data.locked || (oneEnabled && (!formValid || selectedAlgorithm == null))" (click)="submit()">
+                    [disabled]="data.locked || (oneEnabled && ((!formValid && !hideAlgorithmConfigForm) || selectedAlgorithm == null))" (click)="submit()">
                 Continue
             </button>
         </app-workstep-box>

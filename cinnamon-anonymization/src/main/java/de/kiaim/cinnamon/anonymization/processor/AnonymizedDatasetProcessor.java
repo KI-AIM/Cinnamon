@@ -185,6 +185,7 @@ public class AnonymizedDatasetProcessor {
                 case DECIMAL -> null;
                 case INTEGER -> null;
                 case STRING -> null;
+                case TEXT -> null;
                 default -> throw new IllegalArgumentException("Unknown data type: " + type);
             };
         }
@@ -197,6 +198,7 @@ public class AnonymizedDatasetProcessor {
                 case DECIMAL -> Float.parseFloat(value);
                 case INTEGER -> Integer.parseInt(value);
                 case STRING -> value;
+                case TEXT -> value;
                 default -> throw new IllegalArgumentException("Unknown data type: " + type);
             };
         } catch (Exception e) {

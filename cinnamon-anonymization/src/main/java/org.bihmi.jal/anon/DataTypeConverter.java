@@ -12,6 +12,7 @@ public class DataTypeConverter {
 //            // TODO : handle BOOLEAN and DATE_TIME, find a better solution
             case "BOOLEAN" -> DataType.STRING;
             case "DATE_TIME" -> DataType.DATE;
+            case "TEXT" -> DataType.STRING;
             default -> throw new IllegalArgumentException("String " + datatype + " could not be mapped to any ARX datatype.");
         };
     }

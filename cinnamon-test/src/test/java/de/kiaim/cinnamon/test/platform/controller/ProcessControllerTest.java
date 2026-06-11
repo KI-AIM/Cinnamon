@@ -372,8 +372,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("stages[0].processes[0].step").value(ANON_JOB))
 		       .andExpect(jsonPath("stages[0].processes[0].processSteps[0]").value(ANON_JOB))
 		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("stages[0].processes[1].status").value("""
-		                                                                  {"components":{"TabularSynthesizer":{"completed":"False","duration":null,"fitting_duration":null,"initialization_duration":null,"remaining_time":null,"sampling_duration":null,"synthesizer_name":"ctgan"}},"status":[{"completed":"False","duration":null,"step":"callback","remaining_time":null}],"session_key":null,"synthesizer_name":null}"""))
+		       .andExpect(jsonPath("stages[0].processes[1].status").value(expectedSynthStatusJson(false)))
 		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
 		       .andExpect(jsonPath("stages[0].processes[1].processSteps").value(nullValue()));
 		var recordedRequest = mockBackEnd.takeRequest();
@@ -422,8 +421,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("stages[0].processes[0].processSteps[0]").value(ANON_JOB))
 		       .andExpect(jsonPath("stages[0].processes[0].processSteps[1]").doesNotExist())
 		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("stages[0].processes[1].status").value("""
-		                                                                  {"components":{"TabularSynthesizer":{"completed":"False","duration":null,"fitting_duration":null,"initialization_duration":null,"remaining_time":null,"sampling_duration":null,"synthesizer_name":"ctgan"}},"status":[{"completed":"True","duration":null,"step":"callback","remaining_time":null}],"session_key":null,"synthesizer_name":null}"""))
+		       .andExpect(jsonPath("stages[0].processes[1].status").value(expectedSynthStatusJson(true)))
 		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
 		       .andExpect(jsonPath("stages[0].processes[1].processSteps[0]").value(ANON_JOB))
 		       .andExpect(jsonPath("stages[0].processes[1].processSteps[1]").value(SYNTH_JOB))
@@ -509,8 +507,16 @@ public class ProcessControllerTest extends ControllerTest {
 		var synthStatus = new SynthetizationStatus();
 		var synthComponentStatus = new SynthetizationComponentStatus();
 		synthComponentStatus.setCompleted("False");
+		synthComponentStatus.setFittingRemainingTime("2");
+		synthComponentStatus.setSamplingRemainingTime("1");
 		synthComponentStatus.setSynthesizerName("ctgan");
-		synthStatus.getComponents().put("TabularSynthesizer", synthComponentStatus);
+		synthStatus.getComponents().put("structured_synthesis", synthComponentStatus);
+		var totalSynthesisStatus = new SynthetizationComponentStatus();
+		totalSynthesisStatus.setStep("Total");
+		totalSynthesisStatus.setCompleted("False");
+		totalSynthesisStatus.setDuration("12.5");
+		totalSynthesisStatus.setRemainingTime("1");
+		synthStatus.getComponents().put("total_synthesis", totalSynthesisStatus);
 		var synthStepStatus = new SynthetizationStepStatus();
 		synthStepStatus.setStep("callback");
 		synthStepStatus.setCompleted("False");
@@ -520,6 +526,30 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .code(200)
 				                    .body(jsonMapper.writeValueAsString(synthStatus))
 				                    .build());
+	}
+
+	private String expectedSynthStatusJson(final boolean callbackCompleted) throws JsonProcessingException {
+		var synthStatus = new SynthetizationStatus();
+		var synthComponentStatus = new SynthetizationComponentStatus();
+		synthComponentStatus.setCompleted("False");
+		synthComponentStatus.setFittingRemainingTime("2");
+		synthComponentStatus.setSamplingRemainingTime("1");
+		synthComponentStatus.setSynthesizerName("ctgan");
+		synthStatus.getComponents().put("structured_synthesis", synthComponentStatus);
+
+		var totalSynthesisStatus = new SynthetizationComponentStatus();
+		totalSynthesisStatus.setStep("Total");
+		totalSynthesisStatus.setCompleted("False");
+		totalSynthesisStatus.setDuration("12.5");
+		totalSynthesisStatus.setRemainingTime("1");
+		synthStatus.getComponents().put("total_synthesis", totalSynthesisStatus);
+
+		var synthStepStatus = new SynthetizationStepStatus();
+		synthStepStatus.setStep("callback");
+		synthStepStatus.setCompleted(callbackCompleted ? "True" : "False");
+		synthStatus.setStatus(List.of(synthStepStatus));
+
+		return jsonMapper.writeValueAsString(synthStatus);
 	}
 
 	@Test

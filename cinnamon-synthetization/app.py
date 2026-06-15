@@ -270,6 +270,18 @@ def prepare_callback_data(samples, synthesizer_model):
     return files
 
 
+def post_callback_request(callback_url, *, files, data, timeout):
+    """Send callback requests without inheriting proxy settings from the environment."""
+    with requests.Session() as session:
+        session.trust_env = False
+        return session.post(
+            callback_url,
+            files=files,
+            data=data,
+            timeout=timeout,
+        )
+
+
 def _to_bool(value, default):
     if value is None:
         return default
@@ -851,7 +863,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         try:
             files = prepare_callback_data(final_samples, final_model)
             print(f"Sending success callback to {callback_url} with session_key={session_key}")
-            response = requests.post(
+            response = post_callback_request(
                 callback_url,
                 files=files,
                 data={'session_key': session_key},
@@ -1166,7 +1178,7 @@ def send_callback_error(callback_url, session_key, message, status_code):
 
     try:
         print(f"Sending error callback to {callback_url} with data: {data} and files: {files}")
-        response = requests.post(
+        response = post_callback_request(
             callback_url,
             files=files,
             data=data,

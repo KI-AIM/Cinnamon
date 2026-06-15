@@ -662,3 +662,41 @@ def test_format_synthesis_exception_message_falls_back_to_unexpected_error():
     message = app_module._format_synthesis_exception_message(RuntimeError("Pipeline did not produce output"))
 
     assert message == "Unexpected error occurred: Pipeline did not produce output"
+
+
+def test_post_callback_request_disables_proxy_lookup(monkeypatch):
+    captured = {}
+
+    class DummyResponse:
+        status_code = 200
+
+    class DummySession:
+        def __init__(self):
+            self.trust_env = True
+
+        def __enter__(self):
+            captured["session"] = self
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def post(self, url, **kwargs):
+            captured["url"] = url
+            captured["kwargs"] = kwargs
+            return DummyResponse()
+
+    monkeypatch.setattr(app_module.requests, "Session", DummySession)
+
+    response = app_module.post_callback_request(
+        "http://localhost:8080/callback",
+        files={"model": ("model.pkl", b"model-bytes")},
+        data={"session_key": "session-1"},
+        timeout=12.5,
+    )
+
+    assert response.status_code == 200
+    assert captured["session"].trust_env is False
+    assert captured["url"] == "http://localhost:8080/callback"
+    assert captured["kwargs"]["data"] == {"session_key": "session-1"}
+    assert captured["kwargs"]["timeout"] == 12.5

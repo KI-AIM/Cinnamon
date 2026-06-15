@@ -161,7 +161,7 @@ def test_heart_failure_api_generates_synthetic_dataset(monkeypatch):
     )
     monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "dummy_text_synth")
     monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (True, False))
-    monkeypatch.setattr(app_module.requests, "post", fake_requests_post)
+    monkeypatch.setattr(app_module, "post_callback_request", fake_requests_post)
     monkeypatch.setitem(
         app_module.synthesizer_classes,
         "heart_failure_mock",

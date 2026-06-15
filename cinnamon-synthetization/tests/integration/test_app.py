@@ -424,7 +424,7 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
         lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
     )
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
-    monkeypatch.setattr(app_module.requests, "post", lambda *args, **kwargs: DummyResponse())
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
     data = app_module.pd.DataFrame([{"age": 50, "note": "[TEXT_PENDING_LLM]"}])
     original_data = app_module.pd.DataFrame([{"age": 70, "note": "original note"}])
@@ -482,7 +482,7 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
         lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
     )
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
-    monkeypatch.setattr(app_module.requests, "post", lambda *args, **kwargs: DummyResponse())
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
     data = app_module.pd.DataFrame([{"age": 50, "note": "input note"}])
     session_key = "text-reference-fallback-data"
@@ -549,7 +549,7 @@ def test_synthesize_data_uses_original_data_for_two_stage_text_reference(monkeyp
         lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
     )
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
-    monkeypatch.setattr(app_module.requests, "post", lambda *args, **kwargs: DummyResponse())
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
     data = app_module.pd.DataFrame([{"age": 50, "note": "[TEXT_PENDING_LLM]"}])
     original_data = app_module.pd.DataFrame([{"age": 70, "note": "original note"}])

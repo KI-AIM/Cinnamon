@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +40,8 @@ public class ExternalEndpoint {
 	 * Endpoint used if used cannot select an algorithm.
 	 */
 	private String processEndpoint = "";
+
+	private ProcessEndpointTimeout processEndpointTimeout = new ProcessEndpointTimeout();
 
 	/**
 	 * Name of the configuration.
@@ -105,4 +108,12 @@ public class ExternalEndpoint {
 	 * Mapping for {@link Job#getEndpoint()}.
 	 */
 	private List<Job> usages = new ArrayList<>();
+
+	@Getter @Setter
+	public static class ProcessEndpointTimeout {
+
+		private Duration connect = Duration.ofSeconds(10);
+
+		private Duration response = Duration.ofSeconds(10);
+	}
 }

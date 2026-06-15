@@ -1206,9 +1206,11 @@ public class ProcessService {
 
 		// Do the request
 		try {
+			final var processEndpointTimeout = endpoint.getProcessEndpointTimeout();
 			HttpClient client = HttpClient.create()
-			                              .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
-			                              .responseTimeout(Duration.ofSeconds(10));
+			                              .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+			                                      Math.toIntExact(processEndpointTimeout.getConnect().toMillis()))
+			                              .responseTimeout(processEndpointTimeout.getResponse());
 			final WebClient webClient = WebClient.builder()
 			                                     .clientConnector(new ReactorClientHttpConnector(client))
 			                                     .baseUrl(serverUrl)

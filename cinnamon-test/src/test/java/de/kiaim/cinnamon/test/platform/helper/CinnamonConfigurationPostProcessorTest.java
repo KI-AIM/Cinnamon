@@ -5,6 +5,8 @@ import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CinnamonConfigurationPostProcessorTest extends ContextRequiredTest {
@@ -31,6 +33,18 @@ public class CinnamonConfigurationPostProcessorTest extends ContextRequiredTest 
 			}
 		}
 
+	}
+
+	@Test
+	public void mapProcessEndpointTimeouts() {
+		assertEquals(Duration.ofSeconds(10),
+		             config.getExternalServerEndpoints().get(0).getProcessEndpointTimeout().getConnect());
+		assertEquals(Duration.ofSeconds(10),
+		             config.getExternalServerEndpoints().get(0).getProcessEndpointTimeout().getResponse());
+		assertEquals(Duration.ofSeconds(10),
+		             config.getExternalServerEndpoints().get(1).getProcessEndpointTimeout().getConnect());
+		assertEquals(Duration.ofSeconds(60),
+		             config.getExternalServerEndpoints().get(1).getProcessEndpointTimeout().getResponse());
 	}
 
 

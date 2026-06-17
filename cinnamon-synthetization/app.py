@@ -17,7 +17,7 @@ from api_utility.status.status_updater import intercept_standard_streams
 from api_utility.status.status_updater import update_component_status
 from api_utility.status.status_updater import update_status
 from api_utility.status.status_updater import update_total_synthesis_status
-from synthesizer_classes import synthesizer_classes
+import synthesizer_classes as synthesizer_registry
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
 from data_processing.utils import (
@@ -30,6 +30,9 @@ from synthetic_tabular_data_generator.llm import get_llm_profile_names
 app = Flask(__name__)
 tasks = {}
 CORS(app)
+
+synthesizer_classes = synthesizer_registry.synthesizer_classes
+synthesizer_tuning_metadata = getattr(synthesizer_registry, "synthesizer_tuning_metadata", {})
 
 PROCESS_CONTEXT = get_context("spawn")
 
@@ -536,7 +539,8 @@ def run_synthesizer_stage(
         print(f"[{stage_label}] Reference data preprocessed.")
 
     if tuning_enabled:
-        tuning_supported = bool(synthesizer_classes[synthesizer_name].get("tuning_supported"))
+        tuning_metadata = synthesizer_tuning_metadata.get(synthesizer_name, {})
+        tuning_supported = bool(tuning_metadata.get("supported"))
         if not tuning_supported:
             raise RuntimeError(
                 f"Hyperparameter tuning is not supported for synthesizer '{synthesizer_name}'."
@@ -586,7 +590,7 @@ def run_synthesizer_stage(
             timeout_seconds = None
 
         target_variable = tuning_cfg.get("target_variable") or pre_processed_data.columns[-1]
-        tuning_direction = synthesizer_classes[synthesizer_name].get("tuning_direction") or "minimize"
+        tuning_direction = tuning_metadata.get("direction") or "minimize"
 
         with intercept_standard_streams(file_path_status, "fitting", component_name=status_component_name):
             result = run_optuna_study(

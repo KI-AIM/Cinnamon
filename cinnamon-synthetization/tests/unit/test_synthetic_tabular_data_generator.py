@@ -183,7 +183,7 @@ def test_method_fit_definition():
     _assert_method_present_and_signature(
         "_fit",
         [],
-        ["None"],
+        ["None", "Optional", "float"],
     )
 
 

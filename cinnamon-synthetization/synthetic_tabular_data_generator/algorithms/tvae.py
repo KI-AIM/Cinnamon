@@ -24,26 +24,20 @@ class TvaeSynthesizer(TabularDataSynthesizer):
         self._sampling: Optional[Dict[str, Any]] = None
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
-        """Initialize synthesizer and sampling parameters.
-
-        The UI exposes ``embedding_dim`` plus the SDV-style ``compress_dims`` /
-        ``decompress_dims`` layer lists. synthcity's TVAE instead takes scalar
-        layer counts/widths, so each list is translated as ``n_layers = len``,
-        ``n_units = first element`` (uniform-width assumption).
-        """
+        """Initialize synthesizer and sampling parameters."""
         synth_params = config["synthetization_configuration"]["algorithm"]["model_parameter"]
         training_params = config["synthetization_configuration"]["algorithm"]["model_fitting"]
 
         embedding_dim = int(synth_params["embedding_dim"])
-        compress_dims = list(synth_params["compress_dims"])
-        decompress_dims = list(synth_params["decompress_dims"])
+        hidden_layers = int(synth_params["number_of_layers"])
+        hidden_units = int(synth_params["number_of_units_in_layers"])
 
         self._model_kwargs = {
             "n_units_embedding": embedding_dim,
-            "encoder_n_layers_hidden": len(compress_dims),
-            "encoder_n_units_hidden": int(compress_dims[0]),
-            "decoder_n_layers_hidden": len(decompress_dims),
-            "decoder_n_units_hidden": int(decompress_dims[0]),
+            "encoder_n_layers_hidden": hidden_layers,
+            "encoder_n_units_hidden": hidden_units,
+            "decoder_n_layers_hidden": hidden_layers,
+            "decoder_n_units_hidden": hidden_units,
             "n_iter": int(training_params["epochs"]),
             "batch_size": int(training_params["batch_size"]),
             "lr": float(1e-3),

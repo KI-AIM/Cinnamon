@@ -24,27 +24,19 @@ class CtganSynthesizer(TabularDataSynthesizer):
         self._sampling: Optional[Dict[str, Any]] = None
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
-        """Initialize synthesizer and sampling parameters.
-
-        The UI exposes the SDV-style ``generator_dim`` / ``discriminator_dim``
-        layer lists. synthcity's CTGAN instead takes scalar layer counts/widths,
-        so each list is translated as ``n_layers = len``, ``n_units = first
-        element`` (uniform-width assumption). ``embedding_dim`` is present in the
-        UI form but has no synthcity CTGAN equivalent, so it is not forwarded.
-        """
+        """Initialize synthesizer and sampling parameters."""
         synth_params = config["synthetization_configuration"]["algorithm"]["model_parameter"]
         training_params = config["synthetization_configuration"]["algorithm"]["model_fitting"]
-
-        generator_dim = list(synth_params["generator_dim"])
-        discriminator_dim = list(synth_params["discriminator_dim"])
+        hidden_layers = int(synth_params["number_of_layers"])
+        hidden_units = int(synth_params["number_of_units_in_layers"])
         batch_size = int(training_params["batch_size"])
 
         self._model_kwargs = {
             "n_iter": int(training_params["epochs"]),
-            "generator_n_layers_hidden": len(generator_dim),
-            "generator_n_units_hidden": int(generator_dim[0]),
-            "discriminator_n_layers_hidden": len(discriminator_dim),
-            "discriminator_n_units_hidden": int(discriminator_dim[0]),
+            "generator_n_layers_hidden": hidden_layers,
+            "generator_n_units_hidden": hidden_units,
+            "discriminator_n_layers_hidden": hidden_layers,
+            "discriminator_n_units_hidden": hidden_units,
             "lr": float(2e-4),
             "weight_decay": float(1e-6),
             "batch_size": batch_size,

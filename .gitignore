@@ -7,6 +7,11 @@ target/
 ### Local files ###
 .env
 scripts/resources/
+.DS_Store
+**/.DS_Store
+cinnamon-synthetization/outputs/
+cinnamon-synthetization/workspace/
+start-local-macos.sh
 
 ### STS ###
 .apt_generated

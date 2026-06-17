@@ -5,6 +5,7 @@ export class SynthetizationProcess {
     components?: {
         structured_synthesis?: SynthetizationComponentProgress;
         llm_synthesis?: SynthetizationComponentProgress;
+        total_synthesis?: ProcessProgress;
     };
     session_key: string;
     status: ProcessProgress[];

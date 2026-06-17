@@ -13,6 +13,7 @@ from api_utility.status.status_updater import (
     initialize_status_file,
     update_component_status,
     update_status,
+    update_total_synthesis_status,
 )
 
 
@@ -56,6 +57,7 @@ def test_initialize_status_file_creates_expected_structure(tmp_path):
         "step": "initialization",
         "duration": "Waiting",
         "completed": "False",
+        "remaining_time": "Waiting",
     }
     assert _get_step(data, "fitting") == {
         "step": "fitting",
@@ -78,7 +80,9 @@ def test_initialize_status_file_creates_expected_structure(tmp_path):
         "duration": "Waiting",
         "initialization_duration": "Waiting",
         "fitting_duration": "Waiting",
+        "fitting_remaining_time": "Waiting",
         "sampling_duration": "Waiting",
+        "sampling_remaining_time": "Waiting",
         "remaining_time": "Waiting",
         "completed": "False",
     }
@@ -87,7 +91,15 @@ def test_initialize_status_file_creates_expected_structure(tmp_path):
         "duration": "Waiting",
         "initialization_duration": "Waiting",
         "fitting_duration": "Waiting",
+        "fitting_remaining_time": "Waiting",
         "sampling_duration": "Waiting",
+        "sampling_remaining_time": "Waiting",
+        "remaining_time": "Waiting",
+        "completed": "False",
+    }
+    assert _get_component(data, "total_synthesis") == {
+        "step": "Total",
+        "duration": "Waiting",
         "remaining_time": "Waiting",
         "completed": "False",
     }
@@ -114,6 +126,7 @@ def test_update_status_updates_only_target_step(tmp_path):
     assert fitting["remaining_time"] == "10"
     assert initialization["duration"] == "Waiting"
     assert initialization["completed"] == "False"
+    assert initialization["remaining_time"] == "Waiting"
 
 
 def test_update_status_does_not_add_remaining_time_to_callback_step(tmp_path):
@@ -153,12 +166,39 @@ def test_update_component_status_updates_only_target_component(tmp_path):
         "duration": "3.5",
         "initialization_duration": "0.5",
         "fitting_duration": "1.0",
+        "fitting_remaining_time": "Waiting",
         "sampling_duration": "2.0",
+        "sampling_remaining_time": "Waiting",
         "remaining_time": "0",
         "completed": "True",
     }
     assert structured_component["duration"] == "Waiting"
     assert structured_component["completed"] == "False"
+
+
+def test_update_total_synthesis_status_updates_total_summary_only(tmp_path):
+    status_path = tmp_path / "outputs" / "status" / "total_component.yaml"
+    initialize_status_file(str(status_path), session_key="total", synthesizer_name="ctgan")
+
+    update_total_synthesis_status(
+        str(status_path),
+        duration=4.5,
+        remaining_time="0",
+        completed=True,
+    )
+
+    data = _read_status(status_path)
+    total_component = _get_component(data, "total_synthesis")
+    llm_component = _get_component(data, "llm_synthesis")
+
+    assert total_component == {
+        "step": "Total",
+        "duration": "4.5",
+        "remaining_time": "0",
+        "completed": "True",
+    }
+    assert llm_component["duration"] == "Waiting"
+    assert llm_component["completed"] == "False"
 
 
 def test_intercept_stdout_updates_remaining_time_when_message_matches(monkeypatch, tmp_path):
@@ -189,6 +229,7 @@ def test_intercept_stdout_updates_component_remaining_time_when_configured(monke
     data = _read_status(status_path)
     assert _get_step(data, "sampling")["remaining_time"] == "7"
     assert _get_component(data, "llm_synthesis")["remaining_time"] == "7"
+    assert _get_component(data, "llm_synthesis")["sampling_remaining_time"] == "7"
 
 
 def test_intercept_stdout_updates_remaining_time_from_tqdm_output(monkeypatch, tmp_path):

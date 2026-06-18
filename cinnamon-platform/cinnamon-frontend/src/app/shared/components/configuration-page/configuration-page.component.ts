@@ -173,15 +173,36 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected get freeTextConfigurationInvalid(): boolean {
+        const llmProfile = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.llm_profile");
         const modelParameter = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.model_parameter");
         const modelFitting = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.model_fitting");
         const sampling = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.sampling");
 
-        if (modelParameter == null || modelFitting == null || sampling == null) {
+        if (llmProfile == null || modelParameter == null || modelFitting == null || sampling == null) {
             return true;
         }
 
-        return modelParameter.invalid || modelFitting.invalid || sampling.invalid;
+        return llmProfile.invalid || modelParameter.invalid || modelFitting.invalid || sampling.invalid;
+    }
+
+    protected get submitInvalid(): boolean {
+        if (!this.oneEnabled) {
+            return false;
+        }
+
+        if (this.selectedAlgorithm == null) {
+            return true;
+        }
+
+        if (!this.hideAlgorithmConfigForm && !this.formValid) {
+            return true;
+        }
+
+        if (!this.hasFreeTextConfiguration) {
+            return false;
+        }
+
+        return this.freeTextSelectionInvalid || this.freeTextConfigurationInvalid;
     }
 
     protected getFreeTextAlgorithmGroup(): FormGroup | null {
@@ -509,6 +530,10 @@ export class ConfigurationPageComponent implements OnInit {
      * @protected
      */
     protected submit(): void {
+        if (this.submitInvalid) {
+            return;
+        }
+
         this.updateSelectCache();
         this.updateConfigCache();
 

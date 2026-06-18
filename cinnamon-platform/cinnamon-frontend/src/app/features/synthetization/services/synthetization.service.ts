@@ -80,7 +80,7 @@ export class SynthetizationService extends AlgorithmService {
         };
 
         if (textSynthesisConfiguration) {
-            config["text_synthesis_configuration"] = textSynthesisConfiguration;
+            config["synthetization_configuration"]["text_synthesis_configuration"] = textSynthesisConfiguration;
         }
 
         return config;
@@ -89,13 +89,16 @@ export class SynthetizationService extends AlgorithmService {
     public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg[configurationName]["algorithm"]["synthesizer"]);
         const config = {...arg[configurationName]["algorithm"]};
+        const textSynthesisConfiguration =
+            arg[configurationName]["text_synthesis_configuration"]
+            ?? arg["text_synthesis_configuration"];
         delete config["id"];
         delete config["synthesizer"];
         delete config["type"];
         delete config["version"];
 
-        if (arg["text_synthesis_configuration"] != null) {
-            config["text_synthesis_configuration"] = arg["text_synthesis_configuration"];
+        if (textSynthesisConfiguration != null) {
+            config["text_synthesis_configuration"] = textSynthesisConfiguration;
         }
 
         if (config["hyperparameter_tuning"]) {

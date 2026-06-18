@@ -18,7 +18,7 @@ configurations:
         description: Select the configured LLM profile.
         default_value: ""
         values: []
-        mandatory: false
+        mandatory: true
   model_parameter:
     display_name: Dataset Generation Parameters
     description: Configure how few-shot reference examples are selected for text generation.

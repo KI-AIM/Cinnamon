@@ -402,15 +402,15 @@ def inject_llm_profile_parameter(config_content):
             "type": "string",
             "label": "LLM Profile",
             "description": "Select the configured LLM profile (model endpoint and credentials).",
-            "default_value": profile_names[0],
+            "default_value": "",
             "values": profile_names,
-            "mandatory": False,
+            "mandatory": True,
         }
         parameters.append(llm_profile_parameter)
     else:
         llm_profile_parameter["values"] = profile_names
-        if not llm_profile_parameter.get("default_value"):
-            llm_profile_parameter["default_value"] = profile_names[0]
+        llm_profile_parameter["default_value"] = ""
+        llm_profile_parameter["mandatory"] = True
 
     return config_content
 
@@ -440,7 +440,12 @@ def build_text_synthesis_algorithm_config(algorithm_config, synthesizer_name, te
     if synthesizer_name == text_synthesizer_name:
         config = deepcopy(algorithm_config)
     else:
-        config = deepcopy(algorithm_config.get("text_synthesis_configuration", {}))
+        nested_text_config = (
+            algorithm_config.get("synthetization_configuration", {})
+            .get("text_synthesis_configuration", {})
+        )
+        legacy_text_config = algorithm_config.get("text_synthesis_configuration", {})
+        config = deepcopy(nested_text_config or legacy_text_config)
 
     if not config:
         config = {}

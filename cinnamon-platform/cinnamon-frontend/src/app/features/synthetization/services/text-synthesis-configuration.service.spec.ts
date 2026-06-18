@@ -17,7 +17,8 @@ describe("TextSynthesisConfigurationService", () => {
         expect(algorithmGroup).not.toBeNull();
         expect(algorithmGroup?.get("synthesizer")?.value).toBe("llm_nearest_neighbor_few_shot_text_synthesis");
         expect(algorithmGroup?.get("llm_profile.llm_profile")).not.toBeNull();
-        expect(algorithmGroup?.get("model_parameter.profile_rows")).not.toBeNull();
+        expect(algorithmGroup?.get("llm_profile.llm_profile")?.hasError("required")).toBeTrue();
+        expect(algorithmGroup?.get("model_parameter.profile_rows")).toBeNull();
         expect(algorithmGroup?.get("model_parameter.few_shot_rows")).not.toBeNull();
         expect(algorithmGroup?.get("model_parameter.similarity_strategy")).not.toBeNull();
         expect(algorithmGroup?.get("model_parameter.knowledge_source_type")).not.toBeNull();

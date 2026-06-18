@@ -762,7 +762,8 @@ def test_get_synthesizer_config_normalizes_llm_profile_into_model_parameter(monk
     llm_profile_parameters = configurations["llm_profile"]["parameters"]
     assert len(llm_profile_parameters) == 1
     assert llm_profile_parameters[0]["values"] == ["profile-a", "profile-b"]
-    assert llm_profile_parameters[0]["default_value"] == "profile-a"
+    assert llm_profile_parameters[0]["default_value"] == ""
+    assert llm_profile_parameters[0]["mandatory"] is True
 
 
 def test_get_synthesizer_config_omits_llm_profile_when_no_profiles_exist(monkeypatch):
@@ -780,6 +781,49 @@ def test_get_synthesizer_config_omits_llm_profile_when_no_profiles_exist(monkeyp
     llm_profile_parameters = configurations["llm_profile"]["parameters"]
     assert len(llm_profile_parameters) == 1
     assert llm_profile_parameters[0]["values"] == []
+
+
+def test_build_text_synthesis_algorithm_config_prefers_nested_text_configuration():
+    config = app_module.build_text_synthesis_algorithm_config(
+        {
+            "synthetization_configuration": {
+                "algorithm": {
+                    "synthesizer": "ctgan",
+                },
+                "text_synthesis_configuration": {
+                    "synthetization_configuration": {
+                        "algorithm": {
+                            "llm_profile": {
+                                "llm_profile": "Profile Nested",
+                            },
+                            "sampling": {
+                                "temperature": 0.4,
+                                "top_p": 0.8,
+                            },
+                        }
+                    }
+                },
+            },
+            "text_synthesis_configuration": {
+                "synthetization_configuration": {
+                    "algorithm": {
+                        "llm_profile": {
+                            "llm_profile": "Profile Legacy",
+                        },
+                    }
+                }
+            },
+        },
+        "ctgan",
+        "llm_nearest_neighbor_few_shot_text_synthesis",
+        5,
+    )
+
+    algorithm = config["synthetization_configuration"]["algorithm"]
+    assert algorithm["llm_profile"]["llm_profile"] == "Profile Nested"
+    assert algorithm["sampling"]["temperature"] == 0.4
+    assert algorithm["sampling"]["top_p"] == 0.8
+    assert algorithm["sampling"]["num_samples"] == 5
 
 
 def test_format_synthesis_exception_message_classifies_llm_configuration_errors():

@@ -27,13 +27,17 @@ def _algorithm_config(provider: str = "ollama") -> dict:
     return {
         "synthetization_configuration": {
             "algorithm": {
+                "llm_profile": {
+                    "llm_profile": "Test Profile",
+                },
                 "model_parameter": {},
                 "model_fitting": {
-                    "profile_rows": 50,
                     "few_shot_rows": 2,
                 },
                 "sampling": {
                     "num_samples": 3,
+                    "temperature": 0.3,
+                    "top_p": 0.9,
                 },
             }
         }
@@ -45,19 +49,18 @@ def _set_shared_llm_env(monkeypatch, provider: str) -> None:
     healthcheck_path = "/api/tags" if provider == "ollama" else "/v1/models"
     base_url = "http://127.0.0.1:11434" if provider == "ollama" else "http://gpu.example.org:7086"
     model_name = "llama3.1:8b" if provider == "ollama" else "gpt-test"
-
-    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", provider)
-    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", model_name)
-    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", base_url)
-    monkeypatch.setenv("CINNAMON_LLM_ENDPOINT_PATH", endpoint_path)
-    monkeypatch.setenv("CINNAMON_LLM_HEALTHCHECK_PATH", healthcheck_path)
-    monkeypatch.setenv("CINNAMON_LLM_API_KEY", "")
-    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "5")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
-    monkeypatch.setenv("CINNAMON_LLM_VERIFY_SSL", "true")
-    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.3")
-    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "1024")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_IDS", "test-profile")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_NAME", "Test Profile")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_PROVIDER", provider)
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MODEL_NAME", model_name)
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_BASE_URL", base_url)
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_ENDPOINT_PATH", endpoint_path)
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_HEALTHCHECK_PATH", healthcheck_path)
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_API_KEY", "")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_TIMEOUT_SECONDS", "5")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MAX_RETRIES", "2")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_VERIFY_SSL", "true")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MAX_TOKENS", "1024")
 
 
 class _DummyResponse:
@@ -317,7 +320,7 @@ def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
     assert sample["notes"].iloc[0] == "Patient shows stable recovery."
 
 
-def test_llm_tabular_prefers_model_parameter_for_profile_and_few_shot(monkeypatch):
+def test_llm_tabular_ignores_profile_rows_and_prefers_model_parameter_few_shot(monkeypatch):
     _set_shared_llm_env(monkeypatch, provider="ollama")
 
     def fake_request(method, url, **kwargs):
@@ -343,8 +346,10 @@ def test_llm_tabular_prefers_model_parameter_for_profile_and_few_shot(monkeypatc
     synthesizer.initialize_synthesizer()
     synthesizer.fit()
 
-    assert synthesizer._fitting_kwargs["profile_rows"] == 2
+    assert "profile_rows" not in synthesizer._fitting_kwargs
     assert synthesizer._fitting_kwargs["few_shot_rows"] == 1
+    assert synthesizer._few_shot_source_df is not None
+    assert len(synthesizer._few_shot_source_df) == len(_dataset())
 
 
 def test_llm_tabular_draws_new_few_shot_examples_for_each_prompt(monkeypatch):

@@ -18,7 +18,7 @@ configurations:
         description: Select the configured LLM profile (model endpoint and credentials).
         default_value: ""
         values: []
-        mandatory: false
+        mandatory: true
   model_parameter:
     display_name: Similarity and Knowledge Parameters
     description: Configure how nearest-neighbor examples are selected. Knowledge bases are not implemented yet.

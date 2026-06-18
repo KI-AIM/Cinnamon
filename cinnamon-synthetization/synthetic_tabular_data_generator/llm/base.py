@@ -49,9 +49,7 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         self,
         config: Dict[str, Any],
         *,
-        default_profile_rows: Optional[int] = 1000,
         default_few_shot_rows: int = 0,
-        include_profile_rows: bool = True,
     ) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         algorithm_config = config["synthetization_configuration"]["algorithm"]
         model_params = algorithm_config.get("model_parameter", {})
@@ -64,11 +62,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
             "max_retries": self._llm_config.max_retries,
             "timeout_seconds": self._llm_config.timeout_seconds,
         }
-        if include_profile_rows:
-            profile_rows = model_params.get("profile_rows", training_params.get("profile_rows", default_profile_rows))
-            if profile_rows is None:
-                raise ValueError("profile_rows must be configured for this synthesizer.")
-            self._fitting_kwargs["profile_rows"] = max(1, int(profile_rows))
 
         self._sampling = algorithm_config.get("sampling", {})
         self._user_prompt_domain_context = str(training_params.get("user_prompt_domain_context", "")).strip()
@@ -92,12 +85,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
     def _build_profile_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration is not initialized.")
-
-        profile_rows = self._fitting_kwargs.get("profile_rows")
-        if profile_rows is None:
-            return df.copy()
-        if len(df) > profile_rows:
-            return df.sample(n=profile_rows).reset_index(drop=True)
         return df.copy()
 
     def _resolve_num_samples(self, default_num_samples: int, *, allow_exceed_default: bool) -> int:
@@ -206,7 +193,6 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         algorithm_config, model_params, training_params = self._initialize_common_llm_configuration(
             config,
             default_few_shot_rows=20,
-            include_profile_rows=False,
         )
         self._similarity_strategy = self._normalize_similarity_strategy(
             model_params.get("similarity_strategy", default_similarity_strategy),

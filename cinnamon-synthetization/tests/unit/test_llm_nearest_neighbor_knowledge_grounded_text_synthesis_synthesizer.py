@@ -28,6 +28,9 @@ def _algorithm_config() -> dict:
     return {
         "synthetization_configuration": {
             "algorithm": {
+                "llm_profile": {
+                    "llm_profile": "Test Profile",
+                },
                 "model_parameter": {
                     "few_shot_rows": 2,
                     "similarity_strategy": "Attributes",
@@ -48,18 +51,18 @@ def _algorithm_config() -> dict:
 
 
 def _set_shared_llm_env(monkeypatch) -> None:
-    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "ollama")
-    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "llama3.1:8b")
-    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://127.0.0.1:11434")
-    monkeypatch.setenv("CINNAMON_LLM_ENDPOINT_PATH", "/api/generate")
-    monkeypatch.setenv("CINNAMON_LLM_HEALTHCHECK_PATH", "/api/tags")
-    monkeypatch.setenv("CINNAMON_LLM_API_KEY", "")
-    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "5")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
-    monkeypatch.setenv("CINNAMON_LLM_VERIFY_SSL", "true")
-    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.3")
-    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "1024")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_IDS", "test-profile")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_NAME", "Test Profile")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_PROVIDER", "ollama")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MODEL_NAME", "llama3.1:8b")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_BASE_URL", "http://127.0.0.1:11434")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_ENDPOINT_PATH", "/api/generate")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_HEALTHCHECK_PATH", "/api/tags")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_API_KEY", "")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_TIMEOUT_SECONDS", "5")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MAX_RETRIES", "2")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_VERIFY_SSL", "true")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MAX_TOKENS", "1024")
 
 
 class _DummyResponse:

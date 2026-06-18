@@ -51,7 +51,6 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         """
         self._initialize_common_llm_configuration(
             config,
-            default_profile_rows=1000,
             default_few_shot_rows=20,
         )
 

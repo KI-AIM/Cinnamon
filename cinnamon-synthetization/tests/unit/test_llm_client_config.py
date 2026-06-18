@@ -10,138 +10,161 @@ if str(PROJECT_ROOT) not in sys.path:
 from synthetic_tabular_data_generator.llm.client import LlmClient, load_llm_client_config
 
 
-def test_load_llm_client_config_prefers_sampling_max_tokens_over_env(monkeypatch):
-    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "2048")
-    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
-    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
-    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://gpu.example.org:7086")
-    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
-    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
-    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
+def _set_profile_env(
+    monkeypatch,
+    *,
+    profile_id: str = "p1",
+    profile_name: str = "Profile A",
+    provider: str = "openai_compatible",
+    model_name: str | None = None,
+    base_url: str | None = None,
+    endpoint_path: str | None = None,
+    healthcheck_path: str | None = None,
+    timeout_seconds: str = "10",
+    max_retries: str = "2",
+    verify_ssl: str = "true",
+    max_tokens: str = "2048",
+) -> str:
+    if model_name is None:
+        model_name = "gpt-test" if provider == "openai_compatible" else "qwen3:8b"
+    if base_url is None:
+        base_url = "http://gpu.example.org:7086" if provider == "openai_compatible" else "http://127.0.0.1:11434"
+    if endpoint_path is None:
+        endpoint_path = "/v1/chat/completions" if provider == "openai_compatible" else "/api/generate"
+    if healthcheck_path is None:
+        healthcheck_path = "/v1/models" if provider == "openai_compatible" else "/api/tags"
 
-    algorithm_config = {
+    token = profile_id.upper()
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_IDS", profile_id)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_NAME", profile_name)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_PROVIDER", provider)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_MODEL_NAME", model_name)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_BASE_URL", base_url)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_ENDPOINT_PATH", endpoint_path)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_HEALTHCHECK_PATH", healthcheck_path)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_API_KEY", "")
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_TIMEOUT_SECONDS", timeout_seconds)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_MAX_RETRIES", max_retries)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_VERIFY_SSL", verify_ssl)
+    monkeypatch.setenv(f"CINNAMON_LLM_PROFILE_{token}_MAX_TOKENS", max_tokens)
+    return profile_name
+
+
+def _algorithm_config(
+    *,
+    profile_name: str = "Profile A",
+    sampling: dict | None = None,
+    model_parameter: dict | None = None,
+    model_fitting: dict | None = None,
+) -> dict:
+    return {
         "synthetization_configuration": {
             "algorithm": {
-                "model_parameter": {},
-                "model_fitting": {},
-                "sampling": {
-                    "temperature": 0.2,
-                    "top_p": 0.9,
-                    "max_tokens": 999999,
+                "llm_profile": {
+                    "llm_profile": profile_name,
                 },
+                "model_parameter": model_parameter or {},
+                "model_fitting": model_fitting or {},
+                "sampling": sampling or {},
             }
         }
     }
 
-    config = load_llm_client_config(algorithm_config)
+
+def test_load_llm_client_config_prefers_sampling_max_tokens_over_profile(monkeypatch):
+    profile_name = _set_profile_env(monkeypatch, max_tokens="2048")
+
+    config = load_llm_client_config(
+        _algorithm_config(
+            profile_name=profile_name,
+            sampling={
+                "temperature": 0.2,
+                "top_p": 0.9,
+                "max_tokens": 999999,
+            },
+        )
+    )
 
     assert config.max_tokens == 999999
 
 
-def test_load_llm_client_config_uses_env_max_tokens_as_fallback(monkeypatch):
-    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "2048")
-    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
-    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
-    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://gpu.example.org:7086")
-    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
-    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
-    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
+def test_load_llm_client_config_uses_profile_max_tokens_as_fallback(monkeypatch):
+    profile_name = _set_profile_env(monkeypatch, max_tokens="2048")
 
-    algorithm_config = {
-        "synthetization_configuration": {
-            "algorithm": {
-                "model_parameter": {},
-                "model_fitting": {},
-                "sampling": {
-                    "temperature": 0.2,
-                    "top_p": 0.9,
-                },
-            }
-        }
-    }
-
-    config = load_llm_client_config(algorithm_config)
+    config = load_llm_client_config(
+        _algorithm_config(
+            profile_name=profile_name,
+            sampling={
+                "temperature": 0.2,
+                "top_p": 0.9,
+            },
+        )
+    )
 
     assert config.max_tokens == 2048
 
 
-def test_load_llm_client_config_requires_explicit_decoding_values(monkeypatch):
-    monkeypatch.delenv("CINNAMON_LLM_TEMPERATURE", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_TOP_P", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_MAX_TOKENS", raising=False)
-    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
-    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
-    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://gpu.example.org:7086")
-    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
-
-    algorithm_config = {
-        "synthetization_configuration": {
-            "algorithm": {
-                "model_parameter": {},
-                "model_fitting": {},
-                "sampling": {},
-            }
-        }
-    }
+def test_load_llm_client_config_requires_selected_profile(monkeypatch):
+    _set_profile_env(monkeypatch)
 
     try:
-        load_llm_client_config(algorithm_config)
+        load_llm_client_config(
+            {
+                "synthetization_configuration": {
+                    "algorithm": {
+                        "llm_profile": {},
+                        "model_parameter": {},
+                        "model_fitting": {},
+                        "sampling": {
+                            "temperature": 0.2,
+                            "top_p": 0.9,
+                        },
+                    }
+                }
+            }
+        )
+        assert False, "Expected ValueError for missing llm_profile selection"
+    except ValueError as exc:
+        message = str(exc)
+        assert "Missing llm_profile selection" in message
+        assert "Profile A" in message
+
+
+def test_load_llm_client_config_requires_explicit_decoding_values(monkeypatch):
+    profile_name = _set_profile_env(monkeypatch)
+
+    try:
+        load_llm_client_config(_algorithm_config(profile_name=profile_name, sampling={}))
         assert False, "Expected ValueError for missing decoding configuration"
     except ValueError as exc:
         message = str(exc)
         assert "Invalid LLM decoding configuration" in message
-        assert "CINNAMON_LLM_TEMPERATURE" in message
-        assert "CINNAMON_LLM_TOP_P" in message
-        assert "CINNAMON_LLM_MAX_TOKENS" in message
+        assert "temperature" in message
+        assert "top_p" in message
+        assert "max_tokens" in message
 
 
 def test_load_llm_client_config_uses_selected_profile(monkeypatch):
-    monkeypatch.delenv("CINNAMON_LLM_PROVIDER", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_MODEL_NAME", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_BASE_URL", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_ENDPOINT_PATH", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_HEALTHCHECK_PATH", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_API_KEY", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_TIMEOUT_SECONDS", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_MAX_RETRIES", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_VERIFY_SSL", raising=False)
-    monkeypatch.delenv("CINNAMON_LLM_MAX_TOKENS", raising=False)
+    profile_name = _set_profile_env(
+        monkeypatch,
+        provider="openai_compatible",
+        model_name="model-a",
+        base_url="http://profile-a.example.org:8000",
+        timeout_seconds="33",
+        max_retries="4",
+        verify_ssl="false",
+        max_tokens="1500",
+    )
 
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_IDS", "p1,p2")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_NAME", "Profile A")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_PROVIDER", "openai_compatible")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_MODEL_NAME", "model-a")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_BASE_URL", "http://profile-a.example.org:8000")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_ENDPOINT_PATH", "/v1/chat/completions")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_HEALTHCHECK_PATH", "/v1/models")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_API_KEY", "")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_TIMEOUT_SECONDS", "33")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_MAX_RETRIES", "4")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_VERIFY_SSL", "false")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_P1_MAX_TOKENS", "1500")
-
-    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.4")
-    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.8")
-
-    algorithm_config = {
-        "synthetization_configuration": {
-            "algorithm": {
-                "model_parameter": {
-                    "llm_profile": "Profile A",
-                },
-                "model_fitting": {},
-                "sampling": {
-                    "temperature": 0.4,
-                    "top_p": 0.8,
-                },
-            }
-        }
-    }
-
-    config = load_llm_client_config(algorithm_config)
+    config = load_llm_client_config(
+        _algorithm_config(
+            profile_name=profile_name,
+            sampling={
+                "temperature": 0.4,
+                "top_p": 0.8,
+            },
+        )
+    )
 
     assert config.provider == "openai_compatible"
     assert config.model_name == "model-a"
@@ -170,25 +193,13 @@ class _DummyRetryResponse:
 
 
 def test_llm_client_retries_on_retryable_http_status(monkeypatch):
-    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
-    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
-    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://gpu.example.org:7086")
-    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "3")
-    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
-    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "512")
+    profile_name = _set_profile_env(monkeypatch, max_retries="3", max_tokens="512")
 
     config = load_llm_client_config(
-        {
-            "synthetization_configuration": {
-                "algorithm": {
-                    "model_parameter": {},
-                    "model_fitting": {},
-                    "sampling": {"temperature": 0.2, "top_p": 0.9},
-                }
-            }
-        }
+        _algorithm_config(
+            profile_name=profile_name,
+            sampling={"temperature": 0.2, "top_p": 0.9},
+        )
     )
     client = LlmClient(config)
 
@@ -213,25 +224,13 @@ def test_llm_client_retries_on_retryable_http_status(monkeypatch):
 
 
 def test_llm_client_does_not_retry_on_non_retryable_http_status(monkeypatch):
-    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "openai_compatible")
-    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "gpt-test")
-    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://gpu.example.org:7086")
-    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "3")
-    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
-    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "512")
+    profile_name = _set_profile_env(monkeypatch, max_retries="3", max_tokens="512")
 
     config = load_llm_client_config(
-        {
-            "synthetization_configuration": {
-                "algorithm": {
-                    "model_parameter": {},
-                    "model_fitting": {},
-                    "sampling": {"temperature": 0.2, "top_p": 0.9},
-                }
-            }
-        }
+        _algorithm_config(
+            profile_name=profile_name,
+            sampling={"temperature": 0.2, "top_p": 0.9},
+        )
     )
     client = LlmClient(config)
 
@@ -257,25 +256,19 @@ def test_llm_client_does_not_retry_on_non_retryable_http_status(monkeypatch):
 
 
 def test_llm_client_ollama_healthcheck_requires_configured_model(monkeypatch):
-    monkeypatch.setenv("CINNAMON_LLM_PROVIDER", "ollama")
-    monkeypatch.setenv("CINNAMON_LLM_MODEL_NAME", "qwen3:8b")
-    monkeypatch.setenv("CINNAMON_LLM_BASE_URL", "http://127.0.0.1:11434")
-    monkeypatch.setenv("CINNAMON_LLM_TIMEOUT_SECONDS", "10")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_RETRIES", "2")
-    monkeypatch.setenv("CINNAMON_LLM_TEMPERATURE", "0.2")
-    monkeypatch.setenv("CINNAMON_LLM_TOP_P", "0.9")
-    monkeypatch.setenv("CINNAMON_LLM_MAX_TOKENS", "512")
+    profile_name = _set_profile_env(
+        monkeypatch,
+        provider="ollama",
+        model_name="qwen3:8b",
+        base_url="http://127.0.0.1:11434",
+        max_tokens="512",
+    )
 
     config = load_llm_client_config(
-        {
-            "synthetization_configuration": {
-                "algorithm": {
-                    "model_parameter": {},
-                    "model_fitting": {},
-                    "sampling": {"temperature": 0.2, "top_p": 0.9},
-                }
-            }
-        }
+        _algorithm_config(
+            profile_name=profile_name,
+            sampling={"temperature": 0.2, "top_p": 0.9},
+        )
     )
     client = LlmClient(config)
 

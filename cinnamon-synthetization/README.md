@@ -143,40 +143,9 @@ In case of an error, the callback receives an error payload instead.
 
 ## LLM Configuration Via `.env`
 
-The module supports two LLM configuration modes:
+LLM-based synthesizers require an explicit `llm_profile` selection. The frontend exposes the configured profiles in the synthesizer configuration when they are defined.
 
-1. a fallback single-LLM configuration
-2. multiple selectable named LLM profiles
-
-The frontend exposes these profiles in the synthesizer configuration when they are defined.
-
-### 1. Fallback single-LLM configuration
-
-This configuration is used if no `llm_profile` is selected.
-
-Example:
-
-```env
-CINNAMON_LLM_PROVIDER="ollama"
-CINNAMON_LLM_MODEL_NAME="qwen3:8b"
-CINNAMON_LLM_BASE_URL="http://host.docker.internal:11434"
-CINNAMON_LLM_ENDPOINT_PATH="/api/generate"
-CINNAMON_LLM_HEALTHCHECK_PATH="/api/tags"
-CINNAMON_LLM_API_KEY=""
-CINNAMON_LLM_TIMEOUT_SECONDS=300
-CINNAMON_LLM_MAX_RETRIES=3
-CINNAMON_LLM_VERIFY_SSL=true
-CINNAMON_LLM_TEMPERATURE=0.0
-CINNAMON_LLM_TOP_P=1.0
-CINNAMON_LLM_MAX_TOKENS=4096
-```
-
-Supported providers:
-
-- `ollama`
-- `openai_compatible`
-
-### 2. Selectable LLM profiles
+### Selectable LLM profiles
 
 Profiles are defined in `.env` and shown in the UI as selectable options.
 
@@ -232,7 +201,6 @@ The runtime configuration is resolved in this order:
 
 1. selected LLM profile
 2. synthesizer configuration values
-3. fallback environment variables
 
 For decoding, these values are especially important:
 
@@ -242,7 +210,7 @@ For decoding, these values are especially important:
 
 ## Important Disclaimer About `max_tokens`
 
-`CINNAMON_LLM_MAX_TOKENS` and per-profile `*_MAX_TOKENS` must be chosen carefully.
+Per-profile `*_MAX_TOKENS` must be chosen carefully.
 
 This value depends on:
 

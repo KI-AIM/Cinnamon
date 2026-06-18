@@ -3,7 +3,7 @@
 
         <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="getNumberSteps(data.dataConfiguration)"
                            [numberSteps]="getTotalStepCount(data.dataConfiguration)"
-                           [step]="step" [invalid]="(oneEnabled && ((!formValid && !hideAlgorithmConfigForm) || selectedAlgorithm == null))"
+                           [step]="step" [invalid]="submitInvalid"
                            (confirm)="submit()">
             <!-- Activation -->
             <app-workstep-item header="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
@@ -212,7 +212,7 @@
 
         <app-workstep-box header="Confirm your configuration">
             <button type="submit" mat-raised-button color="primary"
-                    [disabled]="data.locked || (oneEnabled && ((!formValid && !hideAlgorithmConfigForm) || selectedAlgorithm == null))" (click)="submit()">
+                    [disabled]="data.locked || submitInvalid" (click)="submit()">
                 Continue
             </button>
         </app-workstep-box>

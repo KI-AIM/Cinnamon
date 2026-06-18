@@ -1,13 +1,16 @@
-import { TestBed } from "@angular/core/testing";
-
+import { HttpClient } from '@angular/common/http';
 import { DataConfigurationService } from "./data-configuration.service";
+import { ConfigurationService } from './configuration.service';
 
 describe("DataConfigurationService", () => {
 	let service: DataConfigurationService;
 
 	beforeEach(() => {
-		TestBed.configureTestingModule({});
-		service = TestBed.inject(DataConfigurationService);
+		service = new DataConfigurationService(
+			{} as HttpClient,
+			new ConfigurationService({} as HttpClient),
+			{ addError: jasmine.createSpy('addError') } as any,
+		);
 	});
 
 	it("should be created", () => {

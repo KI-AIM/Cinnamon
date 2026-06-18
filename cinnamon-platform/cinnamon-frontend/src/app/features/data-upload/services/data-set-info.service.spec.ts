@@ -1,13 +1,11 @@
-import { TestBed } from '@angular/core/testing';
-
+import { HttpClient } from '@angular/common/http';
 import { DataSetInfoService } from './data-set-info.service';
 
 describe('DataSetInfoService', () => {
   let service: DataSetInfoService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(DataSetInfoService);
+    service = new DataSetInfoService({} as HttpClient);
   });
 
   it('should be created', () => {

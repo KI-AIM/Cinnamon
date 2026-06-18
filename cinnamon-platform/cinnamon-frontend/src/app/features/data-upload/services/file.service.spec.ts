@@ -1,13 +1,11 @@
-import { TestBed } from "@angular/core/testing";
-
+import { HttpClient } from '@angular/common/http';
 import { FileService } from "./file.service";
 
 describe("FileService", () => {
 	let service: FileService;
 
 	beforeEach(() => {
-		TestBed.configureTestingModule({});
-		service = TestBed.inject(FileService);
+		service = new FileService({} as HttpClient);
 	});
 
 	it("should be created", () => {

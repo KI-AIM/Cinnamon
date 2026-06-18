@@ -1,13 +1,16 @@
-import { TestBed } from '@angular/core/testing';
-
 import { ErrorHandlingService } from './error-handling.service';
 
 describe('ErrorHandlingService', () => {
   let service: ErrorHandlingService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(ErrorHandlingService);
+    service = new ErrorHandlingService(
+      { addNotification: jasmine.createSpy('addNotification') } as any,
+      {
+        getUser: () => ({ email: 'test@example.com' }),
+        logout: jasmine.createSpy('logout'),
+      } as any,
+    );
   });
 
   it('should be created', () => {

@@ -14,7 +14,6 @@ describe('ConfigurationGroupComponent', () => {
 
     fixture = TestBed.createComponent(ConfigurationGroupComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

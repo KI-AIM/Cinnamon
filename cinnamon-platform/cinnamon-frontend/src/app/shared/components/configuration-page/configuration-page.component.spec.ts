@@ -14,7 +14,6 @@ describe('ConfigurationPageComponent', () => {
 
     fixture = TestBed.createComponent(ConfigurationPageComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

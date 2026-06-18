@@ -13,7 +13,6 @@ describe("AttributeConfigurationComponent", () => {
 
 		fixture = TestBed.createComponent(AttributeConfigurationComponent);
 		component = fixture.componentInstance;
-		fixture.detectChanges();
 	});
 
 	it("should create", () => {

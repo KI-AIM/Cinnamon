@@ -14,7 +14,6 @@ describe('ChartCalendarComponent', () => {
 
     fixture = TestBed.createComponent(ChartCalendarComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

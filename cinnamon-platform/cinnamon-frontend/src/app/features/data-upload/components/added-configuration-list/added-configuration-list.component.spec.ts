@@ -13,7 +13,6 @@ describe("AddedConfigurationListComponent", () => {
 
 		fixture = TestBed.createComponent(AddedConfigurationListComponent);
 		component = fixture.componentInstance;
-		fixture.detectChanges();
 	});
 
 	it("should create", () => {

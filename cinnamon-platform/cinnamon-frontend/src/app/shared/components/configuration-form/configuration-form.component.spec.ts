@@ -14,7 +14,6 @@ describe('ConfigurationFormComponent', () => {
 
     fixture = TestBed.createComponent(ConfigurationFormComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

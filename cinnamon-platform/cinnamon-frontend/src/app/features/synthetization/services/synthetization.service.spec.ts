@@ -1,13 +1,15 @@
-import { TestBed } from '@angular/core/testing';
+import { HttpClient } from '@angular/common/http';
+import { SynthetizationService } from './synthetization.service';
+import { ConfigurationService } from 'src/app/shared/services/configuration.service';
 
-import { SynthetizationServiceService } from './synthetization-service.service';
-
-describe('SynthetizationServiceService', () => {
-  let service: SynthetizationServiceService;
+describe('SynthetizationService', () => {
+  let service: SynthetizationService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(SynthetizationServiceService);
+    service = new SynthetizationService(
+      {} as HttpClient,
+      new ConfigurationService({} as HttpClient),
+    );
   });
 
   it('should be created', () => {

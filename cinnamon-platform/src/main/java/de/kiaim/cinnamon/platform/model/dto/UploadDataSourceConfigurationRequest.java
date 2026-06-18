@@ -15,7 +15,7 @@ import lombok.Setter;
 @Getter @Setter
 public class UploadDataSourceConfigurationRequest {
 
-	@NotNull(message = "Configuration must be present.")
+	@NotNull(message = "Data source configuration must be present.")
 	@Valid
 	private DataSourceConfiguration dataSourceConfiguration;
 

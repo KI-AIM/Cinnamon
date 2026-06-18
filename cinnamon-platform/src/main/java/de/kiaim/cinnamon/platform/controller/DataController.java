@@ -62,18 +62,44 @@ public class DataController {
 		this.userService = userService;
 	}
 
+	@Operation(summary = "Get the data source configuration")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully retrieved the data source configuration.",
+			             content = @Content(schema = @Schema(implementation = DataSourceConfiguration.class))
+			),
+			@ApiResponse(responseCode = "400",
+			             description = "The project does not contain a data source configuration.",
+			             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+	})
 	@GetMapping(value = "/file/source",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public DataSourceConfiguration getDataSourceConfiguration(@AuthenticationPrincipal final UserEntity requestUser) {
+	public DataSourceConfiguration getDataSourceConfiguration(@AuthenticationPrincipal final UserEntity requestUser)
+			throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project =  projectService.getProject(user);
 		return databaseService.exportDataSourceConfiguration(project);
 	}
 
+	@Operation(summary = "Store the data source configuration",
+	           description = "Stores the data source configuration for the current project." +
+	                         "If a dataset was imported before but not locked, the dataset will be deleted.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully stored the data source configuration."
+			),
+			@ApiResponse(responseCode = "400",
+			             description = "If the dataset was imported and locked.",
+			             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+			),
+			@ApiResponse(responseCode = "500",
+			             description = "The dataset was imported, but not locked, and the deletion failed."
+			),
+	})
 	@PostMapping(value = "/file/source",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public void storeDataSourceConfiguration(
-			final UploadDataSourceConfigurationRequest request,
+			final @Valid UploadDataSourceConfigurationRequest request,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
@@ -81,6 +107,19 @@ public class DataController {
 		databaseService.storeDataSourceConfiguration(project, request.getDataSourceConfiguration());
 	}
 
+	@Operation(summary = "Retrieve the data from the data source",
+	           description = "Retrieves the data from the data source and stores it in the internal database." +
+	                         "If a dataset was imported before but not locked, the dataset will be deleted.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "The data was retrieved and stored successfully."),
+			@ApiResponse(responseCode = "400",
+			             description = "The dataset was imported and locked or the retrieved file could not be read.",
+			             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "500",
+			             description = "The file could not retrieved because of a failed request.",
+			             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@PostMapping(value = "/file/retrieve",
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public FileInformation retrieveFile(

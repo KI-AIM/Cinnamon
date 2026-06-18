@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.test.util;
 
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.DataSourceServerConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.*;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
@@ -11,6 +12,15 @@ import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 public class FileConfigurationTestHelper {
 	public static DataSourceConfiguration generateDataSourceConfiguration() {
 		return new DataSourceConfiguration(DataSourceType.LOCAL, null);
+	}
+
+	public static DataSourceConfiguration generateDataSourceConfiguration(DataSourceType dataSourceType) {
+		return switch (dataSourceType) {
+			case LOCAL -> new DataSourceConfiguration(DataSourceType.LOCAL, null);
+			case FHIR_SERVER -> new DataSourceConfiguration(DataSourceType.FHIR_SERVER,
+			                                                new DataSourceServerConfiguration(
+					                                                "https://example.com/fhir"));
+		};
 	}
 
 	public static FileConfiguration generateFileConfiguration() {

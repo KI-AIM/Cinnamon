@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.platform.service;
+package de.kiaim.cinnamon.platform.processor.source;
 
 import de.kiaim.cinnamon.model.configuration.data.DataSourceServerConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
@@ -7,7 +7,7 @@ import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import de.kiaim.cinnamon.platform.exception.InternalRequestException;
 import de.kiaim.cinnamon.platform.exception.RequestRuntimeException;
 import de.kiaim.cinnamon.platform.helper.StringMultipartFile;
-import de.kiaim.cinnamon.platform.processor.source.DataSourceProcessor;
+import de.kiaim.cinnamon.platform.service.HttpService;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -21,11 +21,11 @@ import org.springframework.web.reactive.function.client.WebClient;
  * @author Daniel Preciado-Marquez
  */
 @Service
-public class FhirServerService implements DataSourceProcessor {
+public class FhirServerProcessor implements DataSourceProcessor {
 
 	private final HttpService httpService;
 
-	public FhirServerService(final HttpService httpService) {
+	public FhirServerProcessor(final HttpService httpService) {
 		this.httpService = httpService;
 	}
 

@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.test.platform.service;
 
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
@@ -45,7 +46,7 @@ public class ExportServiceTest extends DatabaseTest {
 		projectService.updateProjectConfiguration(project, ProjectConfigurationTestHelper.generateProjectConfigurationDTO());
 
 		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
-		final var dataSourceConfiguration = FileConfigurationTestHelper.generateDataSourceConfiguration();
+		final var dataSourceConfiguration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.LOCAL);
 		final var file = ResourceHelper.loadCsvFile();
 		final var csvFileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 		final var fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();

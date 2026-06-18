@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.test.platform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
@@ -120,6 +121,13 @@ public class ControllerTest extends DatabaseTest {
 		assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 	}
 
+	protected void postDataSource(DataSourceType type) throws Exception {
+		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(type);
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isOk());
+	}
+
 	protected void postFile(final boolean withErrors, final boolean alternative) throws Exception {
 		MockMultipartFile file;
 		if (withErrors) {
@@ -190,6 +198,19 @@ public class ControllerTest extends DatabaseTest {
 	protected void createHoldOut(final float holdOutPercentage) throws Exception {
 		mockMvc.perform(post("/api/data/hold-out")
 				                .param("holdOutPercentage", String.valueOf(holdOutPercentage)))
+		       .andExpect(status().isOk());
+	}
+
+	protected void storeData() throws Exception {
+		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		mockMvc.perform(multipart("/api/data")
+				                .param("configuration",
+				                       objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isOk());
+	}
+
+	protected void confirmData() throws Exception {
+		mockMvc.perform(post("/api/data/confirm"))
 		       .andExpect(status().isOk());
 	}
 

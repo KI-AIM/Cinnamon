@@ -3,7 +3,10 @@ package de.kiaim.cinnamon.test.platform.controller;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.data.IntegerData;
+import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
@@ -19,6 +22,9 @@ import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.util.*;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import mockwebserver3.MockResponse;
+import mockwebserver3.MockWebServer;
+import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +38,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,16 +46,172 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithUserDetails("test_user")
+@WithMockWebServer
 class DataControllerTest extends ControllerTest {
 
 	@Autowired ProjectService projectService;
 
 	@Autowired DataSetRepository dataSetRepository;
 
+	private MockWebServer mockBackEnd;
+
 	@BeforeEach
 	public void setUp() {
 		projectService.setMode(testProject, Mode.EXPERT);
 	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━ getDataSourceConfiguration ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	void getDataSourceConfigurationNotAvailable() throws Exception {
+		mockMvc.perform(get("/api/data/file/source"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "8", "10")));
+	}
+
+	@Test
+	void getDataSourceConfiguration() throws Exception {
+		postDataSource(DataSourceType.LOCAL);
+
+		mockMvc.perform(get("/api/data/file/source"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{dataSourceType: 'LOCAL'}"));
+	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━ postDataSourceConfiguration ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	void postDataSourceConfigurationNoConfig() throws Exception {
+		mockMvc.perform(multipart("/api/data/file/source"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("dataSourceConfiguration", "Data source configuration must be present."));
+	}
+
+	@Test
+	void postDataSourceConfigurationInvalidConfig() throws Exception {
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration", "{\"dataSourceType\": \"Invalid\"}"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("dataSourceConfiguration.dataSourceType", "Invalid value 'Invalid'. Possible values are: [LOCAL, FHIR_SERVER]"));
+	}
+
+	@Test
+	void postDataSourceConfigurationMissingServer() throws Exception {
+		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
+		configuration.setServer(null);
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("dataSourceConfiguration.server",
+		                                  "Server configuration is required for FHIR server data source!"));
+	}
+
+	@Test
+	void postDataSourceConfiguration() throws Exception {
+		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.LOCAL);
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration",
+									   objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isOk());
+
+		var project = getTestProject();
+		var storedConfiguration = project.getOriginalData().getFile().getDataSourceConfiguration();
+		assertNotNull(storedConfiguration);
+		assertEquals(DataSourceType.LOCAL, storedConfiguration.getDataSourceType());
+	}
+
+	@Test
+	void postDataSourceConfigurationStoredData() throws Exception {
+		postFile(false, false);
+		storeData();
+
+		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isOk());
+
+		var project = getTestProject();
+		var storedConfiguration = project.getOriginalData().getFile().getDataSourceConfiguration();
+		assertNotNull(storedConfiguration);
+		assertEquals(DataSourceType.FHIR_SERVER, storedConfiguration.getDataSourceType());
+
+		assertNull(project.getOriginalData().getFile().getFile());
+		assertNull(project.getOriginalData().getDataSet());
+	}
+
+	@Test
+	void postDataSourceConfigurationConfirmedData() throws Exception {
+		postFile(false, false);
+		storeData();
+		confirmData();
+
+		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "3", "4")));
+
+		var project = getTestProject();
+		var storedConfiguration = project.getOriginalData().getFile().getDataSourceConfiguration();
+		assertNotNull(storedConfiguration);
+		assertEquals(DataSourceType.LOCAL, storedConfiguration.getDataSourceType());
+	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ retrieveFile ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	void retrieveFile() throws Exception {
+		// Prepare the data source
+		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
+		var url = mockBackEnd.url("/fhir/Observation").toString();
+		configuration.getServer().setUrl(url);
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isOk());
+
+		// Start the test
+		var bundle = ResourceHelper.loadFhirBundleAsString();
+		mockBackEnd.enqueue(new MockResponse.Builder()
+				                    .addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+				                    .code(200)
+				                    .body(bundle)
+				                    .build());
+
+		mockMvc.perform(post("/api/data/file/retrieve"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{name: 'fhir_bundle.json', type: null, numberOfAttributes: 0}"));
+
+		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
+		assertEquals("GET", recordedRequest.getMethod());
+		assertEquals(url, recordedRequest.getRequestUrl().toString());
+
+		var project = getTestProject();
+		var file = project.getOriginalData().getFile().getFile();
+		assertNotNull(file);
+		assertEquals(bundle, file.getLobString());
+	}
+
+	@Test
+	void retrieveFileNoDataSource() throws Exception {
+		mockMvc.perform(post("/api/data/file/retrieve"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "8", "10")))
+		       .andExpect(errorMessage("Retrieving the file requires the data source configuration to be available!"));
+	}
+
+	@Test
+	void retrieveFileLocalDataSource() throws Exception {
+		postDataSource(DataSourceType.LOCAL);
+		mockMvc.perform(post("/api/data/file/retrieve"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "8", "11")))
+		       .andExpect(errorMessage("Failed to retrieve the file! The data source is set to be a local file."));
+	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ getFile ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	@Test
 	void getFile() throws Exception {
@@ -66,6 +229,8 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(content().json("{name: null, type: null, numberOfAttributes: 0}"));
 	}
 
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ uploadFile ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 	@Test
 	void postFile() throws Exception {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
@@ -73,6 +238,13 @@ class DataControllerTest extends ControllerTest {
 				                .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
+
+		var project = getTestProject();
+		var dataSource = project.getOriginalData().getFile().getDataSourceConfiguration();
+		assertNotNull(dataSource);
+		assertEquals(DataSourceType.LOCAL, dataSource.getDataSourceType());
+
+		assertNotNull(project.getOriginalData().getFile().getFile());
 	}
 
 	@Test
@@ -96,6 +268,29 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("file", "Data must be present!"));
 	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ estimateFileConfiguration ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	void estimateFileConfigurationCsv() throws Exception {
+		postFile(false, false);
+
+		mockMvc.perform(post("/api/data/file/estimation"))
+		       .andExpect(status().isOk());
+
+		var project = getTestProject();
+		assertNotNull(project.getOriginalData().getFile().getCompatibility());
+		assertNotNull(project.getOriginalData().getFile().getFileConfiguration());
+	}
+
+	@Test
+	void estimateFileConfigurationNoFile() throws Exception {
+		mockMvc.perform(post("/api/data/file/estimation"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "8", "2")));
+	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ uploadFileConfiguration ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	@Test
 	void postFileConfigurationMissingFileConfiguration() throws Exception {

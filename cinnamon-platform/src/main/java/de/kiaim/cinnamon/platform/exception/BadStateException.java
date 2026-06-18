@@ -48,7 +48,7 @@ public class BadStateException extends BadRequestException {
 	/**
 	 * Exception code for actions that require the data source configuration of the data source to be set.
 	 */
-	public static final String NO_DATA_SOURCE_FILE_CONFIGURATION = "10";
+	public static final String NO_DATA_SOURCE_CONFIGURATION = "10";
 
 	/**
 	 * Exception code for actions that require the data source to be external.

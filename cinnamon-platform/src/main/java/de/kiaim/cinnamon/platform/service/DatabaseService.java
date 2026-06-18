@@ -157,8 +157,12 @@ public class DatabaseService {
 	}
 
 	@Transactional(readOnly = true)
-	public DataSourceConfiguration exportDataSourceConfiguration(final ProjectEntity project) {
+	public DataSourceConfiguration exportDataSourceConfiguration(final ProjectEntity project) throws BadStateException {
 		final DataSourceConfigurationEntity entity = project.getOriginalData().getFile().getDataSourceConfiguration();
+		if (entity == null) {
+			throw new BadStateException(BadStateException.NO_DATA_SOURCE_CONFIGURATION,
+			                            "The project does not contain a data source configuration!");
+		}
 		return dataSourceConfigurationMapper.toDto(entity);
 	}
 
@@ -346,8 +350,8 @@ public class DatabaseService {
 		var config = project.getOriginalData().getFile().getDataSourceConfiguration();
 
 		if (config == null) {
-			throw new BadStateException(BadStateException.NO_DATA_SOURCE_FILE_CONFIGURATION,
-			                            "Retrieving the file requires the file configuration!");
+			throw new BadStateException(BadStateException.NO_DATA_SOURCE_CONFIGURATION,
+			                            "Retrieving the file requires the data source configuration to be available!");
 		}
 
 		if (config.getDataSourceType() == DataSourceType.LOCAL || config.getServer() == null) {

@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.model.configuration.data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
+import de.kiaim.cinnamon.model.validation.DataSourceConfigured;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +20,7 @@ import org.jspecify.annotations.Nullable;
  */
 @Schema(description = "Specifies the data source for the file containing the original data.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@DataSourceConfigured
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,7 +30,7 @@ public class DataSourceConfiguration {
 	 * Type of the data source.
 	 */
 	@Schema(description = "Source of the file.")
-	@NotNull(message = "Data source type must be present")
+	@NotNull(message = "Data source type must be present.")
 	private DataSourceType dataSourceType;
 
 	/**

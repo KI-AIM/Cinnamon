@@ -131,7 +131,7 @@ def extract_remaining_time(message):
 
 
 @contextmanager
-def intercept_standard_streams(file_path, process_stage, component_name=None):
+def intercept_standard_streams(file_path, process_stage, component_name=None, remaining_time_transform=None):
     original_stdout = sys.stdout
     original_stderr = sys.stderr
     try:
@@ -140,12 +140,14 @@ def intercept_standard_streams(file_path, process_stage, component_name=None):
             process_stage,
             terminal=original_stdout,
             component_name=component_name,
+            remaining_time_transform=remaining_time_transform,
         )
         sys.stderr = InterceptStream(
             file_path,
             process_stage,
             terminal=original_stderr,
             component_name=component_name,
+            remaining_time_transform=remaining_time_transform,
         )
         yield
     finally:
@@ -158,11 +160,19 @@ class InterceptStream:
     Mirror a stream while extracting remaining-time updates for a process stage.
     """
 
-    def __init__(self, file_path, process_stage, terminal=None, component_name=None):
+    def __init__(
+        self,
+        file_path,
+        process_stage,
+        terminal=None,
+        component_name=None,
+        remaining_time_transform=None,
+    ):
         self.terminal = sys.stdout if terminal is None else terminal
         self.file_path = file_path
         self.process_stage = process_stage
         self.component_name = component_name
+        self.remaining_time_transform = remaining_time_transform
         self._message_buffer = ""
         self._last_remaining_time = None
 
@@ -172,6 +182,8 @@ class InterceptStream:
         self._message_buffer = (self._message_buffer + message)[-2048:]
 
         remaining_time = extract_remaining_time(self._message_buffer)
+        if remaining_time is not None and callable(self.remaining_time_transform):
+            remaining_time = self.remaining_time_transform(remaining_time)
         if remaining_time is not None and remaining_time != self._last_remaining_time:
             self._last_remaining_time = remaining_time
             update_status(self.file_path, step=self.process_stage, remaining_time=remaining_time)

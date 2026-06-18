@@ -112,6 +112,93 @@ def _algorithm_config() -> dict:
     }
 
 
+def test_run_synthesizer_stage_uses_global_timeout_countdown_for_hyperparameter_tuning(monkeypatch, tmp_path):
+    class FakeSynth:
+        def __init__(self):
+            self._progress_callback = None
+
+        def set_progress_callback(self, callback):
+            self._progress_callback = callback
+
+        def initialize_anonymization_configuration(self, _config):
+            return None
+
+        def initialize_attribute_configuration(self, _config):
+            return None
+
+        def initialize_dataset(self, _dataset):
+            return None
+
+        def initialize_synthesizer(self):
+            return None
+
+        def fit(self):
+            if self._progress_callback is not None:
+                self._progress_callback("fitting", "7")
+            print("Estimated remaining time: 7 seconds")
+            return 1.0
+
+        def sample(self):
+            return app_module.pd.DataFrame([{"age": 42}])
+
+        def get_model(self):
+            return b"fake-model"
+
+    fake_optuna_module = types.ModuleType("hyperparameter_tuning.optuna_tuning")
+    fake_optuna_module.DEFAULT_ARTIFACT_DIR = str(tmp_path / "artifacts")
+
+    status_path = tmp_path / "outputs" / "status" / "hpt-status.yaml"
+    initialize_status_file(str(status_path), session_key="hpt-status", synthesizer_name="fake_synth")
+
+    def fake_optimize(**kwargs):
+        kwargs["fit_metric_fn"](kwargs["algorithm_config_base"])
+        with status_path.open("r", encoding="utf-8") as handle:
+            status = yaml.safe_load(handle)
+        steps = {step["step"]: step for step in status["status"]}
+        assert steps["fitting"]["remaining_time"] == "300"
+        assert status["components"]["structured_synthesis"]["fitting_remaining_time"] == "300"
+        return types.SimpleNamespace(best_algorithm_config=kwargs["algorithm_config_base"])
+
+    fake_optuna_module.optimize = fake_optimize
+
+    monkeypatch.setitem(sys.modules, "hyperparameter_tuning.optuna_tuning", fake_optuna_module)
+    monkeypatch.setattr(app_module, "synthesizer_classes", {"fake_synth": {"class": FakeSynth}})
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_tuning_metadata",
+        {"fake_synth": {"supported": True, "direction": "minimize"}},
+    )
+    monkeypatch.setattr(app_module, "post_process_dataframe", lambda samples, *_args, **_kwargs: samples)
+    monkeypatch.setattr(app_module.time, "time", lambda: 1_000.0)
+
+    samples, model, stage_init_duration, fit_duration, sample_duration = app_module.run_synthesizer_stage(
+        stage_label="STRUCTURED_SYNTHESIS",
+        synthesizer_name="fake_synth",
+        stage_attribute_config=_structured_attribute_config(),
+        stage_algorithm_config={
+            "synthetization_configuration": {
+                "algorithm": {
+                    "sampling": {"num_samples": 1},
+                    "hyperparameter_tuning": {
+                        "enabled": True,
+                        "timeout_minutes": 5,
+                        "n_trials": 1,
+                    },
+                }
+            }
+        },
+        input_data=app_module.pd.DataFrame([{"age": 1}]),
+        file_path_status=str(status_path),
+        status_component_name="structured_synthesis",
+    )
+
+    assert samples.to_dict(orient="records") == [{"age": 42}]
+    assert model == b"fake-model"
+    assert stage_init_duration == 0.0
+    assert fit_duration == 0.0
+    assert sample_duration == 0.0
+
+
 def test_start_synthetization_process_returns_400_when_session_key_is_missing():
     app_module.tasks.clear()
     client = app_module.app.test_client()
@@ -448,6 +535,60 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
     assert len(captured_calls) == 1
     assert captured_calls[0]["input_data"].equals(data)
     assert captured_calls[0]["reference_data"].equals(original_data)
+
+    _delete_status_file(session_key)
+
+
+def test_synthesize_data_marks_llm_component_before_text_stage_starts(monkeypatch):
+    class DummyResponse:
+        status_code = 200
+        text = "ok"
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    def fake_run_synthesizer_stage(**kwargs):
+        with status_path.open("r", encoding="utf-8") as handle:
+            status = yaml.safe_load(handle)
+        assert status["components"]["llm_synthesis"]["synthesizer_name"] == "llm_text_synth"
+        return kwargs["input_data"].copy(), b"model", 0.1, 0.2, 0.3
+
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_classes",
+        {
+            "llm_text_synth": {"class": object},
+        },
+    )
+    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
+    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
+    monkeypatch.setattr(
+        app_module,
+        "load_text_synthesis_defaults",
+        lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
+    )
+    monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
+
+    data = app_module.pd.DataFrame([{"age": 50, "note": "input note"}])
+    session_key = "text-component-visible-early"
+    status_path = _status_file_path(session_key)
+    _delete_status_file(session_key)
+    initialize_status_file(str(status_path), session_key, "llm_text_synth")
+
+    result = app_module.synthesize_data(
+        "llm_text_synth",
+        str(status_path),
+        _text_attribute_config(),
+        _algorithm_config(),
+        data,
+        None,
+        "http://callback.local/test",
+        session_key,
+    )
+
+    assert result["status_code"] == 200
 
     _delete_status_file(session_key)
 

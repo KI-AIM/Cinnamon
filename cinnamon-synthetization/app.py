@@ -1,4 +1,5 @@
 import io
+import math
 import os
 import sys
 import time
@@ -508,8 +509,22 @@ def run_synthesizer_stage(
     stage_algorithm = stage_algorithm_config.get("synthetization_configuration", {}).get("algorithm", {})
     tuning_cfg = stage_algorithm.get("hyperparameter_tuning", {}) if isinstance(stage_algorithm, dict) else {}
     tuning_enabled = isinstance(tuning_cfg, dict) and bool(tuning_cfg.get("enabled", False))
+    raw_timeout = tuning_cfg.get("timeout_minutes") if tuning_enabled else None
+    try:
+        timeout_seconds = float(raw_timeout) * 60.0 if raw_timeout else None
+    except (TypeError, ValueError):
+        timeout_seconds = None
+    tuning_fit_start_time = None
+
+    def _resolve_tuning_fitting_remaining_time(fallback_remaining_time=None):
+        if not tuning_enabled or timeout_seconds is None or tuning_fit_start_time is None:
+            return fallback_remaining_time
+        remaining_seconds = max(0, int(math.ceil(timeout_seconds - (time.time() - tuning_fit_start_time))))
+        return str(remaining_seconds)
 
     def _handle_progress_update(step, remaining_time):
+        if tuning_enabled and step == "fitting":
+            remaining_time = _resolve_tuning_fitting_remaining_time(remaining_time)
         if remaining_time is None:
             return
         update_status(file_path_status, step=step, remaining_time=str(remaining_time))
@@ -566,6 +581,16 @@ def run_synthesizer_stage(
             )
 
         fit_time = time.time()
+        tuning_fit_start_time = fit_time
+        fitting_remaining_time = _resolve_tuning_fitting_remaining_time()
+        if fitting_remaining_time is not None:
+            update_status(file_path_status, step='fitting', remaining_time=fitting_remaining_time)
+            if status_component_name is not None:
+                update_component_status(
+                    file_path_status,
+                    status_component_name,
+                    fitting_remaining_time=fitting_remaining_time,
+                )
 
         def _fit_one_trial(trial_algorithm_config):
             trial_synth = synthesizer_classes[synthesizer_name]['class']()
@@ -583,16 +608,16 @@ def run_synthesizer_stage(
         sampler = tuning_cfg.get("sampler", "tpe")
         pruner = tuning_cfg.get("pruner", "median")
         n_trials = int(tuning_cfg.get("n_trials", 50))
-        raw_timeout = tuning_cfg.get("timeout_minutes")
-        try:
-            timeout_seconds = float(raw_timeout) * 60.0 if raw_timeout else None
-        except (TypeError, ValueError):
-            timeout_seconds = None
 
         target_variable = tuning_cfg.get("target_variable") or pre_processed_data.columns[-1]
         tuning_direction = tuning_metadata.get("direction") or "minimize"
 
-        with intercept_standard_streams(file_path_status, "fitting", component_name=status_component_name):
+        with intercept_standard_streams(
+            file_path_status,
+            "fitting",
+            component_name=status_component_name,
+            remaining_time_transform=_resolve_tuning_fitting_remaining_time if timeout_seconds is not None else None,
+        ):
             result = run_optuna_study(
                 fit_metric_fn=_fit_one_trial,
                 real=pre_processed_data,
@@ -767,6 +792,15 @@ def update_pipeline_totals(file_path_status, total_init_duration, total_fit_dura
     )
 
 
+def announce_component_synthesis(file_path_status, component_name, synthesizer_name):
+    update_component_status(
+        file_path_status,
+        component_name,
+        synthesizer_name=synthesizer_name,
+        completed=False,
+    )
+
+
 def synthesize_data(synthesizer_name, file_path_status, attribute_config, algorithm_config, data,
                     original_data,
                     callback_url, session_key):
@@ -823,6 +857,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         # 1) Standalone text synthesis (no structured synthesis).
         if synthesizer_name == text_synthesizer_name:
             print("Pipeline mode: text-only synthesis.")
+            announce_component_synthesis(file_path_status, "llm_synthesis", text_synthesizer_name)
             text_input = create_text_synthesis_input(data, attribute_config)
             text_algorithm_config = build_text_synthesis_algorithm_config(
                 algorithm_config,
@@ -859,11 +894,13 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         #    first synthesize structured columns, then synthesize text via the default few-shot text synthesizer.
         elif text_configs and not supports_free_text:
             print("Pipeline mode: two-stage (structured -> text synthesis).")
+            announce_component_synthesis(file_path_status, "llm_synthesis", text_synthesizer_name)
 
             structured_base = None
             structured_model = None
 
             if structured_configs and supports_structured:
+                announce_component_synthesis(file_path_status, "structured_synthesis", synthesizer_name)
                 structured_attribute_config = build_attribute_config(structured_configs)
                 structured_base, structured_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
                     stage_label="STRUCTURED_SYNTHESIS",
@@ -932,6 +969,11 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         # 3) Selected synthesizer can handle target data directly (single-stage).
         else:
             print("Pipeline mode: single-stage synthesis.")
+            announce_component_synthesis(
+                file_path_status,
+                "llm_synthesis" if is_llm_synthesizer(synthesizer_name) else "structured_synthesis",
+                synthesizer_name,
+            )
             final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
                 stage_label="SINGLE_STAGE",
                 synthesizer_name=synthesizer_name,

@@ -1,3 +1,4 @@
+import { Platform } from "@angular/cdk/platform";
 import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from "@angular/core";
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, ValidatorFn, Validators } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
@@ -7,8 +8,6 @@ import { Steps } from "@core/enums/steps";
 import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
 import { TitleService } from "@core/services/title-service.service";
 import { FileService } from "@features/data-upload/services/file.service";
-import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
-import { ConfigurationInputType } from "@shared/model/configuration-input-type";
 import { Delimiter, LineEnding, QuoteChar } from "@shared/model/csv-file-configuration";
 import { DataConfigurationEstimation } from "@shared/model/data-configuration";
 import {
@@ -67,17 +66,30 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         [LineEnding.CRLF]: "CRLF (\\r\\n)",
         [LineEnding.LF]: "LF (\\n)",
     };
+    public lineEndingOs: Record<LineEnding, string> = {
+        [LineEnding.CR]: "Older macOS",
+        [LineEnding.CRLF]: "Windows",
+        [LineEnding.LF]: "Unix (Linux, macOS)",
+    }
 
     public delimiters = Object.values(Delimiter);
     public delimiterLabels: Record<Delimiter, string> = {
         [Delimiter.COMMA]: "Comma (,)",
         [Delimiter.SEMICOLON]: "Semicolon (;)",
     };
+    public delimiterExamples: Record<Delimiter, string> = {
+        [Delimiter.COMMA]: "PID,name,age\n123656,John,36",
+        [Delimiter.SEMICOLON]: "PID;name;age\n123656;John;36",
+    };
 
     public quoteChars = Object.values(QuoteChar);
     public quoteCharLabels: Record<QuoteChar, string> = {
         [QuoteChar.DOUBLE_QUOTE]: "Double Quote (\")",
         [QuoteChar.SINGLE_QUOTE]: "Single Quote (')",
+    };
+    public quoteCharExamples: Record<QuoteChar, string> = {
+        [QuoteChar.DOUBLE_QUOTE]: "\"PID\",\"name\",\"age\"\n\"123456\",\"John\",36",
+        [QuoteChar.SINGLE_QUOTE]: "'PID','name','age'\n'123456','John',36",
     };
 
     constructor(
@@ -94,6 +106,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly stateManagementService: StateManagementService,
         private readonly formBuilder: FormBuilder,
+        protected readonly platform: Platform,
     ) {
         this.titleService.setPageTitle("Upload data");
         this.fileConfiguration = fileService.getFileConfiguration();
@@ -150,7 +163,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected get isDataFileInvalid(): boolean {
-        return this.dataFile == null;
+        return !this.isDataFileStored && this.dataFile == null;
     }
 
     /**
@@ -160,7 +173,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      */
     protected isFileConfigurationInvalid(): boolean {
         if (this.fileConfiguration.fileType === FileType.FHIR) {
-            if (this.fileConfiguration.fhirFileConfiguration.resourceType == null) {
+            if (this.fileConfiguration.fhirFileConfiguration == null || this.fileConfiguration.fhirFileConfiguration.resourceType == null) {
                 return true;
             }
         }
@@ -302,6 +315,37 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Checks if the user's OS uses the given line ending.
+     * @param lineEnding
+     */
+    protected isUserOs(lineEnding: LineEnding): boolean {
+        const platform = window.navigator.platform;
+        const crlf = ["Win32"];
+        const cr = ["darwin"];
+        const lf = ["linux"];
+
+        switch (lineEnding) {
+            case LineEnding.CRLF:
+                return crlf.includes(platform);
+            case LineEnding.LF:
+                return lf.includes(platform);
+            case LineEnding.CR:
+                return cr.includes(platform);
+            default:
+                return false;
+        }
+    }
+
+    protected hasCurrentFileHeader(): boolean {
+        if (this.fileConfiguration.fileType === FileType.CSV && this.fileConfiguration.csvFileConfiguration != null) {
+            return this.fileConfiguration.csvFileConfiguration.hasHeader;
+        } else if (this.fileConfiguration.fileType === FileType.XLSX && this.fileConfiguration.xlsxFileConfiguration != null) {
+            return this.fileConfiguration.xlsxFileConfiguration.hasHeader;
+        }
+        return false;
+    }
+
     protected onDataConfigurationFileInput(files: FileList | null) {
         if (files) {
             this.configurationFile = files[0];
@@ -337,19 +381,6 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                 this.handleError(err, "Failed to upload file");
             },
         });
-    }
-
-    /**
-     * Creates the input definition for the resource type selector.
-     * @return The input definition.
-     * @protected
-     */
-    protected get fhirResourceTypeDefinition(): ConfigurationInputDefinition {
-        const def = new ConfigurationInputDefinition();
-        def.type = ConfigurationInputType.STRING;
-        def.label = "FHIR Resource Type";
-        def.description = "Select the resource type you want to anonymize. In one project, only a single resource type contained in the bundle can be anonymized. The protected dataset will only contain data of this resource. If you want to anonymize multiple resource types, create one project for each of them.";
-        return def;
     }
 
     /**

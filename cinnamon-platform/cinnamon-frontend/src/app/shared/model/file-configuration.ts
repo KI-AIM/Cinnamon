@@ -22,9 +22,9 @@ export enum FileType {
 export class FileConfiguration {
     constructor(
         public fileType: FileType | null,
-        public csvFileConfiguration: CsvFileConfiguration,
-        public xlsxFileConfiguration: XlsxFileConfiguration,
-        public fhirFileConfiguration: FhirFileConfiguration,
+        public csvFileConfiguration: CsvFileConfiguration | null,
+        public xlsxFileConfiguration: XlsxFileConfiguration | null,
+        public fhirFileConfiguration: FhirFileConfiguration | null,
     ) {}
 }
 

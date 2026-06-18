@@ -11,6 +11,7 @@ export class WorkstepItemComponent {
 
     @Input() public stepIndex!: number;
     @Input({transform: booleanAttribute}) public invalid: boolean = false;
+    @Input({transform: booleanAttribute}) public loading: boolean = false;
     @Input({transform: booleanAttribute}) public locked: boolean = false;
     @Input() public header!: string;
 

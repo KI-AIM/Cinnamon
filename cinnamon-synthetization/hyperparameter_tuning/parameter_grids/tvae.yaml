@@ -19,6 +19,3 @@ model_parameter:
 model_fitting:
   batch_size: [1, 5, 10, 15, 20, 50, 100, 200]
   epochs: [1, 10, 20, 30, 40, 50, 100, 150, 200]
-sampling:
-  num_samples: [1000]
-

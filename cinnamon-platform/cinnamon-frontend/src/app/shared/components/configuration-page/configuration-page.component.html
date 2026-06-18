@@ -105,7 +105,7 @@
                                    [stepIndex]="getFreeTextConfigurationStepIndex()" [skip]="!hasFreeTextConfiguration"
                                    [invalid]="freeTextConfigurationInvalid">
                     <ng-container *ngIf="getFreeTextAlgorithmGroup() as freeTextAlgorithmForm">
-                        <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms) | async as freeTextDefinition">
+                        <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms, data.dataConfiguration) | async as freeTextDefinition">
                             <app-configuration-group [form]="freeTextAlgorithmForm" [fromGroupName]="''"
                                                      [group]="freeTextDefinition" [disabled]="data.locked || !oneEnabled"
                                                      [isOption]="false">
@@ -200,7 +200,7 @@
 
             <app-workstep-box header="Free-Text Synthesizer Configuration" [invalid]="freeTextConfigurationInvalid">
                 <ng-container *ngIf="getFreeTextAlgorithmGroup() as freeTextAlgorithmForm">
-                    <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms) | async as freeTextDefinition">
+                    <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms, data.dataConfiguration) | async as freeTextDefinition">
                         <app-configuration-group [form]="freeTextAlgorithmForm" [fromGroupName]="''"
                                                  [group]="freeTextDefinition" [disabled]="data.locked || !oneEnabled"
                                                  [isOption]="false">

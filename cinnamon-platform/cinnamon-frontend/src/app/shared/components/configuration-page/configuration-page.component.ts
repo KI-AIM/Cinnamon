@@ -29,6 +29,7 @@ import { StatusService } from "../../services/status.service";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import { hasTextColumns } from "../../model/data-configuration";
+import { TextSynthesisConfigurationService } from "../../../features/synthetization/services/text-synthesis-configuration.service";
 
 /**
  * Component for the entire configuration page including the algorithm selection,
@@ -134,6 +135,7 @@ export class ConfigurationPageComponent implements OnInit {
         private readonly router: Router,
         private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
+        private readonly textSynthesisConfigurationService: TextSynthesisConfigurationService,
     ) {
     }
 
@@ -249,23 +251,39 @@ export class ConfigurationPageComponent implements OnInit {
         return this.isSynthetizationConfiguration && hasTextColumns(dataConfiguration);
     }
 
-    protected getFreeTextAlgorithmDefinition(algorithms: Algorithm[]): Observable<AlgorithmDefinition | null> {
+    protected getFreeTextAlgorithmDefinition(
+        algorithms: Algorithm[],
+        dataConfiguration: DataConfiguration,
+    ): Observable<AlgorithmDefinition | null> {
         const selectedName = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.synthesizer")?.value;
         const selectedAlgorithm = this.getFreeTextAlgorithms(algorithms).find(item => item.name === selectedName);
         if (selectedAlgorithm == null) {
             return of(null);
         }
 
-        const cached = this.freeTextDefinitionCache.get(selectedAlgorithm.name);
-        if (cached) {
-            return cached;
+        let definition$ = this.freeTextDefinitionCache.get(selectedAlgorithm.name);
+        if (!definition$) {
+            definition$ = this.algorithmService.getAlgorithmDefinition(selectedAlgorithm).pipe(
+                shareReplay(1),
+            );
+            this.freeTextDefinitionCache.set(selectedAlgorithm.name, definition$);
         }
 
-        const definition$ = this.algorithmService.getAlgorithmDefinition(selectedAlgorithm).pipe(
-            shareReplay(1),
+        return definition$.pipe(
+            tap(definition => {
+                const disabled = this.forms?.form?.get(
+                    "text_synthesis_configuration.synthetization_configuration.algorithm.synthesizer",
+                )?.disabled ?? false;
+                if (this.forms?.form) {
+                    this.textSynthesisConfigurationService.syncFormWithDefinition(
+                        this.forms.form,
+                        definition,
+                        dataConfiguration,
+                        disabled,
+                    );
+                }
+            }),
         );
-        this.freeTextDefinitionCache.set(selectedAlgorithm.name, definition$);
-        return definition$;
     }
 
     protected get selectionStepHeader(): string {

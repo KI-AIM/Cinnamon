@@ -1,6 +1,11 @@
 import { Injectable } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from "@angular/forms";
+import { FormArray, FormBuilder, FormControl, FormGroup, ValidatorFn, Validators } from "@angular/forms";
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
+import { AlgorithmDefinition } from "@shared/model/algorithm-definition";
+import { ConfigurationGroupDefinition } from "@shared/model/configuration-group-definition";
+import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
+import { ConfigurationInputType } from "@shared/model/configuration-input-type";
+import { DataConfiguration } from "@shared/model/data-configuration";
 
 @Injectable({
     providedIn: 'root',
@@ -19,35 +24,172 @@ export class TextSynthesisConfigurationService {
         form.addControl(this.formGroupName, group);
     }
 
+    public syncFormWithDefinition(
+        form: FormGroup,
+        definition: AlgorithmDefinition,
+        dataConfiguration: DataConfiguration,
+        disabled: boolean,
+    ): void {
+        const algorithmGroup = form.get(
+            `${this.formGroupName}.synthetization_configuration.algorithm`,
+        ) as FormGroup | null;
+        if (algorithmGroup == null) {
+            return;
+        }
+
+        const currentValues = algorithmGroup.getRawValue();
+        this.syncGroupFromDefinition(
+            algorithmGroup,
+            definition,
+            currentValues,
+            dataConfiguration,
+            disabled,
+            new Set(["synthesizer"]),
+        );
+    }
+
     public createGroup(config: any, disabled: boolean): FormGroup {
         const algorithm = config?.synthetization_configuration?.algorithm ?? {};
-        const llmProfile = algorithm.llm_profile ?? {};
-        const modelParameter = algorithm.model_parameter ?? {};
-        const modelFitting = algorithm.model_fitting ?? {};
-        const sampling = algorithm.sampling ?? {};
 
         return this.formBuilder.group({
             synthetization_configuration: this.formBuilder.group({
                 algorithm: this.formBuilder.group({
                     synthesizer: new FormControl({value: algorithm.synthesizer ?? this.defaultTextSynthesizer, disabled}, [Validators.required]),
-                    llm_profile: this.formBuilder.group({
-                        llm_profile: new FormControl({value: llmProfile.llm_profile ?? "", disabled}, [Validators.required]),
-                    }),
-                    model_parameter: this.formBuilder.group({
-                        few_shot_rows: new FormControl({value: modelParameter.few_shot_rows ?? 20, disabled}, [Validators.required, Validators.min(0)]),
-                        similarity_strategy: new FormControl({value: modelParameter.similarity_strategy ?? "Random", disabled}, [Validators.required]),
-                        knowledge_source_type: new FormControl({value: modelParameter.knowledge_source_type ?? "NOT_IMPLEMENTED", disabled}, [Validators.required]),
-                    }),
-                    model_fitting: this.formBuilder.group({
-                        user_prompt_domain_context: new FormControl({value: modelFitting.user_prompt_domain_context ?? "", disabled}),
-                        allow_structured_corrections: new FormControl({value: modelFitting.allow_structured_corrections ?? true, disabled}),
-                    }),
-                    sampling: this.formBuilder.group({
-                        temperature: new FormControl({value: sampling.temperature ?? 0.3, disabled}, [Validators.required, Validators.min(0), Validators.max(2)]),
-                        top_p: new FormControl({value: sampling.top_p ?? 0.9, disabled}, [Validators.required, Validators.min(0), Validators.max(1)]),
-                    }),
                 }),
             }),
         });
+    }
+
+    private syncGroupFromDefinition(
+        targetGroup: FormGroup,
+        definition: ConfigurationGroupDefinition,
+        initialValues: any,
+        dataConfiguration: DataConfiguration,
+        disabled: boolean,
+        preservedControls: Set<string> = new Set(),
+    ): void {
+        const desiredControls = new Set<string>(preservedControls);
+
+        for (const inputDefinition of definition.parameters ?? []) {
+            desiredControls.add(inputDefinition.name);
+            targetGroup.setControl(
+                inputDefinition.name,
+                this.createControl(inputDefinition, initialValues?.[inputDefinition.name], dataConfiguration, disabled),
+            );
+        }
+
+        for (const [name, groupDefinition] of Object.entries(definition.configurations ?? {})) {
+            desiredControls.add(name);
+            targetGroup.setControl(
+                name,
+                this.createDefinitionGroup(groupDefinition, initialValues?.[name] ?? {}, dataConfiguration, disabled),
+            );
+        }
+
+        for (const [name, groupDefinition] of Object.entries(definition.options ?? {})) {
+            desiredControls.add(name);
+            targetGroup.setControl(
+                name,
+                this.createDefinitionGroup(groupDefinition, initialValues?.[name] ?? {}, dataConfiguration, disabled),
+            );
+        }
+
+        for (const controlName of Object.keys(targetGroup.controls)) {
+            if (!desiredControls.has(controlName)) {
+                targetGroup.removeControl(controlName);
+            }
+        }
+    }
+
+    private createDefinitionGroup(
+        groupDefinition: ConfigurationGroupDefinition,
+        initialValues: any,
+        dataConfiguration: DataConfiguration,
+        disabled: boolean,
+    ): FormGroup {
+        const group: Record<string, FormControl | FormArray | FormGroup> = {};
+
+        for (const inputDefinition of groupDefinition.parameters ?? []) {
+            group[inputDefinition.name] = this.createControl(
+                inputDefinition,
+                initialValues?.[inputDefinition.name],
+                dataConfiguration,
+                disabled,
+            );
+        }
+
+        for (const [name, childDefinition] of Object.entries(groupDefinition.configurations ?? {})) {
+            group[name] = this.createDefinitionGroup(
+                childDefinition,
+                initialValues?.[name] ?? {},
+                dataConfiguration,
+                disabled,
+            );
+        }
+
+        for (const [name, childDefinition] of Object.entries(groupDefinition.options ?? {})) {
+            group[name] = this.createDefinitionGroup(
+                childDefinition,
+                initialValues?.[name] ?? {},
+                dataConfiguration,
+                disabled,
+            );
+        }
+
+        return new FormGroup(group);
+    }
+
+    private createControl(
+        inputDefinition: ConfigurationInputDefinition,
+        initialValue: any,
+        dataConfiguration: DataConfiguration,
+        disabled: boolean,
+    ): FormControl | FormArray {
+        const mandatory = this.isMandatory(inputDefinition);
+        const resolvedInitialValue = initialValue ?? inputDefinition.default_value;
+
+        if (inputDefinition.type === ConfigurationInputType.LIST) {
+            const controls = [];
+            for (const value of (resolvedInitialValue ?? []) as number[]) {
+                controls.push(new FormControl({value, disabled}, Validators.required));
+            }
+            return new FormArray(controls, mandatory ? Validators.required : null);
+        }
+
+        if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
+            const selectedValues = Array.isArray(resolvedInitialValue) ? resolvedInitialValue : [];
+            return new FormArray(
+                selectedValues.map(value => new FormControl({value, disabled})),
+                mandatory ? Validators.required : null,
+            );
+        }
+
+        const validators: ValidatorFn[] = [];
+        if (mandatory && inputDefinition.type !== ConfigurationInputType.BOOLEAN) {
+            validators.push(Validators.required);
+        }
+        if (inputDefinition.min_value !== null) {
+            validators.push(Validators.min(inputDefinition.min_value));
+        }
+        if (inputDefinition.max_value !== null) {
+            validators.push(Validators.max(inputDefinition.max_value));
+        }
+
+        const value = resolvedInitialValue ?? this.getDefaultValueForInput(inputDefinition, dataConfiguration);
+        return new FormControl({value, disabled}, validators);
+    }
+
+    private getDefaultValueForInput(
+        inputDefinition: ConfigurationInputDefinition,
+        dataConfiguration: DataConfiguration,
+    ): any {
+        if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
+            return dataConfiguration.configurations.map(configuration => configuration.name);
+        }
+        return inputDefinition.default_value;
+    }
+
+    private isMandatory(inputDefinition: { mandatory?: boolean | null }): boolean {
+        return inputDefinition.mandatory !== false;
     }
 }

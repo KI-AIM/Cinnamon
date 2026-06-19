@@ -575,21 +575,12 @@ class LlmTextSynthesisBase(ConfiguredLlmSynthesizerBase):
         repaired_row: Dict[str, Any],
     ) -> tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
         reference_examples = self._draw_few_shot_examples(repaired_row)
-        text_only_references = [self._text_only_reference_row(row) for row in reference_examples]
+        if self._similarity_strategy != self.SIMILARITY_STRATEGY_ATTRIBUTES or not reference_examples:
+            return None, reference_examples
 
-        if self._similarity_strategy != self.SIMILARITY_STRATEGY_ATTRIBUTES or not text_only_references:
-            return None, text_only_references
-
-        primary_reference_row = text_only_references[0]
-        additional_reference_examples = text_only_references[1:]
+        primary_reference_row = reference_examples[0]
+        additional_reference_examples = reference_examples[1:]
         return primary_reference_row, additional_reference_examples
-
-    def _text_only_reference_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
-        return {
-            column_name: row.get(column_name)
-            for column_name in self._text_columns
-            if column_name in row
-        }
 
     def _structured_only_reference_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
         return {

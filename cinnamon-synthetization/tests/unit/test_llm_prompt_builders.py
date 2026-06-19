@@ -6,6 +6,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from synthetic_tabular_data_generator.llm.prompt_builders import build_tabular_generation_prompt
+from synthetic_tabular_data_generator.llm.prompt_builders import build_text_enrichment_prompt_prefix
 from synthetic_tabular_data_generator.llm.prompt_builders import build_text_enrichment_prompt_from_prefix
 
 
@@ -48,3 +49,17 @@ def test_prompt_builders_keep_umlauts_readable_in_json_blocks():
     assert '"geschlecht": "männlich"' in prompt
     assert '"geschlecht": "weiblich"' in prompt
     assert "\\u00e4" not in prompt
+
+
+def test_text_enrichment_prompt_prefix_marks_repaired_structured_values_as_ground_truth():
+    prompt = build_text_enrichment_prompt_prefix(
+        column_order=["aufnahme_datum", "geschlecht", "dokument_text"],
+        text_columns=["dokument_text"],
+        missing_value_string="MISSING",
+    )
+
+    assert "Treat the repaired non-TEXT fields as ground truth for this row." in prompt
+    assert (
+        "If a repaired structured value is the kind of fact that is typically mentioned explicitly in texts of this kind, the generated TEXT must use that same value."
+        in prompt
+    )

@@ -14,6 +14,7 @@ configurations:
         label: Sampler
         description: Algorithm used to propose hyperparameter combinations. Grid exhaustively tests all combinations, TPE performs Bayesian optimisation, NSGA is a genetic algorithm for multi-objective search.
         default_value: tpe
+        ui_hidden: true
         values:
           - grid
           - tpe
@@ -24,6 +25,7 @@ configurations:
         label: Pruner
         description: Strategy for early-stopping unpromising trials. "none" lets every trial run to completion; Median stops trials below the median of completed ones; Hyperband and Successive Halving allocate budget adaptively across trials.
         default_value: median
+        ui_hidden: true
         values:
           - none
           - median
@@ -45,5 +47,4 @@ configurations:
         default_value: 60
         min_value: 1
         max_value: 100000
-
 

@@ -44,6 +44,7 @@ SYNTHESIZER_CONFIG_DIR = os.path.join(
     "synthetic_tabular_data_generator",
     "synthesizer_config",
 )
+HYPERPARAMETER_TUNING_DIR = os.path.join(os.path.dirname(__file__), "hyperparameter_tuning")
 
 
 def configure_realtime_logging():
@@ -307,6 +308,24 @@ def load_synthesizer_config(synthesizer_name):
     config_file = os.path.join(SYNTHESIZER_CONFIG_DIR, f"{synthesizer_name}.yaml")
     with open(config_file, "r", encoding="utf-8") as handle:
         return yaml.safe_load(handle) or {}
+
+
+@lru_cache(maxsize=1)
+def load_study_config():
+    config_file = os.path.join(HYPERPARAMETER_TUNING_DIR, "study.yaml")
+    with open(config_file, "r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle) or {}
+
+
+def get_study_parameter_default(parameter_name):
+    study_config = load_study_config()
+    parameters = study_config.get("configurations", {}).get("study", {}).get("parameters", [])
+    for parameter in parameters:
+        if parameter.get("name") == parameter_name and "default_value" in parameter:
+            return parameter["default_value"]
+    raise RuntimeError(
+        f"Missing default_value for hyperparameter tuning parameter '{parameter_name}' in study.yaml."
+    )
 
 
 def get_processing_capabilities(synthesizer_name):
@@ -610,8 +629,8 @@ def run_synthesizer_stage(
             trial_synth.initialize_synthesizer()
             return trial_synth.fit()
 
-        sampler = tuning_cfg.get("sampler", "tpe")
-        pruner = tuning_cfg.get("pruner", "median")
+        sampler = tuning_cfg.get("sampler", get_study_parameter_default("sampler"))
+        pruner = tuning_cfg.get("pruner", get_study_parameter_default("pruner"))
         n_trials = int(tuning_cfg.get("n_trials", 50))
 
         target_variable = tuning_cfg.get("target_variable") or pre_processed_data.columns[-1]
@@ -1158,8 +1177,7 @@ def get_study_yaml():
     so it can render the hyperparameter-tuning configuration form.
     """
     try:
-        directory = os.path.join(os.path.dirname(__file__), 'hyperparameter_tuning')
-        return send_from_directory(directory, 'study.yaml')
+        return send_from_directory(HYPERPARAMETER_TUNING_DIR, 'study.yaml')
     except FileNotFoundError:
         return jsonify({'error': 'study.yaml not found'}), 404
     except Exception as e:

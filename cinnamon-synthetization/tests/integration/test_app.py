@@ -112,6 +112,13 @@ def _algorithm_config() -> dict:
     }
 
 
+def test_get_study_parameter_default_reads_values_from_study_yaml():
+    app_module.load_study_config.cache_clear()
+
+    assert app_module.get_study_parameter_default("sampler") == "tpe"
+    assert app_module.get_study_parameter_default("pruner") == "median"
+
+
 def test_run_synthesizer_stage_uses_global_timeout_countdown_for_hyperparameter_tuning(monkeypatch, tmp_path):
     class FakeSynth:
         def __init__(self):
@@ -197,6 +204,82 @@ def test_run_synthesizer_stage_uses_global_timeout_countdown_for_hyperparameter_
     assert stage_init_duration == 0.0
     assert fit_duration == 0.0
     assert sample_duration == 0.0
+
+
+def test_run_synthesizer_stage_uses_study_yaml_defaults_for_sampler_and_pruner(monkeypatch, tmp_path):
+    class FakeSynth:
+        def set_progress_callback(self, _callback):
+            return None
+
+        def initialize_anonymization_configuration(self, _config):
+            return None
+
+        def initialize_attribute_configuration(self, _config):
+            return None
+
+        def initialize_dataset(self, _dataset):
+            return None
+
+        def initialize_synthesizer(self):
+            return None
+
+        def fit(self):
+            return 1.0
+
+        def sample(self):
+            return app_module.pd.DataFrame([{"age": 42}])
+
+        def get_model(self):
+            return b"fake-model"
+
+    fake_optuna_module = types.ModuleType("hyperparameter_tuning.optuna_tuning")
+    fake_optuna_module.DEFAULT_ARTIFACT_DIR = str(tmp_path / "artifacts")
+
+    status_path = tmp_path / "outputs" / "status" / "default-study-values.yaml"
+    initialize_status_file(str(status_path), session_key="default-study-values", synthesizer_name="fake_synth")
+
+    app_module.load_study_config.cache_clear()
+
+    def fake_optimize(**kwargs):
+        assert kwargs["sampler"] == app_module.get_study_parameter_default("sampler")
+        assert kwargs["pruner"] == app_module.get_study_parameter_default("pruner")
+        return types.SimpleNamespace(best_algorithm_config=kwargs["algorithm_config_base"])
+
+    fake_optuna_module.optimize = fake_optimize
+
+    monkeypatch.setitem(sys.modules, "hyperparameter_tuning.optuna_tuning", fake_optuna_module)
+    monkeypatch.setattr(app_module, "synthesizer_classes", {"fake_synth": {"class": FakeSynth}})
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_tuning_metadata",
+        {"fake_synth": {"supported": True, "direction": "minimize"}},
+    )
+    monkeypatch.setattr(app_module, "post_process_dataframe", lambda samples, *_args, **_kwargs: samples)
+    monkeypatch.setattr(app_module.time, "time", lambda: 1_000.0)
+
+    samples, model, *_durations = app_module.run_synthesizer_stage(
+        stage_label="STRUCTURED_SYNTHESIS",
+        synthesizer_name="fake_synth",
+        stage_attribute_config=_structured_attribute_config(),
+        stage_algorithm_config={
+            "synthetization_configuration": {
+                "algorithm": {
+                    "sampling": {"num_samples": 1},
+                    "hyperparameter_tuning": {
+                        "enabled": True,
+                        "timeout_minutes": 5,
+                        "n_trials": 1,
+                    },
+                }
+            }
+        },
+        input_data=app_module.pd.DataFrame([{"age": 1}]),
+        file_path_status=str(status_path),
+        status_component_name="structured_synthesis",
+    )
+
+    assert samples.to_dict(orient="records") == [{"age": 42}]
+    assert model == b"fake-model"
 
 
 def test_start_synthetization_process_returns_400_when_session_key_is_missing():

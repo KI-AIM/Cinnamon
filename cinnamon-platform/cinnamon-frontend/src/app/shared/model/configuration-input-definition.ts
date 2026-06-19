@@ -9,6 +9,7 @@ export class ConfigurationInputDefinition {
     mandatory: boolean = true
     multiline?: boolean
     rows?: number
+    ui_hidden?: boolean
     invert: string | null
     min_value: number | null
     max_value: number | null

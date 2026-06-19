@@ -42,4 +42,9 @@ export class HtConfigurationComponent {
             this.studyDefinition?.configurations?.['study']?.parameters ?? [];
         return params.find(p => p.name === name) ?? null;
     }
+
+    shouldShowParam(name: string): boolean {
+        const parameter = this.getParam(name);
+        return parameter != null && parameter.ui_hidden !== true;
+    }
 }

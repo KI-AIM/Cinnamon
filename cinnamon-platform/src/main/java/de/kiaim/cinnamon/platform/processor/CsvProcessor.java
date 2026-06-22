@@ -214,7 +214,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 		final Iterable<CSVRecord> records;
 		try {
-			records = csvFormat.parse(new InputStreamReader(data));
+			records = csvFormat.parse(new InputStreamReader(data, StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			throw new InternalIOException(InternalIOException.CSV_READING, "Failed to parse CSV file", e);
 		}

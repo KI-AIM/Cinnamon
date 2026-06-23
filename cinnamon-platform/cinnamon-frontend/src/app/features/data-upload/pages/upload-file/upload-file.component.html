@@ -3,7 +3,8 @@
     @if (pageData.status.mode === Mode.STANDARD) {
         <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="pageData.locked.isLocked"
                            [invalid]="!pageData.fileInfo.name || isInvalid || loadingEstimation"
-                           [numberSteps]="4" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
+                           [numberSteps]="4" resetSteps [resetFollowing]="true" [step]="Steps.UPLOAD"
+                           (confirm)="uploadFile()">
 
             <app-workstep-item header="Select your data source" [locked]="pageData.locked.isLocked"
                                [invalid]="isDataSourceTypeInvalid" [stepIndex]="0">

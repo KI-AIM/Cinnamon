@@ -158,8 +158,15 @@ public class DataController {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity projectEntity =  projectService.getProject(user);
 
-		databaseService.storeDataSourceConfiguration(projectEntity,
-		                                             new DataSourceConfiguration(DataSourceType.LOCAL, null));
+		DataSourceConfiguration config;
+		try {
+			config = databaseService.exportDataSourceConfiguration(projectEntity);
+			config.setDataSourceType(DataSourceType.LOCAL);
+		} catch (final BadStateException e) {
+			config = new DataSourceConfiguration(DataSourceType.LOCAL, null);
+		}
+		databaseService.storeDataSourceConfiguration(projectEntity, config);
+
 		final FileInformation fileInformation = databaseService.storeFile(projectEntity, requestData.getFile());
 
 		return ResponseEntity.ok(fileInformation);

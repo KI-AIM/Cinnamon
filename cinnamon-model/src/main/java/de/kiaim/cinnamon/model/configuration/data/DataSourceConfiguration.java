@@ -38,6 +38,5 @@ public class DataSourceConfiguration {
 	 */
 	@Schema(description = "Configuration for the server where the file is located.")
 	@Nullable
-	@Valid
 	private DataSourceServerConfiguration server;
 }

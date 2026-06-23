@@ -110,6 +110,33 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void postDataSourceConfigurationMissingServerUrl() throws Exception {
+		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
+		configuration.getServer().setUrl(null);
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("dataSourceConfiguration.server.url", "must not be blank"));
+	}
+
+	@Test
+	void postDataSourceConfigurationLocalMissingServer() throws Exception {
+		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
+		configuration.setDataSourceType(DataSourceType.LOCAL);
+		configuration.getServer().setUrl(null);
+
+		mockMvc.perform(multipart("/api/data/file/source")
+				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
+		       .andExpect(status().isOk());
+
+		var project = getTestProject();
+		var storedConfiguration = project.getOriginalData().getFile().getDataSourceConfiguration();
+		assertNotNull(storedConfiguration);
+		assertEquals(DataSourceType.LOCAL, storedConfiguration.getDataSourceType());
+	}
+
+	@Test
 	void postDataSourceConfiguration() throws Exception {
 		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.LOCAL);
 		mockMvc.perform(multipart("/api/data/file/source")

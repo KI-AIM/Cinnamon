@@ -1,8 +1,10 @@
 package de.kiaim.cinnamon.model.validation;
 
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
+import de.kiaim.cinnamon.model.configuration.data.DataSourceServerConfiguration;
+import jakarta.validation.*;
+
+import java.util.Set;
 
 /**
  * Validates that the data source configuration is valid for the selected data source type.
@@ -34,6 +36,23 @@ public class DataSourceConfiguredValidator implements ConstraintValidator<DataSo
 			       .addPropertyNode("server")
 			       .addConstraintViolation();
 			return false;
+		} else {
+			// Validate the server configuration object
+			try (final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
+				final Validator validator = validatorFactory.getValidator();
+
+				Set<ConstraintViolation<DataSourceServerConfiguration>> violations = validator.validate(value.getServer());
+				if (!violations.isEmpty()) {
+					context.disableDefaultConstraintViolation();
+					for (ConstraintViolation<DataSourceServerConfiguration> v : violations) {
+						context.buildConstraintViolationWithTemplate(v.getMessage())
+						       .addPropertyNode("server")
+						       .addPropertyNode(v.getPropertyPath().toString())
+						       .addConstraintViolation();
+					}
+					return false;
+				}
+			}
 		}
 
 		return true;

@@ -219,9 +219,11 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
             this.loadingEstimation = true;
 
-            this.fileService.uploadFile(file).pipe(
+            const config = this.dataSourceConfigurationForm.getRawValue();
+            this.fileService.uploadDataSourceConfiguration(config).pipe(
+                switchMap(() => this.fileService.uploadFile(file)),
                 switchMap(() => this.statusService.updateNextStep(Steps.UPLOAD)),
-                switchMap(() => this.fileService.dataSourceConfiguration$),
+                switchMap(() => this.fileService.refreshDataSourceConfiguration()),
                 take(1),
                 switchMap(() => this.fileService.estimateFileConfiguration())
             ).subscribe({

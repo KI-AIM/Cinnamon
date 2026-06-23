@@ -72,8 +72,7 @@ export class FileService {
 
         this._fileInfoLoading$ = this.httpClient.get<FileInformation>(this.baseUrl).pipe(
             tap(value => {
-                this._fileInfoFetched = true;
-                this._fileInfoSubject.next(value);
+                this.setFileInfo(value);
             }),
             finalize(() => {
                 this._fileInfoLoading$ = null;
@@ -82,6 +81,11 @@ export class FileService {
         );
 
         return this._fileInfoLoading$;
+    }
+
+    public setFileInfo(fileInfo: FileInformation): void {
+        this._fileInfoFetched = true;
+        this._fileInfoSubject.next(fileInfo);
     }
 
     public get dataSourceConfiguration$(): Observable<DataSourceConfiguration> {
@@ -121,14 +125,16 @@ export class FileService {
      * @param dataSourceConfiguration The file configuration containing the data source configuration.
      * @return An empty observable.
      */
-    public uploadDataSourceConfiguration(dataSourceConfiguration: DataSourceConfiguration): Observable<void> {
+    public uploadDataSourceConfiguration(dataSourceConfiguration: DataSourceConfiguration): Observable<FileInformation> {
         this.setDataSourceConfiguration(dataSourceConfiguration);
 
         const formData = new FormData();
         const fileConfigString = JSON.stringify(dataSourceConfiguration);
         formData.append("dataSourceConfiguration", fileConfigString);
 
-        return this.httpClient.post<void>(this.baseUrl + "/source", formData);
+        return this.httpClient.post<FileInformation>(this.baseUrl + "/source", formData).pipe(
+            tap(value => this.setFileInfo(value)),
+        );
     }
 
     private setDataSourceConfiguration(dataSourceConfiguration: DataSourceConfiguration) {
@@ -165,8 +171,7 @@ export class FileService {
         formData.append("file", file);
 
         return this.httpClient.post<FileInformation>(this.baseUrl, formData).pipe(tap(value => {
-            this._fileInfoFetched = true;
-            this._fileInfoSubject.next(value);
+            this.setFileInfo(value);
         }));
     }
 
@@ -182,8 +187,7 @@ export class FileService {
         formData.append("fileConfiguration", fileConfigString);
 
         return this.httpClient.post<FileInformation>(this.baseUrl + "/configuration", formData).pipe(tap(value => {
-            this._fileInfoFetched = true;
-            this._fileInfoSubject.next(value);
+            this.setFileInfo(value);
         }));
     }
 
@@ -211,8 +215,7 @@ export class FileService {
 
         return this.httpClient.post<FileInformation>(this.baseUrl + "/retrieve", formData).pipe(
             tap(value => {
-                this._fileInfoFetched = true;
-                this._fileInfoSubject.next(value);
+                this.setFileInfo(value);
             }),
         );
     }

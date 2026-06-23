@@ -98,13 +98,14 @@ public class DataController {
 	})
 	@PostMapping(value = "/file/source",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public void storeDataSourceConfiguration(
+	public FileInformation storeDataSourceConfiguration(
 			final @Valid UploadDataSourceConfigurationRequest request,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
 		final ProjectEntity project =  projectService.getProject(user);
 		databaseService.storeDataSourceConfiguration(project, request.getDataSourceConfiguration());
+		return databaseService.getFileInformation(project);
 	}
 
 	@Operation(summary = "Retrieve the data from the data source",
@@ -126,7 +127,7 @@ public class DataController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project =  projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user);
 		return databaseService.retrieveAndStoreFile(project);
 	}
 

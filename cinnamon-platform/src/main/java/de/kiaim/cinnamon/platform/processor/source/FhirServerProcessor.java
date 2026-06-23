@@ -58,10 +58,10 @@ public class FhirServerProcessor implements DataSourceProcessor {
 			                   .block();
 		} catch (final RequestRuntimeException e) {
 			final String message = httpService.buildError(e, "fetch FHIR bundle");
-			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, e);
+			throw new InternalRequestException(InternalRequestException.FHIR_SERVER, message, e);
 		} catch (final Exception e) {
 			var message = "Failed to fetch FHIR bundle! " + e.getMessage();
-			throw new InternalRequestException(InternalRequestException.ALGORITHMS, message, e);
+			throw new InternalRequestException(InternalRequestException.FHIR_SERVER, message, e);
 		}
 
 		var file = new StringMultipartFile(content, "fhir_bundle.json", CustomMediaType.APPLICATION_FHIR_JSON);

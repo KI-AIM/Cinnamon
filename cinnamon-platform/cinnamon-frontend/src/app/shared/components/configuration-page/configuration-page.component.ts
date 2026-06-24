@@ -7,7 +7,6 @@ import { Steps } from "@core/enums/steps";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { StateManagementService } from "@core/services/state-management.service";
 import { FileUploadComponent } from "@shared/components/file-upload/file-upload.component";
-import { DataConfiguration } from "@shared/model/data-configuration";
 import { Status } from "@shared/model/status";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
 import { catchError, combineLatest, from, map, mergeMap, Observable, of, shareReplay, switchMap, tap } from "rxjs";
@@ -15,9 +14,9 @@ import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import {
     Algorithm,
+    isMixedTextSynthesizer,
+    isStructuredOnlySynthesizer,
     isTextOnlySynthesizer,
-    supportsFreeTextData,
-    supportsStructuredData
 } from "../../model/algorithm";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
@@ -28,7 +27,11 @@ import { ErrorHandlingService } from "../../services/error-handling.service";
 import { StatusService } from "../../services/status.service";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
-import { hasTextColumns } from "../../model/data-configuration";
+import {
+    DataConfiguration,
+    isMixedDataConfiguration,
+    isTextOnlyDataConfiguration,
+} from "../../model/data-configuration";
 import { TextSynthesisConfigurationService } from "../../../features/synthetization/services/text-synthesis-configuration.service";
 
 /**
@@ -117,6 +120,8 @@ export class ConfigurationPageComponent implements OnInit {
     protected oneEnabled = false;
 
     protected selectedAlgorithm: Algorithm | null = null;
+    protected currentAlgorithms: Algorithm[] = [];
+    protected currentDataConfiguration: DataConfiguration | null = null;
     private freeTextDefinitionCache: Map<string, Observable<AlgorithmDefinition>> = new Map<string, Observable<AlgorithmDefinition>>();
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
@@ -192,7 +197,7 @@ export class ConfigurationPageComponent implements OnInit {
             return false;
         }
 
-        if (this.selectedAlgorithm == null) {
+        if (this.getEffectiveSelectedAlgorithm() == null) {
             return true;
         }
 
@@ -216,11 +221,42 @@ export class ConfigurationPageComponent implements OnInit {
             return algorithms;
         }
 
-        return algorithms.filter(item => supportsStructuredData(item) && !isTextOnlySynthesizer(item));
+        return algorithms.filter(item => isStructuredOnlySynthesizer(item));
+    }
+
+    protected getTextOnlyAlgorithms(algorithms: Algorithm[]): Algorithm[] {
+        return algorithms.filter(item => isTextOnlySynthesizer(item));
     }
 
     protected getFreeTextAlgorithms(algorithms: Algorithm[]): Algorithm[] {
-        return algorithms.filter(item => supportsFreeTextData(item) && isTextOnlySynthesizer(item));
+        return algorithms.filter(item => isMixedTextSynthesizer(item));
+    }
+
+    protected getPrimaryAlgorithms(algorithms: Algorithm[], dataConfiguration: DataConfiguration): Algorithm[] {
+        if (!this.isSynthetizationConfiguration) {
+            return algorithms;
+        }
+        if (isTextOnlyDataConfiguration(dataConfiguration)) {
+            return this.getTextOnlyAlgorithms(algorithms);
+        }
+        return this.getStructuredAlgorithms(algorithms);
+    }
+
+    protected getEffectiveSelectedAlgorithm(
+        algorithms: Algorithm[] = this.currentAlgorithms,
+        dataConfiguration: DataConfiguration | null = this.currentDataConfiguration,
+    ): Algorithm | null {
+        const currentSelection = this.selection?.selectedOption ?? this.selectedAlgorithm;
+        if (dataConfiguration == null) {
+            return currentSelection;
+        }
+
+        const primaryAlgorithms = this.getPrimaryAlgorithms(algorithms, dataConfiguration);
+        if (currentSelection != null && primaryAlgorithms.some(item => item.name === currentSelection.name)) {
+            return currentSelection;
+        }
+
+        return primaryAlgorithms.length === 1 ? primaryAlgorithms[0] : null;
     }
 
     protected getNumberSteps(dataConfiguration: DataConfiguration): number {
@@ -228,27 +264,35 @@ export class ConfigurationPageComponent implements OnInit {
             return 4;
         }
 
-        return hasTextColumns(dataConfiguration) ? 6 : 4;
+        return isMixedDataConfiguration(dataConfiguration) ? 6 : 4;
     }
 
     protected getTotalStepCount(dataConfiguration: DataConfiguration): number {
-        return this.getNumberSteps(dataConfiguration) + (this.intermediateStep ? 1 : 0);
+        const hasIntermediateStep = this.intermediateStep != null && !isTextOnlyDataConfiguration(dataConfiguration);
+        return this.getNumberSteps(dataConfiguration) + (hasIntermediateStep ? 1 : 0);
     }
 
-    protected getAlgorithmConfigurationStepIndex(): number {
-        return this.intermediateStep ? 4 : 3;
+    protected getAlgorithmConfigurationStepIndex(dataConfiguration: DataConfiguration): number {
+        const hasIntermediateStep = this.intermediateStep != null && !isTextOnlyDataConfiguration(dataConfiguration);
+        return hasIntermediateStep ? 4 : 3;
     }
 
-    protected getFreeTextSelectionStepIndex(): number {
-        return this.intermediateStep ? 5 : 4;
+    protected getFreeTextSelectionStepIndex(dataConfiguration: DataConfiguration): number {
+        const hasIntermediateStep = this.intermediateStep != null && !isTextOnlyDataConfiguration(dataConfiguration);
+        return hasIntermediateStep ? 5 : 4;
     }
 
-    protected getFreeTextConfigurationStepIndex(): number {
-        return this.intermediateStep ? 6 : 5;
+    protected getFreeTextConfigurationStepIndex(dataConfiguration: DataConfiguration): number {
+        const hasIntermediateStep = this.intermediateStep != null && !isTextOnlyDataConfiguration(dataConfiguration);
+        return hasIntermediateStep ? 6 : 5;
     }
 
     protected shouldShowFreeTextSteps(dataConfiguration: DataConfiguration): boolean {
-        return this.isSynthetizationConfiguration && hasTextColumns(dataConfiguration);
+        return this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration);
+    }
+
+    protected isTextOnlyDataset(dataConfiguration: DataConfiguration): boolean {
+        return isTextOnlyDataConfiguration(dataConfiguration);
     }
 
     protected getFreeTextAlgorithmDefinition(
@@ -286,14 +330,20 @@ export class ConfigurationPageComponent implements OnInit {
         );
     }
 
-    protected get selectionStepHeader(): string {
+    protected getSelectionStepHeader(dataConfiguration: DataConfiguration): string {
+        if (this.isSynthetizationConfiguration && isTextOnlyDataConfiguration(dataConfiguration)) {
+            return "Select the free-text synthesizer";
+        }
         if (this.isSynthetizationConfiguration) {
             return "Select the structured synthesizer";
         }
         return "Select the algorithm to be executed";
     }
 
-    protected get configurationStepHeader(): string {
+    protected getConfigurationStepHeader(dataConfiguration: DataConfiguration): string {
+        if (this.isSynthetizationConfiguration && isTextOnlyDataConfiguration(dataConfiguration)) {
+            return "Configure the free-text synthesizer";
+        }
         if (this.isSynthetizationConfiguration) {
             return "Configure the structured synthesizer";
         }
@@ -332,6 +382,11 @@ export class ConfigurationPageComponent implements OnInit {
             status: this.statusService.statusNonNull$,
         }).pipe(
             switchMap(pageData => {
+                this.currentAlgorithms = pageData.algorithms;
+                this.currentDataConfiguration = pageData.dataConfiguration;
+                const primaryAlgorithms = this.getPrimaryAlgorithms(pageData.algorithms, pageData.dataConfiguration);
+                this.hasAlgorithmSelection = primaryAlgorithms.length > 1;
+
                 if (pageData.algorithms.length === 0) {
                     return of({
                         ...pageData,
@@ -341,18 +396,17 @@ export class ConfigurationPageComponent implements OnInit {
 
                 return this.algorithmService.fetchConfiguration().pipe(
                     tap(value => {
-                        const structuredAlgorithms = this.getStructuredAlgorithms(pageData.algorithms);
                         const hasCurrentSelection = this.selectedAlgorithm != null
-                            && structuredAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
+                            && primaryAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
 
-                        if (value.selectedAlgorithm != null && structuredAlgorithms.some(item => item.name === value.selectedAlgorithm!.name)) {
+                        if (value.selectedAlgorithm != null && primaryAlgorithms.some(item => item.name === value.selectedAlgorithm!.name)) {
                             this.selectedAlgorithm = value.selectedAlgorithm
                             this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
                         } else if (hasCurrentSelection) {
                             value.selectedAlgorithm = this.selectedAlgorithm;
-                        } else if (!this.hasAlgorithmSelection && structuredAlgorithms.length > 0) {
-                            this.selectedAlgorithm = structuredAlgorithms[0];
-                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), structuredAlgorithms[0]);
+                        } else if (!this.hasAlgorithmSelection && primaryAlgorithms.length > 0) {
+                            this.selectedAlgorithm = primaryAlgorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), primaryAlgorithms[0]);
                             value.selectedAlgorithm = this.selectedAlgorithm;
                         } else {
                             this.selectedAlgorithm = null;
@@ -365,15 +419,14 @@ export class ConfigurationPageComponent implements OnInit {
                     catchError(error => {
                         this.errorHandlingService.addError(error);
                         const value: ConfigData = {config: {}, selectedAlgorithm: null};
-                        const structuredAlgorithms = this.getStructuredAlgorithms(pageData.algorithms);
                         const hasCurrentSelection = this.selectedAlgorithm != null
-                            && structuredAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
+                            && primaryAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
 
                         if (hasCurrentSelection) {
                             value.selectedAlgorithm = this.selectedAlgorithm;
-                        } else if (!this.hasAlgorithmSelection && structuredAlgorithms.length > 0) {
-                            this.selectedAlgorithm = structuredAlgorithms[0];
-                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), structuredAlgorithms[0]);
+                        } else if (!this.hasAlgorithmSelection && primaryAlgorithms.length > 0) {
+                            this.selectedAlgorithm = primaryAlgorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), primaryAlgorithms[0]);
                             value.selectedAlgorithm = this.selectedAlgorithm;
                         }
 
@@ -443,8 +496,9 @@ export class ConfigurationPageComponent implements OnInit {
      * @protected
      */
     protected updateConfigCache(): void {
-        if (this.selectedAlgorithm && this.forms)  {
-            this.configurationService.setConfiguration(this.algorithmService.getConfigurationName(), this.selectedAlgorithm, this.forms.formData);
+        const selectedAlgorithm = this.getEffectiveSelectedAlgorithm();
+        if (selectedAlgorithm && this.forms)  {
+            this.configurationService.setConfiguration(this.algorithmService.getConfigurationName(), selectedAlgorithm, this.forms.formData);
         }
     }
 
@@ -453,8 +507,10 @@ export class ConfigurationPageComponent implements OnInit {
      * @protected
      */
     protected updateSelectCache(): void {
-        if (this.selection?.selectedOption) {
-            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), this.selection.selectedOption);
+        const selectedAlgorithm = this.getEffectiveSelectedAlgorithm();
+        if (selectedAlgorithm) {
+            this.selectedAlgorithm = selectedAlgorithm;
+            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), selectedAlgorithm);
         }
     }
 
@@ -554,8 +610,9 @@ export class ConfigurationPageComponent implements OnInit {
 
         this.updateSelectCache();
         this.updateConfigCache();
+        const selectedAlgorithm = this.getEffectiveSelectedAlgorithm();
 
-        if (!this.selection.selectedOption) {
+        if (!selectedAlgorithm) {
             this.configureJobs().subscribe({
                     next: () => this.finish(),
                     error: err => {
@@ -567,7 +624,7 @@ export class ConfigurationPageComponent implements OnInit {
             const config = this.hideAlgorithmConfigForm
                 ? {}
                 : (this.forms ? this.forms.formData : '');
-            this.postConfig(config).pipe(
+            this.postConfig(config, selectedAlgorithm).pipe(
                 switchMap(() => {
                     return this.configureJobs();
                 }),
@@ -585,8 +642,8 @@ export class ConfigurationPageComponent implements OnInit {
      * @param configuration The configuration object.
      * @private
      */
-    private postConfig(configuration: Object): Observable<void> {
-        const configurationString = stringify(this.algorithmService.createConfiguration(configuration, this.selection.selectedOption));
+    private postConfig(configuration: Object, selectedAlgorithm: Algorithm): Observable<void> {
+        const configurationString = stringify(this.algorithmService.createConfiguration(configuration, selectedAlgorithm));
         return this.configurationService.storeConfig(configurationString);
     }
 

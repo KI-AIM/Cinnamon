@@ -20,7 +20,7 @@ describe("TextSynthesisConfigurationService", () => {
 
         const algorithmGroup = root.get("text_synthesis_configuration.synthetization_configuration.algorithm") as any;
         expect(algorithmGroup).not.toBeNull();
-        expect(algorithmGroup?.get("synthesizer")?.value).toBe("llm_nearest_neighbor_few_shot_text_synthesis");
+        expect(algorithmGroup?.get("synthesizer")?.value).toBe("");
         expect(Object.keys(algorithmGroup.controls)).toEqual(["synthesizer"]);
     });
 

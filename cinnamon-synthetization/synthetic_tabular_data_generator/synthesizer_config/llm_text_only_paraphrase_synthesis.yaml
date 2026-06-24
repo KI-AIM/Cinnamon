@@ -19,10 +19,6 @@ configurations:
         default_value: ""
         values: []
         mandatory: true
-  model_parameter:
-    display_name: Rewrite Parameters
-    description: Configure prompt behavior for text-only paraphrasing.
-    parameters: []
   model_fitting:
     display_name: Prompt Configuration
     description: Configure optional domain context for information-preserving text rewriting.
@@ -43,9 +39,9 @@ configurations:
         type: integer
         label: Number of Samples
         description: Number of input rows to rewrite. Cannot exceed the number of provided rows.
-        default_value: 1
+        default_value: $dataset.original.numberRows
         min_value: 1
-        max_value: 1000000
+        max_value: $dataset.original.numberRows
       - name: temperature
         type: float
         label: Temperature

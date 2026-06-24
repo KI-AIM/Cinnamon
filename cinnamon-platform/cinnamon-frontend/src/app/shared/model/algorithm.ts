@@ -7,34 +7,58 @@ export class Algorithm {
     version: string
     URL: string
     processing_capabilities?: {
+        data_modality?: "structured_only" | "text_only" | "mixed"
+        generation_scope?: "structured_only" | "text_only"
         supports_structured_data?: boolean
         supports_free_text_data?: boolean
     }
 }
 
-export function supportsStructuredData(algorithm: Algorithm): boolean {
-    const supportsStructured = algorithm.processing_capabilities?.supports_structured_data;
-    if (supportsStructured === undefined) {
-        return !algorithm.name.includes("text");
+function getDataModality(algorithm: Algorithm): "structured_only" | "text_only" | "mixed" {
+    const modality = algorithm.processing_capabilities?.data_modality;
+    if (modality != null) {
+        return modality;
     }
-    return supportsStructured;
+
+    const supportsStructured = algorithm.processing_capabilities?.supports_structured_data;
+    const supportsFreeText = algorithm.processing_capabilities?.supports_free_text_data;
+    if (supportsStructured === false && supportsFreeText === true) {
+        return "mixed";
+    }
+
+    return algorithm.name.includes("text") ? "mixed" : "structured_only";
+}
+
+function getGenerationScope(algorithm: Algorithm): "structured_only" | "text_only" {
+    const scope = algorithm.processing_capabilities?.generation_scope;
+    if (scope != null) {
+        return scope;
+    }
+
+    const supportsFreeText = algorithm.processing_capabilities?.supports_free_text_data;
+    if (supportsFreeText != null) {
+        return supportsFreeText ? "text_only" : "structured_only";
+    }
+
+    return algorithm.name.includes("text") ? "text_only" : "structured_only";
+}
+
+export function supportsStructuredData(algorithm: Algorithm): boolean {
+    return getDataModality(algorithm) !== "text_only";
 }
 
 export function supportsFreeTextData(algorithm: Algorithm): boolean {
-    const supportsFreeText = algorithm.processing_capabilities?.supports_free_text_data;
-    if (supportsFreeText === undefined) {
-        return algorithm.name.includes("text");
-    }
-    return supportsFreeText;
+    return getGenerationScope(algorithm) === "text_only";
 }
 
 export function isTextOnlySynthesizer(algorithm: Algorithm): boolean {
-    const supportsStructured = algorithm.processing_capabilities?.supports_structured_data;
-    const supportsFreeText = algorithm.processing_capabilities?.supports_free_text_data;
+    return getDataModality(algorithm) === "text_only" && getGenerationScope(algorithm) === "text_only";
+}
 
-    if (supportsStructured !== undefined || supportsFreeText !== undefined) {
-        return supportsStructured === false && supportsFreeText === true;
-    }
+export function isStructuredOnlySynthesizer(algorithm: Algorithm): boolean {
+    return getDataModality(algorithm) === "structured_only" && getGenerationScope(algorithm) === "structured_only";
+}
 
-    return algorithm.name.includes("text");
+export function isMixedTextSynthesizer(algorithm: Algorithm): boolean {
+    return getDataModality(algorithm) === "mixed" && getGenerationScope(algorithm) === "text_only";
 }

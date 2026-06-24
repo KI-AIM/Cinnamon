@@ -52,6 +52,13 @@ public class Algorithm {
 	private String version;
 
 	/**
+	 * Processing capabilities of the algorithm.
+	 */
+	@Schema(description = "Processing capabilities of the algorithm.")
+	@JsonProperty("processing_capabilities")
+	private ProcessingCapabilities processingCapabilities;
+
+	/**
 	 * Endpoint for fetching the algorithm definition.
 	 */
 	@Schema(description = "Endpoint for fetching the algorithm definition.", example = "/ctgan")

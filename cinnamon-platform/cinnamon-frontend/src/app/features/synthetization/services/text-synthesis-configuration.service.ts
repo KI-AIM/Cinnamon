@@ -12,7 +12,6 @@ import { DataConfiguration } from "@shared/model/data-configuration";
 })
 export class TextSynthesisConfigurationService {
     public readonly formGroupName = "text_synthesis_configuration";
-    private readonly defaultTextSynthesizer = "llm_nearest_neighbor_few_shot_text_synthesis";
 
     constructor(
         private readonly formBuilder: FormBuilder,
@@ -54,7 +53,7 @@ export class TextSynthesisConfigurationService {
         return this.formBuilder.group({
             synthetization_configuration: this.formBuilder.group({
                 algorithm: this.formBuilder.group({
-                    synthesizer: new FormControl({value: algorithm.synthesizer ?? this.defaultTextSynthesizer, disabled}, [Validators.required]),
+                    synthesizer: new FormControl({value: algorithm.synthesizer ?? "", disabled}, [Validators.required]),
                 }),
             }),
         });

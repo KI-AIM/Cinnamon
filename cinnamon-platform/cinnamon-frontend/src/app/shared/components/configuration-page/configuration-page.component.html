@@ -22,9 +22,9 @@
             </app-workstep-item>
 
             <!-- Algorithm Selection -->
-            <app-workstep-item [header]="selectionStepHeader" [locked]="data.locked"
+            <app-workstep-item [header]="getSelectionStepHeader(data.dataConfiguration)" [locked]="data.locked"
                                [skip]="!hasAlgorithmSelection" [stepIndex]="2" [invalid]="selectedAlgorithm == null">
-                <app-configuration-selection #selection [algorithms]="getStructuredAlgorithms(data.algorithms)"
+                <app-configuration-selection #selection [algorithms]="getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)"
                                              [disabled]="data.locked || !oneEnabled"
                                              [initialValue]="data.configurationData.selectedAlgorithm"
                                              (change)="onSelectionChange($event)">
@@ -32,14 +32,14 @@
             </app-workstep-item>
 
             <!-- Hyperparameter Tuning (optional, injected by the parent page) -->
-            <app-workstep-item *ngIf="intermediateStep" header="Configure hyperparameter tuning"
+            <app-workstep-item *ngIf="intermediateStep && !isTextOnlyDataset(data.dataConfiguration)" header="Configure hyperparameter tuning"
                                [locked]="data.locked" [stepIndex]="3">
                 <ng-container *ngTemplateOutlet="intermediateStep"></ng-container>
             </app-workstep-item>
 
             <!-- Algorithm Configuration -->
-            <app-workstep-item [header]="configurationStepHeader" [locked]="data.locked"
-                               [stepIndex]="getAlgorithmConfigurationStepIndex()"
+            <app-workstep-item [header]="getConfigurationStepHeader(data.dataConfiguration)" [locked]="data.locked"
+                               [stepIndex]="getAlgorithmConfigurationStepIndex(data.dataConfiguration)"
                                [invalid]="!hideAlgorithmConfigForm && structuredConfigurationInvalid">
                 <ng-container *ngIf="hideAlgorithmConfigForm; else algorithmConfigBody">
                     <div class="w-100 mt-4">
@@ -50,6 +50,20 @@
                 </ng-container>
                 <ng-template #algorithmConfigBody>
                     <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
+                        <ng-container *ngIf="getEffectiveSelectedAlgorithm(data.algorithms, data.dataConfiguration) as effectiveSelection; else structuredPlaceholder">
+                            <div *ngFor="let item of getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)" [id]="item">
+                                <ng-container *ngIf="effectiveSelection.name === item.name">
+                                    <app-configuration-form #form [algorithm]="item"
+                                                            [dataConfiguration]="data.dataConfiguration"
+                                                            [disabled]="data.locked || !oneEnabled"
+                                                            (onChange)="onFormChange($event)"
+                                                            [additionalConfigs]="additionalConfigs"
+                                                            [initialConfigurationData]="data.configurationData">
+                                    </app-configuration-form>
+                                </ng-container>
+                            </div>
+                        </ng-container>
+                        <ng-template #structuredPlaceholder>
                         <div class="ms-auto me-auto" style="width: fit-content">
                             <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
                                 Please select an algorithm in the previous step first.
@@ -58,9 +72,10 @@
                                 No algorithms available.
                             </ng-template>
                         </div>
+                        </ng-template>
                     </div>
                     <ng-template #configurationForms>
-                        <div *ngFor="let item of getStructuredAlgorithms(data.algorithms)" [id]="item">
+                        <div *ngFor="let item of getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)" [id]="item">
                             <ng-container *ngIf="selectedAlgorithm != null && selectedAlgorithm.name === item.name">
                                 <app-configuration-form #form [algorithm]="item"
                                                         [dataConfiguration]="data.dataConfiguration"
@@ -78,7 +93,7 @@
             <ng-container *ngIf="shouldShowFreeTextSteps(data.dataConfiguration)">
                 <!-- Free-text Selection -->
                 <app-workstep-item header="Select the free-text synthesizer" [locked]="data.locked"
-                                   [stepIndex]="getFreeTextSelectionStepIndex()" [skip]="!hasFreeTextConfiguration"
+                                   [stepIndex]="getFreeTextSelectionStepIndex(data.dataConfiguration)" [skip]="!hasFreeTextConfiguration"
                                    [invalid]="freeTextSelectionInvalid">
                     <ng-container *ngIf="forms?.form as rootForm">
                         <div [formGroup]="rootForm">
@@ -102,7 +117,7 @@
 
                 <!-- Free-text Configuration -->
                 <app-workstep-item header="Configure the free-text synthesizer" [locked]="data.locked"
-                                   [stepIndex]="getFreeTextConfigurationStepIndex()" [skip]="!hasFreeTextConfiguration"
+                                   [stepIndex]="getFreeTextConfigurationStepIndex(data.dataConfiguration)" [skip]="!hasFreeTextConfiguration"
                                    [invalid]="freeTextConfigurationInvalid">
                     <ng-container *ngIf="getFreeTextAlgorithmGroup() as freeTextAlgorithmForm">
                         <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms, data.dataConfiguration) | async as freeTextDefinition">
@@ -131,19 +146,19 @@
                              (input)="uploadConfiguration($event)"></app-file-upload>
         </app-workstep-box>
 
-        <app-workstep-box [header]="selectionStepHeader" [class.d-none]="!hasAlgorithmSelection">
-            <app-configuration-selection #selection [algorithms]="getStructuredAlgorithms(data.algorithms)"
+        <app-workstep-box [header]="getSelectionStepHeader(data.dataConfiguration)" [class.d-none]="!hasAlgorithmSelection">
+            <app-configuration-selection #selection [algorithms]="getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)"
                                          [initialValue]="data.configurationData.selectedAlgorithm"
                                          [disabled]="data.locked || !oneEnabled"
                                          (change)="onSelectionChange($event)">
             </app-configuration-selection>
         </app-workstep-box>
 
-        <app-workstep-box *ngIf="intermediateStep" header="Hyperparameter Tuning">
+        <app-workstep-box *ngIf="intermediateStep && !isTextOnlyDataset(data.dataConfiguration)" header="Hyperparameter Tuning">
             <ng-container *ngTemplateOutlet="intermediateStep"></ng-container>
         </app-workstep-box>
 
-        <app-workstep-box [header]="configurationStepHeader"
+        <app-workstep-box [header]="getConfigurationStepHeader(data.dataConfiguration)"
                           [invalid]="selectedAlgorithm !== null && !hideAlgorithmConfigForm && structuredConfigurationInvalid">
             <ng-container *ngIf="hideAlgorithmConfigForm; else algorithmConfigBodyExpert">
                 <div class="w-100 py-3">
@@ -154,6 +169,19 @@
             </ng-container>
             <ng-template #algorithmConfigBodyExpert>
                 <div *ngIf="!selectedAlgorithm; else configurationForms" id="placeholder" class="w-100 mt-4">
+                    <ng-container *ngIf="getEffectiveSelectedAlgorithm(data.algorithms, data.dataConfiguration) as effectiveSelection; else expertPlaceholder">
+                        <div *ngFor="let item of getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)" [id]="item">
+                            <ng-container *ngIf="effectiveSelection.name === item.name">
+                                <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
+                                                        [dataConfiguration]="data.dataConfiguration"
+                                                        [disabled]="data.locked || !oneEnabled"
+                                                        [initialConfigurationData]="data.configurationData"
+                                                        (onChange)="onFormChange($event)">
+                                </app-configuration-form>
+                            </ng-container>
+                        </div>
+                    </ng-container>
+                    <ng-template #expertPlaceholder>
                     <div class="ms-auto me-auto" style="width: fit-content">
                         <ng-container *ngIf="hasAlgorithmSelection; else noAlgorithmSelection">
                             Please select an algorithm.
@@ -162,9 +190,10 @@
                             No algorithms available.
                         </ng-template>
                     </div>
+                    </ng-template>
                 </div>
                 <ng-template #configurationForms>
-                    <div *ngFor="let item of getStructuredAlgorithms(data.algorithms)" [id]="item">
+                    <div *ngFor="let item of getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)" [id]="item">
                         <ng-container *ngIf="selectedAlgorithm!.name === item.name">
                             <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
                                                     [dataConfiguration]="data.dataConfiguration"

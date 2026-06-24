@@ -6,54 +6,74 @@
 
     <hr class="hr">
 
-    <ul class="nav flex-column justify-content-start">
+    @if (pageData$ | async; as pageData) {
 
-        <li *ngFor="let step of StepConfiguration | keyvalue: indexOrderAsc" class="nav-item">
-            <a class="nav-link"
-            [id]="step.value.id"
-            [routerLink]="[step.value.path]"
-            [routerLinkActive]="['active']"
-            [ngClass]="{'completed': statusService.getCompletedSteps().contains(step.value.enum), 'disabled': !userService.isAuthenticated() || (step.value.dependsOn != null && !statusService.getCompletedSteps().contains(step.value.dependsOn))}">
-                {{step.value.text}}
-            </a>
-        </li>
-    </ul>
+        @if (pageData.isAdmin) {
 
-    <hr class="hr">
-    <ul class="nav flex-column justify-content-start">
-        <li class="nav-item">
-            <a class="nav-link" title="Project Settings" (click)="openProjectSettings()"
-               [ngClass]="{'disabled': !userService.isAuthenticated()}">
-                Project Settings
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" title="Project Export" (click)="openProjectExport()"
-               [ngClass]="{'disabled': !userService.isAuthenticated()}">
-                Project Export
-            </a>
-        </li>
-    </ul>
+            <ul class="nav flex-column justify-content-start">
+                <li class="nav-item">
+                    <a class="nav-link" routerLink="/admin">Security</a>
+                    <a class="nav-link" routerLink="/admin">Models</a>
+                    <a class="nav-link" routerLink="/admin">External Modules</a>
+                    <a class="nav-link" routerLink="/admin">Settings</a>
+                </li>
+            </ul>
+
+        } @else {
+
+            <ul class="nav flex-column justify-content-start">
+
+                <li *ngFor="let step of StepConfiguration | keyvalue: indexOrderAsc" class="nav-item">
+                    <a class="nav-link"
+                       [id]="step.value.id"
+                       [routerLink]="[step.value.path]"
+                       [routerLinkActive]="['active']"
+                       [ngClass]="{'completed': statusService.getCompletedSteps().contains(step.value.enum), 'disabled': !userService.isAuthenticated() || (step.value.dependsOn != null && !statusService.getCompletedSteps().contains(step.value.dependsOn))}">
+                        {{step.value.text}}
+                    </a>
+                </li>
+            </ul>
+
+            <hr class="hr">
+            <ul class="nav flex-column justify-content-start">
+                <li class="nav-item">
+                    <a class="nav-link" title="Project Settings" (click)="openProjectSettings()"
+                       [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                        Project Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" title="Project Export" (click)="openProjectExport()"
+                       [ngClass]="{'disabled': !userService.isAuthenticated()}">
+                        Project Export
+                    </a>
+                </li>
+            </ul>
 
 
-    <div class="nav-bottom">
+            <div class="nav-bottom">
 
-        <a [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
-            <mat-icon>logout</mat-icon>
-            <span>Close Project</span>
-        </a>
+                <a [hidden]="!userService.isAuthenticated()" class="logout" (click)="onLogout()">
+                    <mat-icon>logout</mat-icon>
+                    <span>Close Project</span>
+                </a>
 
-        <div class="nav-bottom-right">
-            <div class="site-link">
-                <!-- ID is used for external selenium script. DO NOT REMOVE OR CHANGE! -->
-                <a id="imprint" (click)="openDialog(imprintDialog)">Imprint</a>
+                <div class="nav-bottom-right">
+                    <div class="site-link">
+                        <!-- ID is used for external selenium script. DO NOT REMOVE OR CHANGE! -->
+                        <a id="imprint" (click)="openDialog(imprintDialog)">Imprint</a>
+                    </div>
+                    <div class="site-link">
+                        <a href="https://www.medizin.uni-muenster.de/en/faculty-of-medicine/dataprotection.html"
+                           target="_blank">Data Privacy</a>
+                    </div>
+                </div>
             </div>
-            <div class="site-link">
-                <a href="https://www.medizin.uni-muenster.de/en/faculty-of-medicine/dataprotection.html"
-                   target="_blank">Data Privacy</a>
-            </div>
-        </div>
-    </div>
+
+        }
+
+    }
+
 
     <app-project-settings></app-project-settings>
     <app-project-export *ngIf="userService.isAuthenticated()"></app-project-export>

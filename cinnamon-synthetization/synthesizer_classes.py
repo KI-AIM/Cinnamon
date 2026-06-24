@@ -8,6 +8,9 @@ from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_few_shot_t
 from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_knowledge_grounded_text_synthesis import (
     LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
 )
+from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
+    LlmTextOnlyParaphraseSynthesisSynthesizer,
+)
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
@@ -84,6 +87,14 @@ synthesizer_classes = {
         'display_name': 'LLM Knowledge-grounded Text Synthesis',
         'description': 'Generate synthetic medical free-text fields using an LLM with dynamically selected similar original examples. Knowledge-base grounding is not implemented yet and is currently exposed only as NOT_IMPLEMENTED.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml'
+    },
+    'llm_text_only_paraphrase_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTextOnlyParaphraseSynthesisSynthesizer,
+        'display_name': 'LLM Text-only Paraphrase Synthesis',
+        'description': 'Rewrite TEXT-only input rows with an LLM while preserving the original information content. This synthesizer expects only TEXT columns and rephrases each non-missing field without changing meaning.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_paraphrase_synthesis.yaml'
     }
 }
 

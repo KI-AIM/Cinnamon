@@ -1153,6 +1153,7 @@ def get_synthesizer_config(module_name, filename):
                 "llm_tabular.yaml",
                 "llm_nearest_neighbor_few_shot_text_synthesis.yaml",
                 "llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml",
+                "llm_text_only_paraphrase_synthesis.yaml",
             }
         )
         if not is_dynamic_llm_definition:

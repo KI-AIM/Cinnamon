@@ -1,0 +1,62 @@
+name: llm_text_only_paraphrase_synthesis
+version: "0.1"
+type: cross-sectional
+display_name: LLM Text-only Paraphrase Synthesis
+description: Rewrite TEXT-only input rows with an LLM while preserving the original information content. The model rewrites each non-missing TEXT field in new wording and keeps missing fields unchanged.
+URL: /start_synthetization_process/llm_text_only_paraphrase_synthesis
+processing_capabilities:
+  supports_structured_data: false
+  supports_free_text_data: true
+configurations:
+  llm_profile:
+    display_name: LLM Profile
+    description: Select which configured LLM instance should be used.
+    parameters:
+      - name: llm_profile
+        type: string
+        label: LLM Profile
+        description: Select the configured LLM profile.
+        default_value: ""
+        values: []
+        mandatory: true
+  model_parameter:
+    display_name: Rewrite Parameters
+    description: Configure prompt behavior for text-only paraphrasing.
+    parameters: []
+  model_fitting:
+    display_name: Prompt Configuration
+    description: Configure optional domain context for information-preserving text rewriting.
+    parameters:
+      - name: user_prompt_domain_context
+        type: string
+        multiline: true
+        rows: 5
+        label: Domain Context
+        description: Optional domain context to guide terminology and style during text rewriting.
+        default_value: ""
+        mandatory: false
+  sampling:
+    display_name: Sampling
+    description: Configure how many input rows are rewritten and how deterministic the LLM output should be.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Number of Samples
+        description: Number of input rows to rewrite. Cannot exceed the number of provided rows.
+        default_value: 1
+        min_value: 1
+        max_value: 1000000
+      - name: temperature
+        type: float
+        label: Temperature
+        description: Controls randomness of token sampling. Lower values are more deterministic.
+        default_value: 0.2
+        min_value: 0.0
+        max_value: 2.0
+      - name: top_p
+        type: float
+        label: Top-p
+        description: Controls nucleus sampling by limiting candidate tokens to a probability mass.
+        default_value: 0.9
+        min_value: 0.0
+        max_value: 1.0

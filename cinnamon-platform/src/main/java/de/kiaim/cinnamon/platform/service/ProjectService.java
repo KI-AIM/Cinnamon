@@ -233,6 +233,14 @@ public class ProjectService {
 				}
 
 				project.getConfigurations().clear();
+
+				if (parts.length > 1) {
+					if (parts[1].equals("dataset")) {
+						databaseService.deleteOriginalDatasetIgnoreConfirmed(project);
+					} else if (parts[1].equals("file")) {
+						databaseService.deleteOriginalData(project);
+					}
+				}
 			} else if (parts[0].equals("pipeline")) {
 				final Stage stage = stepService.getStageConfiguration(parts[1]);
 				processService.deleteStage(project, stage);

@@ -557,7 +557,7 @@ public class DatabaseService {
 	 * If the dataset is confirmed, an exception will be thrown.
 	 * If no dataset is stored, nothing will be done.
 	 *
-	 * @param projectEntity The project of which the dataset should be deleted.
+	 * @param projectEntity   The project of which the dataset should be deleted.
 	 * @throws BadDataSetIdException               If the dataset is confirmed.
 	 * @throws InternalDataSetPersistenceException If there is an issue with the dataset persistence.
 	 */
@@ -565,6 +565,15 @@ public class DatabaseService {
 	public void deleteOriginalDataset(final ProjectEntity projectEntity)
 			throws BadDataSetIdException, InternalDataSetPersistenceException {
 		deleteDataSetIfNotConfirmedOrThrow(projectEntity.getOriginalData().getDataSet());
+	}
+
+	/**
+	 * Similar to {@link #deleteOriginalDataset(ProjectEntity)}, but does not throw an exception if the dataset is confirmed.
+	 */
+	@Transactional
+	public void deleteOriginalDatasetIgnoreConfirmed(final ProjectEntity projectEntity)
+			throws InternalDataSetPersistenceException {
+		deleteDataSet(projectEntity.getOriginalData().getDataSet());
 	}
 
 	/**

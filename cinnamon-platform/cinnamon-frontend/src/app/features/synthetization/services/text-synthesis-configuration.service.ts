@@ -155,6 +155,14 @@ export class TextSynthesisConfigurationService {
             return new FormArray(controls, mandatory ? Validators.required : null);
         }
 
+        if (inputDefinition.type === ConfigurationInputType.NAMED_LIST) {
+            const values = Array.isArray(resolvedInitialValue) ? resolvedInitialValue : [];
+            return new FormArray(
+                values.map(value => this.createNamedListItemGroup(value, disabled)),
+                mandatory ? Validators.required : null,
+            );
+        }
+
         if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
             const selectedValues = Array.isArray(resolvedInitialValue) ? resolvedInitialValue : [];
             return new FormArray(
@@ -190,5 +198,15 @@ export class TextSynthesisConfigurationService {
 
     private isMandatory(inputDefinition: { mandatory?: boolean | null }): boolean {
         return inputDefinition.mandatory !== false;
+    }
+
+    private createNamedListItemGroup(
+        item: {name?: string, description?: string},
+        disabled: boolean,
+    ): FormGroup {
+        return this.formBuilder.group({
+            name: new FormControl({value: item?.name ?? "", disabled}, Validators.required),
+            description: new FormControl({value: item?.description ?? "", disabled}),
+        });
     }
 }

@@ -43,6 +43,12 @@
                 </div>
             </ng-container>
 
+            <ng-container *ngSwitchCase="ConfigurationInputType.NAMED_LIST">
+                <app-configuration-input-named-list [configurationInputDefinition]="configurationInputDefinition"
+                                                    [parentForm]="form" [disabled]="disabled">
+                </app-configuration-input-named-list>
+            </ng-container>
+
             <ng-container *ngSwitchCase="ConfigurationInputType.BOOLEAN">
                 <mat-checkbox [formControlName]="configurationInputDefinition.name" color="primary">
                 </mat-checkbox>

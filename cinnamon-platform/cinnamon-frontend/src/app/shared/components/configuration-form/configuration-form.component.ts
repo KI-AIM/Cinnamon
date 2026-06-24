@@ -220,6 +220,13 @@ export class ConfigurationFormComponent implements OnInit {
                             formInverted.push(new FormControl(attribute.name));
                         }
                     }
+                } else if (key.type === ConfigurationInputType.NAMED_LIST) {
+                    const list = Array.isArray(obj?.[key.name]) ? obj[key.name] : [];
+                    const formList = form.get(key.name) as FormArray;
+                    formList.clear();
+                    for (const item of list) {
+                        formList.push(this.createNamedListItemGroup(item, this.disabled));
+                    }
                 }
             }
         }
@@ -273,6 +280,13 @@ export class ConfigurationFormComponent implements OnInit {
                     }
 
                     group[inputDefinition.name] = new FormArray(controls, mandatory ? Validators.required : null);
+                } else if (inputDefinition.type === ConfigurationInputType.NAMED_LIST) {
+                    const initialValue = initialValues[inputDefinition.name] ?? inputDefinition.default_value ?? [];
+                    const controls = [];
+                    for (const item of initialValue as Array<{name?: string, description?: string}>) {
+                        controls.push(this.createNamedListItemGroup(item, this.disabled));
+                    }
+                    group[inputDefinition.name] = new FormArray(controls, mandatory ? Validators.required : null);
                 } else if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
                     group[inputDefinition.name] = new FormArray([], mandatory ? Validators.required : null);
                     if (inputDefinition.invert) {
@@ -312,6 +326,16 @@ export class ConfigurationFormComponent implements OnInit {
 
     private isMandatory(inputDefinition: { mandatory?: boolean | null }): boolean {
         return inputDefinition.mandatory !== false;
+    }
+
+    private createNamedListItemGroup(
+        item: {name?: string, description?: string},
+        disabled: boolean,
+    ): FormGroup {
+        return new FormGroup({
+            name: new FormControl({value: item?.name ?? "", disabled}, Validators.required),
+            description: new FormControl({value: item?.description ?? "", disabled}),
+        });
     }
 
     private resolveAdditionalConfigs(additionalConfigs: ConfigurationAdditionalConfigs | null): ConfigurationAdditionalConfigs | null {

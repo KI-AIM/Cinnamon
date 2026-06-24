@@ -5,5 +5,6 @@ export enum ConfigurationInputType {
     FLOAT = 'float',
     INTEGER = 'integer',
     LIST = 'list',
+    NAMED_LIST = 'named_list',
     STRING = 'string',
 }

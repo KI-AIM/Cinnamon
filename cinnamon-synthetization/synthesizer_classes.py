@@ -11,6 +11,9 @@ from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_knowledge_
 from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
     LlmTextOnlyParaphraseSynthesisSynthesizer,
 )
+from synthetic_tabular_data_generator.algorithms.llm_text_only_semantic_variation_synthesis import (
+    LlmTextOnlySemanticVariationSynthesisSynthesizer,
+)
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
 
@@ -86,6 +89,14 @@ synthesizer_classes = {
         'display_name': 'LLM Text-only Paraphrase Synthesis',
         'description': 'Rewrite TEXT-only input rows with an LLM while preserving the original information content. This synthesizer expects only TEXT columns and rephrases each non-missing field without changing meaning.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_paraphrase_synthesis.yaml'
+    },
+    'llm_text_only_semantic_variation_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTextOnlySemanticVariationSynthesisSynthesizer,
+        'display_name': 'LLM Text-only Semantic Variation Synthesis',
+        'description': 'Generate new TEXT-only rows for fictional but plausible patients by sampling source texts and asking an LLM to create semantically similar variations. The generated text may add, omit, or change details as long as it remains close in topic and style to the sampled source.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_semantic_variation_synthesis.yaml'
     }
 }
 

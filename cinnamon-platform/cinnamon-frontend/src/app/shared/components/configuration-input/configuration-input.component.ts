@@ -142,6 +142,12 @@ export class ConfigurationInputComponent implements OnInit, OnDestroy {
             for (const defaultValue of this.configurationInputDefinition.default_value as number[]) {
                 formArray.push(new FormControl(defaultValue, Validators.required));
             }
+        } else if (this.configurationInputDefinition.type === ConfigurationInputType.NAMED_LIST) {
+            const formArray = this.form.controls[this.configurationInputDefinition.name] as FormArray
+            formArray.clear();
+            for (const item of this.configurationInputDefinition.default_value as Array<{name: string, description: string}>) {
+                formArray.push(this.createNamedListItemGroup(item));
+            }
         } else if (this.configurationInputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
             const formArray = this.form.controls[this.configurationInputDefinition.name] as FormArray
             formArray.clear();
@@ -162,5 +168,12 @@ export class ConfigurationInputComponent implements OnInit, OnDestroy {
     protected isMultilineStringInput(): boolean {
         return this.configurationInputDefinition.type === ConfigurationInputType.STRING
             && this.configurationInputDefinition.multiline === true;
+    }
+
+    private createNamedListItemGroup(item?: {name?: string, description?: string}): FormGroup {
+        return new FormGroup({
+            name: new FormControl(item?.name ?? "", Validators.required),
+            description: new FormControl(item?.description ?? ""),
+        });
     }
 }

@@ -76,7 +76,7 @@ SECTION_KEYS = {"display_name", "description", "parameters"}
 PARAM_REQUIRED_KEYS = {"name", "type", "label", "description", "default_value"}
 PARAM_OPTIONAL_KEYS = {"min_value", "max_value", "values", "mandatory", "multiline", "rows"}
 PARAM_ALLOWED_KEYS = PARAM_REQUIRED_KEYS | PARAM_OPTIONAL_KEYS
-ALLOWED_PARAM_TYPES = {"integer", "float", "string", "list", "boolean"}
+ALLOWED_PARAM_TYPES = {"integer", "float", "string", "list", "boolean", "named_list"}
 
 
 def _load_yaml(path: Path) -> dict:
@@ -159,6 +159,13 @@ def test_configuration_sections_and_parameters():
                     assert isinstance(default_value, list)
                 elif param_type == "boolean":
                     assert isinstance(default_value, bool)
+                elif param_type == "named_list":
+                    assert isinstance(default_value, list)
+                    for item in default_value:
+                        assert isinstance(item, dict)
+                        assert set(item.keys()) == {"name", "description"}
+                        assert isinstance(item["name"], str)
+                        assert isinstance(item["description"], str)
 
                 if "values" in param:
                     assert isinstance(param["values"], list)
@@ -179,13 +186,17 @@ def test_configuration_sections_and_parameters():
                 if "min_value" in param or "max_value" in param:
                     assert param_type in {"integer", "float"}
                     if "min_value" in param:
-                        assert _is_number(param["min_value"])
+                        assert _is_number(param["min_value"]) or _is_placeholder(param["min_value"])
                     if "max_value" in param:
-                        assert _is_number(param["max_value"])
+                        assert _is_number(param["max_value"]) or _is_placeholder(param["max_value"])
                     if "min_value" in param and "max_value" in param:
-                        assert param["min_value"] <= param["max_value"]
+                        if _is_number(param["min_value"]) and _is_number(param["max_value"]):
+                            assert param["min_value"] <= param["max_value"]
                         if _is_number(default_value):
-                            assert param["min_value"] <= default_value <= param["max_value"]
+                            if _is_number(param["min_value"]):
+                                assert param["min_value"] <= default_value
+                            if _is_number(param["max_value"]):
+                                assert default_value <= param["max_value"]
 
 
 def test_yaml_matches_synthesizer_classes_name_version_type():

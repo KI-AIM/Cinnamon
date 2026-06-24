@@ -50,6 +50,9 @@ import {
     ConfigurationInputAttributeListComponent
 } from './components/configuration-input-attribute-list/configuration-input-attribute-list.component';
 import {
+    ConfigurationInputNamedListComponent
+} from './components/configuration-input-named-list/configuration-input-named-list.component';
+import {
     ConfigurationInputInfoComponent
 } from './components/configuration-input-info/configuration-input-info.component';
 import { ConfigurationInputComponent } from './components/configuration-input/configuration-input.component';
@@ -115,6 +118,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         ConfigurationGroupComponent,
         ConfigurationInputArrayComponent,
         ConfigurationInputAttributeListComponent,
+        ConfigurationInputNamedListComponent,
         ConfigurationInputComponent,
         ConfigurationInputInfoComponent,
         ConfigurationPageComponent,
@@ -197,6 +201,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         ConfigurationFormComponent,
         ConfigurationGroupComponent,
         ConfigurationInputComponent,
+        ConfigurationInputNamedListComponent,
         ConfigurationInputInfoComponent,
         ConfigurationPageComponent,
         DataInspectionComponent,

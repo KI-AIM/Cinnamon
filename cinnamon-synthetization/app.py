@@ -1232,19 +1232,13 @@ def get_synthesizer_config(module_name, filename):
             error_message = 'Invalid file path. Access to files outside the allowed directory is not allowed.'
             return jsonify({'error': error_message}), 403
 
-        is_dynamic_llm_definition = (
-            module_name == "synthetic_tabular_data_generator"
-            and filename.lower() in {
-                "llm_nearest_neighbor_few_shot_text_synthesis.yaml",
-                "llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml",
-                "llm_text_only_paraphrase_synthesis.yaml",
-            }
-        )
+        is_dynamic_llm_definition = False
+        if module_name == "synthetic_tabular_data_generator":
+            with open(config_path, "r", encoding="utf-8") as file:
+                config_content = yaml.safe_load(file) or {}
+            is_dynamic_llm_definition = "llm_profile" in (config_content.get("configurations", {}) or {})
         if not is_dynamic_llm_definition:
             return send_from_directory(config_directory, filename)
-
-        with open(config_path, "r", encoding="utf-8") as file:
-            config_content = yaml.safe_load(file) or {}
         config_content = inject_llm_profile_parameter(config_content)
         return Response(yaml.safe_dump(config_content, sort_keys=False), mimetype='text/yaml')
     except FileNotFoundError:

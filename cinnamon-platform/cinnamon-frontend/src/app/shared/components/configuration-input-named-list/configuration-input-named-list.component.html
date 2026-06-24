@@ -20,7 +20,7 @@
         <div *ngFor="let control of formArray.controls; index as i" [formGroupName]="i" class="value-row">
             <mat-form-field class="name-field">
                 <mat-label>Attribute name</mat-label>
-                <input type="text" formControlName="name" matInput/>
+                <textarea formControlName="name" rows="2" matInput></textarea>
                 <mat-error *ngIf="formArray.at(i).get('name')?.hasError('required')">
                     Attribute name must not be empty
                 </mat-error>
@@ -28,7 +28,7 @@
 
             <mat-form-field class="description-field">
                 <mat-label>Description</mat-label>
-                <textarea formControlName="description" rows="3" matInput></textarea>
+                <textarea formControlName="description" rows="2" matInput></textarea>
             </mat-form-field>
 
             <div class="remove-button">

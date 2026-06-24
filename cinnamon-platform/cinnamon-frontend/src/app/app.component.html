@@ -28,9 +28,9 @@
                 <ng-container *ngIf="locked$ | async as locked">
                     <app-info-card *ngIf="locked.isLocked" typeClass="card-warn">
                         <div *ngIf="locked.reasons.includes(LockedReason.STEP_CONFIRMED)">
-                            The data import is locked as subsequent steps depend on it.
-                            In order to modify the data configuration, you have to reset the subsequent steps first.
-
+                            The {{ locked.currentStep?.text }} is locked as subsequent steps depend on it.
+                            In order to modify the {{ locked.currentStep?.text }}, you have to reset the subsequent steps first.
+                            <br/>
                             <button mat-raised-button color="warn"
                                     [disabled]="locked.reasons.includes(LockedReason.PROCESS_RUNNING)"
                                     (click)="openDeleteDialog(deleteDialog);">

@@ -1,13 +1,14 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { KeyValue } from '@angular/common';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { MatDialog } from "@angular/material/dialog";
+import { NavigationService } from "@core/services/navigation.service";
 import { ProjectExportComponent } from "@shared/components/project-export/project-export.component";
+import { StatusService } from "@shared/services/status.service";
+import { combineLatest, Observable } from "rxjs";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
+import { UserService } from 'src/app/shared/services/user.service';
 import { Mode } from '../../enums/mode';
 import { StepConfiguration, Steps } from '../../enums/steps';
-import { KeyValue } from '@angular/common';
-import { UserService } from 'src/app/shared/services/user.service';
-import { StatusService } from "../../../shared/services/status.service";
-import { HttpClient } from "@angular/common/http";
-import { MatDialog } from "@angular/material/dialog";
 
 @Component({
     selector: 'app-navigation',
@@ -16,7 +17,7 @@ import { MatDialog } from "@angular/material/dialog";
     standalone: false
 })
 
-export class NavigationComponent {
+export class NavigationComponent implements OnInit{
     Mode = Mode;
     Steps = Steps;
     StepConfiguration = StepConfiguration;
@@ -24,12 +25,22 @@ export class NavigationComponent {
     @ViewChild(ProjectExportComponent) private projectExport: ProjectExportComponent;
     @ViewChild(ProjectSettingsComponent) private projectSettings: ProjectSettingsComponent;
 
+    protected pageData$: Observable<{
+        isAdmin: boolean;
+    }>;
+
     constructor(
         private readonly dialog: MatDialog,
-        private readonly http: HttpClient,
+        private readonly navigationService: NavigationService,
         protected statusService: StatusService,
         public userService: UserService,
     ) { }
+
+    public ngOnInit(): void {
+        this.pageData$ = combineLatest({
+            isAdmin: this.navigationService.isAdmin$,
+        });
+    }
 
     indexOrderAsc = (akv: KeyValue<string, any>, bkv: KeyValue<string, any>): number => {
         const a = akv.value.index;

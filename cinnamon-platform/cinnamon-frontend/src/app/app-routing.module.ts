@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NotFoundComponent } from "@core/components/not-found/not-found.component";
+import { AdminPageComponent } from "@features/administration/components/admin-page/admin-page.component";
 import { StartpageComponent } from './features/start/pages/startpage/startpage.component';
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 import { DataConfigurationComponent } from './features/data-upload/pages/data-configuration/data-configuration.component';
@@ -24,6 +25,9 @@ import { ReportComponent } from "./features/report/pages/report/report.component
 
 const routes: Routes = [
     {path: '', redirectTo: 'open', pathMatch: 'full'},
+
+    {path: 'admin', component: AdminPageComponent},
+
     {path: 'open' , component: LoginComponent},
     {path: 'create', component: RegisterComponent},
     {path: 'start', component: StartpageComponent, canActivate: [AuthGuard]},

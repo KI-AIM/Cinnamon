@@ -5,8 +5,8 @@ display_name: LLM Text-only Paraphrase Synthesis
 description: Rewrite TEXT-only input rows with an LLM while preserving the original information content. The model rewrites each non-missing TEXT field in new wording and keeps missing fields unchanged.
 URL: /start_synthetization_process/llm_text_only_paraphrase_synthesis
 processing_capabilities:
-  supports_structured_data: false
-  supports_free_text_data: true
+  data_modality: text_only
+  generation_scope: text_only
 configurations:
   llm_profile:
     display_name: LLM Profile

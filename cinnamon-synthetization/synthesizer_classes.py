@@ -11,7 +11,6 @@ from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_knowledge_
 from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
     LlmTextOnlyParaphraseSynthesisSynthesizer,
 )
-from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
 
@@ -63,14 +62,6 @@ synthesizer_classes = {
         'display_name': 'Robust Tabular Variational Autoencoder',
         'description': 'Robust Tabular Variational Autoencoder (RTVAE) is a generative model designed to create realistic synthetic tabular data while being more resilient to noise and outliers in the original dataset. Leveraging a variational autoencoder architecture with beta divergence learning, RTVAE learns robust latent representations and generates new rows by sampling from this learned latent space. This makes the model especially useful for datasets that contain imperfect, noisy, or partially inconsistent records. RTVAE helps preserve important statistical structures while reducing the influence of extreme or unreliable observations.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/rtvae.yaml'
-    },
-    'llm_tabular': {
-        'version': '0.1',
-        'type': 'cross-sectional',
-        'class': LlmTabularSynthesizer,
-        'display_name': 'LLM Dataset Generator',
-        'description': 'The LLM Dataset Generator is a configurable language-model-based synthesizer designed to create fully synthetic tabular datasets from source data using Ollama or OpenAI-compatible APIs. Leveraging the reasoning and pattern-completion capabilities of large language models, it can generate new rows that follow the structure, semantics, and value patterns of the original dataset. This approach is particularly useful when domain-specific context, textual meaning, or flexible generation rules are important. It also allows synthetic data generation to be guided through prompts and configuration settings rather than relying only on statistical model training.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     },
     'llm_nearest_neighbor_few_shot_text_synthesis': {
         'version': '0.1',

@@ -255,13 +255,6 @@ Logs are written under `outputs/prompts/` by default.
 
 ## Notes On LLM-Based Synthesizers
 
-### `llm_tabular`
-
-Generates fully synthetic rows with an LLM. For datasets with TEXT columns, it works in two steps:
-
-1. generate structured non-TEXT values
-2. generate TEXT values conditioned on the structured row
-
 ### `llm_nearest_neighbor_few_shot_text_synthesis`
 
 Used when structured rows already exist and only TEXT fields should be synthesized or enriched. It can optionally repair inconsistent structured values before generating text.

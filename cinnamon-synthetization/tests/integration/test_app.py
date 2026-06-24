@@ -287,7 +287,7 @@ def test_start_synthetization_process_returns_400_when_session_key_is_missing():
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={},
         content_type="multipart/form-data",
     )
@@ -302,7 +302,7 @@ def test_start_synthetization_process_returns_400_when_callback_is_missing():
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={"session_key": "session-without-callback"},
         content_type="multipart/form-data",
     )
@@ -316,13 +316,13 @@ def test_start_synthetization_process_returns_400_when_callback_is_missing():
 
 def test_start_synthetization_process_allows_missing_original_data_for_text_synthesis(monkeypatch):
     app_module.tasks.clear()
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_tabular")
+    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_nearest_neighbor_few_shot_text_synthesis")
     monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
     monkeypatch.setattr(app_module.PROCESS_CONTEXT, "Process", StartedProcess)
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/llm_text_only_paraphrase_synthesis",
         data={
             "session_key": "session-without-original-data",
             "callback": "http://callback.local/test",
@@ -382,7 +382,7 @@ def test_start_synthetization_process_returns_400_for_invalid_attribute_config_y
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={
             "session_key": "invalid-attribute-config",
             "callback": "http://callback.local/test",
@@ -408,7 +408,7 @@ def test_start_synthetization_process_returns_400_for_invalid_algorithm_config_s
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={
             "session_key": "invalid-algorithm-config",
             "callback": "http://callback.local/test",
@@ -434,7 +434,7 @@ def test_start_synthetization_process_returns_400_for_invalid_data_csv():
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={
             "session_key": "invalid-data-csv",
             "callback": "http://callback.local/test",
@@ -513,7 +513,7 @@ def test_cancel_synthetization_process_cleans_up_task_and_marks_status_cancelled
     session_key = "cancel-success-session"
     status_path = _status_file_path(session_key)
     _delete_status_file(session_key)
-    initialize_status_file(str(status_path), session_key, "llm_tabular")
+    initialize_status_file(str(status_path), session_key, "ctgan")
 
     process = CancelableProcess(pid=9876, alive=True)
     app_module.tasks[session_key] = process
@@ -552,7 +552,7 @@ def test_get_status_prunes_finished_tasks():
     session_key = "finished-task-session"
     status_path = _status_file_path(session_key)
     _delete_status_file(session_key)
-    initialize_status_file(str(status_path), session_key, "llm_tabular")
+    initialize_status_file(str(status_path), session_key, "ctgan")
     app_module.tasks[session_key] = FinishedProcess(pid=2468)
     client = app_module.app.test_client()
 
@@ -826,8 +826,8 @@ def test_get_algorithms_includes_processing_capabilities(monkeypatch):
     assert response.status_code == 200
     payload = response.get_data(as_text=True)
     assert "processing_capabilities:" in payload
-    assert "supports_structured_data: true" in payload
-    assert "supports_free_text_data: false" in payload
+    assert "data_modality: structured_only" in payload
+    assert "generation_scope: structured_only" in payload
 
 
 def test_get_synthesizer_config_normalizes_llm_profile_into_model_parameter(monkeypatch):

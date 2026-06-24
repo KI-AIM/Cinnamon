@@ -5,8 +5,8 @@ display_name: Tabular Variational Autoencoder
 description: Is a VAE for synthesizing cross-sectional data.
 URL: /start_synthetization_process/tvae
 processing_capabilities:
-  supports_structured_data: true
-  supports_free_text_data: false
+  data_modality: structured_only
+  generation_scope: structured_only
 configurations:
   model_parameter:
     display_name: Model Architecture

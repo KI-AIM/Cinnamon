@@ -46,6 +46,21 @@ SYNTHESIZER_CONFIG_DIR = os.path.join(
 )
 HYPERPARAMETER_TUNING_DIR = os.path.join(os.path.dirname(__file__), "hyperparameter_tuning")
 
+PROCESSING_MODALITY_STRUCTURED_ONLY = "structured_only"
+PROCESSING_MODALITY_TEXT_ONLY = "text_only"
+PROCESSING_MODALITY_MIXED = "mixed"
+PROCESSING_SCOPE_STRUCTURED_ONLY = "structured_only"
+PROCESSING_SCOPE_TEXT_ONLY = "text_only"
+PROCESSING_MODALITIES = {
+    PROCESSING_MODALITY_STRUCTURED_ONLY,
+    PROCESSING_MODALITY_TEXT_ONLY,
+    PROCESSING_MODALITY_MIXED,
+}
+PROCESSING_SCOPES = {
+    PROCESSING_SCOPE_STRUCTURED_ONLY,
+    PROCESSING_SCOPE_TEXT_ONLY,
+}
+
 
 def configure_realtime_logging():
     for stream in (sys.stdout, sys.stderr):
@@ -331,14 +346,48 @@ def get_study_parameter_default(parameter_name):
 def get_processing_capabilities(synthesizer_name):
     config = load_synthesizer_config(synthesizer_name)
     capabilities = config.get("processing_capabilities", {})
-    supports_structured = _to_bool(capabilities.get("supports_structured_data"), True)
-    supports_free_text = _to_bool(capabilities.get("supports_free_text_data"), False)
-    return supports_structured, supports_free_text
+    data_modality = capabilities.get("data_modality")
+    generation_scope = capabilities.get("generation_scope")
+
+    if data_modality in PROCESSING_MODALITIES and generation_scope in PROCESSING_SCOPES:
+        return data_modality, generation_scope
+
+    return _normalize_processing_capabilities(
+        (
+            capabilities.get("supports_structured_data"),
+            capabilities.get("supports_free_text_data"),
+        ),
+        synthesizer_name=synthesizer_name,
+    )
+
+
+def _normalize_processing_capabilities(capabilities, *, synthesizer_name=None):
+    if not isinstance(capabilities, tuple) or len(capabilities) != 2:
+        raise ValueError(f"Invalid processing_capabilities for synthesizer '{synthesizer_name}'.")
+
+    data_modality, generation_scope = capabilities
+    if data_modality in PROCESSING_MODALITIES and generation_scope in PROCESSING_SCOPES:
+        return data_modality, generation_scope
+
+    supports_structured = _to_bool(data_modality, True)
+    supports_free_text = _to_bool(generation_scope, False)
+
+    if supports_structured and not supports_free_text:
+        return PROCESSING_MODALITY_STRUCTURED_ONLY, PROCESSING_SCOPE_STRUCTURED_ONLY
+
+    if not supports_structured and supports_free_text:
+        if synthesizer_name == "llm_text_only_paraphrase_synthesis":
+            return PROCESSING_MODALITY_TEXT_ONLY, PROCESSING_SCOPE_TEXT_ONLY
+        return PROCESSING_MODALITY_MIXED, PROCESSING_SCOPE_TEXT_ONLY
+
+    raise ValueError(
+        f"Unsupported processing_capabilities for synthesizer '{synthesizer_name}': {capabilities}."
+    )
 
 
 def is_llm_synthesizer(synthesizer_name: str) -> bool:
-    _, supports_free_text = get_processing_capabilities(synthesizer_name)
-    return supports_free_text
+    _, generation_scope = _normalize_processing_capabilities(get_processing_capabilities(synthesizer_name))
+    return generation_scope == PROCESSING_SCOPE_TEXT_ONLY
 
 
 DEFAULT_TEXT_SYNTHESIZER_NAME = "llm_nearest_neighbor_few_shot_text_synthesis"
@@ -347,25 +396,27 @@ DEFAULT_TEXT_SYNTHESIZER_NAME = "llm_nearest_neighbor_few_shot_text_synthesis"
 @lru_cache(maxsize=1)
 def get_text_synthesizer_name():
     if DEFAULT_TEXT_SYNTHESIZER_NAME in synthesizer_classes:
-        supports_structured, supports_free_text = get_processing_capabilities(DEFAULT_TEXT_SYNTHESIZER_NAME)
-        if not supports_structured and supports_free_text:
+        data_modality, generation_scope = _normalize_processing_capabilities(
+            get_processing_capabilities(DEFAULT_TEXT_SYNTHESIZER_NAME)
+        )
+        if data_modality == PROCESSING_MODALITY_MIXED and generation_scope == PROCESSING_SCOPE_TEXT_ONLY:
             return DEFAULT_TEXT_SYNTHESIZER_NAME
 
     candidates = []
     for name in synthesizer_classes:
-        supports_structured, supports_free_text = get_processing_capabilities(name)
-        if not supports_structured and supports_free_text:
+        data_modality, generation_scope = _normalize_processing_capabilities(get_processing_capabilities(name))
+        if data_modality == PROCESSING_MODALITY_MIXED and generation_scope == PROCESSING_SCOPE_TEXT_ONLY:
             candidates.append(name)
 
     if not candidates:
         raise RuntimeError(
-            "No text-only synthesizer found. Expected one synthesizer_config with "
-            "supports_structured_data=false and supports_free_text_data=true."
+            "No text-enrichment synthesizer found. Expected one synthesizer_config with "
+            "processing_capabilities.data_modality=mixed and generation_scope=text_only."
         )
     if len(candidates) > 1:
         raise RuntimeError(
-            f"Ambiguous text-only synthesizers found: {candidates}. "
-            "Please keep exactly one text-only synthesizer in the registry."
+            f"Ambiguous text-enrichment synthesizers found: {candidates}. "
+            "Please keep exactly one default mixed text synthesizer in the registry."
         )
     return candidates[0]
 
@@ -858,12 +909,14 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             send_callback_error(callback_url, session_key, error_message, 500)
             return {'message': error_message, 'session_key': session_key, 'status_code': 500}
         structured_configs, text_configs = split_attribute_configurations(attribute_config)
-        supports_structured, supports_free_text = get_processing_capabilities(synthesizer_name)
+        data_modality, generation_scope = _normalize_processing_capabilities(
+            get_processing_capabilities(synthesizer_name)
+        )
         text_reference_data = original_data if original_data is not None else data
 
         print(
             "Processing capabilities resolved: "
-            f"supports_structured={supports_structured}, supports_free_text={supports_free_text}, "
+            f"data_modality={data_modality}, generation_scope={generation_scope}, "
             f"structured_columns={len(structured_configs)}, text_columns={len(text_configs)}"
         )
         print(
@@ -878,21 +931,21 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         final_samples = None
         final_model = None
 
-        # 1) Standalone text synthesis (no structured synthesis).
-        if synthesizer_name == text_synthesizer_name:
+        # 1) Selected synthesizer rewrites a TEXT-only dataset directly.
+        if generation_scope == PROCESSING_SCOPE_TEXT_ONLY and data_modality == PROCESSING_MODALITY_TEXT_ONLY:
             print("Pipeline mode: text-only synthesis.")
-            announce_component_synthesis(file_path_status, "llm_synthesis", text_synthesizer_name)
-            text_input = create_text_synthesis_input(data, attribute_config)
+            announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
+            text_input = order_dataframe_by_config(data.copy(), attribute_config.get("configurations", []))
             text_algorithm_config = build_text_synthesis_algorithm_config(
                 algorithm_config,
                 synthesizer_name,
-                text_synthesizer_name,
+                synthesizer_name,
                 len(text_input),
             )
 
             final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
                 stage_label="TEXT_SYNTHESIS",
-                synthesizer_name=text_synthesizer_name,
+                synthesizer_name=synthesizer_name,
                 stage_attribute_config=attribute_config,
                 stage_algorithm_config=text_algorithm_config,
                 input_data=text_input,
@@ -914,16 +967,52 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 completed=True,
             )
 
-        # 2) Selected synthesizer does not support free text:
+        # 2) Selected synthesizer enriches TEXT fields on top of an already existing mixed row base.
+        elif generation_scope == PROCESSING_SCOPE_TEXT_ONLY and data_modality == PROCESSING_MODALITY_MIXED:
+            print("Pipeline mode: text enrichment.")
+            announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
+            text_input = create_text_synthesis_input(data, attribute_config)
+            text_algorithm_config = build_text_synthesis_algorithm_config(
+                algorithm_config,
+                synthesizer_name,
+                synthesizer_name,
+                len(text_input),
+            )
+
+            final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                stage_label="TEXT_SYNTHESIS",
+                synthesizer_name=synthesizer_name,
+                stage_attribute_config=attribute_config,
+                stage_algorithm_config=text_algorithm_config,
+                input_data=text_input,
+                reference_data=text_reference_data,
+                file_path_status=file_path_status,
+                replace_text_with_pending=False,
+                fill_text_with_pending=False,
+                session_key=session_key,
+                status_component_name="llm_synthesis",
+            )
+            total_init_duration += init_duration
+            total_fit_duration += fit_duration
+            total_sample_duration += sample_duration
+            update_pipeline_totals(
+                file_path_status,
+                total_init_duration,
+                total_fit_duration,
+                total_sample_duration,
+                completed=True,
+            )
+
+        # 3) Selected synthesizer does not support text generation:
         #    first synthesize structured columns, then synthesize text via the default few-shot text synthesizer.
-        elif text_configs and not supports_free_text:
+        elif text_configs and generation_scope == PROCESSING_SCOPE_STRUCTURED_ONLY:
             print("Pipeline mode: two-stage (structured -> text synthesis).")
             announce_component_synthesis(file_path_status, "llm_synthesis", text_synthesizer_name)
 
             structured_base = None
             structured_model = None
 
-            if structured_configs and supports_structured:
+            if structured_configs:
                 announce_component_synthesis(file_path_status, "structured_synthesis", synthesizer_name)
                 structured_attribute_config = build_attribute_config(structured_configs)
                 structured_base, structured_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
@@ -990,14 +1079,10 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             if final_model is None:
                 final_model = structured_model
 
-        # 3) Selected synthesizer can handle target data directly (single-stage).
+        # 4) Selected synthesizer handles structured data directly in one stage.
         else:
             print("Pipeline mode: single-stage synthesis.")
-            announce_component_synthesis(
-                file_path_status,
-                "llm_synthesis" if is_llm_synthesizer(synthesizer_name) else "structured_synthesis",
-                synthesizer_name,
-            )
+            announce_component_synthesis(file_path_status, "structured_synthesis", synthesizer_name)
             final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
                 stage_label="SINGLE_STAGE",
                 synthesizer_name=synthesizer_name,
@@ -1006,10 +1091,10 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 input_data=data,
                 reference_data=None,
                 file_path_status=file_path_status,
-                replace_text_with_pending=not is_llm_synthesizer(synthesizer_name),
-                fill_text_with_pending=not is_llm_synthesizer(synthesizer_name),
+                replace_text_with_pending=True,
+                fill_text_with_pending=True,
                 session_key=session_key,
-                status_component_name="llm_synthesis" if is_llm_synthesizer(synthesizer_name) else "structured_synthesis",
+                status_component_name="structured_synthesis",
             )
             total_init_duration += init_duration
             total_fit_duration += fit_duration
@@ -1150,7 +1235,6 @@ def get_synthesizer_config(module_name, filename):
         is_dynamic_llm_definition = (
             module_name == "synthetic_tabular_data_generator"
             and filename.lower() in {
-                "llm_tabular.yaml",
                 "llm_nearest_neighbor_few_shot_text_synthesis.yaml",
                 "llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml",
                 "llm_text_only_paraphrase_synthesis.yaml",

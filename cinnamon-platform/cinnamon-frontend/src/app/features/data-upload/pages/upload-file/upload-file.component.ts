@@ -128,9 +128,6 @@ export class UploadFileComponent implements OnInit, OnDestroy {
             tap((data) => {
                 this.isDataFileStored = data.fileInfo.name != null;
 
-                if (data.dataSourceConfig == null) {
-                    data.dataSourceConfig = new DataSourceConfiguration(DataSourceType.LOCAL, null);
-                }
                 this.createDataSourceConfigurationForm(data.dataSourceConfig);
 
                 if (data.fileConfiguration != null) {

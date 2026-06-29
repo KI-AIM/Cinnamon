@@ -3,6 +3,7 @@ import { Injectable } from "@angular/core";
 import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "@shared/model/csv-file-configuration";
 import {
     DataSourceConfiguration,
+    DataSourceType,
     FhirFileConfiguration,
     FileConfiguration,
     FileConfigurationEstimation
@@ -92,8 +93,13 @@ export class FileService {
         if (!this._dataSourceConfigurationFetched && !this._dataSourceConfigurationLoading$) {
             this.refreshDataSourceConfiguration().subscribe({
                 error : (error) => {
-                    this._fileInfoFetched = false;
-                    this.errorHandlingService.addError(error, "Failed to fetch the data source configuration.");
+                    if (error.error.errorCode === "PLATFORM_1_8_10") {
+                        const config = new DataSourceConfiguration(DataSourceType.LOCAL, null);
+                        this._dataSourceConfigurationSubject.next(config);
+                    } else {
+                        this._fileInfoFetched = false;
+                        this.errorHandlingService.addError(error, "Failed to fetch the data source configuration.");
+                    }
                 }
             });
         }

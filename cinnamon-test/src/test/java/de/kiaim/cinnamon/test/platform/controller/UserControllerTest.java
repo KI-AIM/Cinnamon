@@ -2,12 +2,14 @@ package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
+import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -15,10 +17,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @Transactional
 public class UserControllerTest extends ControllerTest {
@@ -85,7 +86,7 @@ public class UserControllerTest extends ControllerTest {
 	@Test
 	@WithUserDetails("test_user")
 	public void deleteForbidden() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/delete")
+		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/-/delete")
 		                                      .param("email", getTestUser().getUsername())
 		                                      .param("password", "wrong_password"))
 		       .andExpect(status().isForbidden());
@@ -97,7 +98,7 @@ public class UserControllerTest extends ControllerTest {
 	@Test
 	@WithUserDetails("test_user")
 	public void delete() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/delete")
+		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/-/delete")
 		                                      .param("email", getTestUser().getUsername())
 		                                      .param("password", "changeme"))
 		       .andExpect(status().isOk());
@@ -114,7 +115,7 @@ public class UserControllerTest extends ControllerTest {
 
 		assertTrue(existsTable(datasetId));
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/delete")
+		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/-/delete")
 		                                      .param("email", getTestUser().getUsername())
 		                                      .param("password", "changeme"))
 		       .andExpect(status().isOk());
@@ -213,5 +214,40 @@ public class UserControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must be at least 12 characters long!",
 		                                  "Password must contain at least one uppercase character!"));
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void createProject() throws Exception {
+		mockMvc.perform(post("/api/user/-/projects")
+				                .contentType(MediaType.MULTIPART_FORM_DATA)
+				                .param("projectName", "Awesome Project"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.name").value("Awesome Project"));
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void createProjectMissingName() throws Exception {
+		mockMvc.perform(post("/api/user/-/projects")
+				                .contentType(MediaType.MULTIPART_FORM_DATA))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_1_1"))
+		       .andExpect(errorMessage("Missing parameter: 'projectName'"));
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void createProjectInvalidName() throws Exception {
+		final MockMultipartFile invalidParam = new MockMultipartFile("projectName", "projectName",
+		                                                             MediaType.TEXT_PLAIN_VALUE,
+		                                                             "EXPERT".getBytes());
+
+		mockMvc.perform(multipart("/api/user/-/projects")
+				                .file(invalidParam)
+				                .contentType(MediaType.MULTIPART_FORM_DATA))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_1_4"))
+		       .andExpect(errorMessage("Parameter 'projectName' must not be a file!"));
 	}
 }

@@ -25,30 +25,6 @@ public class ProjectControllerTest extends ControllerTest {
 	}
 
 	@Test
-	public void createProject() throws Exception {
-		mockMvc.perform(post("/api/project")
-				                .contentType(MediaType.MULTIPART_FORM_DATA)
-				                .param("mode", Mode.EXPERT.name()))
-		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("$.mode").value("EXPERT"))
-		       .andExpect(jsonPath("$.currentStep").value("WELCOME"));
-	}
-
-	@Test
-	public void createProjectInvalidMode() throws Exception {
-		final MockMultipartFile invalidParam = new MockMultipartFile("mode", "mode",
-		                                                             MediaType.TEXT_PLAIN_VALUE,
-		                                                             "EXPERT".getBytes());
-
-		mockMvc.perform(multipart("/api/project")
-				                .file(invalidParam)
-				                .contentType(MediaType.MULTIPART_FORM_DATA))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorCode("PLATFORM_3_1_4"))
-		       .andExpect(errorMessage("Parameter 'mode' must not be a file!"));
-	}
-
-	@Test
 	public void getStatus() throws Exception {
 		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/status"))
 		       .andExpect(status().isOk())

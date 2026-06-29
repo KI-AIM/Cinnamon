@@ -3,7 +3,7 @@
     <div class="bg-white p-5 rounded border">
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
             <mat-form-field>
-                <mat-label>Project Name</mat-label>
+                <mat-label>Account Name</mat-label>
                 <input type="text" formControlName="email" matInput autocomplete="username">
             </mat-form-field>
 
@@ -42,12 +42,12 @@
             </mat-form-field>
 
             <button type="submit" [disabled]="!registerForm.valid" mat-raised-button color="primary">
-                Create and Open new Project
+                Create and log in to new Account
             </button>
         </form>
         <div style="display: flex; flex-direction: column;">
-            <div style="margin: auto;">Already have a Project?</div>
-            <button mat-raised-button color="primary" (click)="navigateToLogin()">Open existing Project</button>
+            <div style="margin: auto;">Already have an Account?</div>
+            <button mat-raised-button color="primary" (click)="navigateToLogin()">Log in to existing Account</button>
         </div>
     </div>
 

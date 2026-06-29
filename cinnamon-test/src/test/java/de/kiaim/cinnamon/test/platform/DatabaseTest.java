@@ -95,7 +95,7 @@ public class DatabaseTest extends ContextRequiredTest {
 
 			this.testUser = getTestUser();
 			try {
-				this.testProject = projectService.createProject(testUser, "Test Project", PROJECT_SEED);
+				this.testProject = userService.createProject(testUser, "Test Project", PROJECT_SEED);
 				this.testProjectId = testProject.getExternalId();
 			} catch (ApiException e) {
 				fail(e);

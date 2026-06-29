@@ -59,6 +59,7 @@ class ProjectRepositoryTest extends DatabaseTest {
 
 		final ProjectEntity entity = new ProjectEntity();
 		entity.setExternalId(UUID.randomUUID());
+		entity.getProjectConfiguration().setProjectName("Test Project");
 
 		final DataSetEntity dataSetEntity = new DataSetEntity();
 		dataSetEntity.setDataConfiguration(dataConfiguration);

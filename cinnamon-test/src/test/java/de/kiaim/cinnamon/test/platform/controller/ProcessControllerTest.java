@@ -642,7 +642,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		// Start second
 		final var user = userService.save("test_user_3", "changeme");
-		var project = projectService.createProject(user);
+		var project = userService.createProject(user, null, null);
 		postData(false, "test_user_3", project.getExternalId());
 		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/config")
 				                .with(httpBasic("test_user_3", "changeme"))

@@ -2,12 +2,14 @@ package de.kiaim.cinnamon.platform.exception;
 
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.controller.ApiExceptionHandler;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.springframework.http.HttpStatusCode;
 
 /**
  * Class for exceptions that can occur during api requests.
  */
+@Schema(description = "Base class for all exceptions that can occur during api requests.")
 public abstract class ApiException extends Exception {
 
 	private static final String ERROR_CODE_PREFIX = "PLATFORM";

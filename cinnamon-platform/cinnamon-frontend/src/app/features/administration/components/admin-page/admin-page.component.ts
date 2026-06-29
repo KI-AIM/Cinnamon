@@ -1,6 +1,7 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NavigationService } from "@core/services/navigation.service";
 import { TitleService } from "@core/services/title-service.service";
+import { NavigationKey } from "@shared/model/navigation";
 
 @Component({
   selector: 'app-admin-page',
@@ -8,7 +9,7 @@ import { TitleService } from "@core/services/title-service.service";
   templateUrl: './admin-page.component.html',
   styleUrl: './admin-page.component.less'
 })
-export class AdminPageComponent implements OnInit, OnDestroy {
+export class AdminPageComponent implements OnInit {
 
     protected readonly dataSource = [
         {username: "user1", roles: ["admin"], status: "active"},
@@ -24,11 +25,7 @@ export class AdminPageComponent implements OnInit, OnDestroy {
 
     public ngOnInit(): void {
         this.titleService.setPageTitle("Administration - Security");
-        this.navigationService.setAdmin(true);
-    }
-
-    public ngOnDestroy(): void {
-        this.navigationService.setAdmin(false);
+        this.navigationService.setNavigationKey(NavigationKey.ADMIN);
     }
 
 }

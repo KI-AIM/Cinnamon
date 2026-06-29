@@ -2,7 +2,6 @@ import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
-import { StateManagementService } from "@core/services/state-management.service";
 import { TitleService } from "@core/services/title-service.service";
 import { UserService } from "@shared/services/user.service";
 
@@ -30,7 +29,6 @@ export class LoginComponent implements OnInit {
         private readonly router: Router,
 		private readonly titleService: TitleService,
 		private readonly userService: UserService,
-        private readonly stateManagementService: StateManagementService,
 	) {
 		this.titleService.setPageTitle("Open project");
 	}
@@ -51,9 +49,8 @@ export class LoginComponent implements OnInit {
         this.userService.cachedEmailInput = null;
         this.userService.cachedPasswordInput = null;
 
-
         if (this.userService.isAuthenticated()) {
-            this.stateManagementService.fetchAndRouteToCurrentStep();
+            this.router.navigate(["/user/-/home"]);
         }
 	}
 
@@ -61,7 +58,7 @@ export class LoginComponent implements OnInit {
         const loginData = this.loginForm.value as { email: string; password: string };
         this.userService.login(loginData).subscribe({
             next: () => {
-                this.stateManagementService.fetchAndRouteToCurrentStep();
+                this.router.navigate(["/user/-/home"]);
             },
             error: () => {
                 this.notificationService.addNotification(
@@ -78,6 +75,6 @@ export class LoginComponent implements OnInit {
     protected navigateToRegister() {
         this.userService.cachedEmailInput = this.loginForm.value.email ?? null;
         this.userService.cachedPasswordInput = this.loginForm.value.password ?? null;
-        this.router.navigate(["/create"]);
+        this.router.navigate(["/register"]);
     }
 }

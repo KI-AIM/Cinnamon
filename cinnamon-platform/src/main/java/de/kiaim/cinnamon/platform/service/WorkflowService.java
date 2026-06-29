@@ -104,7 +104,7 @@ public class WorkflowService {
 		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
 
 		// 1. Create a new project
-		final ProjectEntity project = projectService.createProject(user); // Name will be changed later
+		final ProjectEntity project = userService.createProject(user, null, null);
 		project.setExpirationDate(
 				new Timestamp(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(DEFAULT_EXPIRATION_DAYS)));
 

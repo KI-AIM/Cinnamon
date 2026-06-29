@@ -1,7 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NotFoundComponent } from "@core/components/not-found/not-found.component";
+import { projectAccessGuard } from "@core/guards/project-access.guard";
 import { AdminPageComponent } from "@features/administration/components/admin-page/admin-page.component";
+import { ProjectShellComponent } from "@features/project/components/project-shell/project-shell.component";
+import { UserHomePageComponent } from "@features/user/pages/user-home-page/user-home-page.component";
 import { StartpageComponent } from './features/start/pages/startpage/startpage.component';
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 import { DataConfigurationComponent } from './features/data-upload/pages/data-configuration/data-configuration.component';
@@ -24,23 +27,38 @@ import {
 import { ReportComponent } from "./features/report/pages/report/report.component";
 
 const routes: Routes = [
-    {path: '', redirectTo: 'open', pathMatch: 'full'},
+    {path: '', redirectTo: 'login', pathMatch: 'full'},
 
-    {path: 'admin', component: AdminPageComponent},
+    {path: 'login', component: LoginComponent},
+    {path: 'register', component: RegisterComponent},
 
-    {path: 'open' , component: LoginComponent},
-    {path: 'create', component: RegisterComponent},
-    {path: 'start', component: StartpageComponent, canActivate: [AuthGuard]},
-    {path: 'upload', component: UploadFileComponent, canActivate: [AuthGuard]},
-    {path: 'dataConfiguration', component: DataConfigurationComponent, canActivate: [AuthGuard]},
-    {path: 'dataValidation', component: DataValidationComponent, canActivate: [AuthGuard]},
-    {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent, canActivate: [AuthGuard]},
-    {path: 'synthetizationConfiguration', component: SynthetizationConfigurationComponent, canActivate: [AuthGuard]},
-    {path: 'execution', component: ExecutionComponent, canActivate: [AuthGuard]},
-    {path: 'technicalEvaluationConfiguration', component: TechnicalEvaluationConfigurationComponent, canActivate: [AuthGuard]},
-    {path: 'riskEvaluationConfiguration', component: RiskAssessmentConfigurationComponent, canActivate: [AuthGuard]},
-    {path: 'evaluation', component: EvaluationComponent, canActivate: [AuthGuard]},
-    {path: 'report', component: ReportComponent , canActivate: [AuthGuard]},
+    {
+        path: 'user/-',
+        canActivate: [AuthGuard],
+        children: [
+            {path: 'admin', component: AdminPageComponent},
+            {path: 'home', component: UserHomePageComponent},
+        ],
+    },
+    {
+        path: 'project/:projectId',
+        component: ProjectShellComponent,
+        canActivate: [AuthGuard, projectAccessGuard],
+        children: [
+            {path: 'start', component: StartpageComponent},
+            {path: 'upload', component: UploadFileComponent},
+            {path: 'dataConfiguration', component: DataConfigurationComponent},
+            {path: 'dataValidation', component: DataValidationComponent},
+            {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent},
+            {path: 'synthetizationConfiguration', component: SynthetizationConfigurationComponent},
+            {path: 'execution', component: ExecutionComponent},
+            {path: 'technicalEvaluationConfiguration', component: TechnicalEvaluationConfigurationComponent},
+            {path: 'riskEvaluationConfiguration', component: RiskAssessmentConfigurationComponent},
+            {path: 'evaluation', component: EvaluationComponent},
+            {path: 'report', component: ReportComponent},
+        ],
+    },
+
     {path: '**', component: NotFoundComponent},
 ];
 

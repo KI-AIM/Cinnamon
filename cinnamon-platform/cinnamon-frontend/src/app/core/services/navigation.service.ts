@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from "rxjs";
+import { NavigationKey } from "@shared/model/navigation";
+import { BehaviorSubject, distinctUntilChanged, Observable } from "rxjs";
 
 /**
  * Service for managing the content of the navigation component {@link NavigationComponent}.
@@ -11,19 +12,22 @@ import { BehaviorSubject, Observable } from "rxjs";
 })
 export class NavigationService {
 
-    // Hacked in state for the admin interface
     private isAdmin: BehaviorSubject<boolean>;
+    private navigationKey: BehaviorSubject<NavigationKey>;
 
     constructor() {
+        this.navigationKey = new BehaviorSubject<NavigationKey>(NavigationKey.NONE);
         this.isAdmin = new BehaviorSubject<boolean>(false);
     }
 
-    public get isAdmin$(): Observable<boolean> {
-        return this.isAdmin.asObservable();
+    public get navigationKey$(): Observable<NavigationKey> {
+        return this.navigationKey.asObservable().pipe(
+            distinctUntilChanged(),
+        );
     }
 
-    public setAdmin(isAdmin: boolean) {
-        this.isAdmin.next(isAdmin);
+    public setNavigationKey(navigationKey: NavigationKey) {
+        this.navigationKey.next(navigationKey);
     }
 
 }

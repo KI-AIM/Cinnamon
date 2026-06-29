@@ -1,0 +1,54 @@
+
+@if (pageData$ | async; as pageData) {
+
+    <button mat-raised-button color="primary" (click)="dialog.open(createProjectDialog)">
+        Create Project
+    </button>
+
+    <table mat-table [dataSource]="pageData.projects">
+
+        <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let project">{{ project.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let project">
+                <button mat-icon-button [routerLink]="['/project', project.id]">
+                    <mat-icon>open</mat-icon>
+                </button>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['name', 'actions']"></tr>
+        <tr mat-row *matRowDef="let project; columns: ['name', 'actions']"></tr>
+
+    </table>
+
+    <ng-template #createProjectDialog>
+        <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Create Project</h2>
+        <mat-dialog-content class="mat-typography dialog-content">
+            <div class="vertical-boxes">
+                <div class="box" [formGroup]="createProjectForm">
+                    <mat-form-field>
+                        <mat-label>Project Name</mat-label>
+                        <input matInput formControlName="name">
+                        <mat-error>Please provide a valid project name</mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+        </mat-dialog-content>
+        <mat-dialog-actions align="end">
+            <button mat-raised-button mat-dialog-close color="warn">Close</button>
+            <button mat-raised-button mat-dialog-close color="primary" [disabled]="createProjectForm.invalid"
+                    (click)="onCreateProject()">
+                Create
+            </button>
+        </mat-dialog-actions>
+    </ng-template>
+}
+
+
+
+

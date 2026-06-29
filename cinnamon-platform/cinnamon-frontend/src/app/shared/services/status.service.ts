@@ -5,6 +5,7 @@ import { StepConfiguration, Steps } from "@core/enums/steps";
 import { List } from "@core/utils/list";
 import { Status } from "@shared/model/status";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { ProjectService } from "@shared/services/project.service";
 import { UserService } from "@shared/services/user.service";
 import { BehaviorSubject, filter, Observable, of, Subscription } from "rxjs";
 import { environments } from "src/environments/environment";
@@ -17,8 +18,9 @@ export class StatusService implements OnDestroy {
 
     private statusSubject: BehaviorSubject<Status | null> = new BehaviorSubject<Status | null>(null);
 
-    private _loginSubscription: Subscription;
-    private _logoutSubscription: Subscription;
+    private _projectOpenSubscription: Subscription;
+    private _projectClosedSubscription: Subscription;
+
 
     /**
      * List of all completed steps.
@@ -30,25 +32,24 @@ export class StatusService implements OnDestroy {
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly http: HttpClient,
         readonly userService: UserService,
+        readonly projectService: ProjectService,
     ) {
-        this._loginSubscription = userService.login$().subscribe({
-            next: () => this.updateStatus(),
-        });
-        this._logoutSubscription = userService.logout$().subscribe({
-            next: () => {
-                this.statusSubject.next(null);
-                this.completedSteps.clear();
-            }
+        this._projectOpenSubscription = projectService.projectOpen$.subscribe({
+            next: (value) => this.updateStatus(value.id),
         });
 
-        if (userService.isAuthenticated()) {
-            this.updateStatus();
-        }
+        this._projectClosedSubscription = projectService.projectClosed.subscribe({
+            next: () => this.statusSubject.next(null),
+        });
+
+        // if (this.projectService.project) {
+        //     this.updateStatus(this.projectService.project.id);
+        // }
     }
 
     public ngOnDestroy(): void {
-        this._loginSubscription?.unsubscribe();
-        this._logoutSubscription?.unsubscribe();
+        this._projectOpenSubscription?.unsubscribe();
+        this._projectClosedSubscription?.unsubscribe();
     }
 
     /**
@@ -147,8 +148,8 @@ export class StatusService implements OnDestroy {
     /**
      * Fetches the current status from the backend and updates the status subject.
      */
-    private updateStatus() {
-        this.http.get<Status>(this.baseUrl + "/status").subscribe({
+    public updateStatus(projectId: string) {
+        this.http.get<Status>(this.baseUrl + "/" + projectId + "/status").subscribe({
             next: (value: Status) => {
                 this.setCompletedSteps(value.currentStep);
                 this.statusSubject.next(value);

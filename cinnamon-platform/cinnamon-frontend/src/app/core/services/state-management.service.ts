@@ -11,6 +11,7 @@ import { TechnicalEvaluationService } from "@features/technical-evaluation/servi
 import { ExecutionStep, PipelineInformation } from "@shared/model/execution-step";
 import { Status } from "@shared/model/status";
 import { ConfigurationService } from "@shared/services/configuration.service";
+import { ProjectService } from "@shared/services/project.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
 import { plainToInstance } from "class-transformer";
@@ -55,6 +56,7 @@ export class StateManagementService {
         protected readonly dataSetInfoService: DataSetInfoService,
         private readonly fileService: FileService,
         private readonly http: HttpClient,
+        private readonly projectService: ProjectService,
         private readonly riskAssessmentService: RiskAssessmentService,
         private readonly router: Router,
         private readonly userService: UserService,

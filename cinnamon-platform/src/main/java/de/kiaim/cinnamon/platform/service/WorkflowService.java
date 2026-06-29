@@ -8,9 +8,7 @@ import de.kiaim.cinnamon.platform.model.dto.WorkflowInformation;
 import de.kiaim.cinnamon.platform.model.entity.PipelineEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.model.entity.WorkflowEntity;
 import de.kiaim.cinnamon.platform.model.mapper.PipelineMapper;
-import de.kiaim.cinnamon.platform.repository.WorkflowRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -33,10 +30,8 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class WorkflowService {
 
+	// TODO set in admin interface
 	public static final long DEFAULT_EXPIRATION_DAYS = 2L;
-	public static final int GEN_WORKFLOW_ID_MAX_RETRIES = 10;
-
-	private final WorkflowRepository workflowRepository;
 
 	private final PipelineMapper pipelineMapper;
 
@@ -47,14 +42,12 @@ public class WorkflowService {
 	private final ProjectService projectService;
 	private final UserService userService;
 
-	public WorkflowService(final WorkflowRepository workflowRepository,
-	                       final PipelineMapper pipelineMapper,
+	public WorkflowService(final PipelineMapper pipelineMapper,
 	                       final ConfigurationService configurationService,
 	                       final DatabaseService databaseService, ExportService exportService,
 	                       final ProcessService processService,
 	                       final ProjectService projectService,
 	                       final UserService userService) {
-		this.workflowRepository = workflowRepository;
 		this.pipelineMapper = pipelineMapper;
 		this.configurationService = configurationService;
 		this.databaseService = databaseService;
@@ -110,15 +103,10 @@ public class WorkflowService {
 					       InternalIOException, InternalMissingHandlingException, InternalRequestException {
 		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
 
-		// 1. Create a new workflow
-		final WorkflowEntity workflow = new WorkflowEntity();
-		workflow.setWorkflowId(generateUUID());
-		workflow.setExpirationDate(
+		// 1. Create a new project
+		final ProjectEntity project = projectService.createProject(user); // Name will be changed later
+		project.setExpirationDate(
 				new Timestamp(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(DEFAULT_EXPIRATION_DAYS)));
-		final ProjectEntity project = projectService.createProject(System.currentTimeMillis());
-		workflow.setProject(project);
-		user.addWorkflow(workflow);
-		log.debug("Created new workflow with ID {} for user {}", workflow.getWorkflowId(), userEmail);
 
 		// 2. Configure the project
 		final ConfigurationImportParameters parameters = new ConfigurationImportParameters();
@@ -139,7 +127,7 @@ public class WorkflowService {
 		processService.start(pipeline);
 
 		// 5. Return the pipeline
-		return workflow.getWorkflowId();
+		return project.getExternalId();
 	}
 
 	/**
@@ -150,15 +138,16 @@ public class WorkflowService {
 	 * @return The status of the workflow.
 	 * @throws BadArgumentException          If the workflow ID is not a valid UUID.
 	 * @throws BadUserException              If the user is not found.
-	 * @throws BadWorkflowException          If the workflow is not found.
+	 * @throws BadProjectException          If the workflow is not found.
 	 * @throws InternalInvalidStateException If fetching the status from the external module failed.
 	 */
 	@Transactional
 	public WorkflowInformation getWorkflowStatus(final String userEmail, final String workflowId)
-			throws BadArgumentException, BadUserException, BadWorkflowException, InternalInvalidStateException {
-		final WorkflowEntity workflow = getWorkflowEntity(userEmail, workflowId);
-		final PipelineInformation pipeline = pipelineMapper.toDto(processService.getPipeline(workflow.getProject()));
-		return new WorkflowInformation(workflow.getWorkflowId().toString(), pipeline);
+			throws BadArgumentException, BadUserException, BadProjectException, InternalInvalidStateException {
+		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
+		final ProjectEntity project = projectService.getProject(user, workflowId);
+		final PipelineInformation pipeline = pipelineMapper.toDto(processService.getPipeline(project));
+		return new WorkflowInformation(project.getExternalId().toString(), pipeline);
 	}
 
 	/**
@@ -168,15 +157,16 @@ public class WorkflowService {
 	 * @param workflowId The ID of the workflow.
 	 * @return The status of the workflow.
 	 * @throws BadUserException              If the user is not found.
-	 * @throws BadWorkflowException          If the workflow is not found.
+	 * @throws BadProjectException          If the workflow is not found.
 	 * @throws InternalInvalidStateException If fetching the status from the external module failed.
 	 */
-	@Transactional
+	@Transactional(readOnly = true)
 	public WorkflowInformation getWorkflowStatus(final String userEmail, final UUID workflowId)
-			throws BadUserException, BadWorkflowException, InternalInvalidStateException {
-		final WorkflowEntity workflow = getWorkflowEntity(userEmail, workflowId);
-		final PipelineInformation pipeline = pipelineMapper.toDto(processService.getPipeline(workflow.getProject()));
-		return new WorkflowInformation(workflow.getWorkflowId().toString(), pipeline);
+			throws BadUserException, BadProjectException, InternalInvalidStateException {
+		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
+		final ProjectEntity project = projectService.getProject(user, workflowId);
+		final PipelineInformation pipeline = pipelineMapper.toDto(processService.getPipeline(project));
+		return new WorkflowInformation(project.getExternalId().toString(), pipeline);
 	}
 
 	/**
@@ -192,7 +182,7 @@ public class WorkflowService {
 	 * @throws BadStateException                   If the project state is invalid for export.
 	 * @throws BadStepNameException                If a resource from an unknown step is requested.
 	 * @throws BadUserException                    If the user is not found.
-	 * @throws BadWorkflowException                If the workflow is not found.
+	 * @throws BadProjectException                If the workflow is not found.
 	 * @throws InternalDataSetPersistenceException If a dataset could not be exported due to an internal error.
 	 * @throws InternalInvalidStateException       If a requested configuration is not valid, i.e., the validation during the import failed.
 	 * @throws InternalIOException                 If the dataset could not be serialized.
@@ -203,104 +193,19 @@ public class WorkflowService {
 	public ResponseEntity<StreamingResponseBody> deleteWorkflow(final String userEmail, final String workflowId,
 	                                                            final HttpServletResponse response)
 			throws BadArgumentException, BadConfigurationNameException, BadStateException, BadStepNameException,
-					       BadUserException, BadWorkflowException, InternalDataSetPersistenceException,
+					       BadUserException, BadProjectException, InternalDataSetPersistenceException,
 					       InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
-		final WorkflowEntity workflow = getWorkflowEntity(userEmail, workflowId);
+		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
+		final ProjectEntity project = projectService.getProject(user, workflowId);
 
 		// Export the project
 		final ResponseEntity<StreamingResponseBody> exportResponse = exportService.createZipFile(
-				workflow.getProject(), response, new ProjectExportParameter());
+				project, response, new ProjectExportParameter());
 
 		// Delete the workflow
-		deleteWorkflow(workflow);
+		projectService.deleteProject(user, project);
 
 		return exportResponse;
-	}
-
-	/**
-	 * Deletes the given workflow.
-	 *
-	 * @param workflow The workflow to delete.
-	 * @throws InternalDataSetPersistenceException If the dataset could not be deleted due to an internal error.
-	 * @throws InternalInvalidStateException       If the process to be canceled has no server instance assigned.
-	 */
-	@Transactional
-	public void deleteWorkflow(final WorkflowEntity workflow)
-			throws InternalDataSetPersistenceException, InternalInvalidStateException {
-		final UserEntity user = workflow.getUser();
-		projectService.resetEntireProject(workflow.getProject());
-		user.removeWorkflow(workflow);
-		log.debug("Deleted workflow with ID {} for user {}", workflow.getWorkflowId(), user.getEmail());
-	}
-
-	/**
-	 * Returns all workflows that have expired.
-	 *
-	 * @return List of expired workflows.
-	 */
-	public List<WorkflowEntity> getExpiredWorkflows() {
-		final Timestamp expirationDate = new Timestamp(System.currentTimeMillis());
-		return workflowRepository.findAllByExpirationDateBefore(expirationDate);
-	}
-
-	/**
-	 * Returns the workflow with the given ID owned by the user with the given email.
-	 *
-	 * @param userEmail  The email of the user owning the workflow.
-	 * @param workflowId The ID of the workflow.
-	 * @return The workflow entity.
-	 * @throws BadArgumentException If the workflow ID is not a valid UUID.
-	 * @throws BadUserException     If the user is not found.
-	 * @throws BadWorkflowException If the workflow is not found.
-	 */
-	private WorkflowEntity getWorkflowEntity(final String userEmail, final String workflowId)
-			throws BadArgumentException, BadUserException, BadWorkflowException {
-		UUID workflowIdAsUUID;
-
-		try {
-			workflowIdAsUUID = UUID.fromString(workflowId);
-		} catch (IllegalArgumentException e) {
-			throw new BadArgumentException(BadArgumentException.INVALID_WORKFLOW_ID, "Invalid workflow ID format");
-		}
-
-
-		return getWorkflowEntity(userEmail, workflowIdAsUUID);
-	}
-
-	/**
-	 * See {@link #getWorkflowEntity(String, String)}.
-	 */
-	private WorkflowEntity getWorkflowEntity(final String userEmail, final UUID workflowId)
-			throws BadUserException, BadWorkflowException {
-		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
-		final WorkflowEntity workflow = user.getWorkflow(workflowId);
-		if (workflow == null) {
-			throw new BadWorkflowException(BadWorkflowException.NOT_FOUND,
-			                               "Workflow with ID " + workflowId + " not found");
-		}
-
-		return workflow;
-	}
-
-	/**
-	 * Generates a unique workflow ID.
-	 *
-	 * @return The generated workflow ID.
-	 * @throws InternalErrorException If the ID could not be generated after 10 retries.
-	 */
-	private UUID generateUUID() throws InternalErrorException {
-		UUID uuid;
-		for (int i = 0; i < GEN_WORKFLOW_ID_MAX_RETRIES; i++) {
-			uuid = UUID.randomUUID();
-
-			if (workflowRepository.countByWorkflowId(uuid) == 0) {
-				return uuid;
-			}
-		}
-
-		throw new InternalErrorException(InternalErrorException.GEN_WORKFLOW_ID_MAX_RETRIES,
-		                                 "Failed to generate a unique workflow ID after " +
-		                                 GEN_WORKFLOW_ID_MAX_RETRIES + " retries! Please try again later.");
 	}
 
 }

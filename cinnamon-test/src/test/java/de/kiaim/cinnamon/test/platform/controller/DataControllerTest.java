@@ -3,8 +3,6 @@ package de.kiaim.cinnamon.test.platform.controller;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.model.enumeration.DataType;
@@ -64,7 +62,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void getDataSourceConfigurationNotAvailable() throws Exception {
-		mockMvc.perform(get("/api/data/file/source"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/file/source"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "8", "10")));
 	}
@@ -73,7 +71,7 @@ class DataControllerTest extends ControllerTest {
 	void getDataSourceConfiguration() throws Exception {
 		postDataSource(DataSourceType.LOCAL);
 
-		mockMvc.perform(get("/api/data/file/source"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/file/source"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{dataSourceType: 'LOCAL'}"));
 	}
@@ -82,7 +80,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void postDataSourceConfigurationNoConfig() throws Exception {
-		mockMvc.perform(multipart("/api/data/file/source"))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
 		       .andExpect(validationError("dataSourceConfiguration", "Data source configuration must be present."));
@@ -90,7 +88,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void postDataSourceConfigurationInvalidConfig() throws Exception {
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration", "{\"dataSourceType\": \"Invalid\"}"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
@@ -101,7 +99,7 @@ class DataControllerTest extends ControllerTest {
 	void postDataSourceConfigurationMissingServer() throws Exception {
 		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
 		configuration.setServer(null);
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
@@ -113,7 +111,7 @@ class DataControllerTest extends ControllerTest {
 	void postDataSourceConfigurationMissingServerUrl() throws Exception {
 		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
 		configuration.getServer().setUrl(null);
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
@@ -126,7 +124,7 @@ class DataControllerTest extends ControllerTest {
 		configuration.setDataSourceType(DataSourceType.LOCAL);
 		configuration.getServer().setUrl(null);
 
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk());
 
@@ -139,7 +137,7 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void postDataSourceConfiguration() throws Exception {
 		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.LOCAL);
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration",
 									   objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk());
@@ -156,7 +154,7 @@ class DataControllerTest extends ControllerTest {
 		storeData();
 
 		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk());
 
@@ -176,7 +174,7 @@ class DataControllerTest extends ControllerTest {
 		confirmData();
 
 		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "3", "4")));
@@ -195,7 +193,7 @@ class DataControllerTest extends ControllerTest {
 		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.FHIR_SERVER);
 		var url = mockBackEnd.url("/fhir/Observation").toString();
 		configuration.getServer().setUrl(url);
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk());
 
@@ -207,7 +205,7 @@ class DataControllerTest extends ControllerTest {
 				                    .body(bundle)
 				                    .build());
 
-		mockMvc.perform(post("/api/data/file/retrieve"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/file/retrieve"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'fhir_bundle.json', type: null, numberOfAttributes: 0}"));
 
@@ -223,7 +221,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void retrieveFileNoDataSource() throws Exception {
-		mockMvc.perform(post("/api/data/file/retrieve"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/file/retrieve"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "8", "10")))
 		       .andExpect(errorMessage("Retrieving the file requires the data source configuration to be available!"));
@@ -232,7 +230,7 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void retrieveFileLocalDataSource() throws Exception {
 		postDataSource(DataSourceType.LOCAL);
-		mockMvc.perform(post("/api/data/file/retrieve"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/file/retrieve"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "8", "11")))
 		       .andExpect(errorMessage("Failed to retrieve the file! The data source is set to be a local file."));
@@ -244,14 +242,14 @@ class DataControllerTest extends ControllerTest {
 	void getFile() throws Exception {
 		postFile(false, false);
 
-		mockMvc.perform(get("/api/data/file"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/file"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 	}
 
 	@Test
 	void getFileNoFile() throws Exception {
-		mockMvc.perform(get("/api/data/file"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/file"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: null, type: null, numberOfAttributes: 0}"));
 	}
@@ -261,7 +259,7 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void postFile() throws Exception {
 		MockMultipartFile file = ResourceHelper.loadCsvFile();
-		mockMvc.perform(multipart("/api/data/file")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file")
 				                .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
@@ -277,7 +275,7 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void postFileConfiguration() throws Exception {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: null, type: 'CSV', numberOfAttributes: 0}"));
@@ -290,7 +288,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void postFileMissingFile() throws Exception {
-		mockMvc.perform(multipart("/api/data/file"))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("file", "Data must be present!"));
@@ -302,7 +300,7 @@ class DataControllerTest extends ControllerTest {
 	void estimateFileConfigurationCsv() throws Exception {
 		postFile(false, false);
 
-		mockMvc.perform(post("/api/data/file/estimation"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/file/estimation"))
 		       .andExpect(status().isOk());
 
 		var project = getTestProject();
@@ -312,7 +310,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateFileConfigurationNoFile() throws Exception {
-		mockMvc.perform(post("/api/data/file/estimation"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/file/estimation"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "8", "2")));
 	}
@@ -321,7 +319,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void postFileConfigurationMissingFileConfiguration() throws Exception {
-		mockMvc.perform(multipart("/api/data/file/configuration"))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(validationError("fileConfiguration", "File Configuration must be present!"));
@@ -332,7 +330,7 @@ class DataControllerTest extends ControllerTest {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 		fileConfiguration.setCsvFileConfiguration(null);
 
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -346,7 +344,7 @@ class DataControllerTest extends ControllerTest {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 		fileConfiguration.getCsvFileConfiguration().setColumnSeparator(null);
 
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -360,7 +358,7 @@ class DataControllerTest extends ControllerTest {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 		fileConfiguration.setFhirFileConfiguration(new FhirFileConfiguration());
 
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
@@ -374,7 +372,7 @@ class DataControllerTest extends ControllerTest {
 		                                               classLoader.getResourceAsStream("test.csv"));
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		mockMvc.perform(multipart("/api/data/file")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file")
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -388,7 +386,7 @@ class DataControllerTest extends ControllerTest {
 		                                               classLoader.getResourceAsStream("test.csv"));
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		mockMvc.perform(multipart("/api/data/file")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file")
 				                .file(file)
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isBadRequest())
@@ -399,7 +397,7 @@ class DataControllerTest extends ControllerTest {
 	void estimateConfiguration() throws Exception {
 		postFile(false, false);
 
-		final String result = mockMvc.perform(get("/api/data/estimation"))
+		final String result = mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/estimation"))
 		                             .andExpect(status().isOk())
 		                             .andReturn().getResponse().getContentAsString();
 
@@ -414,7 +412,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void estimateConfigurationNoFile() throws Exception {
-		mockMvc.perform(get("/api/data/estimation"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/estimation"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Estimating the data configuration requires the file for the dataset to be selected!"));
 	}
@@ -449,7 +447,7 @@ class DataControllerTest extends ControllerTest {
 		configuration.getConfigurations().get(3).setName("invalid");
 		var string = jsonMapper.writeValueAsString(configuration);
 
-		mockMvc.perform(multipart("/api/data")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("configuration", string))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
@@ -462,7 +460,7 @@ class DataControllerTest extends ControllerTest {
 		configuration.getConfigurations().get(0).setType(DataType.UNDEFINED);
 		var string = jsonMapper.writeValueAsString(configuration);
 
-		mockMvc.perform(multipart("/api/data")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("configuration", string))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
@@ -475,7 +473,7 @@ class DataControllerTest extends ControllerTest {
 		configuration.getConfigurations().get(1).getConfigurations().clear();
 		var string = jsonMapper.writeValueAsString(configuration);
 
-		mockMvc.perform(multipart("/api/data").param("configuration", string))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data").param("configuration", string))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
@@ -490,7 +488,7 @@ class DataControllerTest extends ControllerTest {
 		configuration.getConfigurations().get(1).getConfigurations().add(range);
 		var string = jsonMapper.writeValueAsString(configuration);
 
-		mockMvc.perform(multipart("/api/data").param("configuration", string))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data").param("configuration", string))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("Request validation failed"))
 		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
@@ -506,7 +504,7 @@ class DataControllerTest extends ControllerTest {
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
 
-		String result = mockMvc.perform(multipart("/api/data")
+		String result = mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
@@ -515,17 +513,14 @@ class DataControllerTest extends ControllerTest {
 		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 		final DataSetEntity dataSetEntity = dataSetRepository.findById(dataSetId).get();
 
-		UserEntity testUser = getTestUser();
-
 		assertTrue(existsTable(dataSetId), "Table could not be found!");
 		assertEquals(2, countEntries(dataSetId), "Number of entries wrong!");
 		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
 		assertEquals(dataSetId, dataSetEntity.getId(), "User has been associated with the wrong dataset!");
 		assertTrue(dataSetEntity.isStoredData(), "Flag that the data is stored should be true!");
 		assertFalse(dataSetEntity.isConfirmedData(), "Flag that the data is confirmed should be false!");
 
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/project/reset")
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/project/" + testProject.getExternalId() + "/reset")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
@@ -540,7 +535,7 @@ class DataControllerTest extends ControllerTest {
 		postFileAndFileConfiguration();
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-		var result = mockMvc.perform(multipart("/api/data")
+		var result = mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                             .param("configuration",
 				                                    objectMapper.writeValueAsString(configuration)))
 		                    .andExpect(status().isOk())
@@ -549,7 +544,7 @@ class DataControllerTest extends ControllerTest {
 		final DataSetEntity dataset = dataSetRepository.findById(dataSetId).get();
 
 		final DataConfiguration configurationUpdate = DataConfigurationTestHelper.generateDataConfiguration("[0-9]*");
-		mockMvc.perform(multipart("/api/data/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/configuration")
 				                .param("configuration", objectMapper.writeValueAsString(configurationUpdate)))
 		       .andExpect(status().isBadRequest());
 
@@ -559,7 +554,7 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void storeDataNoFile() throws Exception {
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-		mockMvc.perform(multipart("/api/data")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
@@ -577,18 +572,18 @@ class DataControllerTest extends ControllerTest {
 		final MockMultipartFile file = new MockMultipartFile("file", "file.csv", "text/csv", fileContent.getBytes());
 		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		mockMvc.perform(multipart("/api/data/file")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file")
 				                .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 
 		// Store the file
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-		mockMvc.perform(multipart("/api/data")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
@@ -607,18 +602,18 @@ class DataControllerTest extends ControllerTest {
 		final MockMultipartFile file = new MockMultipartFile("file", "file.csv", "text/csv", fileContent.getBytes());
 		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
 
-		mockMvc.perform(multipart("/api/data/file")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file")
 				                .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 
 		// Store the file
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-		mockMvc.perform(multipart("/api/data")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isBadRequest())
@@ -630,13 +625,13 @@ class DataControllerTest extends ControllerTest {
 	void confirmDataAndDeleteData() throws Exception {
 		final Long dataSetId = postData(false);
 
-		mockMvc.perform(post("/api/data/confirm"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/confirm"))
 		       .andExpect(status().isOk());
 
 		final DataSetEntity dataSetEntity = dataSetRepository.findById(dataSetId).get();
 		assertTrue(dataSetEntity.isConfirmedData(), "Flag that the data is confirmed should be true!");
 
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/project/reset")
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/project/" + testProject.getExternalId() + "/reset")
 		                                      .contentType(MediaType.APPLICATION_JSON_VALUE))
 		       .andExpect(status().isOk());
 
@@ -649,7 +644,7 @@ class DataControllerTest extends ControllerTest {
 		postFileAndFileConfiguration();
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-		var result = mockMvc.perform(multipart("/api/data")
+		var result = mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                             .param("configuration",
 				                                    objectMapper.writeValueAsString(configuration)))
 		                    .andExpect(status().isOk())
@@ -657,13 +652,13 @@ class DataControllerTest extends ControllerTest {
 		final long dataSetId = assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 		final DataSetEntity dataset = dataSetRepository.findById(dataSetId).get();
 
-		mockMvc.perform(post("/api/data/confirm"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/confirm"))
 		       .andExpect(status().isOk());
 
 		assertTrue(dataset.isConfirmedData(), "Dataset should have been confirmed!");
 
 		final DataConfiguration configurationUpdate = DataConfigurationTestHelper.generateDataConfiguration("[0-9]*");
-		mockMvc.perform(multipart("/api/data/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/configuration")
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(
 						                       configurationUpdate)))
@@ -675,7 +670,7 @@ class DataControllerTest extends ControllerTest {
 	void loadConfigYaml() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/configuration")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
@@ -687,7 +682,7 @@ class DataControllerTest extends ControllerTest {
 	void loadConfigJson() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/configuration")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/configuration")
 		                                      .accept(MediaType.APPLICATION_JSON)
 		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
@@ -698,7 +693,7 @@ class DataControllerTest extends ControllerTest {
 	void getDataInfo() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/info")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/info")
 				                .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
@@ -709,7 +704,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void getDataInfoNoData() throws Exception {
-		mockMvc.perform(get("/api/data/info")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/info")
 				                .param("selector", "original"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("The project '" + testProject.getId() + "' does not contain an original data set!"));
@@ -723,7 +718,7 @@ class DataControllerTest extends ControllerTest {
 	void loadData() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
@@ -732,7 +727,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
 		                                      .param("selector", "original"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
@@ -742,7 +737,7 @@ class DataControllerTest extends ControllerTest {
 	@WithAnonymousUser
 	@Test
 	void loadDataNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
 		                                      .param("selector", "original"))
 		       .andExpect(status().isUnauthorized());
 	}
@@ -751,7 +746,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("columns", "column4_integer,column0_boolean"))
@@ -763,7 +758,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataInvalidColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
 		                                      .param("selector", "original")
 		                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		       .andExpect(status().isBadRequest())
@@ -777,7 +772,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
@@ -793,7 +788,7 @@ class DataControllerTest extends ControllerTest {
 
 		final String defaultNullEncoding = "N/A";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
@@ -809,7 +804,7 @@ class DataControllerTest extends ControllerTest {
 
 		final String defaultNullEncoding = "N/A";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
@@ -833,7 +828,7 @@ class DataControllerTest extends ControllerTest {
 
 		postData(false);
 
-		mockMvc.perform(post("/api/data/hold-out")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/hold-out")
 				                .param("holdOutPercentage", String.valueOf(holdOutPercentage)))
 		       .andExpect(status().isOk());
 
@@ -842,21 +837,21 @@ class DataControllerTest extends ControllerTest {
 		assertEquals(holdOutPercentage, project.getOriginalData().getDatasetConfiguration().getHoldOutSplitPercentage(),
 		             "Hold-out percentage not set correctly!");
 
-		mockMvc.perform(get("/api/data/data")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
 				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
 				                .accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().isOk())
 				.andExpect(content().json("[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']]"));
 
-		mockMvc.perform(get("/api/data/data")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
 				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name())
 				                .accept(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]"));
 
-		mockMvc.perform(get("/api/data/data")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
 				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.ALL.name())
 				                .accept(MediaType.APPLICATION_JSON))
@@ -868,7 +863,7 @@ class DataControllerTest extends ControllerTest {
 	void generateHoldOutSplitInvalidPercentageBig() throws Exception {
 		postData(false);
 
-		mockMvc.perform(post("/api/data/hold-out")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/hold-out")
 				                .param("holdOutPercentage", String.valueOf(1.3)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_3_2_1"))
@@ -880,7 +875,7 @@ class DataControllerTest extends ControllerTest {
 	void generateHoldOutSplitInvalidPercentageNegative() throws Exception {
 		postData(false);
 
-		mockMvc.perform(post("/api/data/hold-out")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/hold-out")
 				                .param("holdOutPercentage", String.valueOf(-0.01)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_3_2_1"))
@@ -900,7 +895,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSet() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
@@ -911,7 +906,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetJson() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_JSON)
 		                                      .param("selector", "original"))
 		       .andExpect(status().isOk())
@@ -920,7 +915,7 @@ class DataControllerTest extends ControllerTest {
 
 	@Test
 	void loadDataSetNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .param("selector", "original"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
@@ -930,7 +925,7 @@ class DataControllerTest extends ControllerTest {
 	@WithAnonymousUser
 	@Test
 	void loadDataSetNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .param("selector", "original"))
 		       .andExpect(status().isUnauthorized());
 	}
@@ -939,7 +934,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("columns", "column4_integer,column0_boolean"))
@@ -951,7 +946,7 @@ class DataControllerTest extends ControllerTest {
 	void loadDataSetInvalidColumns() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .param("selector", "original")
 		                                      .param("columns", "invalid1,column4_integer,invalid2"))
 		       .andExpect(status().isBadRequest())
@@ -965,7 +960,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
@@ -983,7 +978,7 @@ class DataControllerTest extends ControllerTest {
 		final String defaultNullEncoding = "N/A";
 		final String formatErrorEncoding = ":(";
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/data")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_JSON)
 		                                      .param("selector", "original")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
@@ -1002,7 +997,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResult() throws Exception {
 		postData(true);
 
-		mockMvc.perform(get("/api/data/transformationResult")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult")
 				                .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(oneOf(TransformationResultTestHelper.generateTransformationResultAsJsonA(),
@@ -1013,7 +1008,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPage() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "2")
 				                .param("perPage", "1"))
@@ -1026,7 +1021,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageAlternateDat() throws Exception {
 		postDataAlternative();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "2")
 				                .param("perPage", "1"))
@@ -1039,7 +1034,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageWithErrors() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "2")
 				                .param("perPage", "2"))
@@ -1052,7 +1047,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageEncodedErrors() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "3")
 				                .param("perPage", "1")
@@ -1068,7 +1063,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageSelectErrors() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "2")
@@ -1085,7 +1080,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageSelectValid() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "1")
@@ -1100,7 +1095,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageSelectColumn() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "10")
@@ -1118,7 +1113,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageSelectColumnValid() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "10")
@@ -1136,7 +1131,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageSelectColumnError() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "10")
@@ -1154,7 +1149,7 @@ class DataControllerTest extends ControllerTest {
 	void loadTransformationResultPageSelectColumnAllValid() throws Exception {
 		postData();
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "10")
@@ -1171,7 +1166,7 @@ class DataControllerTest extends ControllerTest {
 		postData();
 		createHoldOut(0.2f);
 
-		mockMvc.perform(get("/api/data/transformationResult/page")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult/page")
 				                .param("selector", "original")
 				                .param("page", "1")
 				                .param("perPage", "10")
@@ -1190,26 +1185,24 @@ class DataControllerTest extends ControllerTest {
 	private void testStoreConfig(final String configuration) throws Exception {
 		postFileAndFileConfiguration();
 
-		mockMvc.perform(multipart("/api/data/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/configuration")
 				                .param("configuration", configuration))
 		       .andExpect(status().isOk());
 		final DataSetEntity dataSetEntity = getTestProject().getOriginalData().getDataSet();
 		final var dataSetId = dataSetEntity.getId();
 
-		UserEntity testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
 		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
 		assertEquals(".*",
-		             ((StringPatternConfiguration) testUser.getProject().getOriginalData().getDataSet()
-		                                                   .getDataConfiguration().getConfigurations().get(5)
-		                                                   .getConfigurations().get(0))
+		             ((StringPatternConfiguration) testProject.getOriginalData().getDataSet()
+		                                                      .getDataConfiguration().getConfigurations().get(5)
+		                                                      .getConfigurations().get(0))
 				             .getPattern(),
 		             "Type of first column does not match!");
 
 		final DataConfiguration configurationUpdate = DataConfigurationTestHelper.generateDataConfiguration("[0-9]*");
 
-		mockMvc.perform(multipart("/api/data/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/configuration")
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(
 						                       configurationUpdate)))
@@ -1219,11 +1212,10 @@ class DataControllerTest extends ControllerTest {
 		testUser = getTestUser();
 		assertFalse(existsTable(dataSetId), "Table should not exist!");
 		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
-		assertNotNull(testUser.getProject(), "User has not been associated with the dataset!");
 		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testUser.getProject().getOriginalData().getDataSet()
-		                                                   .getDataConfiguration().getConfigurations().get(5)
-		                                                   .getConfigurations().get(0)).getPattern(),
+		             ((StringPatternConfiguration) testProject.getOriginalData().getDataSet()
+		                                                      .getDataConfiguration().getConfigurations().get(5)
+		                                                      .getConfigurations().get(0)).getPattern(),
 		             "Type of first column does not match!");
 	}
 

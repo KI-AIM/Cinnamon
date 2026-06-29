@@ -50,14 +50,14 @@ public class ProjectControllerTest extends ControllerTest {
 
 	@Test
 	public void getStatus() throws Exception {
-		mockMvc.perform(get("/api/project/status"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/status"))
 		       .andExpect(status().isOk())
 				.andExpect(jsonPath("$.currentStep").value("WELCOME"));
 	}
 
 	@Test
 	public void confirm() throws Exception {
-		mockMvc.perform(post("/api/project/step")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/step")
 				                .contentType(MediaType.MULTIPART_FORM_DATA)
 				                .param("step", "TECHNICAL_EVALUATION"))
 		       .andExpect(status().isOk());
@@ -67,7 +67,7 @@ public class ProjectControllerTest extends ControllerTest {
 
 	@Test
 	public void resetInvalidTarget() throws Exception {
-		mockMvc.perform(delete("/api/project/reset")
+		mockMvc.perform(delete("/api/project/" + testProject.getExternalId() + "/reset")
 				                .queryParam("target", "INVALID.RESOURCE"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_1_11_2"))
@@ -76,11 +76,11 @@ public class ProjectControllerTest extends ControllerTest {
 
 	@Test
 	public void getProjectConfiguration() throws Exception {
-		mockMvc.perform(get("/api/project/configuration"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/configuration"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
-		                                   projectName: 'test_user',
+		                                   projectName: 'Test Project',
 		                                   contactMail: null,
 		                                   contactUrl: null,
 		                                   reportCreator: null,
@@ -104,7 +104,7 @@ public class ProjectControllerTest extends ControllerTest {
 		metricConfiguration.setColorScheme("TEST_COLOR_SCHEME");
 		dto.setMetricConfiguration(metricConfiguration);
 
-		mockMvc.perform(put("/api/project/configuration")
+		mockMvc.perform(put("/api/project/" + testProject.getExternalId() + "/configuration")
 				                .contentType(MediaType.APPLICATION_JSON)
 				                .content(jsonMapper.writeValueAsString(dto)))
 		       .andExpect(status().isOk());
@@ -118,7 +118,7 @@ public class ProjectControllerTest extends ControllerTest {
 		var dto = ProjectConfigurationTestHelper.generateProjectConfigurationDTO();
 		dto.setMetricConfiguration(null);
 
-		mockMvc.perform(put("/api/project/configuration")
+		mockMvc.perform(put("/api/project/" + testProject.getExternalId() + "/configuration")
 				                .contentType(MediaType.APPLICATION_JSON)
 				                .content(jsonMapper.writeValueAsString(dto)))
 		       .andExpect(status().isBadRequest())
@@ -132,7 +132,7 @@ public class ProjectControllerTest extends ControllerTest {
 
 	@Test
 	public void getInvalidResultFile() throws Exception {
-		mockMvc.perform(get("/api/project/resultFile")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/resultFile")
 				                .param("executionStepName", "evaluation")
 				                .param("processStepName", "technical_evaluation")
 				                .param("name", "invalidFile.txt"))

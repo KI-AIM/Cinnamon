@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.ResultMatcher;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -98,7 +99,7 @@ public class ControllerTest extends DatabaseTest {
 		postFile(withErrors, alternative);
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration(alternative);
-		String result = mockMvc.perform(multipart("/api/data")
+		String result = mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
 		                       .andExpect(status().isOk())
@@ -107,11 +108,11 @@ public class ControllerTest extends DatabaseTest {
 		return assertDoesNotThrow(() -> Long.parseLong(result.trim()));
 	}
 
-	protected void postData(final boolean withErrors, final String user) throws Exception {
-		postFile(withErrors, user);
+	protected void postData(final boolean withErrors, final String user, final UUID projectId) throws Exception {
+		postFile(withErrors, user, projectId);
 
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-		String result = mockMvc.perform(multipart("/api/data")
+		String result = mockMvc.perform(multipart("/api/project/" + projectId + "/data")
 				                                .with(httpBasic(user, "changeme"))
 				                                .param("configuration",
 				                                       objectMapper.writeValueAsString(configuration)))
@@ -123,7 +124,7 @@ public class ControllerTest extends DatabaseTest {
 
 	protected void postDataSource(DataSourceType type) throws Exception {
 		var configuration = FileConfigurationTestHelper.generateDataSourceConfiguration(type);
-		mockMvc.perform(multipart("/api/data/file/source")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/source")
 				                .param("dataSourceConfiguration", objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk());
 	}
@@ -140,19 +141,19 @@ public class ControllerTest extends DatabaseTest {
 			}
 		}
 
-		mockMvc.perform(multipart("/api/data/file")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file")
 				                .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: null, numberOfAttributes: 0}"));
 
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: 'CSV', numberOfAttributes: 6}"));
 	}
 
-	protected void postFile(final boolean withErrors, final String user) throws Exception {
+	protected void postFile(final boolean withErrors, final String user, final UUID projectId) throws Exception {
 		MockMultipartFile file;
 		if (withErrors) {
 			file = ResourceHelper.loadCsvFileWithErrors();
@@ -160,14 +161,14 @@ public class ControllerTest extends DatabaseTest {
 			file = ResourceHelper.loadCsvFile();
 		}
 
-		mockMvc.perform(multipart("/api/data/file")
+		mockMvc.perform(multipart("/api/project/" + projectId + "/data/file")
 				                .file(file)
 				                .with(httpBasic(user, "changeme")))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.csv', type: null, fhirResourceTypes: null, numberOfAttributes: 0}"));
 
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + projectId + "/data/file/configuration")
 				                .with(httpBasic(user, "changeme"))
 				                .param("fileConfiguration", objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
@@ -178,12 +179,12 @@ public class ControllerTest extends DatabaseTest {
 		final MockMultipartFile file = ResourceHelper.loadFhirBundle();
 		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.FHIR);
 
-		mockMvc.perform(multipart("/api/data/file")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file")
 				                .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{name: 'file.json', type: null, fhirResourceTypes: ['Patient', 'Observation'], numberOfAttributes: 0}"));
 
-		mockMvc.perform(multipart("/api/data/file/configuration")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
@@ -191,26 +192,26 @@ public class ControllerTest extends DatabaseTest {
 	}
 
 	protected void estimateDataConfiguration() throws Exception {
-		mockMvc.perform(get("/api/data/estimation"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/estimation"))
 		       .andExpect(status().isOk());
 	}
 
 	protected void createHoldOut(final float holdOutPercentage) throws Exception {
-		mockMvc.perform(post("/api/data/hold-out")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/hold-out")
 				                .param("holdOutPercentage", String.valueOf(holdOutPercentage)))
 		       .andExpect(status().isOk());
 	}
 
 	protected void storeData() throws Exception {
 		final DataConfiguration configuration = DataConfigurationTestHelper.generateDataConfiguration();
-		mockMvc.perform(multipart("/api/data")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("configuration",
 				                       objectMapper.writeValueAsString(configuration)))
 		       .andExpect(status().isOk());
 	}
 
 	protected void confirmData() throws Exception {
-		mockMvc.perform(post("/api/data/confirm"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/data/confirm"))
 		       .andExpect(status().isOk());
 	}
 

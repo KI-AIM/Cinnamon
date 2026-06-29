@@ -1196,7 +1196,8 @@ public class ProcessService {
 		                                                     .toUriString();
 
 		bodyBuilder.part(endpoint.getCallbackPartName(),
-		                 serverAddress + "/api/process/" + externalProcess.getUuid() + "/callback");
+		                 serverAddress + "/api/project/" + externalProcess.getProject().getExternalId() +
+		                 "/process/" + externalProcess.getUuid() + "/callback");
 
 		// Build the URL
 		final String serverUrl = instance.getUrl();

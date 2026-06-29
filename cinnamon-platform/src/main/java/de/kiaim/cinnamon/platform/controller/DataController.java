@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/data")
+@RequestMapping("/api/project/{projectId}/data")
 @Tag(name = "/api/data", description = "API for managing data sets. " +
                                        "Supports CSV files. " +
                                        "Data Sets are associated with the user of the request.")
@@ -74,10 +74,12 @@ public class DataController {
 	})
 	@GetMapping(value = "/file/source",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public DataSourceConfiguration getDataSourceConfiguration(@AuthenticationPrincipal final UserEntity requestUser)
-			throws ApiException {
+	public DataSourceConfiguration getDataSourceConfiguration(
+			@PathVariable final String projectId,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project =  projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		return databaseService.exportDataSourceConfiguration(project);
 	}
 
@@ -99,11 +101,12 @@ public class DataController {
 	@PostMapping(value = "/file/source",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public FileInformation storeDataSourceConfiguration(
+			@PathVariable final String projectId,
 			final @Valid UploadDataSourceConfigurationRequest request,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project =  projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		databaseService.storeDataSourceConfiguration(project, request.getDataSourceConfiguration());
 		return databaseService.getFileInformation(project);
 	}
@@ -124,10 +127,11 @@ public class DataController {
 	@PostMapping(value = "/file/retrieve",
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public FileInformation retrieveFile(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		return databaseService.retrieveAndStoreFile(project);
 	}
 
@@ -153,11 +157,12 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<FileInformation> uploadFile(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final UploadFileRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		DataSourceConfiguration config;
 		try {
@@ -186,10 +191,11 @@ public class DataController {
 	@GetMapping(value = "/file",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<FileInformation> getFile(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
+	) throws BadArgumentException, BadProjectException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity = projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 		final var fileInformation = databaseService.getFileInformation(projectEntity);
 		return ResponseEntity.ok(fileInformation);
 	}
@@ -215,10 +221,11 @@ public class DataController {
 	@PostMapping(value = "/file/estimation",
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public FileConfigurationEstimation estimateFileConfiguration(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 		return databaseService.estimateAndStoreFileConfiguration(projectEntity);
 	}
 
@@ -226,11 +233,12 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<FileInformation> uploadFileConfiguration(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final UploadFileConfigurationRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		databaseService.storeFileConfiguration(projectEntity, requestData.getFileConfiguration());
 		final FileInformation fileInformation = databaseService.getFileInformation(projectEntity);
@@ -239,9 +247,12 @@ public class DataController {
 	}
 
 	@GetMapping(value = "/file/configuration")
-	public FileConfiguration getFileConfiguration(@AuthenticationPrincipal final UserEntity requestUser) {
+	public FileConfiguration getFileConfiguration(
+			@PathVariable final String projectId,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws BadArgumentException, BadProjectException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 		return databaseService.exportFileConfiguration(projectEntity);
 	}
 
@@ -267,9 +278,10 @@ public class DataController {
 	@GetMapping(value = "/estimation",
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> estimateDatatypes(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.ESTIMATE, null, null, null, user);
+		return handleRequest(projectId, RequestType.ESTIMATE, null, null, null, user);
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
@@ -294,11 +306,12 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> storeConfig(
+			@PathVariable final String projectId,
 			// The configuration is not validated by design, to allow uploading invalid configurations and fix them in the UI in the following step
 			final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_CONFIG, request.getConfiguration(), null, null, user);
+		return handleRequest(projectId, RequestType.STORE_CONFIG, request.getConfiguration(), null, null, user);
 	}
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
@@ -324,10 +337,11 @@ public class DataController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> storeData(
+			@PathVariable final String projectId,
 			@Valid final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.STORE_DATE_SET, request.getConfiguration(), null, null, user);
+		return handleRequest(projectId, RequestType.STORE_DATE_SET, request.getConfiguration(), null, null, user);
 	}
 
 	@Operation(summary = "Confirms that the current dataset should be used.",
@@ -349,9 +363,10 @@ public class DataController {
 	             consumes = MediaType.ALL_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> confirmData(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.CONFIRM_DATE_SET, null, null, null, user);
+		return handleRequest(projectId, RequestType.CONFIRM_DATE_SET, null, null, null, user);
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
@@ -375,10 +390,11 @@ public class DataController {
 	@GetMapping(value = "/configuration",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadConfig(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_CONFIG, null, dataSetSource, null, user);
+		return handleRequest(projectId, RequestType.LOAD_CONFIG, null, dataSetSource, null, user);
 	}
 
 	@Operation(summary = "Returns general information the data set.",
@@ -402,10 +418,11 @@ public class DataController {
 	@GetMapping(value = "/info",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> info(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.INFO, null, dataSetSource, null, user);
+		return handleRequest(projectId, RequestType.INFO, null, dataSetSource, null, user);
 	}
 
 	@Operation(summary = "Returns the data of the data set.",
@@ -440,11 +457,12 @@ public class DataController {
 	@GetMapping(value = "/data",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadData(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA, null, dataSetSource, request, user);
+		return handleRequest(projectId, RequestType.LOAD_DATA, null, dataSetSource, request, user);
 	}
 
 	@Operation(summary = "Creates a hold-out split.",
@@ -465,11 +483,12 @@ public class DataController {
 	@PostMapping(value = "/hold-out",
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> generateHoldOutSplit(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final HoldOutRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity = projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		final DatasetConfiguration datasetConfiguration = databaseService.getDatasetConfiguration(projectEntity);
 		datasetConfiguration.setHoldOutSplitPercentage(request.getHoldOutPercentage());
@@ -500,11 +519,12 @@ public class DataController {
 	@GetMapping(value = "",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadDataSet(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_DATA_SET, null, dataSetSource, request, user);
+		return handleRequest(projectId, RequestType.LOAD_DATA_SET, null, dataSetSource, request, user);
 	}
 
 	@Operation(summary = "Returns the entire transformation result.",
@@ -530,11 +550,12 @@ public class DataController {
 	@GetMapping(value = "/transformationResult",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Object> loadTransformationResult(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@ParameterObject LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(RequestType.LOAD_TRANSFORMATION_RESULT, null, dataSetSource, request, user);
+		return handleRequest(projectId, RequestType.LOAD_TRANSFORMATION_RESULT, null, dataSetSource, request, user);
 	}
 
 	@Operation(summary = "Returns a page the transformation result.",
@@ -559,6 +580,7 @@ public class DataController {
 	@GetMapping(value = "/transformationResult/page",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public TransformationResultPage loadTransformationResultPage(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@Parameter(description = "Page number starting at 1.")
 			@RequestParam(required = true) final Integer page,
@@ -570,7 +592,7 @@ public class DataController {
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
 		final UserEntity user2 = userService.getUserByEmail(user.getEmail());
-		final ProjectEntity project = projectService.getProject(user2);
+		final ProjectEntity project = projectService.getProject(user2, projectId);
 
 		dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 		return databaseService.exportTransformationResultPage(
@@ -592,6 +614,7 @@ public class DataController {
 	 *     <li>{@link RequestType#STORE_DATE_SET}: configuration, user</li>
 	 * </ul>
 	 *
+	 * @param projectId       ID of the project.
 	 * @param requestType     Type of the request.
 	 * @param configuration   Configuration describing the source data.
 	 * @param loadDataRequest Settings for the data set export.
@@ -600,6 +623,7 @@ public class DataController {
 	 * @return Response entity containing the response based on the request type or an error description.
 	 */
 	private ResponseEntity<Object> handleRequest(
+			final String projectId,
 			final RequestType requestType,
 			@Nullable final DataConfiguration configuration,
 			@Nullable final DataSetSource dataSetSource,
@@ -607,7 +631,7 @@ public class DataController {
 			final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity = projectService.getProject(user);
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		final List<String> columnNames = loadDataRequest != null
 		                                 ? loadDataRequest.getColumnNames()
@@ -641,7 +665,14 @@ public class DataController {
 				                                       columnIndexMapping, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
-				result = databaseService.exportDataSet(projectEntity, columnNames, holdOutSelector, dataSetSource);
+				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(
+						projectEntity, dataSetSource);
+				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
+				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
+						dataSetEntity.getDataConfiguration(), columnNames);
+				final List<List<Object>> dataRows = dataSetService.encodeDataRows(
+						dataSet, dataSetEntity.getDataTransformationErrors(), columnIndexMapping, loadDataRequest);
+				result = new DataSetEncoded(dataSet.getDataConfiguration(), dataRows);
 			}
 			case LOAD_TRANSFORMATION_RESULT -> {
 				result = databaseService.exportTransformationResult(projectEntity, holdOutSelector, dataSetSource);

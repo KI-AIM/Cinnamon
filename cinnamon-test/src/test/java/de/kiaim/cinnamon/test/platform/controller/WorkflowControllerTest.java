@@ -264,7 +264,7 @@ public class WorkflowControllerTest extends ControllerTest {
 	}
 
 	private void finish(String workflowId, int stageIndex, int processIndex, String nextAlgorithm) throws Exception {
-		var updateTestProject = getTestUser().getWorkflow(UUID.fromString(workflowId)).getProject();
+		var updateTestProject = getTestUser().getProject(UUID.fromString(workflowId));
 
 		var process = updateTestProject.getPipelines().get(0).getStageByIndex(stageIndex).getProcess(processIndex);
 		assertNotNull(process.getUuid(), "No UUID has been assigned to the process!");
@@ -288,7 +288,7 @@ public class WorkflowControllerTest extends ControllerTest {
 		}
 
 		// Send callback request
-		var r = multipart("/api/process/" + id + "/callback");
+		var r = multipart("/api/project/" + workflowId + "/process/" + id + "/callback");
 		for (var abc : process.getJob().getEndpoint().getOutputs()) {
 			if (abc.getEncoding() == StepOutputEncoding.DATA_SET) {
 				var anonymizationResult = new MockMultipartFile(abc.getPartName(), "additional.json",
@@ -313,7 +313,7 @@ public class WorkflowControllerTest extends ControllerTest {
 
 	private void deleteWorkflow(String workflowId) throws Exception {
 		var datasetIds = new ArrayList<Long>();
-		var project = getTestUser().getWorkflow(UUID.fromString(workflowId)).getProject();
+		var project = getTestUser().getProject(UUID.fromString(workflowId));
 
 		if (project.getOriginalData().getDataSet() != null) {
 			datasetIds.add(project.getOriginalData().getDataSet().getId());
@@ -334,8 +334,6 @@ public class WorkflowControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		// Test if cleanup was successful
-		var user = getTestUser();
-		assertTrue(user.getWorkflows().isEmpty(), "Workflow has not been deleted!");
 		assertFalse(projectRepository.existsById(projectId), "Project has not been deleted!");
 
 		for (var datasetId : datasetIds) {

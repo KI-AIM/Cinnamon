@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.StatusEntity;
@@ -67,10 +68,22 @@ public class ProjectController {
 			@Parameter(description = "Mode of the project.", required = true)
 			@RequestParam() final Mode mode,
 			@AuthenticationPrincipal final UserEntity user
-	) {
-		final ProjectEntity project = projectService.getProject(user);
+	) throws ApiException {
+		final ProjectEntity project = projectService.createProject(user);
 		projectService.setMode(project, mode);
 		return project.getStatus();
+	}
+
+	@DeleteMapping(value = "/{projectId}",
+	               consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public void deleteProject(
+			@PathVariable final String projectId,
+			@ParameterObject @Valid final ConfirmUserRequest confirmUserRequest,
+			@AuthenticationPrincipal final UserEntity user
+	) throws ApiException {
+		userService.confirmUser(confirmUserRequest, user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
+		projectService.deleteProject(user, project);
 	}
 
 	@Operation(summary = "Returns the status of the user's project.",
@@ -80,21 +93,23 @@ public class ProjectController {
 			             description = "Response contains the status.",
 			             content = @Content(schema = @Schema(implementation = StatusEntity.class))),
 	})
-	@GetMapping(value = "/status",
+	@GetMapping(value = "/{projectId}/status",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public StatusEntity getProjectStatus(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
-		return projectService.getProject(requestUser).getStatus();
+	) throws ApiException {
+		return projectService.getProject(requestUser, projectId).getStatus();
 	}
 
-	@PostMapping(value = "/step")
+	@PostMapping(value = "/{projectId}/step")
 	public void postStep(
+			@PathVariable final String projectId,
 			@RequestParam(required = true) final Step step,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
+	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.updateCurrentStep(project, step);
 	}
 
@@ -113,15 +128,15 @@ public class ProjectController {
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@DeleteMapping(value = "/reset")
+	@DeleteMapping(value = "/{projectId}/reset")
 	public void resetProject(
+			@PathVariable final String projectId,
 			@Parameter(description = "Target identifier to reset. If missing or empty, the entire project is reset.")
 			@RequestParam(required = false) final String target,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadArgumentException, BadStateException, BadStepNameException, InternalDataSetPersistenceException,
-			         InternalInvalidStateException {
+	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.resetProject(project, target);
 	}
 
@@ -132,11 +147,12 @@ public class ProjectController {
 			             description = "Response contains the configurations.",
 			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
 	})
-	@GetMapping(value = "/configuration", produces = {MediaType.APPLICATION_JSON_VALUE})
+	@GetMapping(value = "/{projectId}/configuration", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ProjectConfigurationDTO getProjectConfiguration(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
-		final var project = projectService.getProject(requestUser);
+	) throws ApiException {
+		final var project = projectService.getProject(requestUser, projectId);
 		return projectService.exportProjectConfiguration(project);
 	}
 
@@ -147,12 +163,13 @@ public class ProjectController {
 			             description = "The configuration has been updated.",
 			             content = @Content()),
 	})
-	@PutMapping(value = "/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
+	@PutMapping(value = "/{projectId}/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
 	public void setProjectConfiguration(
+			@PathVariable final String projectId,
 			@RequestBody @Valid final ProjectConfigurationDTO projectConfigurationDTO,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
-		final var project = projectService.getProject(requestUser);
+	) throws ApiException {
+		final var project = projectService.getProject(requestUser, projectId);
 		projectService.updateProjectConfiguration(project, projectConfigurationDTO);
 	}
 
@@ -173,16 +190,17 @@ public class ProjectController {
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@GetMapping(value = "/zip",
+	@GetMapping(value = "/{projectId}/zip",
 	            produces = {CustomMediaType.APPLICATION_ZIP_VALUE})
 	public ResponseEntity<StreamingResponseBody> getZip(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser,
 			@ParameterObject final ProjectExportParameter projectExportParameter,
 			final HttpServletResponse response
-	) throws BadConfigurationNameException, BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		return exportService.createZipFile(project, response, projectExportParameter);
 	}
@@ -199,17 +217,18 @@ public class ProjectController {
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@GetMapping(value = "/resultFile", produces = {MediaType.ALL_VALUE})
+	@GetMapping(value = "/{projectId}/resultFile", produces = {MediaType.ALL_VALUE})
 	@Transactional(readOnly = true)
 	public ResponseEntity<Object> getResultFile(
+			@PathVariable final String projectId,
 			@RequestParam final String executionStepName,
 			@RequestParam final String processStepName,
 			@RequestParam final String name,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadQueryException, BadStepNameException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Stage stage = stepService.getStageConfiguration(executionStepName);
 		final Job job = stepService.getStepConfiguration(processStepName);

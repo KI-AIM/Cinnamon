@@ -46,7 +46,7 @@ public class ProjectConfigurationTestHelper {
 
 	public static String generateProjectConfigurationAsJson() {
 		return """
-		       {"projectName":"test_user","contactMail":null,"contactUrl":null,"reportCreator":null,"metricConfiguration":null}""";
+		       {"projectName":"Test Project","contactMail":null,"contactUrl":null,"reportCreator":null,"metricConfiguration":null}""";
 	}
 
 	public static String generateProjectConfigurationAsExport() {

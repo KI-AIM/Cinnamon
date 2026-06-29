@@ -16,12 +16,19 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 /**
  * Service class for managing projects.
  */
 @Service
 @Log4j2
 public class ProjectService {
+
+	public static final int GEN_EXTERNAL_ID_MAX_RETRIES = 10;
 
 	private final CinnamonConfiguration cinnamonConfiguration;
 
@@ -52,15 +59,13 @@ public class ProjectService {
 		this.stepService = stepService;
 	}
 
-	/**
-	 * Checks if the given user has a project.
-	 *
-	 * @param user The user to check.
-	 * @return If the user ha a project.
-	 */
-	public boolean hasProject(final UserEntity user) {
-		final UserEntity user2 = userRepository.findById(user.getEmail()).get();
-		return user2.getProject() != null;
+	@Transactional
+	public ProjectEntity createProject(final UserEntity user)
+			throws InternalApplicationConfigurationException, InternalErrorException {
+		final long numberProjects = projectRepository.count();
+		final String projectName = "Project " + (numberProjects + 1);
+
+		return createProject(user, projectName, System.currentTimeMillis());
 	}
 
 	/**
@@ -68,13 +73,16 @@ public class ProjectService {
 	 * Otherwise, returns the existing project.
 	 * Creates a random seed.
 	 *
-	 * @param user The user.
+	 * @param user        The user.
+	 * @param projectName The name of the project.
 	 * @return The projects of the user.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
+	 * @throws InternalErrorException                    If the project could not be created.
 	 */
 	@Transactional
-	public ProjectEntity createProject(final UserEntity user) throws InternalApplicationConfigurationException {
-		return createProject(user, System.currentTimeMillis());
+	public ProjectEntity createProject(final UserEntity user, final String projectName)
+			throws InternalApplicationConfigurationException, InternalErrorException {
+		return createProject(user, projectName, System.currentTimeMillis());
 	}
 
 	/**
@@ -82,24 +90,23 @@ public class ProjectService {
 	 * Otherwise, returns the existing project.
 	 *
 	 * @param user        The user.
+	 * @param projectName The name of the project.
 	 * @param projectSeed The seed used for the project.
 	 * @return The projects of the user.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
+	 * @throws InternalErrorException                    If the project could not be created.
 	 */
 	@Transactional
-	public ProjectEntity createProject(final UserEntity user,
-	                                   final long projectSeed) throws InternalApplicationConfigurationException {
-		if (hasProject(user)) {
-			return user.getProject();
-		}
-
+	public ProjectEntity createProject(final UserEntity user, final String projectName, final long projectSeed)
+			throws InternalApplicationConfigurationException, InternalErrorException {
 		final ProjectEntity project = createProject(projectSeed);
-		user.setProject(project);
-		// TODO change if projects are decoupled form users
-		project.getProjectConfiguration().setProjectName(user.getEmail());
+		user.addProject(project);
 
-		log.debug("Created project for user '{}'", user.getEmail());
-		return userRepository.save(user).getProject();
+		project.getProjectConfiguration().setProjectName(projectName);
+
+		log.debug("Created project with ID {} for user '{}'", project.getExternalId(), user.getEmail());
+
+		return userRepository.save(user).getProject(project.getExternalId());
 	}
 
 	/**
@@ -108,9 +115,12 @@ public class ProjectService {
 	 * @param projectSeed The seed used for the projects.
 	 * @return The project.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
+	 * @throws InternalErrorException                    If the project could not be created.
 	 */
-	public ProjectEntity createProject(final long projectSeed) throws InternalApplicationConfigurationException {
+	public ProjectEntity createProject(final long projectSeed)
+			throws InternalApplicationConfigurationException, InternalErrorException {
 		final ProjectEntity project = new ProjectEntity(projectSeed);
+		project.setExternalId(generateUUID());
 
 		final PipelineEntity pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);
@@ -160,22 +170,49 @@ public class ProjectService {
 		return projectRepository.save(projectEntity);
 	}
 
-	/**
-	 * Returns the project of the user.
-	 * Creates a new project, if the user does not have one.
-	 * TODO: Add projectId parameter if multiple projects are supported
-	 *
-	 * @param user The user of the project.
-	 * @return The project.
-	 */
-	@Transactional
-	public ProjectEntity getProject(final UserEntity user) {
-		if (!hasProject(user)) {
-			throw new RuntimeException("No project");
+	@Transactional(readOnly = true)
+	public ProjectEntity getProject(final UserEntity user, final String projectId)
+			throws BadArgumentException, BadProjectException {
+		UUID workflowIdAsUUID;
+
+		try {
+			workflowIdAsUUID = UUID.fromString(projectId);
+		} catch (final IllegalArgumentException e) {
+			throw new BadArgumentException(BadArgumentException.INVALID_PROJECT_ID, "Invalid project ID format");
 		}
 
-		final UserEntity user2 = userRepository.findById(user.getEmail()).get();
-		return user2.getProject();
+
+		return getProject(user, workflowIdAsUUID);
+	}
+
+	@Transactional(readOnly = true)
+	public ProjectEntity getProject(final UserEntity user, final UUID projectId) throws BadProjectException {
+		final Optional<ProjectEntity> project = projectRepository.findByExternalId(projectId);
+		if (project.isEmpty() || project.get().getUser() == null ||
+		    !project.get().getUser().getEmail().equals(user.getEmail())) {
+			throw new BadProjectException(BadProjectException.NOT_FOUND,
+			                               "Project with ID " + projectId + " not found");
+		}
+
+		return project.get();
+	}
+
+	/**
+	 * Returns all workflows that have expired.
+	 *
+	 * @return List of expired workflows.
+	 */
+	@Transactional(readOnly = true)
+	public List<ProjectEntity> getExpiredProjects() {
+		final Timestamp expirationDate = new Timestamp(System.currentTimeMillis());
+		return projectRepository.findAllByExpirationDateBefore(expirationDate);
+	}
+
+	@Transactional
+	public void deleteProject(final ProjectEntity project)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		final UserEntity user = project.getUser();
+		deleteProject(user, project);
 	}
 
 	/**
@@ -187,14 +224,11 @@ public class ProjectService {
 	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
 	@Transactional
-	public void deleteProject(final UserEntity user)
+	public void deleteProject(final UserEntity user, final ProjectEntity project)
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
-		if (hasProject(user)) {
-			final ProjectEntity p = getProject(user);
-			resetEntireProject(p);
-			user.setProject(null);
-			log.debug("Deleted project for user '{}'", user.getEmail());
-		}
+		resetEntireProject(project);
+		user.removeProject(project);
+		log.debug("Deleted project for user '{}'", user.getEmail());
 	}
 
 	/**
@@ -309,4 +343,26 @@ public class ProjectService {
 		processService.deletePipeline(project);
 		databaseService.deleteOriginalData(project);
 	}
+
+	/**
+	 * Generates a unique workflow ID.
+	 *
+	 * @return The generated workflow ID.
+	 * @throws InternalErrorException If the ID could not be generated after 10 retries.
+	 */
+	private UUID generateUUID() throws InternalErrorException {
+		UUID uuid;
+		for (int i = 0; i < GEN_EXTERNAL_ID_MAX_RETRIES; i++) {
+			uuid = UUID.randomUUID();
+
+			if (projectRepository.countByExternalId(uuid) == 0) {
+				return uuid;
+			}
+		}
+
+		throw new InternalErrorException(InternalErrorException.GEN_EXTERNAL_ID_MAX_RETRIES,
+		                                 "Failed to generate a unique workflow ID after " +
+		                                 GEN_EXTERNAL_ID_MAX_RETRIES+ " retries! Please try again later.");
+	}
+
 }

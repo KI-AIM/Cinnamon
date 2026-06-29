@@ -25,7 +25,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/config")
+@RequestMapping("/api/project/{projectId}/config")
 @Tag(name = "/api/config", description = "API for managing configurations. " +
                                          "Configurations are associated with the user of the request.")
 public class ConfigurationController {
@@ -63,16 +63,17 @@ public class ConfigurationController {
 	})
 	@GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ConfigurationInfo info(
+			@PathVariable final String projectId,
 			@Parameter(description = "Name of the configuration.",
 			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
 			                              schema = @Schema(implementation = String.class)),
 			           required = true)
 			@RequestParam("name") final String configurationName,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadConfigurationNameException, InternalInvalidStateException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		return externalConfigurationService.getInfo(configurationName, project);
 	}
 
@@ -87,12 +88,13 @@ public class ConfigurationController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public void store(
+			@PathVariable final String projectId,
 			@Valid @ParameterObject ConfigurationRequest configurationRequest,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadAlgorithmException, BadConfigurationFileException, BadConfigurationNameException, BadStateException, InternalIOException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		configurationService.importExternalConfiguration(project, configurationRequest.getConfiguration());
 	}
 
@@ -114,12 +116,13 @@ public class ConfigurationController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ConfigurationImportSummary importConfigurations(
+			@PathVariable final String projectId,
 			@Valid @ParameterObject ImportConfigurationRequest importConfigurationRequest,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadFileException, BadConfigurationFileException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		return configurationService.importConfigurations(project, importConfigurationRequest.getConfiguration(),
 		                                                 importConfigurationRequest.getImportParameters());
 	}
@@ -147,16 +150,17 @@ public class ConfigurationController {
 	@GetMapping(value = "",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public Object load(
+			@PathVariable final String projectId,
 			@Parameter(description = "Name of the configuration to be loaded.",
 			           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
 			                              schema = @Schema(implementation = String.class)),
 			           required = true)
 			@RequestParam(name = "name") final String configurationName,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadStateException, InternalIOException, BadConfigurationNameException, InternalInvalidStateException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		return configurationService.loadConfiguration(configurationName, project);
 	}
 
@@ -181,7 +185,7 @@ public class ConfigurationController {
 	@GetMapping(value = "/algorithms", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public AvailableAlgorithms getAvailableAlgorithms(
 			@Valid final AvailableAlgorithmsRequest request
-	) throws InternalRequestException, BadConfigurationNameException {
+	) throws ApiException {
 		return externalConfigurationService.fetchAvailableAlgorithms(request.getConfigurationName());
 	}
 
@@ -206,11 +210,12 @@ public class ConfigurationController {
 	})
 	@GetMapping(value = "/algorithm", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public AlgorithmDefinition getAlgorithmDefinition(
+			@PathVariable final String projectId,
 			@Valid final AlgorithmDefinitionRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
-	) throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalRequestException {
+	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		return externalConfigurationService.fetchAlgorithmDefinition(project, request.getConfigurationName(),
 		                                                             request.getDefinitionPath());
 	}

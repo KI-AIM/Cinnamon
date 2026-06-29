@@ -24,7 +24,7 @@ public class StatisticsControllerTest extends ControllerTest {
 
 	@Test
 	public void getStatisticsNoData() throws Exception {
-		mockMvc.perform(get("/api/statistics")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/statistics")
 				                .param("selector", "original"))
 		       .andExpect(status().isBadRequest());
 	}
@@ -43,7 +43,7 @@ public class StatisticsControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(get("/api/statistics")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/statistics")
 				                .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{status: 'RUNNING', statistics: null}"));
@@ -66,7 +66,7 @@ public class StatisticsControllerTest extends ControllerTest {
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "statistics".getBytes());
 
-		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/process/" + id + "/callback")
 				                .file(resultAdditional))
 		       .andExpect(status().isOk());
 
@@ -77,7 +77,7 @@ public class StatisticsControllerTest extends ControllerTest {
 				                    .body("error")
 				                    .build());
 
-		mockMvc.perform(get("/api/statistics")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/statistics")
 				                .param("selector", "original"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("{status: 'FINISHED', statistics: 'statistics'}"));

@@ -5,7 +5,6 @@ import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,12 +29,10 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
 	private final UserService userService;
-	private final ProjectService projectService;
 
 	@Autowired
-	public UserController(final UserService userService, final ProjectService projectService) {
+	public UserController(final UserService userService) {
 		this.userService = userService;
-		this.projectService = projectService;
 	}
 
 	@Operation(summary = "Check if the user credentials belong to an authorized user.",
@@ -58,8 +55,6 @@ public class UserController {
 	public boolean login(
 			@AuthenticationPrincipal UserEntity user
 	) throws InternalApplicationConfigurationException {
-		// TODO move somewhere else
-		projectService.createProject(user);
 		return true;
 	}
 

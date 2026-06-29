@@ -33,10 +33,9 @@ public class ProjectServiceTest extends DatabaseTest {
 	public void createProject() {
 		var user = userService.save("email", "password");
 
-		assertDoesNotThrow(() -> projectService.createProject(user));
+		var project = assertDoesNotThrow(() -> projectService.createProject(user));
 
-		assertNotNull(user.getProject(), "No project has been created!");
-		var project = user.getProject();
+		assertEquals(1, user.getProjects().size(), "Unexpected number of created projects!");
 
 		assertEquals(1, project.getPipelines().size(), "Unexpected  number of created pipelines!");
 		var pipeline = project.getPipelines().get(0);
@@ -62,10 +61,12 @@ public class ProjectServiceTest extends DatabaseTest {
 		final UserEntity user = getTestUser();
 		ProjectEntity initialProject = assertDoesNotThrow(() -> projectService.createProject(0L));
 		initialProject.getStatus().setCurrentStep(Step.VALIDATION);
-		user.setProject(initialProject);
-		initialProject = userRepository.save(user).getProject();
+		user.addProject(initialProject);
+		initialProject = userRepository.save(user).getProject(initialProject.getExternalId());
 
-		final ProjectEntity project = projectService.getProject(user);
+		ProjectEntity finalInitialProject = initialProject;
+		final ProjectEntity project = assertDoesNotThrow(
+				() -> projectService.getProject(user, finalInitialProject.getExternalId()));
 
 		assertEquals(initialProject.getId(), project.getId(), "The returned project is not equal to the users project!");
 		assertEquals(Step.VALIDATION, project.getStatus().getCurrentStep(), "The initial status is wrong!");

@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -107,8 +108,9 @@ public class UserService implements UserDetailsService {
 	@Transactional
 	public void deleteUserData(final UserEntity user)
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
-		projectService.deleteProject(user);
-		deleteWorkflows(user);
+		for (final var project : new ArrayList<>(user.getProjects())) {
+			projectService.deleteProject(user, project);
+		}
 	}
 
 	/**
@@ -118,26 +120,13 @@ public class UserService implements UserDetailsService {
 	 * @throws InternalInvalidStateException       If a running process has no server instance assigned.
 	 */
 	@Transactional
-	public void deleteAllUsers() throws InternalDataSetPersistenceException, InternalInvalidStateException {
+	public void deleteAllUsers()
+			throws BadArgumentException, BadProjectException, InternalDataSetPersistenceException,
+					       InternalInvalidStateException {
 		final var users = userRepository.findAll();
 		for (final var user : users) {
 			deleteUser(user);
 		}
-	}
-
-	/**
-	 * Cancels and deletes all workflows of the given user.
-	 *
-	 * @param user The user.
-	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
-	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
-	 */
-	private void deleteWorkflows(final UserEntity user)
-			throws InternalDataSetPersistenceException, InternalInvalidStateException {
-		for (final var workflow : user.getWorkflows()) {
-			projectService.resetEntireProject(workflow.getProject());
-		}
-		user.getWorkflows().clear();
 	}
 
 	//==============================

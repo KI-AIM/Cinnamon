@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.test.platform.service;
 
-import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.exception.*;
@@ -40,9 +39,9 @@ public class ExportServiceTest extends DatabaseTest {
 	@Autowired ExportService exportService;
 
 	@Test
-	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalApplicationConfigurationException, InternalIOException {
+	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalIOException {
 		// Preparation
-		final var project = projectService.createProject(getTestUser());
+		final var project = assertDoesNotThrow(() -> projectService.createProject(getTestUser()));
 		projectService.updateProjectConfiguration(project, ProjectConfigurationTestHelper.generateProjectConfigurationDTO());
 
 		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);

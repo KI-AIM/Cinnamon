@@ -8,14 +8,14 @@ import org.springframework.http.HttpStatusCode;
  *
  * @author Daniel Preciado-Marquez
  */
-public class BadWorkflowException extends BadRequestException {
+public class BadProjectException extends BadRequestException {
 
 	/**
 	 * Exception code for a workflow that could not be found.
 	 */
 	public static final String NOT_FOUND = "1";
 
-	public BadWorkflowException(final String exceptionCode, final String message) {
+	public BadProjectException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}
 

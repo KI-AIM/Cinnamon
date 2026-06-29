@@ -1,9 +1,7 @@
 package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ModuleReportContent;
-import de.kiaim.cinnamon.platform.exception.InternalIOException;
-import de.kiaim.cinnamon.platform.exception.InternalMissingHandlingException;
-import de.kiaim.cinnamon.platform.exception.InternalRequestException;
+import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -18,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,7 +28,7 @@ import java.util.Map;
  * @author Daniel Preciado-Marquez
  */
 @RestController()
-@RequestMapping("/api/report")
+@RequestMapping("/api/project/{projectId}/report")
 @Tag(name = "/api/report", description = "API for creating the report.")
 public class ReportController {
 
@@ -55,10 +54,11 @@ public class ReportController {
 	})
 	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	public Map<String, ModuleReportContent> getReportData(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
-			) throws InternalIOException, InternalMissingHandlingException,InternalRequestException {
+	) throws ApiException {
 		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		return reportService.fetchReportData(project);
 	}

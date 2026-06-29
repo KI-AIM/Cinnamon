@@ -15,6 +15,7 @@ import de.kiaim.cinnamon.platform.processor.DataProcessor;
 import de.kiaim.cinnamon.platform.service.DataProcessorService;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
 import de.kiaim.cinnamon.platform.service.ExportService;
+import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
 import de.kiaim.cinnamon.test.util.*;
 import org.junit.jupiter.api.Test;
@@ -37,11 +38,12 @@ public class ExportServiceTest extends DatabaseTest {
 	@Autowired DatabaseService databaseService;
 	@Autowired DataProcessorService dataProcessorService;
 	@Autowired ExportService exportService;
+	@Autowired UserService userService;
 
 	@Test
 	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalIOException {
 		// Preparation
-		final var project = assertDoesNotThrow(() -> projectService.createProject(getTestUser()));
+		final var project = assertDoesNotThrow(() -> userService.createProject(getTestUser(), null, null));
 		projectService.updateProjectConfiguration(project, ProjectConfigurationTestHelper.generateProjectConfigurationDTO());
 
 		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);

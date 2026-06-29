@@ -294,7 +294,7 @@ class DatabaseServiceTest extends DatabaseTest {
 
 	@Test
 	void markProcessOutdated() {
-		ProjectEntity project = assertDoesNotThrow(() -> projectService.createProject(123L));
+		ProjectEntity project = assertDoesNotThrow(() -> projectService.createProject(123L, null));
 
 		ExecutionStepEntity stage1 = project.getPipelines().get(0).getStageByIndex(0);
 		stage1.setStatus(StageStatus.FINISHED);

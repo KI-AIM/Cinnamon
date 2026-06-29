@@ -8,10 +8,10 @@ import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
+import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.StatusEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.service.ExportService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
-@RequestMapping("/api/project")
+@RequestMapping("/api/project/{projectId}")
 @Tag(name = "/api/project", description = "API for managing projects.")
 public class ProjectController {
 
@@ -54,27 +54,15 @@ public class ProjectController {
 		this.userService = userService;
 	}
 
-	@Operation(summary = "Creates a projects with the given mode.",
-	           description = "Creates a projects with the given mode.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200",
-			             description = "Response contains the status.",
-			             content = @Content(schema = @Schema(implementation = StatusEntity.class))),
-	})
-	@PostMapping(value = "",
-	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public StatusEntity createProject(
-			@Parameter(description = "Mode of the project.", required = true)
-			@RequestParam() final Mode mode,
+	@GetMapping(value = "")
+	public ProjectInfo getProject(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		final ProjectEntity project = projectService.createProject(user);
-		projectService.setMode(project, mode);
-		return project.getStatus();
+		return projectService.getProjectInfo(user, projectId);
 	}
 
-	@DeleteMapping(value = "/{projectId}",
+	@DeleteMapping(value = "",
 	               consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public void deleteProject(
 			@PathVariable final String projectId,
@@ -93,7 +81,7 @@ public class ProjectController {
 			             description = "Response contains the status.",
 			             content = @Content(schema = @Schema(implementation = StatusEntity.class))),
 	})
-	@GetMapping(value = "/{projectId}/status",
+	@GetMapping(value = "/status",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public StatusEntity getProjectStatus(
 			@PathVariable final String projectId,
@@ -102,7 +90,7 @@ public class ProjectController {
 		return projectService.getProject(requestUser, projectId).getStatus();
 	}
 
-	@PostMapping(value = "/{projectId}/step")
+	@PostMapping(value = "/step")
 	public void postStep(
 			@PathVariable final String projectId,
 			@RequestParam(required = true) final Step step,
@@ -128,7 +116,7 @@ public class ProjectController {
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@DeleteMapping(value = "/{projectId}/reset")
+	@DeleteMapping(value = "/reset")
 	public void resetProject(
 			@PathVariable final String projectId,
 			@Parameter(description = "Target identifier to reset. If missing or empty, the entire project is reset.")
@@ -147,7 +135,7 @@ public class ProjectController {
 			             description = "Response contains the configurations.",
 			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
 	})
-	@GetMapping(value = "/{projectId}/configuration", produces = {MediaType.APPLICATION_JSON_VALUE})
+	@GetMapping(value = "/configuration", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ProjectConfigurationDTO getProjectConfiguration(
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
@@ -163,7 +151,7 @@ public class ProjectController {
 			             description = "The configuration has been updated.",
 			             content = @Content()),
 	})
-	@PutMapping(value = "/{projectId}/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
+	@PutMapping(value = "/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
 	public void setProjectConfiguration(
 			@PathVariable final String projectId,
 			@RequestBody @Valid final ProjectConfigurationDTO projectConfigurationDTO,
@@ -190,7 +178,7 @@ public class ProjectController {
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@GetMapping(value = "/{projectId}/zip",
+	@GetMapping(value = "/zip",
 	            produces = {CustomMediaType.APPLICATION_ZIP_VALUE})
 	public ResponseEntity<StreamingResponseBody> getZip(
 			@PathVariable final String projectId,
@@ -217,7 +205,7 @@ public class ProjectController {
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@GetMapping(value = "/{projectId}/resultFile", produces = {MediaType.ALL_VALUE})
+	@GetMapping(value = "/resultFile", produces = {MediaType.ALL_VALUE})
 	@Transactional(readOnly = true)
 	public ResponseEntity<Object> getResultFile(
 			@PathVariable final String projectId,

@@ -3,6 +3,7 @@ import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { NavigationService } from "@core/services/navigation.service";
 import { ProjectExportComponent } from "@shared/components/project-export/project-export.component";
+import { NavigationKey } from "@shared/model/navigation";
 import { StatusService } from "@shared/services/status.service";
 import { combineLatest, Observable } from "rxjs";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
@@ -18,6 +19,8 @@ import { StepConfiguration, Steps } from '../../enums/steps';
 })
 
 export class NavigationComponent implements OnInit{
+    protected readonly NavigationKey = NavigationKey;
+
     Mode = Mode;
     Steps = Steps;
     StepConfiguration = StepConfiguration;
@@ -26,7 +29,7 @@ export class NavigationComponent implements OnInit{
     @ViewChild(ProjectSettingsComponent) private projectSettings: ProjectSettingsComponent;
 
     protected pageData$: Observable<{
-        isAdmin: boolean;
+        navigationKey: NavigationKey,
     }>;
 
     constructor(
@@ -38,7 +41,7 @@ export class NavigationComponent implements OnInit{
 
     public ngOnInit(): void {
         this.pageData$ = combineLatest({
-            isAdmin: this.navigationService.isAdmin$,
+            navigationKey: this.navigationService.navigationKey$,
         });
     }
 
@@ -74,5 +77,4 @@ export class NavigationComponent implements OnInit{
             width: '60%'
         });
     }
-
 }

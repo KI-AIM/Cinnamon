@@ -2,6 +2,7 @@ import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
+import { Project } from "@shared/model/project";
 import { User } from "@shared/model/user";
 import { Observable, Subject, tap } from "rxjs";
 import { environments } from "src/environments/environment";
@@ -134,6 +135,18 @@ export class UserService {
             this.notificationService.addNotification(notification);
         });
     }
+
+    public getProjectsForCurrentUser$(): Observable<Project[]> {
+        return this.http.get<Project[]>(environments.apiUrl + "/api/user/-/projects");
+    }
+
+    public createProjectForCurrentUser(projectName: string): Observable<Project> {
+        const formData = new FormData();
+        formData.append("projectName", projectName);
+
+        return this.http.post<Project>(environments.apiUrl + "/api/user/-/projects", formData);
+    }
+
 }
 
 export type LogoutMode = "close" | "delete" | "expired";

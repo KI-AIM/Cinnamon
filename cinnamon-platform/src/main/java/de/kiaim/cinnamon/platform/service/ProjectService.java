@@ -5,13 +5,14 @@ import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
+import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
-import de.kiaim.cinnamon.platform.repository.UserRepository;
 import lombok.extern.log4j.Log4j2;
+import org.apache.catalina.User;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,6 @@ public class ProjectService {
 	private final CinnamonConfiguration cinnamonConfiguration;
 
 	private final ProjectRepository projectRepository;
-	private final UserRepository userRepository;
 
 	private final ProjectConfigurationMapper projectConfigurationMapper;
 
@@ -44,7 +44,6 @@ public class ProjectService {
 	public ProjectService(
 			final CinnamonConfiguration cinnamonConfiguration,
 			final ProjectRepository projectRepository,
-			final UserRepository userRepository,
 			final ProjectConfigurationMapper projectConfigurationMapper,
 			final DatabaseService databaseService,
 			final ProcessService processService,
@@ -52,61 +51,10 @@ public class ProjectService {
 	) {
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.projectRepository = projectRepository;
-		this.userRepository = userRepository;
 		this.projectConfigurationMapper = projectConfigurationMapper;
 		this.databaseService = databaseService;
 		this.processService = processService;
 		this.stepService = stepService;
-	}
-
-	@Transactional
-	public ProjectEntity createProject(final UserEntity user)
-			throws InternalApplicationConfigurationException, InternalErrorException {
-		final long numberProjects = projectRepository.count();
-		final String projectName = "Project " + (numberProjects + 1);
-
-		return createProject(user, projectName, System.currentTimeMillis());
-	}
-
-	/**
-	 * Creates and returns a new project for the given user if they do not have one.
-	 * Otherwise, returns the existing project.
-	 * Creates a random seed.
-	 *
-	 * @param user        The user.
-	 * @param projectName The name of the project.
-	 * @return The projects of the user.
-	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
-	 * @throws InternalErrorException                    If the project could not be created.
-	 */
-	@Transactional
-	public ProjectEntity createProject(final UserEntity user, final String projectName)
-			throws InternalApplicationConfigurationException, InternalErrorException {
-		return createProject(user, projectName, System.currentTimeMillis());
-	}
-
-	/**
-	 * Creates and returns a new project for the given user if they do not have one.
-	 * Otherwise, returns the existing project.
-	 *
-	 * @param user        The user.
-	 * @param projectName The name of the project.
-	 * @param projectSeed The seed used for the project.
-	 * @return The projects of the user.
-	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
-	 * @throws InternalErrorException                    If the project could not be created.
-	 */
-	@Transactional
-	public ProjectEntity createProject(final UserEntity user, final String projectName, final long projectSeed)
-			throws InternalApplicationConfigurationException, InternalErrorException {
-		final ProjectEntity project = createProject(projectSeed);
-		user.addProject(project);
-
-		project.getProjectConfiguration().setProjectName(projectName);
-
-		log.debug("Created project with ID {} for user '{}'", project.getExternalId(), user.getEmail());
-
-		return userRepository.save(user).getProject(project.getExternalId());
 	}
 
 	/**
@@ -117,10 +65,11 @@ public class ProjectService {
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
 	 * @throws InternalErrorException                    If the project could not be created.
 	 */
-	public ProjectEntity createProject(final long projectSeed)
+	public ProjectEntity createProject(final long projectSeed, final String projectName)
 			throws InternalApplicationConfigurationException, InternalErrorException {
 		final ProjectEntity project = new ProjectEntity(projectSeed);
 		project.setExternalId(generateUUID());
+		project.getProjectConfiguration().setProjectName(projectName);
 
 		final PipelineEntity pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);
@@ -195,6 +144,18 @@ public class ProjectService {
 		}
 
 		return project.get();
+	}
+
+	@Transactional(readOnly = true)
+	public ProjectInfo getProjectInfo(final UserEntity user, final String projectId)
+			throws BadArgumentException, BadProjectException {
+		final ProjectEntity project = getProject(user, projectId);
+		return getProjectInfo(project);
+	}
+
+	@Transactional(readOnly = true)
+	public ProjectInfo getProjectInfo(final ProjectEntity project) {
+		return new ProjectInfo(project.getExternalId().toString(), project.getProjectConfiguration().getProjectName());
 	}
 
 	/**
@@ -293,7 +254,7 @@ public class ProjectService {
 	@Transactional
 	public void setMode(final ProjectEntity project, final Mode mode) {
 		project.getStatus().setMode(mode);
-		userRepository.save(project.getUser());
+		projectRepository.save(project);
 	}
 
 	/**

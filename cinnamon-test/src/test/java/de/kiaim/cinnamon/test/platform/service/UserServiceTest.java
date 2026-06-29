@@ -1,5 +1,7 @@
 package de.kiaim.cinnamon.test.platform.service;
 
+import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -63,6 +65,16 @@ public class UserServiceTest extends ContextRequiredTest {
 
 		var e = assertThrows(BadUserConfirmationException.class, () -> userService.confirmUser(request, user));
 		assertEquals("PLATFORM_1_12_2", e.getErrorCode());
+	}
+
+	@Test
+	public void createProject() {
+		var user = userService.save("email", "password");
+
+		var project = assertDoesNotThrow(() -> userService.createProject(user, null, null));
+
+		assertEquals(1, user.getProjects().size(), "Unexpected number of created projects!");
+		assertEquals("Project 1", project.getProjectConfiguration().getProjectName());
 	}
 
 }

@@ -9,7 +9,6 @@ import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
-import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
 import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
@@ -25,17 +24,12 @@ public class ProjectServiceTest extends DatabaseTest {
 	@Autowired CinnamonConfiguration cinnamonConfiguration;
 	@Autowired UserRepository userRepository;
 	@Autowired ProjectService projectService;
-	@Autowired UserService userService;
 
 	private MockWebServer mockBackEnd;
 
 	@Test
 	public void createProject() {
-		var user = userService.save("email", "password");
-
-		var project = assertDoesNotThrow(() -> projectService.createProject(user));
-
-		assertEquals(1, user.getProjects().size(), "Unexpected number of created projects!");
+		var project = assertDoesNotThrow(() -> projectService.createProject(123L, "Test"));
 
 		assertEquals(1, project.getPipelines().size(), "Unexpected  number of created pipelines!");
 		var pipeline = project.getPipelines().get(0);
@@ -59,7 +53,7 @@ public class ProjectServiceTest extends DatabaseTest {
 	@Test
 	public void getExistingProject() {
 		final UserEntity user = getTestUser();
-		ProjectEntity initialProject = assertDoesNotThrow(() -> projectService.createProject(0L));
+		ProjectEntity initialProject = assertDoesNotThrow(() -> projectService.createProject(0L, "Test"));
 		initialProject.getStatus().setCurrentStep(Step.VALIDATION);
 		user.addProject(initialProject);
 		initialProject = userRepository.save(user).getProject(initialProject.getExternalId());

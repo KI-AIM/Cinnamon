@@ -4,7 +4,6 @@ import { AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn,
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
-import { StateManagementService } from "@core/services/state-management.service";
 import { Observable, tap } from "rxjs";
 import { TitleService } from "src/app/core/services/title-service.service";
 import { AppConfig, AppConfigService, PasswordRequirements } from "src/app/shared/services/app-config.service";
@@ -44,7 +43,6 @@ export class RegisterComponent implements OnInit {
         private readonly matDialog: MatDialog,
         private readonly notificationService: NotificationService,
         private readonly router: Router,
-        private readonly stateManagementService: StateManagementService,
         private readonly titleService: TitleService,
         private readonly userService: UserService,
     ) {
@@ -134,7 +132,7 @@ export class RegisterComponent implements OnInit {
                 notification.project = projectName;
                 this.notificationService.addNotification(notification);
 
-                this.stateManagementService.fetchAndRouteToCurrentStep();
+                this.router.navigateByUrl("user/-/home");
             },
             error: (e) => this.handleRegisterFailed(e),
         });
@@ -151,7 +149,7 @@ export class RegisterComponent implements OnInit {
     protected navigateToLogin() {
         this.userService.cachedEmailInput = this.registerForm.value.email ?? null;
         this.userService.cachedPasswordInput = this.registerForm.value.password ?? null;
-        this.router.navigate(["/open"]);
+        this.router.navigate(["/login"]);
     }
 
     /**

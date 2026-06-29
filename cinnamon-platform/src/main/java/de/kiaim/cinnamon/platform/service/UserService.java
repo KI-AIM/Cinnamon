@@ -2,6 +2,8 @@ package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
+import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
+import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import lombok.extern.log4j.Log4j2;
@@ -16,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -121,12 +125,64 @@ public class UserService implements UserDetailsService {
 	 */
 	@Transactional
 	public void deleteAllUsers()
-			throws BadArgumentException, BadProjectException, InternalDataSetPersistenceException,
-					       InternalInvalidStateException {
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		final var users = userRepository.findAll();
 		for (final var user : users) {
 			deleteUser(user);
 		}
+	}
+
+	@Transactional(readOnly = true)
+	public Set<ProjectInfo> getProjects(final String email) throws BadUserException {
+		final UserEntity user = getUserByEmailOrThrow(email);
+		return user.getProjects().stream()
+		           .map(projectService::getProjectInfo)
+		           .collect(Collectors.toSet());
+	}
+
+	@Transactional
+	public ProjectEntity createProject(
+			final String email,
+			@Nullable final String projectName,
+			@Nullable final Long projectSeed
+	) throws InternalApplicationConfigurationException, InternalErrorException, BadUserException {
+		return createProject(getUserByEmailOrThrow(email), projectName, projectSeed);
+	}
+
+	/**
+	 * Creates a new project for the given user.
+	 * If no project name is given, a default name is generated.
+	 * If no project seed is given, a random seed is generated.
+	 *
+	 * @param user        The user.
+	 * @param projectName The name of the project.
+	 * @param projectSeed The seed for the project.
+	 * @return The created project.
+	 * @throws BadUserException                          If the user does not exist.
+	 * @throws InternalApplicationConfigurationException If the application configuration is invalid.
+	 * @throws InternalErrorException                    If an internal error occurs.
+	 */
+	@Transactional
+	public ProjectEntity createProject(final UserEntity user, @Nullable String projectName, @Nullable Long projectSeed)
+			throws InternalApplicationConfigurationException, InternalErrorException, BadUserException {
+		if (projectName == null) {
+			projectName = "Project " + (user.getProjects().size() + 1);
+		}
+		if (projectSeed == null) {
+			projectSeed = System.currentTimeMillis();
+		}
+
+		final ProjectEntity project = projectService.createProject(projectSeed, projectName);
+		user.addProject(project);
+
+		userRepository.save(user);
+		log.debug("Created project with ID {} for user '{}'", project.getExternalId(), user.getEmail());
+
+		// Return the managed instance of the project
+		return user.getProjects().stream()
+		           .filter(p -> p.getExternalId().equals(project.getExternalId()))
+		           .findFirst()
+		           .orElse(project);
 	}
 
 	//==============================

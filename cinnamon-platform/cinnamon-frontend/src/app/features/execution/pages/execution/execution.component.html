@@ -111,35 +111,49 @@
                                                             <div class="synthetization-component-title">
                                                                 {{ getComponentTitle(component.value, component.label) }}
                                                             </div>
-                                                            <table class="table">
+                                                            <table class="synthetization-table">
                                                                 <thead>
-                                                                <th>Step</th>
-                                                                <th>Finished</th>
-                                                                <th>Remaining Time/ Duration</th>
+                                                                <tr>
+                                                                    <th>Step</th>
+                                                                    <th>Finished</th>
+                                                                    <th>Remaining Time</th>
+                                                                    <th>Step Duration</th>
+                                                                </tr>
                                                                 </thead>
                                                                 <tbody>
                                                                 <tr *ngFor="let step of component.rows">
                                                                     <td>{{ step.step }}</td>
                                                                     <td>{{ step.completed }}</td>
-                                                                    <td>{{ formatTime(step) }}</td>
+                                                                    <td>{{ formatRemainingTime(step) }}</td>
+                                                                    <td>{{ formatStepDuration(step) }}</td>
                                                                 </tr>
                                                                 </tbody>
                                                             </table>
                                                         </div>
+                                                        <div *ngIf="hasSynthetizationTotal(synthetizationProcess)" class="synthetization-total">
+                                                            <div class="synthetization-total-label">Total Synthesis Time</div>
+                                                            <div class="synthetization-total-value">
+                                                                {{ getTotalSynthesisDuration(synthetizationProcess) }}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </ng-container>
                                                 <ng-template #legacySynthetizationStatus>
-                                                    <table class="table">
+                                                    <table class="synthetization-table">
                                                         <thead>
-                                                        <th>Step</th>
-                                                        <th>Finished</th>
-                                                        <th>Remaining Time/ Duration</th>
+                                                        <tr>
+                                                            <th>Step</th>
+                                                            <th>Finished</th>
+                                                            <th>Remaining Time</th>
+                                                            <th>Step Duration</th>
+                                                        </tr>
                                                         </thead>
                                                         <tbody>
                                                         <tr *ngFor="let step of getSynthetizationRows(synthetizationProcess)">
                                                             <td>{{ step.step }}</td>
                                                             <td>{{ step?.completed }}</td>
-                                                            <td>{{ formatTime(step) }}</td>
+                                                            <td>{{ formatRemainingTime(step) }}</td>
+                                                            <td>{{ formatStepDuration(step) }}</td>
                                                         </tr>
                                                         </tbody>
                                                     </table>

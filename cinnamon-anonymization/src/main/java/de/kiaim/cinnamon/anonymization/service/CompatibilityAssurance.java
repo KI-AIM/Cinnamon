@@ -100,6 +100,7 @@ public class CompatibilityAssurance {
             case BOOLEAN -> data instanceof BooleanData;
             case DATE -> data instanceof DateData;
             case DATE_TIME -> data instanceof DateTimeData;
+            case TEXT -> data instanceof TextData;
             default -> false;
         };
     }

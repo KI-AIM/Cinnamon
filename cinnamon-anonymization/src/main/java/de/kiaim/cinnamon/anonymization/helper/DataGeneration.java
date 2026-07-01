@@ -24,6 +24,7 @@ public class DataGeneration {
             case DECIMAL -> new DecimalData((Float) value);
             case INTEGER -> new IntegerData((Integer) value);
             case STRING -> new StringData((String) value);
+            case TEXT -> new TextData((String) value);
             default -> throw new IllegalArgumentException("Unsupported data type: " + type);
         };
     }
@@ -47,6 +48,7 @@ public class DataGeneration {
                 case DECIMAL -> new DecimalData(null);
                 case BOOLEAN -> new BooleanData(null);
                 case STRING -> new StringData(null);
+                case TEXT -> new TextData(null);
                 default -> throw new IllegalArgumentException("Unsupported data type: " + type);
             };
         } else {
@@ -57,6 +59,7 @@ public class DataGeneration {
                 case BOOLEAN -> new BooleanData((Boolean) value);
                 case STRING -> new StringData(value.toString());
                 case DATE_TIME -> new DateTimeData((LocalDateTime) value);
+                case TEXT -> new TextData(value.toString());
                 default -> throw new IllegalArgumentException("Unsupported data type: " + type);
             };
         }

@@ -1,15 +1,26 @@
 package de.kiaim.cinnamon.anonymization.processor;
 
 import de.kiaim.cinnamon.anonymization.AbstractAnonymizationTests;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.data.DecimalData;
+import de.kiaim.cinnamon.model.data.TextData;
+import de.kiaim.cinnamon.model.enumeration.DataScale;
+import de.kiaim.cinnamon.model.enumeration.DataType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 import static de.kiaim.cinnamon.anonymization.processor.AnonymizedDatasetProcessor.containsStarWithOtherCharacters;
 import static de.kiaim.cinnamon.anonymization.service.CompatibilityAssurance.isDataSetCompatible;
@@ -69,6 +80,44 @@ public class AnonymizedDatasetProcessorTest extends AbstractAnonymizationTests {
         String value6 = "123*456";
         assertTrue(containsStarWithOtherCharacters(value6));
 
+    }
+
+    private static Stream<Arguments> conversionTestCases() {
+        String[][] nullSample = {{"note"}, {"null"}};
+        String[][] textSample = {{"note"}, {"Patient reports mild symptoms after treatment."}};
+        String[][] decimalSample = {{"weight"}, {"0.3"}};
+        return Stream.of(
+                Arguments.of(nullSample, DataType.TEXT, DataScale.NOMINAL, TextData.class, null),
+                Arguments.of(textSample, DataType.TEXT, DataScale.NOMINAL, TextData.class, textSample[1][0]),
+                Arguments.of(decimalSample, DataType.DECIMAL, DataScale.ORDINAL, DecimalData.class,
+                        Float.parseFloat(decimalSample[1][0]))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("conversionTestCases")
+    public void testConvertToDataSet(String[][] anonymizedData, DataType dataType,
+                                     DataScale dataScale, Class<?> cls, Object expected) {
+        DataConfiguration config = dataConfiguration(anonymizedData[0][0], dataType, dataScale);
+        DataSet result = AnonymizedDatasetProcessor.convertToDataSet(anonymizedData, config);
+
+        assertEquals(1, result.getDataRows().size());
+        Data data = result.getDataRows().get(0).getData().get(0);
+        assertInstanceOf(cls, data);
+        assertEquals(expected, data.getValue());
+        assertTrue(isDataSetCompatible(result));
+    }
+
+    private static DataConfiguration dataConfiguration(String name, DataType dataType,
+                                                           DataScale dataScale) {
+        DataConfiguration configuration = new DataConfiguration();
+        ColumnConfiguration column = new ColumnConfiguration();
+        column.setIndex(0);
+        column.setName(name);
+        column.setType(dataType);
+        column.setScale(dataScale);
+        configuration.addColumnConfiguration(column);
+        return configuration;
     }
 
 }

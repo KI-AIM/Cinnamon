@@ -6,7 +6,96 @@
     gap: 1rem;
 }
 
+.synthetization-component {
+    overflow: hidden;
+}
+
 .synthetization-component-title {
     font-weight: 600;
     margin: 0 0 0.5rem 0;
+}
+
+.synthetization-table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+
+    th,
+    td {
+        border-bottom: 1px solid #d8dee8;
+        padding: 0.65rem 0.75rem;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    th {
+        color: #5b6575;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    td {
+        color: #1f2937;
+    }
+
+    th:nth-child(2),
+    th:nth-child(3),
+    th:nth-child(4),
+    td:nth-child(2),
+    td:nth-child(3),
+    td:nth-child(4) {
+        width: 8.5rem;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+}
+
+.synthetization-total {
+    align-items: center;
+    background: linear-gradient(135deg, #f7f9fc 0%, #eef3f8 100%);
+    border: 1px solid #d8dee8;
+    border-radius: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+}
+
+.synthetization-total-label {
+    color: #5b6575;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.synthetization-total-value {
+    color: #111827;
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .synthetization-table {
+        th,
+        td {
+            padding: 0.6rem;
+        }
+
+        th:nth-child(2),
+        th:nth-child(3),
+        th:nth-child(4),
+        td:nth-child(2),
+        td:nth-child(3),
+        td:nth-child(4) {
+            width: auto;
+        }
+    }
+
+    .synthetization-total {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }

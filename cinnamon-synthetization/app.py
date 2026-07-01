@@ -4,8 +4,7 @@ import sys
 import time
 from copy import deepcopy
 from functools import lru_cache
-from multiprocessing import Process
-from threading import Event
+from multiprocessing import get_context
 
 import pandas as pd
 import requests
@@ -17,6 +16,7 @@ from api_utility.status.status_updater import initialize_status_file
 from api_utility.status.status_updater import intercept_standard_streams
 from api_utility.status.status_updater import update_component_status
 from api_utility.status.status_updater import update_status
+from api_utility.status.status_updater import update_total_synthesis_status
 from synthesizer_classes import synthesizer_classes
 from data_processing.post_process import post_process_dataframe
 from data_processing.pre_process import pre_process_dataframe
@@ -29,8 +29,9 @@ from synthetic_tabular_data_generator.llm import get_llm_profile_names
 
 app = Flask(__name__)
 tasks = {}
-task_locks = {}
 CORS(app)
+
+PROCESS_CONTEXT = get_context("spawn")
 
 CALLBACK_TIMEOUT_SECONDS = 30.0
 ERROR_CALLBACK_TIMEOUT_SECONDS = 5.0
@@ -52,6 +53,136 @@ def configure_realtime_logging():
             reconfigure(line_buffering=True)
         except Exception:
             continue
+
+
+def _status_file_path(session_key):
+    return os.path.join(os.path.dirname(__file__), 'outputs', 'status', f"{session_key}.yaml")
+
+
+def _cleanup_task_state(task_id):
+    tasks.pop(task_id, None)
+
+
+def _prune_finished_tasks():
+    for task_id, task_process in list(tasks.items()):
+        try:
+            if _task_is_alive(task_process):
+                continue
+        except Exception as exc:
+            print(f"Warning: Failed to inspect task {task_id}: {exc}")
+        _cleanup_task_state(task_id)
+
+
+def _mark_task_cancelled(task_id):
+    file_path = _status_file_path(task_id)
+    if not os.path.exists(file_path):
+        return
+
+    try:
+        update_status(file_path, 'callback', completed=False)
+        for step in ('initialization', 'fitting', 'sampling'):
+            update_status(file_path, step, remaining_time='Cancelled')
+        update_total_synthesis_status(file_path, completed=False, remaining_time='Cancelled')
+        for component_name in ('structured_synthesis', 'llm_synthesis'):
+            update_component_status(
+                file_path,
+                component_name,
+                remaining_time='Cancelled',
+                fitting_remaining_time='Cancelled',
+                sampling_remaining_time='Cancelled',
+                completed=False,
+            )
+    except Exception as exc:
+        print(f"Warning: Failed to update cancellation status for session {task_id}: {exc}")
+
+
+def _task_is_alive(task_process):
+    is_alive = getattr(task_process, 'is_alive', None)
+    if callable(is_alive):
+        return bool(is_alive())
+    exitcode = getattr(task_process, 'exitcode', None)
+    return exitcode is None
+
+
+def _terminate_task_process(task_process):
+    terminate = getattr(task_process, 'terminate', None)
+    if not callable(terminate):
+        raise RuntimeError('Task process cannot be terminated cleanly.')
+    terminate()
+
+    join = getattr(task_process, 'join', None)
+    if callable(join):
+        join(timeout=2.0)
+
+    if _task_is_alive(task_process):
+        kill = getattr(task_process, 'kill', None)
+        if callable(kill):
+            kill()
+            if callable(join):
+                join(timeout=1.0)
+
+    if _task_is_alive(task_process):
+        raise RuntimeError('Task process is still running after cancellation attempt.')
+
+
+def _load_yaml_file(upload, field_name, *, required_keys=None):
+    try:
+        content = upload.read()
+        decoded_content = content.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"Uploaded file '{field_name}' must be UTF-8 encoded.") from exc
+
+    try:
+        parsed = yaml.safe_load(decoded_content)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Uploaded file '{field_name}' contains invalid YAML.") from exc
+
+    if not isinstance(parsed, dict):
+        raise ValueError(f"Uploaded file '{field_name}' must contain a YAML object at the top level.")
+
+    for required_key in required_keys or ():
+        if required_key not in parsed:
+            raise ValueError(f"Uploaded file '{field_name}' is missing required key '{required_key}'.")
+
+    return parsed
+
+
+def _load_csv_file(upload, field_name):
+    try:
+        content = upload.read()
+        decoded_content = content.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"Uploaded file '{field_name}' must be UTF-8 encoded.") from exc
+
+    try:
+        dataframe = pd.read_csv(io.StringIO(decoded_content))
+    except Exception as exc:
+        raise ValueError(f"Uploaded file '{field_name}' contains invalid CSV data.") from exc
+
+    if dataframe.empty and len(dataframe.columns) == 0:
+        raise ValueError(f"Uploaded file '{field_name}' must contain at least one CSV column.")
+    if dataframe.columns.has_duplicates:
+        raise ValueError(f"Uploaded file '{field_name}' must not contain duplicate CSV column names.")
+
+    return dataframe
+
+
+def _validate_attribute_config(attribute_config):
+    configurations = attribute_config.get("configurations")
+    if not isinstance(configurations, list) or not configurations:
+        raise ValueError("Uploaded file 'attribute_config' must define a non-empty 'configurations' list.")
+
+
+def _validate_algorithm_config(algorithm_config):
+    synthetization_configuration = algorithm_config.get("synthetization_configuration")
+    if not isinstance(synthetization_configuration, dict):
+        raise ValueError("Uploaded file 'algorithm_config' must define 'synthetization_configuration'.")
+
+    algorithm_section = synthetization_configuration.get("algorithm")
+    if not isinstance(algorithm_section, dict):
+        raise ValueError(
+            "Uploaded file 'algorithm_config' must define 'synthetization_configuration.algorithm'."
+        )
 
 
 def initialize_input_data(synthesizer_name):
@@ -85,7 +216,7 @@ def initialize_input_data(synthesizer_name):
     callback_url = request.form['callback']
 
     # Initialize status file
-    file_path_status = os.path.join(os.path.dirname(__file__), 'outputs', 'status', f"{session_key}.yaml")
+    file_path_status = _status_file_path(session_key)
     initialize_status_file(file_path_status, session_key, synthesizer_name)
 
     # Get the files from the request
@@ -95,11 +226,22 @@ def initialize_input_data(synthesizer_name):
     original_data = request.files.get('original_data')
 
     # Read the content of the files
-    attribute_config = yaml.safe_load(attribute_config.read())
-    algorithm_config = yaml.safe_load(algorithm_config.read())
-    data = pd.read_csv(io.StringIO(data.read().decode('utf-8')))
-    if original_data is not None:
-        original_data = pd.read_csv(io.StringIO(original_data.read().decode('utf-8')))
+    try:
+        attribute_config = _load_yaml_file(attribute_config, 'attribute_config', required_keys=('configurations',))
+        _validate_attribute_config(attribute_config)
+
+        algorithm_config = _load_yaml_file(
+            algorithm_config,
+            'algorithm_config',
+            required_keys=('synthetization_configuration',),
+        )
+        _validate_algorithm_config(algorithm_config)
+
+        data = _load_csv_file(data, 'data')
+        if original_data is not None:
+            original_data = _load_csv_file(original_data, 'original_data')
+    except ValueError as exc:
+        return str(exc), 400
 
     return session_key, callback_url, file_path_status, attribute_config, algorithm_config, data, original_data
 
@@ -126,6 +268,18 @@ def prepare_callback_data(samples, synthesizer_model):
     }
 
     return files
+
+
+def post_callback_request(callback_url, *, files, data, timeout):
+    """Send callback requests without inheriting proxy settings from the environment."""
+    with requests.Session() as session:
+        session.trust_env = False
+        return session.post(
+            callback_url,
+            files=files,
+            data=data,
+            timeout=timeout,
+        )
 
 
 def _to_bool(value, default):
@@ -360,7 +514,9 @@ def run_synthesizer_stage(
             update_component_status(
                 file_path_status,
                 status_component_name,
-                remaining_time=str(remaining_time),
+                fitting_remaining_time=str(remaining_time) if step == "fitting" else None,
+                sampling_remaining_time=str(remaining_time) if step == "sampling" else None,
+                remaining_time=str(remaining_time) if step == "sampling" else None,
             )
 
     synthesizer_class.set_progress_callback(_handle_progress_update)
@@ -407,13 +563,15 @@ def run_synthesizer_stage(
                 print(f"[{stage_label}] Warning: Failed to set session key for prompt logging: {e}")
     
     stage_init_duration = time.time() - stage_init_time
-    update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True)
+    update_status(file_path_status, step='initialization', duration=stage_init_duration, completed=True, remaining_time="0")
     if status_component_name is not None:
         update_component_status(
             file_path_status,
             status_component_name,
             synthesizer_name=synthesizer_name,
             initialization_duration=stage_init_duration,
+            fitting_remaining_time="Waiting",
+            sampling_remaining_time="Waiting",
             completed=False,
         )
 
@@ -422,6 +580,16 @@ def run_synthesizer_stage(
         synthesizer_class.fit()
     fit_duration = time.time() - fit_time
     print(f"[{stage_label}] Synthesizer fitted.")
+    if status_component_name is not None:
+        update_component_status(
+            file_path_status,
+            status_component_name,
+            synthesizer_name=synthesizer_name,
+            initialization_duration=stage_init_duration,
+            fitting_duration=fit_duration,
+            fitting_remaining_time="0",
+            completed=False,
+        )
 
     sample_time = time.time()
     with intercept_standard_streams(file_path_status, "sampling", component_name=status_component_name):
@@ -449,6 +617,8 @@ def run_synthesizer_stage(
             initialization_duration=stage_init_duration,
             fitting_duration=fit_duration,
             sampling_duration=sample_duration,
+            fitting_remaining_time="0",
+            sampling_remaining_time="0",
             remaining_time="0",
             completed=True,
         )
@@ -457,20 +627,33 @@ def run_synthesizer_stage(
 
 
 def update_pipeline_totals(file_path_status, total_init_duration, total_fit_duration, total_sample_duration, *, completed):
-    update_status(file_path_status, step='initialization', duration=total_init_duration, completed=completed)
+    update_status(
+        file_path_status,
+        step='initialization',
+        duration=total_init_duration,
+        completed=completed,
+        remaining_time="0" if total_init_duration > 0 else None,
+    )
     update_status(
         file_path_status,
         'fitting',
         duration=total_fit_duration,
         completed=completed,
-        remaining_time="0" if completed else None,
+        remaining_time="0" if total_fit_duration > 0 else None,
     )
     update_status(
         file_path_status,
         'sampling',
         duration=total_sample_duration,
         completed=completed,
-        remaining_time="0" if completed else None,
+        remaining_time="0" if total_sample_duration > 0 else None,
+    )
+    total_duration = total_init_duration + total_fit_duration + total_sample_duration
+    update_total_synthesis_status(
+        file_path_status,
+        duration=total_duration,
+        completed=completed,
+        remaining_time="0" if completed and total_duration > 0 else "Waiting",
     )
 
 
@@ -509,11 +692,16 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
 
         structured_configs, text_configs = split_attribute_configurations(attribute_config)
         supports_structured, supports_free_text = get_processing_capabilities(synthesizer_name)
+        text_reference_data = original_data if original_data is not None else data
 
         print(
             "Processing capabilities resolved: "
             f"supports_structured={supports_structured}, supports_free_text={supports_free_text}, "
             f"structured_columns={len(structured_configs)}, text_columns={len(text_configs)}"
+        )
+        print(
+            "Text synthesis reference dataset source: "
+            f"{'original_data' if original_data is not None else 'data (fallback)'}"
         )
 
         total_init_duration = 0.0
@@ -540,7 +728,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 stage_attribute_config=attribute_config,
                 stage_algorithm_config=text_algorithm_config,
                 input_data=text_input,
-                reference_data=data,
+                reference_data=text_reference_data,
                 file_path_status=file_path_status,
                 replace_text_with_pending=False,
                 fill_text_with_pending=False,
@@ -611,7 +799,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 stage_attribute_config=attribute_config,
                 stage_algorithm_config=text_algorithm_config,
                 input_data=text_input,
-                reference_data=data,
+                reference_data=text_reference_data,
                 file_path_status=file_path_status,
                 replace_text_with_pending=False,
                 fill_text_with_pending=False,
@@ -675,7 +863,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         try:
             files = prepare_callback_data(final_samples, final_model)
             print(f"Sending success callback to {callback_url} with session_key={session_key}")
-            response = requests.post(
+            response = post_callback_request(
                 callback_url,
                 files=files,
                 data={'session_key': session_key},
@@ -712,12 +900,10 @@ def start_synthetization_process(synthesizer_name):
     Returns:
         JSON: Response indicating task start status.
     """
+    _prune_finished_tasks()
     task_id = request.form.get('session_key')
     if not task_id:
         return jsonify({'message': 'No session key provided'}), 400
-
-    stop_event = Event()
-    task_locks[task_id] = stop_event
 
     try:
         configure_realtime_logging()
@@ -729,18 +915,16 @@ def start_synthetization_process(synthesizer_name):
             and isinstance(input_data[0], str)
             and isinstance(input_data[1], int)
         ):
-            if task_id in task_locks:
-                del task_locks[task_id]
             return jsonify({'message': input_data[0], 'session_key': task_id}), input_data[1]
 
         session_key, callback_url, file_path_status, attribute_config, algorithm_config, data, original_data = input_data
         print('Data successfully loaded')
 
         # Create and start the process
-        task_process = Process(
+        task_process = PROCESS_CONTEXT.Process(
             target=synthesize_data,
             args=(synthesizer_name, file_path_status, attribute_config, algorithm_config,
-                  data.copy(), original_data.copy() if original_data is not None else None, callback_url, session_key)  # Note the data.copy()
+                  data.copy(), original_data.copy() if original_data is not None else None, callback_url, session_key)
         )
 
         tasks[task_id] = task_process
@@ -754,8 +938,6 @@ def start_synthetization_process(synthesizer_name):
         }), 202
 
     except Exception as e:
-        if task_id in task_locks:
-            del task_locks[task_id]
         return jsonify({
             'message': 'Exception occurred during Synthetization',
             'error': str(e),
@@ -825,8 +1007,9 @@ def get_status(session_key):
         The contents of the configuration file if found, or an error message if not found.
         :param session_key:
     """
+    _prune_finished_tasks()
     try:
-        file_path = os.path.join(os.path.dirname(__file__), 'outputs', 'status', f"{session_key}.yaml")
+        file_path = _status_file_path(session_key)
         with open(file_path, 'r') as f:
             status = yaml.safe_load(f)
             return jsonify(status)
@@ -850,6 +1033,7 @@ def get_algorithms():
             - description
             - URL
     """
+    _prune_finished_tasks()
     try:
         synthesizer_list = [
             {
@@ -885,14 +1069,45 @@ def cancel_synthetization():
         JSON: A success message if the process is successfully canceled.
         JSON: An error message if the process cannot be canceled.
     """
+    _prune_finished_tasks()
     task_id = request.form.get('session_key')
     task_pid = request.form.get('pid')
 
+    if not task_id:
+        return jsonify({'message': 'No session key provided'}), 400
+    if not task_pid:
+        return jsonify({'message': 'No pid provided', 'session_key': task_id}), 400
+
     try:
-        os.kill(int(task_pid), 9)
+        expected_pid = int(task_pid)
+    except (TypeError, ValueError):
+        return jsonify({'message': 'Invalid pid provided', 'session_key': task_id}), 400
 
-        return jsonify({'message': 'Task canceled', 'session_id': task_id, "pid": task_pid}), 200
+    task_process = tasks.get(task_id)
+    if task_process is None:
+        return jsonify({'message': 'No running task found for session key', 'session_key': task_id}), 404
 
+    actual_pid = getattr(task_process, 'pid', None)
+    if actual_pid != expected_pid:
+        return jsonify({
+            'message': 'PID does not match the registered task',
+            'session_key': task_id,
+            'pid': actual_pid,
+        }), 409
+
+    if not _task_is_alive(task_process):
+        _cleanup_task_state(task_id)
+        return jsonify({
+            'message': 'Task is no longer running',
+            'session_key': task_id,
+            'pid': actual_pid,
+        }), 409
+
+    try:
+        _terminate_task_process(task_process)
+        _mark_task_cancelled(task_id)
+        _cleanup_task_state(task_id)
+        return jsonify({'message': 'Task canceled', 'session_key': task_id, 'pid': actual_pid}), 200
     except Exception as e:
         return jsonify({'message': 'Task cannot be cancelled', 'error': f'Failed to cancel task: {str(e)}',
                         'session_key': task_id}), 500
@@ -963,7 +1178,7 @@ def send_callback_error(callback_url, session_key, message, status_code):
 
     try:
         print(f"Sending error callback to {callback_url} with data: {data} and files: {files}")
-        response = requests.post(
+        response = post_callback_request(
             callback_url,
             files=files,
             data=data,

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterOutlet } from "@angular/router";
 import { ProjectShellComponent } from './components/project-shell/project-shell.component';
 
 
@@ -8,8 +9,9 @@ import { ProjectShellComponent } from './components/project-shell/project-shell.
   declarations: [
     ProjectShellComponent
   ],
-  imports: [
-    CommonModule
-  ]
+    imports: [
+        CommonModule,
+        RouterOutlet
+    ]
 })
 export class ProjectModule { }

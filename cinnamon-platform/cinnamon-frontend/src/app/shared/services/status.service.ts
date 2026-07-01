@@ -4,10 +4,9 @@ import { Mode } from "@core/enums/mode";
 import { StepConfiguration, Steps } from "@core/enums/steps";
 import { List } from "@core/utils/list";
 import { Status } from "@shared/model/status";
-import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { ProjectService } from "@shared/services/project.service";
 import { UserService } from "@shared/services/user.service";
-import { BehaviorSubject, filter, Observable, of, Subscription } from "rxjs";
+import { BehaviorSubject, filter, Observable, of, Subscription, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
@@ -29,22 +28,13 @@ export class StatusService implements OnDestroy {
     private readonly completedSteps: List<Steps> = new List();
 
     constructor(
-        private readonly errorHandlingService: ErrorHandlingService,
         private readonly http: HttpClient,
         readonly userService: UserService,
         readonly projectService: ProjectService,
     ) {
-        this._projectOpenSubscription = projectService.projectOpen$.subscribe({
-            next: (value) => this.updateStatus(value.id),
-        });
-
         this._projectClosedSubscription = projectService.projectClosed.subscribe({
             next: () => this.statusSubject.next(null),
         });
-
-        // if (this.projectService.project) {
-        //     this.updateStatus(this.projectService.project.id);
-        // }
     }
 
     public ngOnDestroy(): void {
@@ -149,15 +139,12 @@ export class StatusService implements OnDestroy {
      * Fetches the current status from the backend and updates the status subject.
      */
     public updateStatus(projectId: string) {
-        this.http.get<Status>(this.baseUrl + "/" + projectId + "/status").subscribe({
-            next: (value: Status) => {
-                this.setCompletedSteps(value.currentStep);
-                this.statusSubject.next(value);
-            },
-            error: err => {
-                this.errorHandlingService.addError(err, "Failed to fetch project state.");
-            },
-        });
+        return this.http.get<Status>(this.baseUrl + "/" + projectId + "/status").pipe(
+            tap((status) => {
+                this.setCompletedSteps(status.currentStep);
+                this.statusSubject.next(status);
+            }),
+        );
     }
 
     addCompletedStep(step: Steps): void {

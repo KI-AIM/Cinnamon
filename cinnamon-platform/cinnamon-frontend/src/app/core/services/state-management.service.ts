@@ -250,31 +250,19 @@ export class StateManagementService {
     }
 
     /**
-     * Fetches the state from the backend and routes to the current step.
-     */
-    public fetchAndRouteToCurrentStep() {
-        this.statusService.statusNonNull$.pipe(
-            take(1),
-        ).subscribe({
-            next: value => {
-                this.routeToCurrentStep(value);
-            }
-        });
-    }
-
-    /**
      * Routes to the page for the current step.
+     * @param projectId The id of the project.
      * @param status The current status of the application.
      */
-    public routeToCurrentStep(status: Status) {
+    public routeToCurrentStep(projectId: string, status: Status) {
         for (let [a, b] of Object.entries(StepConfiguration)) {
             if (a === status.currentStep.toString()) {
-                this.router.navigateByUrl(b.path);
+                this.router.navigateByUrl("/project/" + projectId + b.path);
                 return;
             }
 
         }
-        this.router.navigateByUrl("/start");
+        this.router.navigateByUrl("/project/" + projectId + "/start");
     }
 
     /**

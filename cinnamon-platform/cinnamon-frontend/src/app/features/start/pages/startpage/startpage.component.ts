@@ -29,6 +29,7 @@ export class StartpageComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        console.log("Ach du meine guete");
         this.status$ = this.statusService.statusNonNull$;
     }
 

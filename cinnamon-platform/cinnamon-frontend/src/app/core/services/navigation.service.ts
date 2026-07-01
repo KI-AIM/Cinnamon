@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from "@angular/router";
 import { NavigationKey } from "@shared/model/navigation";
 import { BehaviorSubject, distinctUntilChanged, Observable } from "rxjs";
 
@@ -10,14 +11,21 @@ import { BehaviorSubject, distinctUntilChanged, Observable } from "rxjs";
 @Injectable({
     providedIn: 'root'
 })
-export class NavigationService {
+export class NavigationService implements OnInit {
 
-    private isAdmin: BehaviorSubject<boolean>;
     private navigationKey: BehaviorSubject<NavigationKey>;
 
-    constructor() {
+    constructor(
+        private readonly route: ActivatedRoute,
+        private readonly router: Router,
+    ) {
         this.navigationKey = new BehaviorSubject<NavigationKey>(NavigationKey.NONE);
-        this.isAdmin = new BehaviorSubject<boolean>(false);
+    }
+
+    public ngOnInit(): void {
+        this.router.events.subscribe((event) => {
+            ev
+        });
     }
 
     public get navigationKey$(): Observable<NavigationKey> {

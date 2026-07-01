@@ -140,7 +140,7 @@ public class UserController {
 			@RequestParam final String projectName,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		final ProjectEntity project = userService.createProject(user, projectName, null);
+		final ProjectEntity project = userService.createProject(user.getEmail(), projectName, null);
 		return projectService.getProjectInfo(project);
 	}
 

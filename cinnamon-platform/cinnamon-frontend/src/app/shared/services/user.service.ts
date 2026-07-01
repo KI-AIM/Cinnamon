@@ -4,7 +4,7 @@ import { Router } from "@angular/router";
 import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
 import { Project } from "@shared/model/project";
 import { User } from "@shared/model/user";
-import { Observable, Subject, tap } from "rxjs";
+import { BehaviorSubject, Observable, Subject, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
@@ -26,6 +26,8 @@ export class UserService {
 
     private loginSubject: Subject<void> = new Subject<void>();
     private logoutSubject: Subject<void> = new Subject<void>();
+
+    private projectListSubject: BehaviorSubject<Project[]> = new BehaviorSubject<Project[]>([]);
 
     constructor(
         private readonly http: HttpClient,
@@ -137,6 +139,19 @@ export class UserService {
     }
 
     public getProjectsForCurrentUser$(): Observable<Project[]> {
+        this.refreshProjectsForCurrentUser$().subscribe();
+        return this.projectListSubject.asObservable();
+    }
+
+    public refreshProjectsForCurrentUser$(): Observable<Project[]> {
+        return this.fetchProjectsForCurrentUser$().pipe(
+            tap((projects) => {
+                this.projectListSubject.next(projects);
+            }),
+        );
+    }
+
+    private fetchProjectsForCurrentUser$(): Observable<Project[]> {
         return this.http.get<Project[]>(environments.apiUrl + "/api/user/-/projects");
     }
 

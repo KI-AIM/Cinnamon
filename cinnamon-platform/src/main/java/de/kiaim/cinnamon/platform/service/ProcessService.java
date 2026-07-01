@@ -39,6 +39,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.Nullable;
@@ -1285,12 +1286,13 @@ public class ProcessService {
 			throws InternalIOException {
 		try {
 			final String dataSetString = JsonMapper.jsonMapper().writeValueAsString(dataSet);
-			bodyBuilder.part(stepInputConfiguration.getPartName(), new ByteArrayResource(dataSetString.getBytes()) {
+			bodyBuilder.part(stepInputConfiguration.getPartName(),
+			                 new ByteArrayResource(dataSetString.getBytes(StandardCharsets.UTF_8)) {
 				@Override
 				public String getFilename() {
 					return stepInputConfiguration.getFileName();
 				}
-			});
+			}).contentType(MediaType.APPLICATION_JSON);
 		} catch (final JsonProcessingException e) {
 			throw new InternalIOException(InternalIOException.DATA_SET_SERIALIZATION,
 			                              "Could not convert dataset to json!", e);

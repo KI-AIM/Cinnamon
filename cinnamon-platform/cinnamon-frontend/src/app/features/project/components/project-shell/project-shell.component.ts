@@ -3,12 +3,12 @@ import { ActivatedRoute } from "@angular/router";
 import { StateManagementService } from "@core/services/state-management.service";
 import { ProjectService } from "@shared/services/project.service";
 import { StatusService } from "@shared/services/status.service";
+import { switchMap } from "rxjs";
 
 @Component({
     selector: 'app-project-shell',
     standalone: false,
     templateUrl: './project-shell.component.html',
-    styleUrl: './project-shell.component.less'
 })
 export class ProjectShellComponent implements OnInit {
 
@@ -24,14 +24,17 @@ export class ProjectShellComponent implements OnInit {
         const projectId = this.route.snapshot.params['projectId'];
         console.log("Project ID: " + projectId);
         if (projectId) {
-            this.projectService.openProjectId(projectId).subscribe({
-                    next: (project) => {
+            this.projectService.openProjectId(projectId).pipe(
+                switchMap((project) => {
+                    return this.statusService.updateStatus(project.id);
+                }),
+            ).subscribe({
+                    next: (status) => {
+                        this.stateManagementService.routeToCurrentStep(projectId, status);
                     },
                 }
             );
         }
-
-        this.stateManagementService.fetchAndRouteToCurrentStep();
     }
 
 }

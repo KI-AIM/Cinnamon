@@ -4,7 +4,7 @@ import { MatDialog } from "@angular/material/dialog";
 import { TitleService } from "@core/services/title-service.service";
 import { Project } from "@shared/model/project";
 import { UserService } from "@shared/services/user.service";
-import { combineLatest, Observable } from "rxjs";
+import { combineLatest, Observable, switchMap } from "rxjs";
 
 @Component({
     selector: 'app-user-home-page',
@@ -40,6 +40,14 @@ export class UserHomePageComponent implements OnInit {
     }
 
     protected onCreateProject() {
-        this.userService.createProjectForCurrentUser(this.createProjectForm.value.name).subscribe();
+        this.userService.createProjectForCurrentUser(this.createProjectForm.value.name).pipe(
+            switchMap(_ => {
+                return this.userService.refreshProjectsForCurrentUser$();
+            }),
+        ).subscribe({
+            next: _ => {
+                this.createProjectForm.reset();
+            },
+        });
     }
 }

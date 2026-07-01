@@ -17,6 +17,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSourceSelector;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.Authentication;
@@ -204,8 +205,10 @@ public class DataSetService {
 	private List<List<Object>> printDataRows(final DataSet dataSet) {
 		final List<List<Object>> result = new ArrayList<>(dataSet.getData().size());
 
+		final PrintDataRowsContext context = PrintDataRowsContext.createFor(dataSet.getDataConfiguration());
+
 		for (final DataRow row : dataSet.getDataRows()) {
-			result.add(printDataRow(row, dataSet.getDataConfiguration()));
+			result.add(printDataRow(row, dataSet.getDataConfiguration(), context));
 		}
 
 		return result;
@@ -219,7 +222,8 @@ public class DataSetService {
 	 * @param dataConfiguration The data configuration defining the attributes and their format.
 	 * @return The converted dataset.
 	 */
-	private List<Object> printDataRow(final DataRow row, final DataConfiguration dataConfiguration) {
+	private List<Object> printDataRow(final DataRow row, final DataConfiguration dataConfiguration,
+									  final PrintDataRowsContext context) {
 		final List<Object> result = new ArrayList<>(row.getData().size());
 
 		for (int i = 0; i < row.getData().size(); i++) {
@@ -253,7 +257,7 @@ public class DataSetService {
 				if (config == null || dateTimeValue == null) {
 					result.add(value.getValue());
 				} else {
-					final String format = config.getDateTimeFormatter();
+					final String format = context.getDateTimeFormatter().get(columnConfiguration.getIndex());
 					final DateTimeFormatter formatter = new DateTimeData.DateTimeDataBuilder().buildFormatter(format);
 					result.add(formatter.format(dateTimeValue));
 				}
@@ -544,4 +548,82 @@ public class DataSetService {
 
 		return lastOrOriginalDataSet;
 	}
+
+	/**
+	 * Helper class for {@link DataSetService#printDataRows(DataSet)}.
+	 * Contains preprocessed data for printing the data rows.
+	 */
+	@Getter
+	private static final class PrintDataRowsContext {
+		/**
+		 * Formatters date time columns with striped time zone patterns.
+		 */
+		private final Map<Integer, String> dateTimeFormatter = new HashMap<>();
+
+		/**
+		 * Creates a new context for printing the data rows.
+		 *
+		 * @param dataConfiguration The data configuration of the dataset to be printed.
+		 * @return The initialized context.
+		 */
+		public static PrintDataRowsContext createFor(final DataConfiguration dataConfiguration) {
+			final PrintDataRowsContext context = new PrintDataRowsContext();
+			context.init(dataConfiguration);
+			return context;
+		}
+
+		/**
+		 * Prepares the context for printing the data rows.
+		 * Stripes the time zone patterns from the date formatters.
+		 *
+		 * @param dataConfiguration The data configuration of the dataset to be printed.
+		 */
+		private void init(final DataConfiguration dataConfiguration) {
+			for (final ColumnConfiguration columnConfiguration : dataConfiguration.getConfigurations()) {
+				if (columnConfiguration.getType() == DataType.DATE_TIME) {
+					final var config = columnConfiguration.getConfiguration(DateTimeFormatConfiguration.class);
+					if (config != null) {
+						final String format = stripTimeZonePatterns(config.getDateTimeFormatter());
+						this.dateTimeFormatter.put(columnConfiguration.getIndex(), format);
+					}
+				}
+			}
+		}
+
+		/**
+		 * Strips timezone patterns from the given format pattern.
+		 *
+		 * @param formatPattern The format pattern to strip timezone patterns from.
+		 * @return The format pattern without timezone patterns.
+		 */
+		private static String stripTimeZonePatterns(String formatPattern) {
+			final StringBuilder sb = new StringBuilder(formatPattern.length());
+			boolean inQuotes = false;
+
+			for (final char c : formatPattern.toCharArray()) {
+				if (c == '\'') {
+					inQuotes = !inQuotes; // Toggle quote state
+					sb.append(c);         // Always keep quote characters
+				} else if (!inQuotes && isTimeZoneChar(c)) {
+					continue; // Skip timezone pattern letters (and their repetitions)
+				} else {
+					sb.append(c);
+				}
+			}
+			return sb.toString();
+		}
+
+		/**
+		 * Checks if the given character is a timezone pattern letter.
+		 * Covers: X, x, Z, O, V, v, z (all standard timezone pattern letters)
+		 *
+		 * @param c The character to check.
+		 * @return True if the character is a timezone pattern letter, false otherwise.
+		 */
+		private static boolean isTimeZoneChar(final char c) {
+			return c == 'X' || c == 'x' || c == 'Z' || c == 'O' || c == 'V' || c == 'z';
+		}
+
+	}
+
 }

@@ -1,0 +1,44 @@
+@import '../../../styles/colors';
+@import '../../../styles/variables';
+
+.user-center-title {
+    font-size: 20px;
+    font-weight: bold;
+    padding: 6px 4px 6px 24px;
+}
+
+.user-center-title-close {
+    float: right;
+    height: fit-content;
+    padding: 0;
+}
+
+.user-center-title-close mat-icon {
+    vertical-align: text-bottom;
+}
+
+.user-center-current-user {
+}
+
+.user-center-list {
+
+}
+
+.user-center-seperator {
+    height: 1px;
+    background-color: @color-border;
+    margin: 8px 0;
+}
+
+.user-center-list-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 8px;
+    cursor: pointer;
+
+    border-radius: @border-radius;
+
+    &:hover {
+        background-color: @color-border;
+    }
+}

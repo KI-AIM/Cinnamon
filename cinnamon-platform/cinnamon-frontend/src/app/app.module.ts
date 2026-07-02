@@ -37,6 +37,7 @@ import { EvaluationModule } from "./features/evaluation/evaluation.module";
 import { RiskAssessmentModule } from "./features/risk-assessment/risk-assessment.module";
 import { NotFoundComponent } from './core/components/not-found/not-found.component';
 import { NotificationCenterComponent } from './core/components/notification-center/notification-center.component';
+import { UserCenterComponent } from '@core/components/user-center/user-center.component';
 
 @NgModule({
     declarations: [
@@ -44,6 +45,7 @@ import { NotificationCenterComponent } from './core/components/notification-cent
         NavigationComponent,
         NotFoundComponent,
         NotificationCenterComponent,
+        UserCenterComponent,
     ],
     imports: [
         BrowserModule,

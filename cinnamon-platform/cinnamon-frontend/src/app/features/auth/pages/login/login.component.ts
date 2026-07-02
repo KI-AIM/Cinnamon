@@ -30,7 +30,7 @@ export class LoginComponent implements OnInit {
 		private readonly titleService: TitleService,
 		private readonly userService: UserService,
 	) {
-		this.titleService.setPageTitle("Open project");
+		this.titleService.setPageTitle("Login");
 	}
 
 	ngOnInit() {
@@ -62,7 +62,7 @@ export class LoginComponent implements OnInit {
             },
             error: () => {
                 this.notificationService.addNotification(
-                    new AppNotification("Project name or password wrong", 'failure')
+                    new AppNotification("Account name or password wrong", 'failure')
                 );
             },
         });

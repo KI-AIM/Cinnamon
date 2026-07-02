@@ -24,6 +24,7 @@ export class UserService {
     private readonly USER_KEY = "user";
     private user: User;
 
+    private userSubject: BehaviorSubject<User>;
     private loginSubject: Subject<void> = new Subject<void>();
     private logoutSubject: Subject<void> = new Subject<void>();
 
@@ -36,18 +37,22 @@ export class UserService {
     ) {
         const storedUser = sessionStorage.getItem(this.USER_KEY);
         if (storedUser !== null) {
-            this.user = JSON.parse(storedUser);
+            this.userSubject = new BehaviorSubject<User>(JSON.parse(storedUser) as User);
         } else {
-            this.user = new User(false, "", "");
+            this.userSubject = new BehaviorSubject<User>(this.createLoggedOutUser());
         }
     }
 
     getUser(): User {
-        return this.user;
+        return this.userSubject.value;
+    }
+
+    public get user$(): Observable<User> {
+        return this.userSubject.asObservable();
     }
 
     isAuthenticated(): boolean {
-        return this.user.authenticated;
+        return this.getUser().authenticated;
     }
 
     /**
@@ -64,8 +69,6 @@ export class UserService {
     login(
         credentials: { email: string; password: string }
     ): Observable<any> {
-        this.user = new User(false, "", "");
-
         const token = btoa(credentials.email + ":" + credentials.password);
         const headers = new HttpHeaders(
             credentials ? {authorization: "Basic " + token} : {}
@@ -74,8 +77,7 @@ export class UserService {
         return this.http.get<any>(this.baseURL + "/login", {headers: headers}).pipe(
             tap(data => {
                 if (typeof data === "boolean" && data) {
-                    this.user = new User(true, credentials.email, token);
-                    sessionStorage.setItem(this.USER_KEY, JSON.stringify(this.user));
+                    this.setUser(new User(true, credentials.email, token));
                     this.loginSubject.next();
                 }
             }),
@@ -109,19 +111,18 @@ export class UserService {
      * @param mode The mode defining the displayed message.
      */
     public logout(mode: LogoutMode) {
-        const project = this.user.email || null;
+        const user = this.getUser().email || null;
 
-        sessionStorage.removeItem(this.USER_KEY)
-        this.user = new User(false, "", "");
+        this.userSubject.next(this.createLoggedOutUser());
 
         let message = "";
         let type: NotificationType = "success";
         switch (mode) {
             case "close":
-                message = "Successfully closed project";
+                message = "Successfully logged out";
                 break;
             case "delete":
-                message = "Successfully deleted project";
+                message = "Successfully deleted account";
                 break;
             case "expired":
                 message = "Session expired";
@@ -131,9 +132,9 @@ export class UserService {
 
         this.logoutSubject.next();
 
-        this.router.navigate(['open']).then(() => {
+        this.router.navigate(['/']).then(() => {
             const notification = new AppNotification(message, type);
-            notification.project = project;
+            notification.user = user;
             this.notificationService.addNotification(notification);
         });
     }
@@ -160,6 +161,15 @@ export class UserService {
         formData.append("projectName", projectName);
 
         return this.http.post<Project>(environments.apiUrl + "/api/user/-/projects", formData);
+    }
+
+    private createLoggedOutUser(): User {
+        return new User(false, "", "");
+    }
+
+    private setUser(user: User): void {
+        sessionStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        this.userSubject.next(user);
     }
 
 }

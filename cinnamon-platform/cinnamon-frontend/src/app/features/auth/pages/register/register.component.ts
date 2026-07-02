@@ -46,7 +46,7 @@ export class RegisterComponent implements OnInit {
         private readonly titleService: TitleService,
         private readonly userService: UserService,
     ) {
-        this.titleService.setPageTitle("Create new project");
+        this.titleService.setPageTitle("Register new account");
     }
 
     public ngOnInit(): void {
@@ -128,7 +128,7 @@ export class RegisterComponent implements OnInit {
         const loginData = {email: this.registerForm.value.email!, password: this.registerForm.value.password!};
         this.userService.login(loginData).subscribe({
             next: () => {
-                const notification = new AppNotification("Successfully created project", 'success');
+                const notification = new AppNotification("Successfully registered account", 'success');
                 notification.project = projectName;
                 this.notificationService.addNotification(notification);
 

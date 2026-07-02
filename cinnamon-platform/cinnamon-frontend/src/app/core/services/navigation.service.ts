@@ -1,5 +1,5 @@
 import { Injectable, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from "@angular/router";
+import { ActivatedRoute } from "@angular/router";
 import { NavigationKey } from "@shared/model/navigation";
 import { BehaviorSubject, distinctUntilChanged, Observable } from "rxjs";
 
@@ -17,15 +17,22 @@ export class NavigationService implements OnInit {
 
     constructor(
         private readonly route: ActivatedRoute,
-        private readonly router: Router,
     ) {
         this.navigationKey = new BehaviorSubject<NavigationKey>(NavigationKey.NONE);
     }
 
     public ngOnInit(): void {
-        this.router.events.subscribe((event) => {
-            ev
+        this.route.url.subscribe(url => {
+            if (url.some(segment => segment.path === "project")) {
+                this.setNavigationKey(NavigationKey.PROJECT);
+            } else if (url.some(segment => segment.path === "admin")) {
+                // Check admin before user because the admin route is part of the user route
+                this.setNavigationKey(NavigationKey.ADMIN);
+            } else if (url.some(segment => segment.path === "user")) {
+                this.setNavigationKey(NavigationKey.USER);
+            }
         });
+
     }
 
     public get navigationKey$(): Observable<NavigationKey> {

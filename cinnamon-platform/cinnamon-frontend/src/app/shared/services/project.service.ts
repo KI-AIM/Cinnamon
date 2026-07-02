@@ -1,7 +1,16 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Project } from "@shared/model/project";
-import { BehaviorSubject, distinctUntilKeyChanged, filter, Observable, tap } from "rxjs";
+import {
+    BehaviorSubject,
+    distinctUntilChanged,
+    distinctUntilKeyChanged,
+    filter,
+    map,
+    Observable,
+    take,
+    tap
+} from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
@@ -29,6 +38,25 @@ export class ProjectService {
         return this._projectSubject.asObservable();
     }
 
+    public get projectId$(): Observable<string | null> {
+        return this.project$.pipe(
+            map(project => project?.id || null),
+            distinctUntilChanged(),
+        );
+    }
+
+    public get projectIdRequired$(): Observable<string> {
+        return this.projectId$.pipe(
+            filter(id => id != null),
+        );
+    }
+
+    public get projectIdRequiredOnce$(): Observable<string> {
+        return this.projectIdRequired$.pipe(
+            take(1),
+        );
+    }
+
     public get projectOpen$(): Observable<Project> {
         return this._projectSubject.asObservable().pipe(
             filter(project => project !== null),
@@ -36,7 +64,7 @@ export class ProjectService {
         );
     }
 
-    public get projectClosed(): Observable<null> {
+    public get projectClosed$(): Observable<null> {
         return this._projectSubject.asObservable().pipe(
             filter(project => project === null)
         );

@@ -5,16 +5,13 @@ import { StepConfiguration, Steps } from "@core/enums/steps";
 import { List } from "@core/utils/list";
 import { Status } from "@shared/model/status";
 import { ProjectService } from "@shared/services/project.service";
-import { UserService } from "@shared/services/user.service";
-import { BehaviorSubject, filter, Observable, of, Subscription, tap } from "rxjs";
+import { BehaviorSubject, filter, Observable, of, Subscription, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
     providedIn: 'root'
 })
 export class StatusService implements OnDestroy {
-    private readonly baseUrl: string = environments.apiUrl + "/api/project"
-
     private statusSubject: BehaviorSubject<Status | null> = new BehaviorSubject<Status | null>(null);
 
     private _projectOpenSubscription: Subscription;
@@ -29,10 +26,9 @@ export class StatusService implements OnDestroy {
 
     constructor(
         private readonly http: HttpClient,
-        readonly userService: UserService,
         readonly projectService: ProjectService,
     ) {
-        this._projectClosedSubscription = projectService.projectClosed.subscribe({
+        this._projectClosedSubscription = projectService.projectClosed$.subscribe({
             next: () => this.statusSubject.next(null),
         });
     }
@@ -77,9 +73,9 @@ export class StatusService implements OnDestroy {
         currentStatus.mode = mode;
         this.statusSubject.next(currentStatus);
 
-        const formData = new FormData();
-        formData.append("mode", mode.toString());
-        return this.http.post<void>(this.baseUrl, formData);
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postMode(projectId, mode)),
+        );
     }
 
     getCompletedSteps(): List<Object> {
@@ -87,14 +83,15 @@ export class StatusService implements OnDestroy {
     }
 
     /**
-     * Sets the given step to the current steps, marks all previous steps as completed, and updates the backend.
-     * Steps after the given step will be removed from the list of completed steps.
+     * Sets the given step to the current steps, marks all previous steps as completed, and updates the backend. * Steps after the given step will be removed from the list of completed steps.
      *
      * @param step
      */
     public updateNextStep(step: Steps): Observable<void> {
         this.setNextStep(step);
-        return this.postStep(step);
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postStep(projectId, step)),
+        );
     }
 
     /**
@@ -129,17 +126,12 @@ export class StatusService implements OnDestroy {
         });
     }
 
-    private postStep(step: Steps): Observable<void> {
-        const formData = new FormData();
-        formData.append("step", step);
-        return this.http.post<void>(this.baseUrl + "/step", formData);
-    }
-
     /**
      * Fetches the current status from the backend and updates the status subject.
      */
-    public updateStatus(projectId: string) {
-        return this.http.get<Status>(this.baseUrl + "/" + projectId + "/status").pipe(
+    public updateStatus(): Observable<Status> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchStatus(projectId)),
             tap((status) => {
                 this.setCompletedSteps(status.currentStep);
                 this.statusSubject.next(status);
@@ -165,5 +157,25 @@ export class StatusService implements OnDestroy {
             return false;
         }
         return this.completedSteps.contains(step);
+    }
+
+    private baseUrl(projectId: string): string {
+        return environments.apiUrl + "/api/project/" + projectId;
+    }
+
+    private fetchStatus(projectId: string): Observable<Status> {
+        return this.http.get<Status>(this.baseUrl(projectId) + "/status");
+    }
+
+    private postMode(projectId: string, mode: Mode) {
+        const formData = new FormData();
+        formData.append("mode", mode.toString());
+        return this.http.post<void>(this.baseUrl(projectId) + "/mode", formData);
+    }
+
+    private postStep(projectId: string, step: Steps): Observable<void> {
+        const formData = new FormData();
+        formData.append("step", step);
+        return this.http.post<void>(this.baseUrl(projectId) + "/step", formData);
     }
 }

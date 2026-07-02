@@ -27,8 +27,7 @@
                     <li *ngFor="let step of StepConfiguration | keyvalue: indexOrderAsc" class="nav-item">
                         <a class="nav-link"
                            [id]="step.value.id"
-                           [routerLink]="[step.value.path]"
-                           [routerLinkActive]="['active']"
+                           (click)="routeToStep(step.value.enum)"
                            [ngClass]="{'completed': statusService.getCompletedSteps().contains(step.value.enum), 'disabled': !userService.isAuthenticated() || (step.value.dependsOn != null && !statusService.getCompletedSteps().contains(step.value.dependsOn))}">
                             {{step.value.text}}
                         </a>

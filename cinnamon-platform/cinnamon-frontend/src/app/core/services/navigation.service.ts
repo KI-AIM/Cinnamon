@@ -1,7 +1,8 @@
-import { Injectable, OnInit } from '@angular/core';
-import { ActivatedRoute } from "@angular/router";
+import { Injectable } from '@angular/core';
+import { Event, NavigationEnd, Router } from "@angular/router";
 import { NavigationKey } from "@shared/model/navigation";
 import { BehaviorSubject, distinctUntilChanged, Observable } from "rxjs";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 /**
  * Service for managing the content of the navigation component {@link NavigationComponent}.
@@ -11,37 +12,46 @@ import { BehaviorSubject, distinctUntilChanged, Observable } from "rxjs";
 @Injectable({
     providedIn: 'root'
 })
-export class NavigationService implements OnInit {
+export class NavigationService {
 
     private navigationKey: BehaviorSubject<NavigationKey>;
 
     constructor(
-        private readonly route: ActivatedRoute,
+        private readonly router: Router,
+
     ) {
         this.navigationKey = new BehaviorSubject<NavigationKey>(NavigationKey.NONE);
-    }
 
-    public ngOnInit(): void {
-        this.route.url.subscribe(url => {
-            if (url.some(segment => segment.path === "project")) {
-                this.setNavigationKey(NavigationKey.PROJECT);
-            } else if (url.some(segment => segment.path === "admin")) {
-                // Check admin before user because the admin route is part of the user route
-                this.setNavigationKey(NavigationKey.ADMIN);
-            } else if (url.some(segment => segment.path === "user")) {
-                this.setNavigationKey(NavigationKey.USER);
+        this.router.events.pipe(
+            takeUntilDestroyed(),
+        ).subscribe((event: Event): void => {
+            if (event instanceof NavigationEnd) {
+                const url = (event as NavigationEnd).url;
+                if (url.includes("project")) {
+                    this.setNavigationKey(NavigationKey.PROJECT);
+                } else if (url.includes("admin")) {
+                    this.setNavigationKey(NavigationKey.ADMIN);
+                } else if (url.includes("user")) {
+                    this.setNavigationKey(NavigationKey.USER);
+                }
             }
         });
-
     }
 
+    /**
+     * Observable for the current navigation key.
+     */
     public get navigationKey$(): Observable<NavigationKey> {
         return this.navigationKey.asObservable().pipe(
             distinctUntilChanged(),
         );
     }
 
-    public setNavigationKey(navigationKey: NavigationKey) {
+    /**
+     * Sets the navigation key.
+     * @param navigationKey The navigation key to set.
+     */
+    public setNavigationKey(navigationKey: NavigationKey): void {
         this.navigationKey.next(navigationKey);
     }
 

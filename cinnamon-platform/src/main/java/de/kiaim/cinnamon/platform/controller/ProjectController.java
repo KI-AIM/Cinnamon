@@ -12,6 +12,7 @@ import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.StatusEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
+import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.service.ExportService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -88,6 +89,17 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		return projectService.getProject(requestUser, projectId).getStatus();
+	}
+
+	@PostMapping(value = "/mode")
+	public void postMode(
+			@PathVariable final String projectId,
+			@RequestParam(required = true) final Mode mode,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user, projectId);
+		projectService.setMode(project, mode);
 	}
 
 	@PostMapping(value = "/step")

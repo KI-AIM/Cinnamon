@@ -200,6 +200,12 @@ export class AppNotification {
     public time: Date = new Date();
 
     /**
+     * The user the notification belongs to.
+     * Null if the notification does not belong to a user.
+     */
+    public user: string | null = null;
+
+    /**
      * The project the notification belongs to.
      * Null if the notification does not belong to a project.
      */

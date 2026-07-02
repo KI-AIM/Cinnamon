@@ -9,6 +9,8 @@ import { AppConfig, AppConfigService } from "./shared/services/app-config.servic
 import { Observable, switchMap } from "rxjs";
 import { LockedInformation, LockedReason, StateManagementService } from "./core/services/state-management.service";
 import { ErrorHandlingService } from "./shared/services/error-handling.service";
+import {UserService} from "@shared/services/user.service";
+import {User} from "@shared/model/user";
 
 @Component({
     selector: 'app-root',
@@ -36,6 +38,7 @@ export class AppComponent implements OnInit {
     protected appConfig$: Observable<AppConfig>;
     protected latestNotification$: Observable<AppNotification | null>;
     protected locked$: Observable<LockedInformation>;
+    protected user$: Observable<User>;
 
     constructor(
         private readonly appConfigService: AppConfigService,
@@ -46,6 +49,7 @@ export class AppComponent implements OnInit {
         private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
         private titleService: TitleService,
+        private readonly userService: UserService,
     ) {
     }
 
@@ -53,6 +57,7 @@ export class AppComponent implements OnInit {
         this.appConfig$ = this.appConfigService.appConfig$;
         this.latestNotification$ = this.notificationService.latestNotification$();
         this.locked$ = this.stateManagementService.currentStepLocked$;
+        this.user$ = this.userService.user$;
     }
 
     getTitle(): String {

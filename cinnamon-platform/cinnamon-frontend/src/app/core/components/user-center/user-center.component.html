@@ -1,0 +1,35 @@
+<a #trigger title="Account" class="icon icon-enabled" (click)="openCenter(dialog, trigger);">
+    <mat-icon>person</mat-icon>
+</a>
+
+<ng-template #dialog>
+    <span class="dialog-title fw-bold user-center-title">
+        <span>Account</span>
+        <span mat-dialog-close class="icon-enabled user-center-title-close">
+            <mat-icon>close</mat-icon>
+        </span>
+    </span>
+
+    <mat-dialog-content class="mat-typography">
+
+        @if (user$ | async; as user) {
+            <div class="user-center-current-user">
+                {{ user.email }}
+            </div>
+        }
+
+        <div class="user-center-seperator"></div>
+
+        <div class="user-center-list">
+
+
+            <div class="user-center-list-item" (click)="logout()">
+                <mat-icon>logout</mat-icon>
+                <span>Logout</span>
+            </div>
+        </div>
+
+
+    </mat-dialog-content>
+
+</ng-template>

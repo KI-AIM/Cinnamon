@@ -11,15 +11,14 @@ import {
 import { FileInformation } from "@shared/model/file-information";
 import { XlsxFileConfiguration } from "@shared/model/xlsx-file-configuration";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
-import { distinctUntilChanged, finalize, Observable, ReplaySubject, share, shareReplay, tap } from "rxjs";
+import { ProjectService } from "@shared/services/project.service";
+import { distinctUntilChanged, finalize, Observable, ReplaySubject, share, shareReplay, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
     providedIn: 'root',
 })
 export class FileService {
-    private readonly baseUrl: string = environments.apiUrl + "/api/data/file";
-
     fileConfiguration: FileConfiguration;
 
     private readonly _fileInfoSubject: ReplaySubject<FileInformation>;
@@ -35,6 +34,7 @@ export class FileService {
 	constructor(
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly httpClient: HttpClient,
+        private readonly projectService: ProjectService,
     ) {
         this._fileInfoSubject = new ReplaySubject<FileInformation>(1);
         this._fileInfo$ = this._fileInfoSubject.asObservable().pipe(
@@ -71,7 +71,8 @@ export class FileService {
             return this._fileInfoLoading$;
         }
 
-        this._fileInfoLoading$ = this.httpClient.get<FileInformation>(this.baseUrl).pipe(
+        this._fileInfoLoading$ = this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchFileInformation(projectId)),
             tap(value => {
                 this.setFileInfo(value);
             }),
@@ -111,7 +112,8 @@ export class FileService {
             return this._dataSourceConfigurationLoading$;
         }
 
-        this._dataSourceConfigurationLoading$ = this.httpClient.get<DataSourceConfiguration>(this.baseUrl + "/source").pipe(
+        this._dataSourceConfigurationLoading$ = this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchDataSourceConfiguration(projectId)),
             tap(value => {
                 this._dataSourceConfigurationFetched = true;
                 this._dataSourceConfigurationSubject.next(value);
@@ -134,11 +136,8 @@ export class FileService {
     public uploadDataSourceConfiguration(dataSourceConfiguration: DataSourceConfiguration): Observable<FileInformation> {
         this.setDataSourceConfiguration(dataSourceConfiguration);
 
-        const formData = new FormData();
-        const fileConfigString = JSON.stringify(dataSourceConfiguration);
-        formData.append("dataSourceConfiguration", fileConfigString);
-
-        return this.httpClient.post<FileInformation>(this.baseUrl + "/source", formData).pipe(
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postDataSourceConfiguration(projectId, dataSourceConfiguration)),
             tap(value => this.setFileInfo(value)),
         );
     }
@@ -149,7 +148,8 @@ export class FileService {
     }
 
     public get fileConfiguration$(): Observable<FileConfiguration> {
-        return this.httpClient.get<FileConfiguration>(this.baseUrl + "/configuration").pipe(
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchFileConfiguration(projectId)),
             tap(value => this.fileConfiguration = value),
             share(),
         );
@@ -172,13 +172,12 @@ export class FileService {
 	}
 
     public uploadFile(file: File): Observable<FileInformation> {
-        const formData = new FormData();
-
-        formData.append("file", file);
-
-        return this.httpClient.post<FileInformation>(this.baseUrl, formData).pipe(tap(value => {
-            this.setFileInfo(value);
-        }));
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postFile(projectId, file)),
+            tap(value => {
+                this.setFileInfo(value);
+            }),
+        );
     }
 
     /**
@@ -187,14 +186,12 @@ export class FileService {
      * @param fileConfiguration The file configuration.
      */
     public uploadFileConfiguration(fileConfiguration: FileConfiguration): Observable<FileInformation> {
-        const formData = new FormData();
-
-        const fileConfigString = JSON.stringify(fileConfiguration);
-        formData.append("fileConfiguration", fileConfigString);
-
-        return this.httpClient.post<FileInformation>(this.baseUrl + "/configuration", formData).pipe(tap(value => {
-            this.setFileInfo(value);
-        }));
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postFileConfiguration(projectId, fileConfiguration)),
+            tap(value => {
+                this.setFileInfo(value);
+            }),
+        );
     }
 
     /**
@@ -203,26 +200,71 @@ export class FileService {
      * @return The estimation result.
      */
     public estimateFileConfiguration(): Observable<FileConfigurationEstimation> {
-        return this.httpClient.post<FileConfigurationEstimation>(this.baseUrl + "/estimation", {}).pipe(
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postFileEstimationAction(projectId)),
             tap(value => this.fileConfiguration = value.estimation),
         );
     }
 
     /**
-     * Retrieves the data from the configured server and estimates the file configuration for the returned file.
+     * Retrieves the data from the configured server.
      *
-     * @param fileConfiguration The file configuration defining the file to retrieve.
      * @return The estimation result.
      */
-    public retrieveFile(fileConfiguration: FileConfiguration): Observable<FileInformation> {
-        const formData = new FormData();
-        const fileConfigString = JSON.stringify(fileConfiguration);
-        formData.append("fileConfiguration", fileConfigString);
-
-        return this.httpClient.post<FileInformation>(this.baseUrl + "/retrieve", formData).pipe(
+    public retrieveFile(): Observable<FileInformation> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postFileRetrievalAction(projectId)),
             tap(value => {
                 this.setFileInfo(value);
             }),
         );
     }
+
+    private baseUrl(projectId: string): string {
+        return environments.apiUrl + "/api/project/" + projectId +  "/data/file";
+    }
+
+    private fetchDataSourceConfiguration(projectId: string): Observable<DataSourceConfiguration> {
+        return this.httpClient.get<DataSourceConfiguration>(this.baseUrl(projectId) + "/source");
+    }
+
+    private fetchFileConfiguration(projectId: string): Observable<FileConfiguration> {
+        return this.httpClient.get<FileConfiguration>(this.baseUrl(projectId) + "/configuration");
+    }
+
+    private fetchFileInformation(projectId: string): Observable<FileInformation> {
+        return this.httpClient.get<FileInformation>(this.baseUrl(projectId));
+    }
+
+    private postDataSourceConfiguration(projectId: string, dataSourceConfiguration: DataSourceConfiguration): Observable<FileInformation> {
+        const formData = new FormData();
+        const fileConfigString = JSON.stringify(dataSourceConfiguration);
+        formData.append("dataSourceConfiguration", fileConfigString);
+
+        return this.httpClient.post<FileInformation>(this.baseUrl(projectId) + "/source", formData);
+    }
+
+    private postFile(projectId: string, file: File): Observable<FileInformation> {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        return this.httpClient.post<FileInformation>(this.baseUrl(projectId), formData);
+    }
+
+    private postFileConfiguration(projectId: string, fileConfiguration: FileConfiguration): Observable<FileInformation> {
+        const formData = new FormData();
+        const fileConfigString = JSON.stringify(fileConfiguration);
+        formData.append("fileConfiguration", fileConfigString);
+
+        return this.httpClient.post<FileInformation>(this.baseUrl(projectId) + "/configuration", formData);
+    }
+
+    private postFileEstimationAction(projectId: string): Observable<FileConfigurationEstimation> {
+        return this.httpClient.post<FileConfigurationEstimation>(this.baseUrl(projectId) + "/estimate", {});
+    }
+
+    private postFileRetrievalAction(projectId: string): Observable<FileInformation> {
+        return this.httpClient.post<FileInformation>(this.baseUrl(projectId) + "/retrieve", {});
+    }
+
 }

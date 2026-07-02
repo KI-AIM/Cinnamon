@@ -13,11 +13,10 @@ import { Status } from "@shared/model/status";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { ProjectService } from "@shared/services/project.service";
 import { StatusService } from "@shared/services/status.service";
-import { UserService } from "@shared/services/user.service";
 import { plainToInstance } from "class-transformer";
 import {
     BehaviorSubject,
-    filter,
+    filter, from,
     interval,
     map,
     Observable,
@@ -25,7 +24,6 @@ import {
     shareReplay,
     Subscription,
     switchMap,
-    take,
     tap
 } from "rxjs";
 import { environments } from "src/environments/environment";
@@ -59,7 +57,6 @@ export class StateManagementService {
         private readonly projectService: ProjectService,
         private readonly riskAssessmentService: RiskAssessmentService,
         private readonly router: Router,
-        private readonly userService: UserService,
         private readonly statusService: StatusService,
         private readonly synthetizationService: SynthetizationService,
         private readonly technicalEvaluationService: TechnicalEvaluationService,
@@ -79,15 +76,15 @@ export class StateManagementService {
         );
 
         this._pipelineObserver$ = interval(2000).pipe(
-            switchMap(() => this.fetchPipelineInformation()),
+            switchMap(() => this.fetchPipelineInformationForCurrentProject()),
             tap(value => this.doUpdatePipeline(value)),
         );
 
-        this.userService.logout$().subscribe(() => {
+        this.projectService.projectClosed$.subscribe(() => {
             this.clearCaches();
         });
 
-        if (this.userService.isAuthenticated()) {
+        if (this.projectService.project != null) {
             this.initPipeline();
         }
     }
@@ -201,7 +198,7 @@ export class StateManagementService {
 
         // Directly set the initialized flag to prevent calls during the request
         this.pipelineInitialized = true;
-        this.fetchPipelineInformation().subscribe({
+        this.fetchPipelineInformationForCurrentProject().subscribe({
             next: value => {
                 this.doUpdatePipeline(value);
             },
@@ -215,7 +212,7 @@ export class StateManagementService {
      * Updates the status of the entire pipeline.
      */
     public updatePipeline(): void {
-        this.fetchPipelineInformation().subscribe({
+        this.fetchPipelineInformationForCurrentProject().subscribe({
             next: value => {
                 this.doUpdatePipeline(value);
             },
@@ -249,28 +246,50 @@ export class StateManagementService {
         }
     }
 
+    public setAndRouteToStep(step: Steps): Observable<boolean> {
+        return this.statusService.updateNextStep(step).pipe(
+            switchMap(() => this.projectService.projectIdRequiredOnce$),
+            switchMap(projectId => this.doRouteToStep(projectId, step)),
+        );
+    }
+
+    public routeToStep(step: Steps): Observable<boolean> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.doRouteToStep(projectId, step)),
+        );
+    }
+
     /**
      * Routes to the page for the current step.
      * @param projectId The id of the project.
      * @param status The current status of the application.
      */
-    public routeToCurrentStep(projectId: string, status: Status) {
+    public routeToCurrentStep(projectId: string, status: Status): Observable<boolean> {
+        return this.doRouteToStep(projectId, status.currentStep);
+    }
+
+    private doRouteToStep(projectId: string, step: Steps): Observable<boolean> {
         for (let [a, b] of Object.entries(StepConfiguration)) {
-            if (a === status.currentStep.toString()) {
-                this.router.navigateByUrl("/project/" + projectId + b.path);
-                return;
+            if (a === step.toString()) {
+                return from(this.router.navigateByUrl("/project/" + projectId + b.path));
             }
 
         }
-        this.router.navigateByUrl("/project/" + projectId + "/start");
+        return from(this.router.navigateByUrl("/project/" + projectId + "/start"));
+    }
+
+    private fetchPipelineInformationForCurrentProject(): Observable<PipelineInformation> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchPipelineInformation(projectId)),
+        );
     }
 
     /**
      * Fetches the pipeline information from the backend.
      * @return The pipeline information.
      */
-    private fetchPipelineInformation(): Observable<PipelineInformation> {
-        return this.http.get<PipelineInformation>(environments.apiUrl + "/api/process").pipe(
+    private fetchPipelineInformation(projectId: string): Observable<PipelineInformation> {
+        return this.http.get<PipelineInformation>(environments.apiUrl + "/api/project/" + projectId + "/process").pipe(
             map(value => {
                 return plainToInstance(PipelineInformation, value);
             }),

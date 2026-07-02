@@ -2,6 +2,7 @@ import { KeyValue } from '@angular/common';
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { NavigationService } from "@core/services/navigation.service";
+import { StateManagementService } from "@core/services/state-management.service";
 import { ProjectExportComponent } from "@shared/components/project-export/project-export.component";
 import { NavigationKey } from "@shared/model/navigation";
 import { StatusService } from "@shared/services/status.service";
@@ -35,6 +36,7 @@ export class NavigationComponent implements OnInit{
     constructor(
         private readonly dialog: MatDialog,
         private readonly navigationService: NavigationService,
+        protected readonly stateManagementService: StateManagementService,
         protected statusService: StatusService,
         public userService: UserService,
     ) { }
@@ -54,6 +56,10 @@ export class NavigationComponent implements OnInit{
 
     onLogout() {
         this.userService.logout("close");
+    }
+
+    protected routeToStep(step: Steps): void {
+        this.stateManagementService.routeToStep(step).subscribe({});
     }
 
     /**

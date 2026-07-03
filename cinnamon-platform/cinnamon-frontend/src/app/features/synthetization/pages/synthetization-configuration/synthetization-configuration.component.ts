@@ -1,6 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Steps } from "@core/enums/steps";
-import { TitleService } from "../../../../core/services/title-service.service";
 import { AlgorithmService, ConfigurationInfo } from "../../../../shared/services/algorithm.service";
 import { SynthetizationService } from "../../services/synthetization.service";
 import { Observable, Subject, takeUntil } from "rxjs";
@@ -59,9 +58,7 @@ export class SynthetizationConfigurationComponent implements OnInit, OnDestroy {
     constructor(
         private readonly synthService: SynthetizationService,
         private readonly textSynthesisConfigurationService: TextSynthesisConfigurationService,
-        private readonly titleService: TitleService,
     ) {
-        this.titleService.setPageTitle("Synthetization");
     }
 
     public ngOnInit(): void {

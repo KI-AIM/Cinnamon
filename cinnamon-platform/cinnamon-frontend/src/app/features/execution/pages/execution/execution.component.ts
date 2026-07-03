@@ -1,12 +1,10 @@
 import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
-import { Router } from "@angular/router";
 import { StateManagementService } from "@core/services/state-management.service";
 import { plainToInstance } from "class-transformer";
 import { combineLatest, map, Observable, tap } from "rxjs";
 import { ProcessStatus } from "../../../../core/enums/process-status";
 import { Steps } from "../../../../core/enums/steps";
-import { TitleService } from "../../../../core/services/title-service.service";
 import { ExecutionStep } from "../../../../shared/model/execution-step";
 import { ProcessProgress } from "../../../../shared/model/process-progress";
 import { SynthetizationProcess } from "../../../../shared/model/synthetization-process";
@@ -14,7 +12,6 @@ import { SynthetizationComponentProgress } from "../../../../shared/model/synthe
 import { ErrorHandlingService } from "../../../../shared/services/error-handling.service";
 import { StageDefinition } from "../../../../shared/services/execution-step.service";
 import { StatisticsService } from "../../../../shared/services/statistics.service";
-import { StatusService } from "../../../../shared/services/status.service";
 import { ExecutionService } from "../../services/execution.service";
 
 @Component({
@@ -40,13 +37,9 @@ export class ExecutionComponent implements OnInit {
     constructor(
         private errorHandlingService: ErrorHandlingService,
         protected readonly executionService: ExecutionService,
-        private readonly router: Router,
         private readonly stateManagementService: StateManagementService,
         private readonly statisticsService: StatisticsService,
-        private readonly statusService: StatusService,
-        private readonly titleService: TitleService,
     ) {
-        this.titleService.setPageTitle("Execution");
     }
 
     ngOnInit() {
@@ -100,14 +93,7 @@ export class ExecutionComponent implements OnInit {
     }
 
     protected continue() {
-        this.statusService.updateNextStep(Steps.TECHNICAL_EVALUATION).subscribe({
-            next: () => {
-                this.router.navigateByUrl("/technicalEvaluationConfiguration");
-            },
-            error: (e) =>{
-                console.error(e);
-            }
-        });
+        this.stateManagementService.setAndRouteToStep(Steps.TECHNICAL_EVALUATION).subscribe();
     }
 
     protected getSynthetizationStatus(value: string): SynthetizationProcess | null {

@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { StateManagementService } from "@core/services/state-management.service";
+import { ProjectService } from "@shared/services/project.service";
 import { ExecutionStep } from "../model/execution-step";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
 import { ProcessStatus } from "../../core/enums/process-status";
-import { catchError, map, Observable, of, tap } from "rxjs";
+import { catchError, map, Observable, of, switchMap, tap } from "rxjs";
 import { plainToInstance } from "class-transformer";
 import { StatusService } from "./status.service";
 import { StepConfiguration, Steps } from "../../core/enums/steps";
@@ -14,7 +15,6 @@ import { ErrorHandlingService } from "./error-handling.service";
     providedIn: 'root'
 })
 export abstract class ExecutionStepService {
-    private readonly baseUrl = environments.apiUrl + "/api/process";
 
     /**
      * Observer that periodically sends requests to fetch the status
@@ -25,6 +25,7 @@ export abstract class ExecutionStepService {
     protected constructor(
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly http: HttpClient,
+        private readonly projectService: ProjectService,
         private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
     ) {
@@ -55,16 +56,19 @@ export abstract class ExecutionStepService {
         // Sets the step in case later steps have already been completed.
         this.statusService.updateNextStep(this.getStep()).subscribe();
 
-        this.asyncStart(job).subscribe();
+        this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.asyncStart(projectId, job)),
+        ).subscribe();
     }
 
     /**
      * Returns an observable for starting the process.
+     * @param projectId The project of which the process should be started.
      * @param job The job to start. If null, the first job will be started.
      * @protected
      */
-    public asyncStart(job: string | null): Observable<ExecutionStep | null> {
-        let url = this.baseUrl + "/" + this.getStageName() + "/start";
+    public asyncStart(projectId: string, job: string | null): Observable<ExecutionStep | null> {
+        let url =  this.baseUrl(projectId) + "/" + this.getStageName() + "/start";
         if (job != null) {
             url += "/" + job;
         }
@@ -89,7 +93,9 @@ export abstract class ExecutionStepService {
      * @protected
      */
     public cancel() {
-        this.http.post<ExecutionStep>(this.baseUrl + '/' + this.getStageName() + '/cancel', {}).subscribe({
+        this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postCancel(projectId)),
+        ).subscribe({
             next: (executionStep: ExecutionStep) => {
                 this.update(executionStep);
             },
@@ -97,6 +103,10 @@ export abstract class ExecutionStepService {
                 this.errorHandlingService.addError(err, "Failed to cancel the process.");
             }
         });
+    }
+
+    private postCancel(projectId: string) {
+        return this.http.post<ExecutionStep>(this.baseUrl(projectId) + '/' + this.getStageName() + '/cancel', {});
     }
 
     /**
@@ -158,6 +168,10 @@ export abstract class ExecutionStepService {
 
     private update(executionStep: ExecutionStep) {
         this.stateManagementService.updateStage(executionStep);
+    }
+
+    private baseUrl(projectId: string) {
+        return environments.apiUrl + '/api/project/' + projectId + '/process';
     }
 }
 

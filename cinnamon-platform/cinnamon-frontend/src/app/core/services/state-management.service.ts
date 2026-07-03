@@ -247,7 +247,15 @@ export class StateManagementService {
     }
 
     public setAndRouteToStep(step: Steps): Observable<boolean> {
-        return this.statusService.updateNextStep(step).pipe(
+        const isStepCompleted = this.statusService.isStepCompleted(step)
+        return of(isStepCompleted).pipe(
+            switchMap((isStepCompleted: boolean) => {
+                if (isStepCompleted) {
+                    return of(false);
+                } else {
+                    return this.statusService.updateNextStep(step);
+                }
+            }),
             switchMap(() => this.projectService.projectIdRequiredOnce$),
             switchMap(projectId => this.doRouteToStep(projectId, step)),
         );

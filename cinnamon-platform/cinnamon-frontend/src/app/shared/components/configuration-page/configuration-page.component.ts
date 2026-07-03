@@ -1,16 +1,16 @@
-import { HttpClient } from "@angular/common/http";
 import { ChangeDetectorRef, Component, Input, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormGroup } from "@angular/forms";
-import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { StateManagementService } from "@core/services/state-management.service";
+import {
+    TextSynthesisConfigurationService
+} from "@features/synthetization/services/text-synthesis-configuration.service";
 import { FileUploadComponent } from "@shared/components/file-upload/file-upload.component";
 import { Status } from "@shared/model/status";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
-import { catchError, combineLatest, from, map, mergeMap, Observable, of, shareReplay, switchMap, tap } from "rxjs";
-import { environments } from "src/environments/environment";
+import { catchError, combineLatest, map, Observable, of, shareReplay, switchMap, tap } from "rxjs";
 import { stringify } from "yaml";
 import {
     Algorithm,
@@ -20,22 +20,18 @@ import {
 } from "../../model/algorithm";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { ConfigurationAdditionalConfigs } from '../../model/configuration-additional-configs';
+import {
+    DataConfiguration,
+    isMixedDataConfiguration,
+    isStructuredOnlyDataConfiguration,
+    isTextOnlyDataConfiguration,
+} from "../../model/data-configuration";
 import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
-
 import { ConfigurationService } from "../../services/configuration.service";
 import { ErrorHandlingService } from "../../services/error-handling.service";
 import { StatusService } from "../../services/status.service";
 import { ConfigurationFormComponent } from "../configuration-form/configuration-form.component";
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
-import {
-    DataConfiguration,
-    hasStructuredColumns,
-    hasTextColumns,
-    isMixedDataConfiguration,
-    isStructuredOnlyDataConfiguration,
-    isTextOnlyDataConfiguration,
-} from "../../model/data-configuration";
-import { TextSynthesisConfigurationService } from "../../../features/synthetization/services/text-synthesis-configuration.service";
 
 /**
  * Component for the entire configuration page including the algorithm selection,
@@ -59,7 +55,6 @@ export class ConfigurationPageComponent implements OnInit {
         risk_evaluation_o: "Privacy Score Calculation of the original dataset",
         text_anonymization: "Text Anonymization",
     };
-    private readonly baseUrl: string = environments.apiUrl + "/api/process";
 
     @Input() public configurationInfo!: ConfigurationInfo;
     @Input() public step!: Steps;
@@ -128,19 +123,6 @@ export class ConfigurationPageComponent implements OnInit {
     protected currentDataConfiguration: DataConfiguration | null = null;
     private freeTextDefinitionCache: Map<string, Observable<AlgorithmDefinition>> = new Map<string, Observable<AlgorithmDefinition>>();
 
-    protected isProcessAvailable(job: string, dataConfiguration: DataConfiguration | null): boolean {
-        if (dataConfiguration === null) {
-            return false;
-        }
-        if (job === "text_anonymization") {
-            return hasTextColumns(dataConfiguration);
-        }
-        if (job === "anonymization") {
-            return hasStructuredColumns(dataConfiguration);
-        }
-        return true;
-    }
-
     protected get configurationProcessJob(): string | null {
         switch (this.algorithmService.getConfigurationName()) {
             case "anonymization":
@@ -160,12 +142,10 @@ export class ConfigurationPageComponent implements OnInit {
     constructor(
         protected readonly algorithmService: AlgorithmService,
         protected readonly changeDetectorRef: ChangeDetectorRef,
-        private readonly configurationService: ConfigurationService,
+        protected readonly configurationService: ConfigurationService,
         private readonly dataConfigService: DataConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
-        private httpClient: HttpClient,
         private readonly notificationService: NotificationService,
-        private readonly router: Router,
         private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
         private readonly textSynthesisConfigurationService: TextSynthesisConfigurationService,
@@ -506,7 +486,7 @@ export class ConfigurationPageComponent implements OnInit {
     private applyProcessAvailability(dataConfiguration: DataConfiguration): void {
         let changed = false;
         for (const process of this.configurationInfo.processes) {
-            if (this.isProcessAvailable(process.job, dataConfiguration) || !this.processEnabled[process.job]) {
+            if (this.configurationService.isProcessAvailable(process.job, dataConfiguration) || !this.processEnabled[process.job]) {
                 continue;
             }
 
@@ -711,28 +691,7 @@ export class ConfigurationPageComponent implements OnInit {
      * @private
      */
     private configureJobs(): Observable<void> {
-        return from(Object.entries(this.processEnabled)).pipe(
-            mergeMap(([job, enabled]) => {
-                const available = this.isProcessAvailable(job, this.currentDataConfiguration);
-                const skip = !enabled || !available;
-                return this.postConfigure(skip, job);
-            }),
-        );
-    }
-
-    /**
-     * Configures the job.
-     * @param skip If the job should be skipped.
-     * @param jobName The name of the job to configure.
-     * @private
-     */
-    private postConfigure(skip: boolean, jobName: string): Observable<void> {
-        const formData = new FormData();
-        if (skip) {
-            formData.append("skip", 'true');
-        }
-        formData.append("jobName", jobName);
-        return this.httpClient.post<void>(this.baseUrl + "/configure", formData);
+        return this.configurationService.configureJobs(this.processEnabled, this.currentDataConfiguration);
     }
 
     /**
@@ -740,26 +699,21 @@ export class ConfigurationPageComponent implements OnInit {
      * @private
      */
     private finish() {
-        let nextUrl = "";
         let nextStep = Steps.EVALUATION;
         switch (this.algorithmService.getConfigurationName()) {
             case "anonymization": {
-                nextUrl = '/synthetizationConfiguration';
                 nextStep = Steps.SYNTHETIZATION;
                 break;
             }
             case "synthetization_configuration": {
-                nextUrl = '/execution';
                 nextStep = Steps.EXECUTION;
                 break;
             }
             case "evaluation_configuration": {
-                nextUrl = "/riskEvaluationConfiguration";
                 nextStep = Steps.RISK_EVALUATION;
                 break;
             }
             case "risk_assessment_configuration": {
-                nextUrl = '/evaluation';
                 nextStep = Steps.EVALUATION;
                 break;
             }
@@ -768,10 +722,7 @@ export class ConfigurationPageComponent implements OnInit {
             }
         }
 
-        this.router.navigateByUrl(nextUrl);
-        if (!this.statusService.isStepCompleted(nextStep)) {
-            this.statusService.updateNextStep(nextStep).subscribe();
-        }
+        this.stateManagementService.setAndRouteToStep(nextStep).subscribe();
     }
 
 }

@@ -10,7 +10,7 @@ import { combineLatest, Observable } from "rxjs";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
 import { UserService } from 'src/app/shared/services/user.service';
 import { Mode } from '../../enums/mode';
-import { StepConfiguration, Steps } from '../../enums/steps';
+import { StepConfiguration, StepDefinition, Steps } from '../../enums/steps';
 
 @Component({
     selector: 'app-navigation',
@@ -31,6 +31,7 @@ export class NavigationComponent implements OnInit{
 
     protected pageData$: Observable<{
         navigationKey: NavigationKey,
+        openStep: StepDefinition | null,
     }>;
 
     constructor(
@@ -44,6 +45,7 @@ export class NavigationComponent implements OnInit{
     public ngOnInit(): void {
         this.pageData$ = combineLatest({
             navigationKey: this.navigationService.navigationKey$,
+            openStep: this.stateManagementService.currentStep$,
         });
     }
 

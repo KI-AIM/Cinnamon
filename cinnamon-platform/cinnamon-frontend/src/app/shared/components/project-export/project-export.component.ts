@@ -14,9 +14,10 @@ import { ExecutionStep } from "@shared/model/execution-step";
 import { FileType } from "@shared/model/file-configuration";
 import { FileInformation } from "@shared/model/file-information";
 import { ConfigurationService } from "@shared/services/configuration.service";
+import { ProjectService } from "@shared/services/project.service";
 import { StatusService } from "@shared/services/status.service";
 import { UserService } from "@shared/services/user.service";
-import { distinctUntilChanged, Observable } from "rxjs";
+import { distinctUntilChanged, Observable, switchMap } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Component({
@@ -54,6 +55,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
         protected readonly executionService: ExecutionService,
         private readonly fileService: FileService,
         private readonly  http: HttpClient,
+        private readonly projectService: ProjectService,
         protected readonly statusService: StatusService,
         private readonly userService: UserService,
     ) {
@@ -115,16 +117,18 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
      * @protected
      */
     protected exportProject(): void {
-        this.http.get(environments.apiUrl + "/api/project/zip", {
-            observe: 'response',
-            params: {
-                bundleConfigurations: this.bundleConfigurations,
-                datasetFileType: this.datasetFileType,
-                holdOutSelector: this.holdOutSelector,
-                resources: this.getResources(),
-            },
-            responseType: 'arraybuffer'
-        }).subscribe({
+        this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.http.get(`${environments.apiUrl}/api/project/${projectId}/zip`, {
+                observe: 'response',
+                params: {
+                    bundleConfigurations: this.bundleConfigurations,
+                    datasetFileType: this.datasetFileType,
+                    holdOutSelector: this.holdOutSelector,
+                    resources: this.getResources(),
+                },
+                responseType: 'arraybuffer'
+            })),
+        ).subscribe({
             next: response => {
                 const contentType = response.headers.get("Content-Type");
                 const contentDisposition = response.headers.get("Content-Disposition");

@@ -1,8 +1,7 @@
 import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
-import { Router } from "@angular/router";
 import { ProcessStatus } from "@core/enums/process-status";
-import { StepConfiguration, Steps } from "@core/enums/steps";
+import { Steps } from "@core/enums/steps";
 import { StateManagementService } from "@core/services/state-management.service";
 import { ExecutionStep } from "@shared/model/execution-step";
 import { RiskEvaluation } from '@shared/model/risk-evaluation';
@@ -10,7 +9,6 @@ import { StatisticsResponse } from "@shared/model/statistics";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { StageDefinition } from "@shared/services/execution-step.service";
 import { StatisticsService } from "@shared/services/statistics.service";
-import { StatusService } from "@shared/services/status.service";
 import { combineLatest, map, Observable, tap } from "rxjs";
 import { EvaluationService } from "../../services/evaluation.service";
 
@@ -42,10 +40,8 @@ export class EvaluationComponent implements OnInit {
     constructor(
         private readonly errorHandlingService: ErrorHandlingService,
         protected readonly evaluationService: EvaluationService,
-        private readonly router: Router,
         private readonly stateManagementService: StateManagementService,
         protected readonly statisticsService: StatisticsService,
-        private readonly statusService: StatusService,
     ) {
     }
 
@@ -108,13 +104,6 @@ export class EvaluationComponent implements OnInit {
     }
 
     protected continue() {
-        this.statusService.updateNextStep(Steps.REPORT).subscribe({
-            next: (v) => {
-                this.router.navigateByUrl(StepConfiguration.REPORT.path);
-            },
-            error: (e) =>{
-                console.error(e);
-            }
-        });
+        this.stateManagementService.setAndRouteToStep(Steps.REPORT).subscribe();
     }
 }

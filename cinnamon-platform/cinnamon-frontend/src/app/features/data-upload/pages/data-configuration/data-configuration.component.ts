@@ -9,7 +9,6 @@ import {
     ValidatorFn,
     Validators
 } from "@angular/forms";
-import { Router } from '@angular/router';
 import { Mode } from "@core/enums/mode";
 import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
 import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
@@ -39,7 +38,6 @@ import {
     tap
 } from "rxjs";
 import { Steps } from 'src/app/core/enums/steps';
-import { TitleService } from 'src/app/core/services/title-service.service';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
@@ -58,7 +56,7 @@ import { FileService } from '../../services/file.service';
     standalone: false
 })
 export class DataConfigurationComponent implements OnInit {
-    protected attributeConfigurationform: FormGroup;
+    protected attributeConfigurationForm: FormGroup;
     protected dataSetConfigurationForm: FormGroup | null;
 
     protected isAdvanceConfigurationExpanded: boolean = false;
@@ -80,13 +78,10 @@ export class DataConfigurationComponent implements OnInit {
         private readonly errorHandlingService: ErrorHandlingService,
         public fileService: FileService,
         private readonly formBuilder: FormBuilder,
-        private titleService: TitleService,
-        private router: Router,
         private readonly statusService: StatusService,
         public loadingService: LoadingService,
         private readonly stateManagementService: StateManagementService,
     ) {
-        this.titleService.setPageTitle("Data configuration");
     }
 
     private get locked(): boolean {
@@ -115,7 +110,7 @@ export class DataConfigurationComponent implements OnInit {
             locked: this.stateManagementService.currentStepLocked$.pipe(
                 tap(value => {
                     this.setFormEnabled(this.dataSetConfigurationForm, value.isLocked);
-                    this.setFormEnabled(this.attributeConfigurationform, value.isLocked);
+                    this.setFormEnabled(this.attributeConfigurationForm, value.isLocked);
                 }),
             ),
             status: this.statusService.statusNonNull$,
@@ -124,16 +119,16 @@ export class DataConfigurationComponent implements OnInit {
                 return this.configuration.dataConfiguration$.pipe(
                     tap(dataConfiguration => {
                         if (this.configuration.localDataConfiguration !== null) {
-                            this.attributeConfigurationform = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration, value.fileType);
+                            this.attributeConfigurationForm = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration, value.fileType);
                         } else {
                             this.setEmptyColumnNames(dataConfiguration);
-                            this.attributeConfigurationform = this.createAttributeConfigurationForm(dataConfiguration, value.fileType);
+                            this.attributeConfigurationForm = this.createAttributeConfigurationForm(dataConfiguration, value.fileType);
                         }
 
                         // Show errors on page load
-                        this.attributeConfigurationform.markAllAsTouched();
+                        this.attributeConfigurationForm.markAllAsTouched();
 
-                        this.attributeConfigurationform.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
+                        this.attributeConfigurationForm.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value1 => {
                             this.configuration.localDataConfiguration = plainToInstance(DataConfiguration, value1);
                         });
                     }),
@@ -161,7 +156,7 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     protected get isInvalid(): boolean {
-        return this.attributeConfigurationform.invalid || this.isDataSetConfigurationFormInvalid;
+        return this.attributeConfigurationForm.invalid || this.isDataSetConfigurationFormInvalid;
     }
 
     /**
@@ -175,7 +170,7 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     confirmConfiguration() {
-        const config = plainToInstance(DataConfiguration, this.attributeConfigurationform.getRawValue());
+        const config = plainToInstance(DataConfiguration, this.attributeConfigurationForm.getRawValue());
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
         this.dataService.storeData(config).pipe(
@@ -207,7 +202,7 @@ export class DataConfigurationComponent implements OnInit {
         this.loadingService.setLoadingStatus(false);
         this.dataSetInfoService.invalidateCache();
 
-        this.router.navigateByUrl("/dataValidation");
+        this.stateManagementService.setAndRouteToStep(Steps.VALIDATION).subscribe();
     }
 
     private handleError(error: HttpErrorResponse) {
@@ -224,7 +219,7 @@ export class DataConfigurationComponent implements OnInit {
         const names: string[] = [];
         const duplicates: string[] = [];
 
-        const configurationsFrom = (this.attributeConfigurationform.controls['configurations'] as FormArray).controls
+        const configurationsFrom = (this.attributeConfigurationForm.controls['configurations'] as FormArray).controls
         // Find duplicate column names
         for (const f of Object.values(configurationsFrom)) {
             const fg = (f as FormGroup).controls['name'];
@@ -239,7 +234,7 @@ export class DataConfigurationComponent implements OnInit {
             }
         }
 
-        // Add errors to inputs with duplicate column namesa
+        // Add errors to inputs with duplicate column names
         for (const f of Object.values(configurationsFrom)) {
             const fg = (f as FormGroup).controls['name'];
 

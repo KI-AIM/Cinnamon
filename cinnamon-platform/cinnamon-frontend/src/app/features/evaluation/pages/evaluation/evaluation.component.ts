@@ -4,7 +4,6 @@ import { Router } from "@angular/router";
 import { ProcessStatus } from "@core/enums/process-status";
 import { StepConfiguration, Steps } from "@core/enums/steps";
 import { StateManagementService } from "@core/services/state-management.service";
-import { TitleService } from "@core/services/title-service.service";
 import { ExecutionStep } from "@shared/model/execution-step";
 import { RiskEvaluation } from '@shared/model/risk-evaluation';
 import { StatisticsResponse } from "@shared/model/statistics";
@@ -47,9 +46,7 @@ export class EvaluationComponent implements OnInit {
         private readonly stateManagementService: StateManagementService,
         protected readonly statisticsService: StatisticsService,
         private readonly statusService: StatusService,
-        private readonly titleService: TitleService,
     ) {
-        this.titleService.setPageTitle("Evaluation");
     }
 
     ngOnInit() {

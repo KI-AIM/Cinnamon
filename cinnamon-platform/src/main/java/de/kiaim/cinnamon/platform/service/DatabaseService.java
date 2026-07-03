@@ -437,6 +437,10 @@ public class DatabaseService {
 			fileInformation.setFhirResourceTypes(file.getCompatibility().getFhirResourceTypes());
 		}
 
+		if (file.getDataSourceConfiguration() != null) {
+			fileInformation.setDataSourceType(file.getDataSourceConfiguration().getDataSourceType());
+		}
+
 		if (file.getFileConfiguration() != null) {
 			fileInformation.setType(file.getFileConfiguration().getFileType());
 		} else if (file.getName() != null) {

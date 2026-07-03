@@ -65,7 +65,7 @@ export class StateManagementService {
             filter(event => event instanceof NavigationEnd),
             map(event => {
                for (const step of Object.values(StepConfiguration)) {
-                   if (step.path === event.url) {
+                   if (event.url.endsWith(step.path)) {
                        return step
                    }
                }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from "@angular/router";
 import { StepConfiguration } from "@core/enums/steps";
 import { StateManagementService } from "@core/services/state-management.service";
@@ -12,7 +12,7 @@ import { switchMap } from "rxjs";
     standalone: false,
     templateUrl: './project-shell.component.html',
 })
-export class ProjectShellComponent implements OnInit {
+export class ProjectShellComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly route: ActivatedRoute,
@@ -37,6 +37,10 @@ export class ProjectShellComponent implements OnInit {
                 }),
             ).subscribe({});
         }
+    }
+
+    public ngOnDestroy(): void {
+        this.projectService.closeProject();
     }
 
 }

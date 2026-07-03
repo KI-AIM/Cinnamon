@@ -4,7 +4,7 @@ import { Router } from "@angular/router";
 import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
 import { Project } from "@shared/model/project";
 import { User } from "@shared/model/user";
-import { BehaviorSubject, Observable, Subject, tap } from "rxjs";
+import { BehaviorSubject, from, Observable, Subject, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
@@ -22,7 +22,6 @@ export class UserService {
 
     private readonly baseURL = environments.apiUrl + "/api/user";
     private readonly USER_KEY = "user";
-    private user: User;
 
     private userSubject: BehaviorSubject<User>;
     private loginSubject: Subject<void> = new Subject<void>();
@@ -64,6 +63,18 @@ export class UserService {
 
     public logout$(): Observable<void> {
         return this.logoutSubject.asObservable();
+    }
+
+    public routeToUser$(): Observable<boolean> {
+        let routing;
+
+        if (this.isAuthenticated()) {
+            routing = this.router.navigate(["/user/-/home"]);
+        } else {
+            routing = this.router.navigate(["/"]);
+        }
+
+        return from(routing);
     }
 
     login(
@@ -113,7 +124,7 @@ export class UserService {
     public logout(mode: LogoutMode) {
         const user = this.getUser().email || null;
 
-        this.userSubject.next(this.createLoggedOutUser());
+        this.setUser(this.createLoggedOutUser());
 
         let message = "";
         let type: NotificationType = "success";

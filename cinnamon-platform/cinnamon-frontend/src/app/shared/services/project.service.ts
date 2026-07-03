@@ -57,13 +57,6 @@ export class ProjectService {
         );
     }
 
-    public get projectOpen$(): Observable<Project> {
-        return this._projectSubject.asObservable().pipe(
-            filter(project => project !== null),
-            distinctUntilKeyChanged('id'),
-        );
-    }
-
     public get projectClosed$(): Observable<null> {
         return this._projectSubject.asObservable().pipe(
             filter(project => project === null)
@@ -74,10 +67,6 @@ export class ProjectService {
         return this.fetchProject(projectId).pipe(
             tap(value => this._projectSubject.next(value)),
         );
-    }
-
-    public openProject(project: Project) {
-        this._projectSubject.next(project);
     }
 
     public closeProject() {

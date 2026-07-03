@@ -57,7 +57,7 @@ export class NavigationComponent implements OnInit{
     };
 
     onLogout() {
-        this.userService.logout("close");
+        this.userService.routeToUser$().subscribe();
     }
 
     protected routeToStep(step: Steps): void {

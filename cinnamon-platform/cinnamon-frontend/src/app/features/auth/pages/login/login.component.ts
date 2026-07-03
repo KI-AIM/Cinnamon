@@ -4,6 +4,7 @@ import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { TitleService } from "@core/services/title-service.service";
 import { UserService } from "@shared/services/user.service";
+import { switchMap } from "rxjs";
 
 interface LoginForm {
 	email: FormControl<string>;
@@ -50,16 +51,15 @@ export class LoginComponent implements OnInit {
         this.userService.cachedPasswordInput = null;
 
         if (this.userService.isAuthenticated()) {
-            this.router.navigate(["/user/-/home"]);
+            this.userService.routeToUser$().subscribe();
         }
 	}
 
 	onSubmit() {
         const loginData = this.loginForm.value as { email: string; password: string };
-        this.userService.login(loginData).subscribe({
-            next: () => {
-                this.router.navigate(["/user/-/home"]);
-            },
+        this.userService.login(loginData).pipe(
+            switchMap(() => this.userService.routeToUser$())
+        ).subscribe({
             error: () => {
                 this.notificationService.addNotification(
                     new AppNotification("Account name or password wrong", 'failure')

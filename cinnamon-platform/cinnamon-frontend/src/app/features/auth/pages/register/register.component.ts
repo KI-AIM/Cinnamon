@@ -132,7 +132,7 @@ export class RegisterComponent implements OnInit {
                 notification.project = projectName;
                 this.notificationService.addNotification(notification);
 
-                this.router.navigateByUrl("user/-/home");
+                this.userService.routeToUser$().subscribe();
             },
             error: (e) => this.handleRegisterFailed(e),
         });

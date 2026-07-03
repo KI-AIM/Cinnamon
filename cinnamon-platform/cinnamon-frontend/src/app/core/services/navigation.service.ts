@@ -33,6 +33,8 @@ export class NavigationService {
                     this.setNavigationKey(NavigationKey.ADMIN);
                 } else if (url.includes("user")) {
                     this.setNavigationKey(NavigationKey.USER);
+                } else {
+                    this.setNavigationKey(NavigationKey.NONE);
                 }
             }
         });

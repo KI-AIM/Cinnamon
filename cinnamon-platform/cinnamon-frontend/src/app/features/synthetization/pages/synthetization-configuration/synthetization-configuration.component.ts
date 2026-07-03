@@ -65,7 +65,7 @@ export class SynthetizationConfigurationComponent implements OnInit, OnDestroy {
     }
 
     public ngOnInit(): void {
-        this.configurationInfo$ = this.synthService.fetchInfo();
+        this.configurationInfo$ = this.synthService.getInfo();
 
         const configs = new Array(
             new AdditionalConfig(

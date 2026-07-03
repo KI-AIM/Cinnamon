@@ -30,6 +30,6 @@ export class RiskAssessmentConfigurationComponent implements OnInit {
     }
 
     public ngOnInit(): void {
-        this.configurationInfo$ = this.riskAssessmentService.fetchInfo();
+        this.configurationInfo$ = this.riskAssessmentService.getInfo();
     }
 }

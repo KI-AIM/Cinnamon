@@ -1,4 +1,5 @@
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
+import { ProjectService } from "@shared/services/project.service";
 import { Algorithm } from "../model/algorithm";
 import { AlgorithmDefinition } from "../model/algorithm-definition";
 import { HttpClient } from "@angular/common/http";
@@ -10,8 +11,6 @@ import { ConfigurationImportSummaryPart } from "../model/import-pipe-data";
 import { environments } from "src/environments/environment";
 
 export abstract class AlgorithmService {
-    private readonly baseURL = environments.apiUrl + "/api/config";
-
     private _algorithms: Algorithm[] | null = null;
     private algorithmDefinitions: {[algorithmName: string]: AlgorithmDefinition} = {};
 
@@ -22,6 +21,7 @@ export abstract class AlgorithmService {
     protected constructor(
         private readonly http: HttpClient,
         protected readonly configurationService: ConfigurationService,
+        private readonly projectService: ProjectService,
     ) {
         configurationService.configImport$.pipe(
             filter(value => value.configurationName === this.getConfigurationName()),
@@ -57,8 +57,18 @@ export abstract class AlgorithmService {
     /**
      * Fetches the configuration information from the backend.
      */
-    public fetchInfo(): Observable<ConfigurationInfo> {
-        return this.http.get<ConfigurationInfo>(this.baseURL + "/info", {
+    public getInfo(): Observable<ConfigurationInfo> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchInfo(projectId))
+        );
+    }
+
+    /**
+     * Fetches the configuration information for the given project from the backend.
+     * @param projectId The ID of the project.
+     */
+    private fetchInfo(projectId: string): Observable<ConfigurationInfo> {
+        return this.http.get<ConfigurationInfo>(this.baseUrl(projectId) + "/info", {
             params: {name: this.getConfigurationName()},
         });
     }
@@ -70,7 +80,7 @@ export abstract class AlgorithmService {
             return of({config: cachedConfig, selectedAlgorithm: cachedAlgorithm});
         }
 
-        return this.fetchInfo().pipe(
+        return this.getInfo().pipe(
             switchMap(value => {
                 // Either all processes are configured or none, so look up if the first is configured
                 if (value.available) {
@@ -88,7 +98,7 @@ export abstract class AlgorithmService {
     }
 
     /**
-     * Returns the selected algorithm, its definition and the configuration object for the process.
+     * Returns the selected algorithm, its definition, and the configuration object for the process.
      * @returns Observable for the selected algorithm and configuration.
      */
     public getAlgorithmData$(): Observable<AlgorithmData> {
@@ -157,7 +167,8 @@ export abstract class AlgorithmService {
      */
     public getAlgorithmDefinition(algorithm: Algorithm): Observable<AlgorithmDefinition> {
         if (!(algorithm.name in this.algorithmDefinitions)) {
-            return this.loadAlgorithmDefinition(algorithm).pipe(
+            return this.projectService.projectIdRequiredOnce$.pipe(
+                switchMap(projectId => this.loadAlgorithmDefinition(projectId, algorithm)),
                 tap(value => {
                     this.algorithmDefinitions[algorithm.name] = value;
                 }),
@@ -195,7 +206,8 @@ export abstract class AlgorithmService {
     }
 
     private loadAlgorithms(): Observable<Algorithm[]> {
-        return this.fetchAlgorithms().pipe(
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchAlgorithms(projectId)),
             map(value => {
                 const response = parse(value) as { [available_synthesizers: string]: Object[] };
                 const result: Algorithm[] = [];
@@ -209,32 +221,36 @@ export abstract class AlgorithmService {
      * Fetches the list of available algorithms as a YAML string.
      * @protected
      */
-    protected fetchAlgorithms(): Observable<string> {
-        return this.http.get<string>(this.baseURL + "/algorithms", {
+    protected fetchAlgorithms(projectId: string): Observable<string> {
+        return this.http.get<string>(this.baseUrl(projectId) + "/algorithms", {
             params: {configurationName: this.getConfigurationName()},
             responseType: 'text' as 'json',
             headers: {'Accept': 'application/yaml'},
         });
     }
 
-    private loadAlgorithmDefinition(algorithm: Algorithm): Observable<AlgorithmDefinition> {
-        return this.fetchAlgorithmDefinition(algorithm.URL)
-            .pipe(map(value => {
-                return plainToInstance(AlgorithmDefinition, parse(value));
-            }));
+    private loadAlgorithmDefinition(projectId: string, algorithm: Algorithm): Observable<AlgorithmDefinition> {
+        return this.fetchAlgorithmDefinition(projectId, algorithm.URL).pipe(
+            map(value => plainToInstance(AlgorithmDefinition, parse(value))),
+        );
     }
 
     /**
      * Loads the configuration definition from the given path.
+     * @param projectId The project ID for fetching the definition from the external server.
      * @param definitionPath The path for fetching the definition from the external server.
      * @protected
      */
-    protected fetchAlgorithmDefinition(definitionPath: string): Observable<string> {
-        return this.http.get<string>(this.baseURL + "/algorithm", {
+    protected fetchAlgorithmDefinition(projectId: string, definitionPath: string): Observable<string> {
+        return this.http.get<string>(this.baseUrl(projectId) + "/algorithm", {
             params: {configurationName: this.getConfigurationName(), definitionPath: definitionPath},
             responseType: 'text' as 'json',
             headers: {'Accept': 'application/yaml'},
         });
+    }
+
+    private baseUrl(projectId: string) {
+        return `${environments.apiUrl}/api/project/${projectId}/config`;
     }
 
     /**

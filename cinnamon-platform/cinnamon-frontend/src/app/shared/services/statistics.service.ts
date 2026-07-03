@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
+import { ProjectService } from "@shared/services/project.service";
 import { environments } from "src/environments/environment";
-import { finalize, map, Observable, of, share, tap } from "rxjs";
+import { finalize, map, Observable, of, share, switchMap, tap } from "rxjs";
 import { HttpClient } from "@angular/common/http";
 import { Statistics, StatisticsData, StatisticsResponse } from "../model/statistics";
 import { plainToInstance } from "class-transformer";
@@ -12,8 +13,6 @@ import { ProcessStatus } from "../../core/enums/process-status";
   providedIn: 'root'
 })
 export class StatisticsService {
-    private readonly baseUrl: string = environments.apiUrl + "/api/statistics";
-
     private _statistics: StatisticsResponse | null = null;
     private _statistics$: Observable<StatisticsResponse> | null = null;
 
@@ -227,6 +226,7 @@ export class StatisticsService {
 
     constructor(
         private readonly httpClient: HttpClient,
+        private readonly projectService: ProjectService,
     ) {
     }
 
@@ -277,7 +277,7 @@ export class StatisticsService {
             return this._statistics$;
         }
 
-        return this.fetchStatistics("VALIDATION").pipe(
+        return this.getStatistics("VALIDATION").pipe(
             tap(value => this._statistics = value),
             share(),
             finalize(() => {
@@ -288,14 +288,8 @@ export class StatisticsService {
 
     // TODO use statistics endpoint
     public fetchResult(): Observable<StatisticsResponse> {
-        return this.httpClient.get<string>(environments.apiUrl + `/api/project/resultFile`,
-            {
-                params: {
-                    executionStepName: 'EVALUATION',
-                    processStepName: 'TECHNICAL_EVALUATION',
-                    name: 'metrics.json',
-                }
-            }).pipe(
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchResultFile(projectId, "TECHNICAL_EVALUATION", "metrics.json")),
             map(value => plainToInstance(Statistics, JSON.parse(value))),
             map(value => {
                 const response = new StatisticsResponse();
@@ -307,27 +301,16 @@ export class StatisticsService {
     }
 
     public fetchRisks(process: 'RISK_EVALUATION' | 'RISK_EVALUATION_O'): Observable<RiskEvaluation> {
-        return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
-            {
-                params: {
-                    executionStepName: 'EVALUATION',
-                    processStepName: process,
-                    name: 'risks.json',
-                }
-            }).pipe(
-                map(value =>plainToInstance(RiskEvaluation, JSON.parse(value)))
-            );
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchResultFile(projectId, process, "risks.json")),
+            map(value => plainToInstance(RiskEvaluation, JSON.parse(value)))
+        );
     }
 
     public fetchRisks2(): Observable<any> {
-        return this.httpClient.get<any>(environments.apiUrl + `/api/project/resultFile`,
-            {
-                params: {
-                    executionStepName: 'EVALUATION',
-                    processStepName: 'BASE_EVALUATION',
-                    name: 'general_risks.json',
-                }
-            });
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchResultFile(projectId, "BASE_EVALUATION", "general_risks.json")),
+        );
     }
 
     public invalidateCache() {
@@ -407,16 +390,9 @@ export class StatisticsService {
         }
     }
 
-    public fetchStatistics(stepName: string): Observable<StatisticsResponse> {
-        const params = {
-            selector: stepName.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
-            jobName: stepName.toLowerCase(),
-        }
-
-        return this.httpClient.get<StatisticsResponse>(this.baseUrl, {params: params}).pipe(
-            map(value => {
-                return plainToInstance(StatisticsResponse, value);
-            }),
+    public getStatistics(stepName: string): Observable<StatisticsResponse> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchStatistics(projectId, stepName, 'start')),
         );
     }
 
@@ -425,13 +401,9 @@ export class StatisticsService {
      * @param stepName The name of the job or 'validation' for the original data set.
      */
     public cancelStatistics(stepName: string): Observable<StatisticsResponse> {
-        const params = {
-            selector: stepName.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
-            jobName: stepName.toLowerCase(),
-            action: 'cancel',
-        }
-
-        return this.httpClient.get<StatisticsResponse>(this.baseUrl, {params: params});
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchStatistics(projectId, stepName, 'cancel')),
+        );
     }
 
     public getValue(data: StatisticsData<any>, which : 'real' | 'synthetic'): number | string {
@@ -471,6 +443,38 @@ export class StatisticsService {
         }
 
         return "N/A";
+    }
+
+    private baseUrlResults(projectId: string): string {
+        return `${environments.apiUrl}/api/project/${projectId}/resultFile`;
+    }
+
+    private baseUrl(projectId: string): string {
+        return `${environments.apiUrl}/api/project/${projectId}/statistics`;
+    }
+
+    private fetchStatistics(projectId: string, stepName: string, action: 'cancel' | 'start') {
+        const params = {
+            selector: stepName.toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+            jobName: stepName.toLowerCase(),
+            action: action,
+        }
+
+        return this.httpClient.get<StatisticsResponse>(this.baseUrl(projectId), {params: params}).pipe(
+            map(value => {
+                return plainToInstance(StatisticsResponse, value);
+            }),
+        );
+    }
+
+    private fetchResultFile(projectId: string, step: string, file: string) {
+        return this.httpClient.get<any>(this.baseUrlResults(projectId), {
+            params: {
+                executionStepName: 'EVALUATION',
+                processStepName: step,
+                name: file,
+            }
+        });
     }
 
 }

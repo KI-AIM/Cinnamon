@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ProjectService } from "@shared/services/project.service";
 import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
@@ -39,8 +40,9 @@ export class SynthetizationService extends AlgorithmService {
     constructor(
         private readonly httpClient: HttpClient,
         configurationService: ConfigurationService,
+        projectService: ProjectService,
     ) {
-        super(httpClient, configurationService);
+        super(httpClient, configurationService, projectService);
     }
 
     public override getConfigurationName(): string {

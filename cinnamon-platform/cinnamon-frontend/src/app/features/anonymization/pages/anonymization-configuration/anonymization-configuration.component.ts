@@ -52,7 +52,7 @@ export class AnonymizationConfigurationComponent implements OnInit {
     }
 
     public ngOnInit(): void {
-        this.configurationInfo$ = this.anonymizationService.fetchInfo();
+        this.configurationInfo$ = this.anonymizationService.getInfo();
 
         const configs = [new AdditionalConfig(
                 AnonymizationAttributeConfigurationComponent,

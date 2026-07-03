@@ -13,6 +13,7 @@ import { TextAnonymizationConfiguration } from "@features/anonymization/services
 import { ConfigurationRegisterData } from "@shared/model/configuration-register-data";
 import { AlgorithmData, AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
+import { ProjectService } from "@shared/services/project.service";
 import { Observable } from "rxjs";
 
 /**
@@ -40,8 +41,9 @@ export class AnonymizationService extends AlgorithmService {
         private readonly attributeConfigurationService: AnonymizationAttributeConfigurationService,
         http: HttpClient,
         configurationService: ConfigurationService,
+        projectService: ProjectService,
     ) {
-        super(http, configurationService);
+        super(http, configurationService, projectService);
     }
 
     public override getConfigurationName(): string {

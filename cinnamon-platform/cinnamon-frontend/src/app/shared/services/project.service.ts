@@ -7,7 +7,7 @@ import {
     distinctUntilKeyChanged,
     filter,
     map,
-    Observable,
+    Observable, switchMap,
     take,
     tap
 } from "rxjs";
@@ -74,7 +74,24 @@ export class ProjectService {
     }
 
     public fetchProject(id: string): Observable<Project> {
-        return this.http.get<Project>(environments.apiUrl + `/api/project/${id}`);
+        return this.http.get<Project>(this.baseUrl(id));
+    }
+
+    public deleteProject(email: string, password: string): Observable<void> {
+        return this.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postDelete(projectId, email, password)),
+        );
+    }
+
+    private postDelete(projectId: string, email: string, password: string): Observable<void> {
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("password", password);
+        return this.http.delete<void>(this.baseUrl(projectId), {body: formData});
+    }
+
+    private baseUrl(projectId: string): string {
+        return `${environments.apiUrl}/api/project/${projectId}`;
     }
 
 }

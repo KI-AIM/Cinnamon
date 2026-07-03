@@ -68,8 +68,9 @@ public class ProjectController {
 	public void deleteProject(
 			@PathVariable final String projectId,
 			@ParameterObject @Valid final ConfirmUserRequest confirmUserRequest,
-			@AuthenticationPrincipal final UserEntity user
+			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
+		final UserEntity user = userService.getUserByEmailOrThrow(requestUser.getEmail());
 		userService.confirmUser(confirmUserRequest, user);
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.deleteProject(user, project);

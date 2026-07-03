@@ -12,7 +12,6 @@ import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import lombok.extern.log4j.Log4j2;
-import org.apache.catalina.User;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

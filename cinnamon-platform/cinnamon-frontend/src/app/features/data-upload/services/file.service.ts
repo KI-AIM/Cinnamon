@@ -12,7 +12,18 @@ import { FileInformation } from "@shared/model/file-information";
 import { XlsxFileConfiguration } from "@shared/model/xlsx-file-configuration";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { ProjectService } from "@shared/services/project.service";
-import { distinctUntilChanged, finalize, Observable, ReplaySubject, share, shareReplay, switchMap, tap } from "rxjs";
+import {
+    distinctUntilChanged,
+    finalize,
+    Observable,
+    of,
+    ReplaySubject,
+    share,
+    shareReplay,
+    switchMap,
+    take,
+    tap
+} from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
@@ -92,15 +103,21 @@ export class FileService {
 
     public get dataSourceConfiguration$(): Observable<DataSourceConfiguration> {
         if (!this._dataSourceConfigurationFetched && !this._dataSourceConfigurationLoading$) {
-            this.refreshDataSourceConfiguration().subscribe({
-                error : (error) => {
-                    if (error.error.errorCode === "PLATFORM_1_8_10") {
+            this.fileInfo$.pipe(
+                take(1),
+                switchMap(fileInfo => {
+                    if (fileInfo.dataSourceType != null) {
+                        return this.refreshDataSourceConfiguration();
+                    } else {
                         const config = new DataSourceConfiguration(DataSourceType.LOCAL, null);
                         this._dataSourceConfigurationSubject.next(config);
-                    } else {
-                        this._fileInfoFetched = false;
-                        this.errorHandlingService.addError(error, "Failed to fetch the data source configuration.");
+                        return of(config);
                     }
+                }),
+            ).subscribe({
+                error: (error) => {
+                    this._fileInfoFetched = false;
+                    this.errorHandlingService.addError(error, "Failed to fetch the data source configuration.");
                 }
             });
         }
@@ -260,7 +277,7 @@ export class FileService {
     }
 
     private postFileEstimationAction(projectId: string): Observable<FileConfigurationEstimation> {
-        return this.httpClient.post<FileConfigurationEstimation>(this.baseUrl(projectId) + "/estimate", {});
+        return this.httpClient.post<FileConfigurationEstimation>(this.baseUrl(projectId) + "/estimation", {});
     }
 
     private postFileRetrievalAction(projectId: string): Observable<FileInformation> {

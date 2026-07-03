@@ -1,9 +1,10 @@
-import {Injectable} from '@angular/core';
 import { HttpClient } from "@angular/common/http";
+import { Injectable } from '@angular/core';
+import { DataSetInfo } from "@shared/model/data-set-info";
+import { ProjectService } from "@shared/services/project.service";
 import { plainToInstance } from "class-transformer";
-import { finalize, map, Observable, of, share, tap } from "rxjs";
-import {DataSetInfo} from "../../../shared/model/data-set-info";
-import {environments} from "../../../../environments/environment";
+import { finalize, map, Observable, of, share, switchMap, tap } from "rxjs";
+import { environments } from "src/environments/environment";
 
 @Injectable({
     providedIn: 'root'
@@ -14,7 +15,10 @@ export class DataSetInfoService {
         dataSetInfo$: Observable<DataSetInfo> | null
     }> = {};
 
-    constructor(private readonly http: HttpClient) {
+    constructor(
+        private readonly http: HttpClient,
+        private readonly projectService: ProjectService,
+    ) {
     }
 
     /**
@@ -39,18 +43,8 @@ export class DataSetInfoService {
             return observable;
         }
 
-        const params = {
-            selector: step.toLowerCase() === "validation"
-                ? "ORIGINAL"
-                : step.toLowerCase() === "protected"
-                    ? "protected"
-                    : "JOB",
-            jobName: step.toLowerCase(),
-        }
-        const dataSetInfo$ = this.http.get<DataSetInfo>(environments.apiUrl + "/api/data/info", {params: params}).pipe(
-            map(value => {
-                return plainToInstance(DataSetInfo, value);
-            }),
+        const dataSetInfo$ = this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchDataSetInfo(projectId, step)),
             tap(value => {
                 this.cache[step] = {dateSetInfo: value, dataSetInfo$: of(value)};
             }),
@@ -68,5 +62,40 @@ export class DataSetInfoService {
 
     public invalidateCache() {
         this.cache = {};
+    }
+
+    /**
+     * Creates the base URL for the dataset info API endpoint for the given project ID.
+     * @param projectId The ID of the project.
+     * @returns The base URL for the dataset info API endpoint.
+     */
+    private baseUrl(projectId: string): string {
+        return environments.apiUrl + "/api/project/" + projectId + "/data/info";
+    }
+
+    /**
+     * Fetches the dataset information for the given project ID and step from the backend.
+     * The step can be "validation" for the original dataset, "protected" for the dataset,
+     * or the concrete step that created the dataset, i.e. "anonymization" or "synthetization".
+     *
+     * @param projectId The ID of the project.
+     * @param step The step as described above.
+     * @returns An observable that emits the dataset information.
+     */
+    private fetchDataSetInfo(projectId: string, step: string): Observable<DataSetInfo> {
+        const params = {
+            selector: step.toLowerCase() === "validation"
+                ? "ORIGINAL"
+                : step.toLowerCase() === "protected"
+                    ? "protected"
+                    : "JOB",
+            jobName: step.toLowerCase(),
+        }
+
+        return this.http.get<DataSetInfo>(this.baseUrl(projectId), {params: params}).pipe(
+            map(datasetInfo => {
+                return plainToInstance(DataSetInfo, datasetInfo);
+            }),
+        );
     }
 }

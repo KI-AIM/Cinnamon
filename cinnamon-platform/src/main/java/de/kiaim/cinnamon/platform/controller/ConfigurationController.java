@@ -72,7 +72,7 @@ public class ConfigurationController {
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		return externalConfigurationService.getInfo(configurationName, project);
 	}
@@ -93,7 +93,7 @@ public class ConfigurationController {
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		configurationService.importExternalConfiguration(project, configurationRequest.getConfiguration());
 	}
@@ -121,7 +121,7 @@ public class ConfigurationController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		return configurationService.importConfigurations(project, importConfigurationRequest.getConfiguration(),
 		                                                 importConfigurationRequest.getImportParameters());
@@ -159,7 +159,7 @@ public class ConfigurationController {
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		return configurationService.loadConfiguration(configurationName, project);
 	}
@@ -214,7 +214,7 @@ public class ConfigurationController {
 			@Valid final AlgorithmDefinitionRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		return externalConfigurationService.fetchAlgorithmDefinition(project, request.getConfigurationName(),
 		                                                             request.getDefinitionPath());

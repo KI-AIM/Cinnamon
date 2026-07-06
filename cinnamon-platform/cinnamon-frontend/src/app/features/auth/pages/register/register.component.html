@@ -3,8 +3,8 @@
     <div class="bg-white p-5 rounded border">
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
             <mat-form-field>
-                <mat-label>Account Name</mat-label>
-                <input type="text" formControlName="email" matInput autocomplete="username">
+                <mat-label>Username</mat-label>
+                <input type="text" formControlName="username" matInput autocomplete="username">
             </mat-form-field>
 
             <div class="w-100 d-flex" style="gap: 16px;">

@@ -34,8 +34,8 @@ export class UserSettingsComponent {
         this.titleService.setPageTitle("Account Settings");
     }
 
-    protected get userEmail(): string {
-        return this.userService.getUser().email;
+    protected get username(): string {
+        return this.userService.getUser().username;
     }
 
     protected openDeleteAccountDialog(dialog: any): void {
@@ -66,7 +66,7 @@ export class UserSettingsComponent {
                 this.closeDeleteAccountDialog();
 
                 const notification = new AppNotification("Account deleted successfully.", 'success');
-                notification.user = this.userEmail;
+                notification.user = this.username;
                 this.notificationService.addNotification(notification);
             },
             error: e => {

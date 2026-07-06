@@ -12,9 +12,9 @@ import { environments } from "src/environments/environment";
 })
 export class UserService {
     /**
-     * Cached email for the login and register page.
+     * Cached username for the login and register page.
      */
-    public cachedEmailInput: string | null = null;
+    public cachedUsernameInput: string | null = null;
     /**
      * Cached password for the login and register page.
      */
@@ -78,9 +78,9 @@ export class UserService {
     }
 
     login(
-        credentials: { email: string; password: string }
+        credentials: { username: string; password: string }
     ): Observable<any> {
-        const token = btoa(credentials.email + ":" + credentials.password);
+        const token = btoa(credentials.username + ":" + credentials.password);
         const headers = new HttpHeaders(
             credentials ? {authorization: "Basic " + token} : {}
         );
@@ -88,7 +88,7 @@ export class UserService {
         return this.http.get<any>(this.baseURL + "/login", {headers: headers}).pipe(
             tap(data => {
                 if (typeof data === "boolean" && data) {
-                    this.setUser(new User(true, credentials.email, token));
+                    this.setUser(new User(true, credentials.username, token));
                     this.loginSubject.next();
                 }
             }),
@@ -97,7 +97,7 @@ export class UserService {
 
 
     register(request: {
-        email: string;
+        username: string;
         password: string;
         passwordRepeated: string;
     }): Observable<any> {
@@ -106,12 +106,12 @@ export class UserService {
 
     /**
      * Deletes the currently authenticated user.
-     * @param email The email of the user.
+     * @param username The username of the user.
      * @param password The password of the user.
      */
-    public delete(email: string, password: string): Observable<void> {
+    public delete(username: string, password: string): Observable<void> {
         const formData = new FormData();
-        formData.append("email", email);
+        formData.append("username", username);
         formData.append("password", password);
 
         return this.http.delete<void>(this.baseURL + "/-/delete", {body: formData});
@@ -122,7 +122,7 @@ export class UserService {
      * @param mode The mode defining the displayed message.
      */
     public logout(mode: LogoutMode) {
-        const user = this.getUser().email || null;
+        const user = this.getUser().username || null;
 
         this.setUser(this.createLoggedOutUser());
 

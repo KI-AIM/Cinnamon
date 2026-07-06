@@ -70,7 +70,7 @@ public class ProjectController {
 			@ParameterObject @Valid final ConfirmUserRequest confirmUserRequest,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmailOrThrow(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsernameOrThrow(requestUser.getUsername());
 		userService.confirmUser(confirmUserRequest, user);
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.deleteProject(user, project);
@@ -98,7 +98,7 @@ public class ProjectController {
 			@RequestParam(required = true) final Mode mode,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.setMode(project, mode);
 	}
@@ -109,7 +109,7 @@ public class ProjectController {
 			@RequestParam(required = true) final Step step,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.updateCurrentStep(project, step);
 	}
@@ -136,7 +136,7 @@ public class ProjectController {
 			@RequestParam(required = false) final String target,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.resetProject(project, target);
 	}
@@ -200,7 +200,7 @@ public class ProjectController {
 			final HttpServletResponse response
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		return exportService.createZipFile(project, response, projectExportParameter);
@@ -228,7 +228,7 @@ public class ProjectController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Stage stage = stepService.getStageConfiguration(executionStepName);

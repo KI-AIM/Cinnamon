@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatusCode;
  */
 public class BadUserConfirmationException extends BadRequestException {
 
-	public static final String INVALID_EMAIL = "1";
+	public static final String INVALID_USERNAME = "1";
 	public static final String INVALID_PASSWORD = "2";
 
 	public BadUserConfirmationException(final String exceptionCode, final String message) {

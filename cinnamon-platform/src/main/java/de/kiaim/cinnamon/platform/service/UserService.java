@@ -40,30 +40,30 @@ public class UserService implements UserDetailsService {
 	}
 
 	@Nullable
-	public UserEntity getUserByEmail(final String email) {
-		return userRepository.findById(email).orElse(null);
+	public UserEntity getUserByUsername(final String username) {
+		return userRepository.findById(username).orElse(null);
 	}
 
-	public UserEntity getUserByEmailOrThrow(final String email) throws BadUserException {
-		return userRepository.findById(email).orElseThrow(
-				() -> new BadUserException(BadUserException.NOT_FOUND, "User with email " + email + " not found"));
+	public UserEntity getUserByUsernameOrThrow(final String username) throws BadUserException {
+		return userRepository.findById(username).orElseThrow(
+				() -> new BadUserException(BadUserException.NOT_FOUND, "User with username " + username + " not found"));
 	}
 
-	public boolean doesUserWithEmailExist(final String email) {
-		return userRepository.existsById(email);
+	public boolean doesUserWithUsernameExist(final String username) {
+		return userRepository.existsById(username);
 	}
 
-	public UserEntity save(final String email, final String rawPassword) {
-		Optional<UserEntity> user = userRepository.findById(email);
+	public UserEntity save(final String username, final String rawPassword) {
+		Optional<UserEntity> user = userRepository.findById(username);
 		UserEntity userEntity;
 		if (user.isEmpty()) {
 			userEntity = new UserEntity();
 			userEntity.setPassword(passwordEncoder.encode(rawPassword));
-			log.debug("Creating new user with email '{}'", email);
+			log.debug("Creating new user with username '{}'", username);
 		} else {
 			userEntity = user.get();
 		}
-		userEntity.setEmail(email);
+		userEntity.setUsername(username);
 		userEntity.setPassword(passwordEncoder.encode(rawPassword));
 		userRepository.save(userEntity);
 
@@ -79,8 +79,8 @@ public class UserService implements UserDetailsService {
 	 * @throws BadUserConfirmationException If the username or password doesn't match.
 	 */
 	public void confirmUser(final ConfirmUserRequest confirmUserRequest, final UserEntity user) throws BadUserConfirmationException {
-		if (!Objects.equals(confirmUserRequest.getEmail(), user.getEmail())) {
-			throw new BadUserConfirmationException(BadUserConfirmationException.INVALID_EMAIL, "Username incorrect!");
+		if (!Objects.equals(confirmUserRequest.getUsername(), user.getUsername())) {
+			throw new BadUserConfirmationException(BadUserConfirmationException.INVALID_USERNAME, "Username incorrect!");
 		}
 		if (!passwordEncoder.matches(confirmUserRequest.getPassword(), user.getPassword())) {
 			throw new BadUserConfirmationException(BadUserConfirmationException.INVALID_PASSWORD, "Password incorrect!");
@@ -99,7 +99,7 @@ public class UserService implements UserDetailsService {
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		deleteUserData(user);
 		userRepository.delete(user);
-		log.debug("Deleting user with email '{}'", user.getEmail());
+		log.debug("Deleting user with username '{}'", user.getUsername());
 	}
 
 	/**
@@ -133,8 +133,8 @@ public class UserService implements UserDetailsService {
 	}
 
 	@Transactional(readOnly = true)
-	public Set<ProjectInfo> getProjects(final String email) throws BadUserException {
-		final UserEntity user = getUserByEmailOrThrow(email);
+	public Set<ProjectInfo> getProjects(final String username) throws BadUserException {
+		final UserEntity user = getUserByUsernameOrThrow(username);
 		return user.getProjects().stream()
 		           .map(projectService::getProjectInfo)
 		           .collect(Collectors.toSet());
@@ -142,11 +142,11 @@ public class UserService implements UserDetailsService {
 
 	@Transactional
 	public ProjectEntity createProject(
-			final String email,
+			final String username,
 			@Nullable final String projectName,
 			@Nullable final Long projectSeed
 	) throws InternalApplicationConfigurationException, InternalErrorException, BadUserException {
-		return createProject(getUserByEmailOrThrow(email), projectName, projectSeed);
+		return createProject(getUserByUsernameOrThrow(username), projectName, projectSeed);
 	}
 
 	/**
@@ -176,7 +176,7 @@ public class UserService implements UserDetailsService {
 		user.addProject(project);
 
 		userRepository.save(user);
-		log.debug("Created project with ID {} for user '{}'", project.getExternalId(), user.getEmail());
+		log.debug("Created project with ID {} for user '{}'", project.getExternalId(), user.getUsername());
 
 		// Return the managed instance of the project
 		return user.getProjects().stream()
@@ -190,8 +190,8 @@ public class UserService implements UserDetailsService {
 	//==============================
 
 	@Override
-	public UserEntity loadUserByUsername(final String email) throws UsernameNotFoundException {
-		return userRepository.findById(email).orElseThrow(
-				() -> new UsernameNotFoundException("User with email" + email + "not found!"));
+	public UserEntity loadUserByUsername(final String username) throws UsernameNotFoundException {
+		return userRepository.findById(username).orElseThrow(
+				() -> new UsernameNotFoundException("User with username" + username + "not found!"));
 	}
 }

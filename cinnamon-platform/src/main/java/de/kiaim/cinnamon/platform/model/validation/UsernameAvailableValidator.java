@@ -5,13 +5,13 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class EmailAvailableValidator implements ConstraintValidator<EmailAvailable, String> {
+public class UsernameAvailableValidator implements ConstraintValidator<UsernameAvailable, String> {
 
 	@Autowired
 	UserService userService;
 
 	@Override
-	public boolean isValid(String email, ConstraintValidatorContext context) {
-		return !userService.doesUserWithEmailExist(email);
+	public boolean isValid(String username, ConstraintValidatorContext context) {
+		return !userService.doesUserWithUsernameExist(username);
 	}
 }

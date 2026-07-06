@@ -137,7 +137,7 @@ public class ProjectService {
 	public ProjectEntity getProject(final UserEntity user, final UUID projectId) throws BadProjectException {
 		final Optional<ProjectEntity> project = projectRepository.findByExternalId(projectId);
 		if (project.isEmpty() || project.get().getUser() == null ||
-		    !project.get().getUser().getEmail().equals(user.getEmail())) {
+		    !project.get().getUser().getUsername().equals(user.getUsername())) {
 			throw new BadProjectException(BadProjectException.NOT_FOUND,
 			                               "Project with ID " + projectId + " not found");
 		}
@@ -188,7 +188,7 @@ public class ProjectService {
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
 		resetEntireProject(project);
 		user.removeProject(project);
-		log.debug("Deleted project for user '{}'", user.getEmail());
+		log.debug("Deleted project for user '{}'", user.getUsername());
 	}
 
 	/**

@@ -1,7 +1,7 @@
 export class User {
 	constructor(
 		public authenticated: boolean,
-		public email: string,
+		public username: string,
 		public token: string
 	) {}
 }

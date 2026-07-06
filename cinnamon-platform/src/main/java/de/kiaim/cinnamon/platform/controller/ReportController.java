@@ -57,7 +57,7 @@ public class ReportController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		return reportService.fetchReportData(project);

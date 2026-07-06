@@ -7,7 +7,7 @@ import { UserService } from "@shared/services/user.service";
 import { switchMap } from "rxjs";
 
 interface LoginForm {
-	email: FormControl<string>;
+	username: FormControl<string>;
 	password: FormControl<string>;
 }
 
@@ -36,7 +36,7 @@ export class LoginComponent implements OnInit {
 
 	ngOnInit() {
         this.loginForm = new FormGroup<LoginForm>({
-            email: new FormControl<string>(this.userService.cachedEmailInput ?? "", {
+            username: new FormControl<string>(this.userService.cachedUsernameInput ?? "", {
                 nonNullable: true,
                 validators: [Validators.required],
             }),
@@ -47,7 +47,7 @@ export class LoginComponent implements OnInit {
         });
 
         // Reset the cached login inputs
-        this.userService.cachedEmailInput = null;
+        this.userService.cachedUsernameInput = null;
         this.userService.cachedPasswordInput = null;
 
         if (this.userService.isAuthenticated()) {
@@ -56,7 +56,7 @@ export class LoginComponent implements OnInit {
 	}
 
 	onSubmit() {
-        const loginData = this.loginForm.value as { email: string; password: string };
+        const loginData = this.loginForm.value as { username: string; password: string };
         this.userService.login(loginData).pipe(
             switchMap(() => this.userService.routeToUser$())
         ).subscribe({
@@ -70,10 +70,10 @@ export class LoginComponent implements OnInit {
 
     /**
      * Navigates to the register page.
-     * Caches the current email and password inputs.
+     * Caches the current username and password inputs.
      */
     protected navigateToRegister() {
-        this.userService.cachedEmailInput = this.loginForm.value.email ?? null;
+        this.userService.cachedUsernameInput = this.loginForm.value.username ?? null;
         this.userService.cachedPasswordInput = this.loginForm.value.password ?? null;
         this.router.navigate(["/register"]);
     }

@@ -59,7 +59,7 @@ public class StatisticsController {
 			@RequestParam(name = "action", required = false) final String action,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		if ("cancel".equals(action)) {

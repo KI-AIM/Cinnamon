@@ -26,7 +26,7 @@ export class UserHomePageComponent implements OnInit {
         private readonly titleService: TitleService,
         private readonly userService: UserService,
     ) {
-        this.titleService.setPageTitle("User");
+        this.titleService.setPageTitle("Home");
     }
 
     public ngOnInit(): void {

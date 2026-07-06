@@ -2,7 +2,6 @@ package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import org.junit.jupiter.api.Test;
@@ -43,42 +42,42 @@ public class UserControllerTest extends ControllerTest {
 
 	@Test
 	public void register() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "$tr0ngPa$$w0rd";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(jsonMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, password))))
+						                new RegisterRequest(username, password, password))))
 		       .andExpect(status().isOk());
 
-		assertTrue(userService.doesUserWithEmailExist(mail), "User has not been created!");
-		final UserEntity user = userService.loadUserByUsername(mail);
+		assertTrue(userService.doesUserWithUsernameExist(username), "User has not been created!");
+		final UserEntity user = userService.loadUserByUsername(username);
 		assertNotEquals(password, user.getPassword(), "Password should not be stored as clear text!");
 	}
 
 	@Test
 	public void registerExisting() throws Exception {
-		String mail = getTestUser().getUsername();
+		String username = getTestUser().getUsername();
 		String password = "$tr0ngPa$$w0rd";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(
-						                jsonMapper.writeValueAsString(new RegisterRequest(mail, password, password))))
+						                jsonMapper.writeValueAsString(new RegisterRequest(username, password, password))))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(validationError("email", "Project name is not available!"));
+		       .andExpect(validationError("username", "Username is not available!"));
 	}
 
 	@Test
 	public void registerMatchingPassword() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "$tr0ngPa$$w0rd";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, "wrong_" + password))))
+						                new RegisterRequest(username, password, "wrong_" + password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("passwordRepeated", "Passwords do not match!"));
 	}
@@ -87,11 +86,11 @@ public class UserControllerTest extends ControllerTest {
 	@WithUserDetails("test_user")
 	public void deleteForbidden() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/-/delete")
-		                                      .param("email", getTestUser().getUsername())
+		                                      .param("username", getTestUser().getUsername())
 		                                      .param("password", "wrong_password"))
 		       .andExpect(status().isForbidden());
 
-		assertTrue(userService.doesUserWithEmailExist(getTestUser().getUsername()),
+		assertTrue(userService.doesUserWithUsernameExist(getTestUser().getUsername()),
 		           "User should have not been deleted!");
 	}
 
@@ -99,11 +98,11 @@ public class UserControllerTest extends ControllerTest {
 	@WithUserDetails("test_user")
 	public void delete() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/-/delete")
-		                                      .param("email", getTestUser().getUsername())
+		                                      .param("username", getTestUser().getUsername())
 		                                      .param("password", "changeme"))
 		       .andExpect(status().isOk());
 
-		assertFalse(userService.doesUserWithEmailExist("test_user"), "User has not been deleted!");
+		assertFalse(userService.doesUserWithUsernameExist("test_user"), "User has not been deleted!");
 	}
 
 	@Test
@@ -116,101 +115,101 @@ public class UserControllerTest extends ControllerTest {
 		assertTrue(existsTable(datasetId));
 
 		mockMvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.DELETE, "/api/user/-/delete")
-		                                      .param("email", getTestUser().getUsername())
+		                                      .param("username", getTestUser().getUsername())
 		                                      .param("password", "changeme"))
 		       .andExpect(status().isOk());
 
-		assertFalse(userService.doesUserWithEmailExist("test_user"), "User has not been deleted!");
+		assertFalse(userService.doesUserWithUsernameExist("test_user"), "User has not been deleted!");
 		assertFalse(existsTable(datasetId));
 	}
 
 	@Test
 	public void registerPasswordBlank() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "            ";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, password))))
+						                new RegisterRequest(username, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must not be blank!"));
 	}
 
 	@Test
 	public void registerPasswordTooShort() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "Pa$$w0rd";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, password))))
+						                new RegisterRequest(username, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must be at least 12 characters long!"));
 	}
 
 	@Test
 	public void registerPasswordNoLowerCase() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "$TR0NGPA$$W0RD";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, password))))
+						                new RegisterRequest(username, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one lowercase character!"));
 	}
 
 	@Test
 	public void registerPasswordNoUpperCase() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "$tr0ngpa$$w0rd";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, password))))
+						                new RegisterRequest(username, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one uppercase character!"));
 	}
 
 	@Test
 	public void registerPasswordNoNumber() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "$trongPa$$word";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, password))))
+						                new RegisterRequest(username, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one digit!"));
 	}
 
 	@Test
 	public void registerPasswordNoSpecialCharacter() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "Str0ngPassw0rd";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, password))))
+						                new RegisterRequest(username, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one special character!"));
 	}
 
 	@Test
 	public void registerPasswordTooShortNoUppercase() throws Exception {
-		String mail = "new_" + getTestUser().getUsername();
+		String username = "new_" + getTestUser().getUsername();
 		String password = "pa$$w0rd";
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(mail, password, password))))
+						                new RegisterRequest(username, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must be at least 12 characters long!",
 		                                  "Password must contain at least one uppercase character!"));

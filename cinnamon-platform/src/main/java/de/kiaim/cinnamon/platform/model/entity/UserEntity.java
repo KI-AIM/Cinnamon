@@ -18,7 +18,7 @@ import java.util.*;
 public class UserEntity implements UserDetails {
 
 	@Id
-	private String email;
+	private String username;
 
 	@Column(nullable = false)
 	private String password;
@@ -79,7 +79,7 @@ public class UserEntity implements UserDetails {
 
 	@Override
 	public String getUsername() {
-		return email;
+		return username;
 	}
 
 	@Override

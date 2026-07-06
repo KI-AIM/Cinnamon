@@ -78,7 +78,7 @@ public class ProcessController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		final PipelineEntity pipeline = processService.getPipeline(project);
 		return pipelineMapper.toDto(pipeline);
@@ -109,7 +109,7 @@ public class ProcessController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Job job = stepService.getStepConfiguration(requestData.getJobName());
@@ -147,7 +147,7 @@ public class ProcessController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Stage stage = stepService.getStageConfiguration(stageName);
@@ -186,7 +186,7 @@ public class ProcessController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Stage stage = stepService.getStageConfiguration(stageName);

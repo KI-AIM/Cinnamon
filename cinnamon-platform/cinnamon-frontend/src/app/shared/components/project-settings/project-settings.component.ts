@@ -150,8 +150,8 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
         return this.projectService.project?.name || '';
     }
 
-    protected get userEmail(): string {
-        return this.userService.getUser().email;
+    protected get username(): string {
+        return this.userService.getUser().username;
     }
 
     /**
@@ -177,13 +177,13 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
      * Displays a message if an error happens.
      *
      * @param projectName The name of the project for conformation.
-     * @param email The email for confirmation.
+     * @param username The username for confirmation.
      * @param password The password for confirmation.
      * @protected
      */
-    protected deleteProject(projectName: string, email: string, password: string): void {
+    protected deleteProject(projectName: string, username: string, password: string): void {
         this.deletionError = null;
-        this.projectService.deleteProject(email, password).pipe(
+        this.projectService.deleteProject(username, password).pipe(
             switchMap(() => this.userService.routeToUser$()),
         ).subscribe({
             next: () => {

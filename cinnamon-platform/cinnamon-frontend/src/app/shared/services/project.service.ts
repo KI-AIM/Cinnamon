@@ -4,7 +4,6 @@ import { Project } from "@shared/model/project";
 import {
     BehaviorSubject,
     distinctUntilChanged,
-    distinctUntilKeyChanged,
     filter,
     map,
     Observable, switchMap,
@@ -77,15 +76,15 @@ export class ProjectService {
         return this.http.get<Project>(this.baseUrl(id));
     }
 
-    public deleteProject(email: string, password: string): Observable<void> {
+    public deleteProject(username: string, password: string): Observable<void> {
         return this.projectIdRequiredOnce$.pipe(
-            switchMap(projectId => this.postDelete(projectId, email, password)),
+            switchMap(projectId => this.postDelete(projectId, username, password)),
         );
     }
 
-    private postDelete(projectId: string, email: string, password: string): Observable<void> {
+    private postDelete(projectId: string, username: string, password: string): Observable<void> {
         const formData = new FormData();
-        formData.append("email", email);
+        formData.append("username", username);
         formData.append("password", password);
         return this.http.delete<void>(this.baseUrl(projectId), {body: formData});
     }

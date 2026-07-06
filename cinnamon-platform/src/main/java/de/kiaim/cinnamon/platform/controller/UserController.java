@@ -87,7 +87,7 @@ public class UserController {
 			           schema = @Schema(implementation = RegisterRequest.class))
 			final @RequestBody @Valid RegisterRequest registerRequest
 	) {
-		userService.save(registerRequest.getEmail(), registerRequest.getPassword());
+		userService.save(registerRequest.getUsername(), registerRequest.getPassword());
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 
@@ -120,7 +120,7 @@ public class UserController {
 			throws BadDataSetIdException, BadStateException, BadUserConfirmationException,
 					       InternalDataSetPersistenceException, InternalInvalidStateException {
 		userService.confirmUser(confirmUserRequest, user);
-		userService.deleteUser(userService.getUserByEmail(user.getEmail()));
+		userService.deleteUser(userService.getUserByUsername(user.getUsername()));
 	}
 
 	@Operation(summary = "Returns all projects of the currently authenticated user.")
@@ -129,7 +129,7 @@ public class UserController {
 	public Set<ProjectInfo> getProjects(
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return userService.getProjects(user.getEmail());
+		return userService.getProjects(user.getUsername());
 	}
 
 	@Operation(summary = "Creates a new project for the currently authenticated user.")
@@ -140,7 +140,7 @@ public class UserController {
 			@RequestParam final String projectName,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		final ProjectEntity project = userService.createProject(user.getEmail(), projectName, null);
+		final ProjectEntity project = userService.createProject(user.getUsername(), projectName, null);
 		return projectService.getProjectInfo(project);
 	}
 

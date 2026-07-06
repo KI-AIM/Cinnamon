@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.test.platform.service;
 
-import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
-import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -27,7 +25,7 @@ public class UserServiceTest extends ContextRequiredTest {
 		var passwordEncoded = passwordEncoder.encode(password);
 
 		var user = new UserEntity();
-		user.setEmail(email);
+		user.setUsername(email);
 		user.setPassword(passwordEncoded);
 
 		assertDoesNotThrow(() -> userService.confirmUser(request, user));
@@ -43,7 +41,7 @@ public class UserServiceTest extends ContextRequiredTest {
 		var passwordEncoded = passwordEncoder.encode(password);
 
 		var user = new UserEntity();
-		user.setEmail(email);
+		user.setUsername(email);
 		user.setPassword(passwordEncoded);
 
 		var e = assertThrows(BadUserConfirmationException.class, () -> userService.confirmUser(request, user));
@@ -60,7 +58,7 @@ public class UserServiceTest extends ContextRequiredTest {
 		var passwordEncoded = passwordEncoder.encode(password);
 
 		var user = new UserEntity();
-		user.setEmail(email);
+		user.setUsername(email);
 		user.setPassword(passwordEncoded);
 
 		var e = assertThrows(BadUserConfirmationException.class, () -> userService.confirmUser(request, user));

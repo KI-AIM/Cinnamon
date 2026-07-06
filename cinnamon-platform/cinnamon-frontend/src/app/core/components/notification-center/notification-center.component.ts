@@ -31,7 +31,7 @@ export class NotificationCenterComponent implements OnInit {
         this.notifications$ = this.userService.user$.pipe(
             switchMap((user) => this.notificationService.notifications$().pipe(
                 map(notifications => {
-                    return notifications.filter(notification => notification.project != null || notification.user === user.email);
+                    return notifications.filter(notification => notification.project != null || notification.user === user.username);
                 }),
                 map(value => {
                     return value.slice().reverse();

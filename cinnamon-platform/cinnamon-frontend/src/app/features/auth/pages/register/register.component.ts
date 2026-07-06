@@ -11,7 +11,7 @@ import { ErrorHandlingService } from "src/app/shared/services/error-handling.ser
 import { UserService } from "src/app/shared/services/user.service";
 
 interface RegisterForm {
-    email: FormControl<string>;
+    username: FormControl<string>;
     password: FormControl<string>;
     passwordRepeated: FormControl<string>;
 }
@@ -53,7 +53,7 @@ export class RegisterComponent implements OnInit {
         this.appConfig$ = this.appConfigService.appConfig$.pipe(
             tap(appConfig => {
                 this.registerForm = new FormGroup<RegisterForm>({
-                    email: new FormControl<string>(this.userService.cachedEmailInput ?? "", {
+                    username: new FormControl<string>(this.userService.cachedUsernameInput ?? "", {
                         nonNullable: true,
                         validators: [Validators.required],
                     }),
@@ -68,7 +68,7 @@ export class RegisterComponent implements OnInit {
                 }, {validators: [this.passwordMatchesValidator()]});
 
                 // Reset the cached login inputs
-                this.userService.cachedEmailInput = null;
+                this.userService.cachedUsernameInput = null;
                 this.userService.cachedPasswordInput = null;
             }),
         );
@@ -115,9 +115,9 @@ export class RegisterComponent implements OnInit {
     }
 
     onSubmit(): void {
-        const project = this.registerForm.controls["email"].value;
+        const project = this.registerForm.controls["username"].value;
 
-        const registerData = this.registerForm.value as { email: string; password: string; passwordRepeated: string };
+        const registerData = this.registerForm.value as { username: string; password: string; passwordRepeated: string };
         this.userService.register(registerData).subscribe({
             next: () => this.handleRegisterSuccess(project),
             error: (e) => this.handleRegisterFailed(e),
@@ -125,7 +125,7 @@ export class RegisterComponent implements OnInit {
     }
 
     handleRegisterSuccess(projectName: string) {
-        const loginData = {email: this.registerForm.value.email!, password: this.registerForm.value.password!};
+        const loginData = {username: this.registerForm.value.username!, password: this.registerForm.value.password!};
         this.userService.login(loginData).subscribe({
             next: () => {
                 const notification = new AppNotification("Successfully registered account", 'success');
@@ -144,10 +144,10 @@ export class RegisterComponent implements OnInit {
 
     /**
      * Navigates to the login page.
-     * Caches the current email and password inputs.
+     * Caches the current username and password inputs.
      */
     protected navigateToLogin() {
-        this.userService.cachedEmailInput = this.registerForm.value.email ?? null;
+        this.userService.cachedUsernameInput = this.registerForm.value.username ?? null;
         this.userService.cachedPasswordInput = this.registerForm.value.password ?? null;
         this.router.navigate(["/login"]);
     }

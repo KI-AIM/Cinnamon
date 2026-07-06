@@ -128,7 +128,7 @@ public class ProjectLogContextFilter extends OncePerRequestFilter {
 
 	private String extractEmail(final Authentication authentication) {
 		if (authentication.getPrincipal() instanceof UserEntity user) {
-			return user.getEmail();
+			return user.getUsername();
 		}
 
 		return authentication.getName();

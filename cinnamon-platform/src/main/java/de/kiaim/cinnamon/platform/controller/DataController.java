@@ -78,7 +78,7 @@ public class DataController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		return databaseService.exportDataSourceConfiguration(project);
 	}
@@ -105,7 +105,7 @@ public class DataController {
 			final @Valid UploadDataSourceConfigurationRequest request,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		databaseService.storeDataSourceConfiguration(project, request.getDataSourceConfiguration());
 		return databaseService.getFileInformation(project);
@@ -130,7 +130,7 @@ public class DataController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity project = projectService.getProject(user, projectId);
 		return databaseService.retrieveAndStoreFile(project);
 	}
@@ -161,7 +161,7 @@ public class DataController {
 			@ParameterObject @Valid final UploadFileRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		DataSourceConfiguration config;
@@ -194,7 +194,7 @@ public class DataController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws BadArgumentException, BadProjectException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 		final var fileInformation = databaseService.getFileInformation(projectEntity);
 		return ResponseEntity.ok(fileInformation);
@@ -224,7 +224,7 @@ public class DataController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 		return databaseService.estimateAndStoreFileConfiguration(projectEntity);
 	}
@@ -237,7 +237,7 @@ public class DataController {
 			@ParameterObject @Valid final UploadFileConfigurationRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		databaseService.storeFileConfiguration(projectEntity, requestData.getFileConfiguration());
@@ -251,7 +251,7 @@ public class DataController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws BadArgumentException, BadProjectException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 		return databaseService.exportFileConfiguration(projectEntity);
 	}
@@ -487,7 +487,7 @@ public class DataController {
 			@ParameterObject @Valid final HoldOutRequest request,
 			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		final DatasetConfiguration datasetConfiguration = databaseService.getDatasetConfiguration(projectEntity);
@@ -591,7 +591,7 @@ public class DataController {
 			@ParameterObject @Valid final LoadDataRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		final UserEntity user2 = userService.getUserByEmail(user.getEmail());
+		final UserEntity user2 = userService.getUserByUsername(user.getUsername());
 		final ProjectEntity project = projectService.getProject(user2, projectId);
 
 		dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
@@ -630,7 +630,7 @@ public class DataController {
 			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser
 	) throws ApiException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		final List<String> columnNames = loadDataRequest != null

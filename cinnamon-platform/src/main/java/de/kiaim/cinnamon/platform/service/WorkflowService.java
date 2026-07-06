@@ -101,7 +101,7 @@ public class WorkflowService {
 					       BadUserException, InternalApplicationConfigurationException,
 					       InternalDataSetPersistenceException, InternalErrorException, InternalInvalidStateException,
 					       InternalIOException, InternalMissingHandlingException, InternalRequestException {
-		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
+		final UserEntity user = userService.getUserByUsernameOrThrow(userEmail);
 
 		// 1. Create a new project
 		final ProjectEntity project = userService.createProject(user, null, null);
@@ -144,7 +144,7 @@ public class WorkflowService {
 	@Transactional
 	public WorkflowInformation getWorkflowStatus(final String userEmail, final String workflowId)
 			throws BadArgumentException, BadUserException, BadProjectException, InternalInvalidStateException {
-		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
+		final UserEntity user = userService.getUserByUsernameOrThrow(userEmail);
 		final ProjectEntity project = projectService.getProject(user, workflowId);
 		final PipelineInformation pipeline = pipelineMapper.toDto(processService.getPipeline(project));
 		return new WorkflowInformation(project.getExternalId().toString(), pipeline);
@@ -163,7 +163,7 @@ public class WorkflowService {
 	@Transactional(readOnly = true)
 	public WorkflowInformation getWorkflowStatus(final String userEmail, final UUID workflowId)
 			throws BadUserException, BadProjectException, InternalInvalidStateException {
-		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
+		final UserEntity user = userService.getUserByUsernameOrThrow(userEmail);
 		final ProjectEntity project = projectService.getProject(user, workflowId);
 		final PipelineInformation pipeline = pipelineMapper.toDto(processService.getPipeline(project));
 		return new WorkflowInformation(project.getExternalId().toString(), pipeline);
@@ -195,7 +195,7 @@ public class WorkflowService {
 			throws BadArgumentException, BadConfigurationNameException, BadStateException, BadStepNameException,
 					       BadUserException, BadProjectException, InternalDataSetPersistenceException,
 					       InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
-		final UserEntity user = userService.getUserByEmailOrThrow(userEmail);
+		final UserEntity user = userService.getUserByUsernameOrThrow(userEmail);
 		final ProjectEntity project = projectService.getProject(user, workflowId);
 
 		// Export the project

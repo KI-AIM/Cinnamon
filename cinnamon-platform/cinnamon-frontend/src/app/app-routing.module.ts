@@ -5,6 +5,7 @@ import { projectAccessGuard } from "@core/guards/project-access.guard";
 import { AdminPageComponent } from "@features/administration/components/admin-page/admin-page.component";
 import { ProjectShellComponent } from "@features/project/components/project-shell/project-shell.component";
 import { UserHomePageComponent } from "@features/user/pages/user-home-page/user-home-page.component";
+import { UserSettingsComponent } from "@features/user/pages/user-settings/user-settings.component";
 import { StartpageComponent } from './features/start/pages/startpage/startpage.component';
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 import { DataConfigurationComponent } from './features/data-upload/pages/data-configuration/data-configuration.component';
@@ -38,6 +39,7 @@ const routes: Routes = [
         children: [
             {path: 'admin', component: AdminPageComponent},
             {path: 'home', component: UserHomePageComponent},
+            {path: 'settings', component: UserSettingsComponent},
         ],
     },
     {

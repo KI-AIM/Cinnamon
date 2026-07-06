@@ -114,7 +114,7 @@ export class UserService {
         formData.append("email", email);
         formData.append("password", password);
 
-        return this.http.delete<void>(this.baseURL + "/delete", {body: formData});
+        return this.http.delete<void>(this.baseURL + "/-/delete", {body: formData});
     }
 
     /**
@@ -164,14 +164,14 @@ export class UserService {
     }
 
     private fetchProjectsForCurrentUser$(): Observable<Project[]> {
-        return this.http.get<Project[]>(environments.apiUrl + "/api/user/-/projects");
+        return this.http.get<Project[]>(this.baseURL + "/-/projects");
     }
 
     public createProjectForCurrentUser(projectName: string): Observable<Project> {
         const formData = new FormData();
         formData.append("projectName", projectName);
 
-        return this.http.post<Project>(environments.apiUrl + "/api/user/-/projects", formData);
+        return this.http.post<Project>(this.baseURL + "/-/projects", formData);
     }
 
     private createLoggedOutUser(): User {

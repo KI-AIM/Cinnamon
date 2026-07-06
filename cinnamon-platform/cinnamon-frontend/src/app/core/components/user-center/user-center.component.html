@@ -21,7 +21,16 @@
         <div class="user-center-seperator"></div>
 
         <div class="user-center-list">
+            <div class="user-center-list-item" [routerLink]="['/user/-/home']" (click)="closeCenter()">
+                <mat-icon>home</mat-icon>
+                <span>Home</span>
+            </div>
 
+
+            <div class="user-center-list-item" [routerLink]="['/user/-/settings']" (click)="closeCenter()">
+                <mat-icon>settings</mat-icon>
+                <span>Settings</span>
+            </div>
 
             <div class="user-center-list-item" (click)="logout()">
                 <mat-icon>logout</mat-icon>

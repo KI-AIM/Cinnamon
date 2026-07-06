@@ -1,0 +1,73 @@
+<div class="vertical-boxes">
+
+    <div class="box">
+        <div class="">
+
+        </div>
+
+        <div class="config-input-row">
+            <div class="config-input-row-label">
+                <span>Delete Account</span>
+            </div>
+            <div class="config-input-row-button">
+                <button mat-raised-button color="warn" (click)="openDeleteAccountDialog(deleteAccountDialog)">Delete
+                    Account
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<ng-template #deleteAccountDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Delete Account</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            <div class="box">
+                <div class="config-input-row workstep-part">
+                    <div class="config-input-row-label">
+                        <span>Are you sure you want to delete your account and all your projects? This action cannot be undone.</span>
+                        <br/>
+                    </div>
+                </div>
+
+                <div>
+                    <span>Please confirm your username and password to proceed.</span>
+                    <mat-form-field class="w-100 hide-mat-error-gap">
+                        <mat-label>Username</mat-label>
+                        <input type="email" matInput required #confirmEmailInput>
+                    </mat-form-field>
+
+                    <mat-form-field class="w-100 hide-mat-error-gap">
+                        <mat-label>Password</mat-label>
+                        <input [type]="hidePassword ? 'password' : 'text'" matInput required #confirmPasswordInput>
+                        <mat-icon class="icon-enabled"
+                                  (click)="hidePassword = !hidePassword; $event.stopPropagation();" matSuffix>
+                            {{ hidePassword ? 'visibility_off' : 'visibility' }}
+                        </mat-icon>
+                    </mat-form-field>
+
+
+                    <div *ngIf="deletionError != null" class="error-text">
+                        {{ deletionError }}
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
+        <button mat-raised-button color="warn" type="button"
+                [disabled]="confirmEmailInput.value === '' || confirmPasswordInput.value === ''"
+                (click)="deleteAccount(confirmEmailInput.value, confirmPasswordInput.value)">
+            Delete Account
+        </button>
+    </mat-dialog-actions>
+
+</ng-template>
+
+

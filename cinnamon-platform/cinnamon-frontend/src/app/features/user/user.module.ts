@@ -4,7 +4,7 @@ import { ReactiveFormsModule } from "@angular/forms";
 import { MatButton, MatIconButton } from "@angular/material/button";
 import { MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from "@angular/material/dialog";
 import { MatIcon } from "@angular/material/icon";
-import { MatError, MatFormField, MatInput, MatLabel } from "@angular/material/input";
+import { MatError, MatFormField, MatInput, MatLabel, MatSuffix } from "@angular/material/input";
 import {
     MatCell,
     MatCellDef,
@@ -16,6 +16,7 @@ import {
 } from "@angular/material/table";
 import { RouterLink } from "@angular/router";
 import { UserHomePageComponent } from './pages/user-home-page/user-home-page.component';
+import { UserSettingsComponent } from './pages/user-settings/user-settings.component';
 
 
 /**
@@ -25,7 +26,8 @@ import { UserHomePageComponent } from './pages/user-home-page/user-home-page.com
  */
 @NgModule({
   declarations: [
-    UserHomePageComponent
+    UserHomePageComponent,
+    UserSettingsComponent
   ],
     imports: [
         CommonModule,
@@ -40,7 +42,6 @@ import { UserHomePageComponent } from './pages/user-home-page/user-home-page.com
         MatRow,
         MatRowDef,
         MatIconButton,
-        RouterLink,
         MatIcon,
         MatButton,
         MatDialogActions,
@@ -51,7 +52,9 @@ import { UserHomePageComponent } from './pages/user-home-page/user-home-page.com
         MatLabel,
         MatError,
         MatInput,
-        ReactiveFormsModule
+        MatSuffix,
+        ReactiveFormsModule,
+        RouterLink,
     ]
 })
 export class UserModule { }

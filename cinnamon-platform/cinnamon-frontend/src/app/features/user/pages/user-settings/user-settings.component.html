@@ -1,8 +1,14 @@
 <div class="vertical-boxes">
 
     <div class="box">
-        <div class="">
 
+        <div class="config-input-row">
+            <div class="config-input-row-label">
+                <span>Change Password</span>
+            </div>
+            <div class="config-input-row-button">
+                <button mat-raised-button color="primary" (click)="openChangePasswordDialog(changePasswordDialog)">Change Password</button>
+            </div>
         </div>
 
         <div class="config-input-row">
@@ -21,6 +27,41 @@
 
 </div>
 
+<ng-template #changePasswordDialog>
+
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Change Password</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            <div class="box">
+
+                @if (appConfig$ | async; as appConfig) {
+                    <app-password-input label="Current Password" heading="Enter your current password"
+                                        [control]="currentPasswordControl">
+                    </app-password-input>
+
+                    <div class="workstep-part">
+                        <app-password-input label="New Password" heading="Choose a new password"
+                                            [passwordRequirements]="appConfig.passwordRequirements"
+                                            autocomplete="new-password" [control]="newPasswordControl">
+                        </app-password-input>
+                        <app-password-input label="Confirm New Password" autocomplete="new-password"
+                                            [control]="newPasswordRepeatedControl">
+                        </app-password-input>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
+        <button mat-raised-button color="primary" type="button" [disabled]="!updatePasswordForm.valid"
+                (click)="changePassword()">
+            Change Password
+        </button>
+    </mat-dialog-actions>
+</ng-template>
+
 <ng-template #deleteAccountDialog>
     <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Delete Account</h2>
     <mat-dialog-content class="mat-typography dialog-content">
@@ -37,18 +78,11 @@
                     <span>Please confirm your username and password to proceed.</span>
                     <mat-form-field class="w-100 hide-mat-error-gap">
                         <mat-label>Username</mat-label>
-                        <input type="email" matInput required #confirmEmailInput>
+                        <input type="text" matInput [formControl]="confirmDeletionUsernameControl">
                     </mat-form-field>
 
-                    <mat-form-field class="w-100 hide-mat-error-gap">
-                        <mat-label>Password</mat-label>
-                        <input [type]="hidePassword ? 'password' : 'text'" matInput required #confirmPasswordInput>
-                        <mat-icon class="icon-enabled"
-                                  (click)="hidePassword = !hidePassword; $event.stopPropagation();" matSuffix>
-                            {{ hidePassword ? 'visibility_off' : 'visibility' }}
-                        </mat-icon>
-                    </mat-form-field>
-
+                    <app-password-input label="Password" [control]="confirmDeletionPasswordControl">
+                    </app-password-input>
 
                     <div *ngIf="deletionError != null" class="error-text">
                         {{ deletionError }}
@@ -62,8 +96,8 @@
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
         <button mat-raised-button color="warn" type="button"
-                [disabled]="confirmEmailInput.value === '' || confirmPasswordInput.value === ''"
-                (click)="deleteAccount(confirmEmailInput.value, confirmPasswordInput.value)">
+                [disabled]="confirmDeletionUsernameControl.value === '' || confirmDeletionPasswordControl.value === ''"
+                (click)="deleteAccount(confirmDeletionUsernameControl.value, confirmDeletionPasswordControl.value)">
             Delete Account
         </button>
     </mat-dialog-actions>

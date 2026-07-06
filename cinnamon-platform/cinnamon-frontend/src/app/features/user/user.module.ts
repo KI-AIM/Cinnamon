@@ -15,6 +15,7 @@ import {
     MatTable
 } from "@angular/material/table";
 import { RouterLink } from "@angular/router";
+import { SharedModule } from "@shared/shared.module";
 import { UserHomePageComponent } from './pages/user-home-page/user-home-page.component';
 import { UserSettingsComponent } from './pages/user-settings/user-settings.component';
 
@@ -55,6 +56,7 @@ import { UserSettingsComponent } from './pages/user-settings/user-settings.compo
         MatSuffix,
         ReactiveFormsModule,
         RouterLink,
+        SharedModule,
     ]
 })
 export class UserModule { }

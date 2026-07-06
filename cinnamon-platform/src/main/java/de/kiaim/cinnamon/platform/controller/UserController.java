@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
+import de.kiaim.cinnamon.platform.model.dto.UpdatePasswordRequest;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -53,15 +54,13 @@ public class UserController {
 			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
 			                                 schema = @Schema(implementation = Boolean.class),
 			                                 examples = {@ExampleObject("true")})}),
-			@ApiResponse(responseCode = "500",
+			@ApiResponse(responseCode = "401",
 			             description = "User is not authorized.",
 			             content = @Content),
 	})
 	@GetMapping(value = "/login",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public boolean login(
-			@AuthenticationPrincipal UserEntity user
-	) throws InternalApplicationConfigurationException {
+	public boolean login() {
 		return true;
 	}
 
@@ -121,6 +120,17 @@ public class UserController {
 					       InternalDataSetPersistenceException, InternalInvalidStateException {
 		userService.confirmUser(confirmUserRequest, user);
 		userService.deleteUser(userService.getUserByUsername(user.getUsername()));
+	}
+
+
+	@PostMapping(value = "/-/update-password",
+	             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+	public void updatePassword(
+			@ParameterObject @Valid final UpdatePasswordRequest updatePasswordRequest,
+			@AuthenticationPrincipal final UserEntity user
+	) throws ApiException {
+		userService.updatePassword(user.getUsername(), updatePasswordRequest.getCurrentPassword(),
+		                           updatePasswordRequest.getNewPassword());
 	}
 
 	@Operation(summary = "Returns all projects of the currently authenticated user.")

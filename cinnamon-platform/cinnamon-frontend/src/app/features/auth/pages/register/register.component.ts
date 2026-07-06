@@ -1,12 +1,11 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { Component, OnInit, TemplateRef } from "@angular/core";
-import { AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from "@angular/forms";
-import { MatDialog } from "@angular/material/dialog";
+import { Component, OnInit } from "@angular/core";
+import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { Observable, tap } from "rxjs";
 import { TitleService } from "src/app/core/services/title-service.service";
-import { AppConfig, AppConfigService, PasswordRequirements } from "src/app/shared/services/app-config.service";
+import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { ErrorHandlingService } from "src/app/shared/services/error-handling.service";
 import { UserService } from "src/app/shared/services/user.service";
 
@@ -25,22 +24,11 @@ interface RegisterForm {
 export class RegisterComponent implements OnInit {
     registerForm: FormGroup<RegisterForm>;
 
-    /**
-     * If the password should be hidden by dots.
-     */
-    protected hidePassword: boolean = true;
-    /**
-     * If the repeated password should be hidden by dots.
-     */
-    protected hidePasswordRepeated: boolean = true;
-
     protected appConfig$: Observable<AppConfig>;
-
 
     constructor(
         private readonly appConfigService: AppConfigService,
         private readonly errorHandlingService: ErrorHandlingService,
-        private readonly matDialog: MatDialog,
         private readonly notificationService: NotificationService,
         private readonly router: Router,
         private readonly titleService: TitleService,
@@ -59,59 +47,19 @@ export class RegisterComponent implements OnInit {
                     }),
                     password: new FormControl<string>(this.userService.cachedPasswordInput ?? "", {
                         nonNullable: true,
-                        validators: [Validators.required, this.passwordRequirementsValidator(appConfig.passwordRequirements)],
+                        validators: [Validators.required, this.userService.passwordRequirementsValidator(appConfig.passwordRequirements)],
                     }),
                     passwordRepeated: new FormControl<string>("", {
                         nonNullable: true,
                         validators: [Validators.required],
                     }),
-                }, {validators: [this.passwordMatchesValidator()]});
+                }, {validators: [this.userService.passwordMatchesValidator("password", "passwordRepeated")]});
 
                 // Reset the cached login inputs
                 this.userService.cachedUsernameInput = null;
                 this.userService.cachedPasswordInput = null;
             }),
         );
-    }
-
-    /**
-     * Opens the dialog contained in the given template.
-     * @param ref Reference to the template element.
-     * @protected
-     */
-    protected openDialog(ref: TemplateRef<any>) {
-        this.matDialog.open(ref);
-    }
-
-    /**
-     * Creates the error message for the password field.
-     * @protected
-     */
-    protected createPasswordErrorMessage(): string | null {
-        const control = this.registerForm.controls["password"] as FormControl;
-        if (control.errors == null) {
-            return null;
-        }
-
-        const errors: string[] = [];
-
-        if (control.hasError('length')) {
-            errors.push(`be at least ${control.getError('length').minLength} characters long`);
-        }
-        if (control.hasError('digit')) {
-            errors.push('contain at lest one digit')
-        }
-        if (control.hasError('lowercase')) {
-            errors.push(`contain at least one lowercase character`);
-        }
-        if (control.hasError('uppercase')) {
-            errors.push(`contain at least one uppercase character`);
-        }
-        if (control.hasError('specialChar')) {
-            errors.push(`contain at least one special character`);
-        }
-
-        return "Password must " + errors.join(", ");
     }
 
     onSubmit(): void {
@@ -150,79 +98,6 @@ export class RegisterComponent implements OnInit {
         this.userService.cachedUsernameInput = this.registerForm.value.username ?? null;
         this.userService.cachedPasswordInput = this.registerForm.value.password ?? null;
         this.router.navigate(["/login"]);
-    }
-
-    /**
-     * Creates a password validator for the given password requirements.
-     * @param passwordRequirements The password requirements.
-     * @private
-     */
-    private passwordRequirementsValidator(passwordRequirements: PasswordRequirements): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (typeof control.value !== "string") {
-                return null;
-            }
-
-            let hasLength = control.value.length >= passwordRequirements.minLength
-
-            const constraints = passwordRequirements.constraints;
-            let hasLowercase = !constraints.includes('LOWERCASE');
-            let hasDigit = !constraints.includes('DIGIT');
-            let hasSpecialChar = !constraints.includes('SPECIAL_CHAR');
-            let hasUppercase = !constraints.includes('UPPERCASE');
-
-            for (let i = 0; i < control.value.length; i++) {
-                const c = control.value.charAt(i);
-
-                if (/\p{N}/u.test(c)) {
-                    hasDigit = true;
-                } else if (/\p{Ll}/u.test(c)) {
-                    hasLowercase = true;
-                } else if (/\p{Lu}/u.test(c)) {
-                    hasUppercase = true;
-                } else {
-                    hasSpecialChar = true;
-                }
-            }
-
-            const v: Record<string, any> = {};
-            if (!hasLength) {
-                v['length'] = {minLength: passwordRequirements.minLength};
-            }
-            if (!hasDigit) {
-                v['digit'] = {};
-            }
-            if (!hasLowercase) {
-                v['lowercase'] = {};
-            }
-            if (!hasUppercase) {
-                v['uppercase'] = {};
-            }
-            if (!hasSpecialChar) {
-                v['specialChar'] = {};
-            }
-
-            return hasLength && hasLowercase && hasDigit && hasSpecialChar && hasUppercase ? null : v;
-        }
-    }
-
-    /**
-     * Validates that the password and passwordRepeated inputs match.
-     */
-    private passwordMatchesValidator(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            const passwordRepeatedControl = control.get("passwordRepeated")!;
-
-            const password = control.get("password")!.value;
-            const passwordRepeated = passwordRepeatedControl.value;
-
-            const error = password !== passwordRepeated ? {passwordMatch: true} : null;
-
-            passwordRepeatedControl.setErrors(error);
-            passwordRepeatedControl.markAsTouched({onlySelf: true, emitEvent: false});
-
-            return error;
-        }
     }
 
 }

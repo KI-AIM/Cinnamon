@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -22,6 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Transactional
 public class UserControllerTest extends ControllerTest {
+
+	@Autowired PasswordEncoder passwordEncoder;
 
 	@Autowired
 	UserService userService;
@@ -213,6 +216,58 @@ public class UserControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must be at least 12 characters long!",
 		                                  "Password must contain at least one uppercase character!"));
+	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ updatePassword ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updatePassword() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-password")
+				                .contentType(MediaType.MULTIPART_FORM_DATA)
+				                .param("currentPassword", "changeme")
+				                .param("newPassword", "$tr0ngPa$$w0rd")
+				                .param("newPasswordRepeated", "$tr0ngPa$$w0rd")
+		       )
+		       .andExpect(status().isOk());
+
+		var user = getTestUser();
+		assertTrue(passwordEncoder.matches("$tr0ngPa$$w0rd", user.getPassword()));
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updatePasswordWrongCurrentPassword() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-password")
+				                .contentType(MediaType.MULTIPART_FORM_DATA)
+				                .param("currentPassword", "invalid")
+				                .param("newPassword", "$tr0ngPa$$w0rd")
+				                .param("newPasswordRepeated", "$tr0ngPa$$w0rd")
+		       )
+		       .andExpect(status().isForbidden())
+		       .andExpect(errorCode("PLATFORM_1_12_2"))
+		       .andExpect(errorMessage("Password incorrect!"));
+
+		var user = getTestUser();
+		assertTrue(passwordEncoder.matches("changeme", user.getPassword()));
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updatePasswordNotMatching() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-password")
+				                .contentType(MediaType.MULTIPART_FORM_DATA)
+				                .param("currentPassword", "changeme")
+				                .param("newPassword", "$tr0ngPa$$w0rd")
+				                .param("newPasswordRepeated", "invalid")
+		       )
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("newPasswordRepeated", "Passwords do not match!"));
+
+		var user = getTestUser();
+		assertTrue(passwordEncoder.matches("changeme", user.getPassword()));
 	}
 
 	@Test

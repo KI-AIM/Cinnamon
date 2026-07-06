@@ -70,6 +70,17 @@ public class UserService implements UserDetailsService {
 		return userEntity;
 	}
 
+	@Transactional
+	public void updatePassword(final String username, final String currentPassword, final String rawPassword)
+			throws BadUserException, BadUserConfirmationException {
+		final UserEntity user = getUserByUsernameOrThrow(username);
+
+		confirmPassword(currentPassword, user);
+
+		user.setPassword(passwordEncoder.encode(rawPassword));
+		log.debug("Updated password for user with username '{}'", username);
+	}
+
 	/**
 	 * Confirms if the given user credentials match the given user.
 	 * Meant for confirmation after the user is already authenticated.
@@ -82,7 +93,11 @@ public class UserService implements UserDetailsService {
 		if (!Objects.equals(confirmUserRequest.getUsername(), user.getUsername())) {
 			throw new BadUserConfirmationException(BadUserConfirmationException.INVALID_USERNAME, "Username incorrect!");
 		}
-		if (!passwordEncoder.matches(confirmUserRequest.getPassword(), user.getPassword())) {
+		confirmPassword(confirmUserRequest.getPassword(), user);
+	}
+
+	private void confirmPassword(final String rawPassword, final UserEntity user) throws BadUserConfirmationException {
+		if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
 			throw new BadUserConfirmationException(BadUserConfirmationException.INVALID_PASSWORD, "Password incorrect!");
 		}
 	}

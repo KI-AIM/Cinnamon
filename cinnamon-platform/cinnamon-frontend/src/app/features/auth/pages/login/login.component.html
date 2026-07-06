@@ -4,14 +4,10 @@
             <mat-label>Username</mat-label>
             <input type="text" formControlName="username" matInput autocomplete="username">
         </mat-form-field>
-        <mat-form-field>
-            <mat-label>Password</mat-label>
-            <input [type]="hidePassword ? 'password' : 'text'" formControlName="password" matInput
-                   autocomplete="current-password">
-            <mat-icon class="icon-enabled" (click)="hidePassword = !hidePassword; $event.stopPropagation();" matSuffix>
-                {{ hidePassword ? 'visibility_off' : 'visibility' }}
-            </mat-icon>
-        </mat-form-field>
+
+        <app-password-input label="Password" [control]="passwordControl">
+        </app-password-input>
+
         <button mat-raised-button color="primary" [disabled]="!loginForm.valid">Login</button>
     </form>
     <div style="display: flex; flex-direction: column;">

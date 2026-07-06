@@ -47,6 +47,12 @@ export class UserCenterComponent implements OnInit {
         });
     }
 
+    protected closeCenter(): void {
+        if (this.dialog) {
+            this.dialog.close();
+        }
+    }
+
     protected logout(): void {
         this.userService.logout("close");
         if (this.dialog) {

@@ -1,10 +1,12 @@
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Injectable } from "@angular/core";
+import { AbstractControl, ValidationErrors, ValidatorFn } from "@angular/forms";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
 import { Project } from "@shared/model/project";
 import { User } from "@shared/model/user";
-import { BehaviorSubject, from, Observable, Subject, tap } from "rxjs";
+import { PasswordRequirements } from "@shared/services/app-config.service";
+import { BehaviorSubject, from, Observable, Subject, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
@@ -88,7 +90,7 @@ export class UserService {
         return this.http.get<any>(this.baseURL + "/login", {headers: headers}).pipe(
             tap(data => {
                 if (typeof data === "boolean" && data) {
-                    this.setUser(new User(true, credentials.username, token));
+                    this.setUser(this.createLoggedInUser(credentials.username, credentials.password));
                     this.loginSubject.next();
                 }
             }),
@@ -150,6 +152,19 @@ export class UserService {
         });
     }
 
+    public updatePassword(currentPassword: string, newPassword: string, newPasswordRepeated: string): Observable<void> {
+        const formData = new FormData();
+        formData.append("currentPassword", currentPassword);
+        formData.append("newPassword", newPassword);
+        formData.append("newPasswordRepeated", newPasswordRepeated);
+
+        return this.http.post<void>(this.baseURL + "/-/update-password", formData).pipe(
+            tap(() => {
+                this.setUser(this.createLoggedInUser(this.getUser().username, newPassword));
+            }),
+        );
+    }
+
     public getProjectsForCurrentUser$(): Observable<Project[]> {
         this.refreshProjectsForCurrentUser$().subscribe();
         return this.projectListSubject.asObservable();
@@ -178,9 +193,87 @@ export class UserService {
         return new User(false, "", "");
     }
 
+    private createLoggedInUser(username: string, password: string): User {
+        const token = btoa(username + ":" + password);
+        return new User(true, username, token);
+    }
+
     private setUser(user: User): void {
         sessionStorage.setItem(this.USER_KEY, JSON.stringify(user));
         this.userSubject.next(user);
+    }
+
+    /**
+     * Creates a password validator for the given password requirements.
+     * @param passwordRequirements The password requirements.
+     * @private
+     */
+    public passwordRequirementsValidator(passwordRequirements: PasswordRequirements): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            if (typeof control.value !== "string") {
+                return null;
+            }
+
+            let hasLength = control.value.length >= passwordRequirements.minLength
+
+            const constraints = passwordRequirements.constraints;
+            let hasLowercase = !constraints.includes('LOWERCASE');
+            let hasDigit = !constraints.includes('DIGIT');
+            let hasSpecialChar = !constraints.includes('SPECIAL_CHAR');
+            let hasUppercase = !constraints.includes('UPPERCASE');
+
+            for (let i = 0; i < control.value.length; i++) {
+                const c = control.value.charAt(i);
+
+                if (/\p{N}/u.test(c)) {
+                    hasDigit = true;
+                } else if (/\p{Ll}/u.test(c)) {
+                    hasLowercase = true;
+                } else if (/\p{Lu}/u.test(c)) {
+                    hasUppercase = true;
+                } else {
+                    hasSpecialChar = true;
+                }
+            }
+
+            const v: Record<string, any> = {};
+            if (!hasLength) {
+                v['length'] = {minLength: passwordRequirements.minLength};
+            }
+            if (!hasDigit) {
+                v['digit'] = {};
+            }
+            if (!hasLowercase) {
+                v['lowercase'] = {};
+            }
+            if (!hasUppercase) {
+                v['uppercase'] = {};
+            }
+            if (!hasSpecialChar) {
+                v['specialChar'] = {};
+            }
+
+            return hasLength && hasLowercase && hasDigit && hasSpecialChar && hasUppercase ? null : v;
+        }
+    }
+
+    /**
+     * Validates that the password and passwordRepeated inputs match.
+     */
+    public passwordMatchesValidator(passwordField: string, passwordRepeatedField: string ): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            const passwordRepeatedControl = control.get(passwordRepeatedField)!;
+
+            const password = control.get(passwordField)!.value;
+            const passwordRepeated = passwordRepeatedControl.value;
+
+            const error = password !== passwordRepeated ? {passwordMatch: true} : null;
+
+            passwordRepeatedControl.setErrors(error);
+            passwordRepeatedControl.markAsTouched({onlySelf: true, emitEvent: false});
+
+            return error;
+        }
     }
 
 }

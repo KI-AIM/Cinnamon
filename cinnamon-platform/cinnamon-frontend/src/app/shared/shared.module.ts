@@ -102,6 +102,7 @@ import { MetricSorterPipe } from './pipes/metric-sorter.pipe';
 import { RiskColorIndexPipe } from './pipes/risk-color-index.pipe';
 import { RiskConfidenceIntervalPipe } from './pipes/risk-confidence-interval.pipe';
 import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
+import { PasswordInputComponent } from './components/password-input/password-input.component';
 
 @NgModule({
     declarations: [
@@ -165,6 +166,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         RiskColorIndexPipe,
         RiskConfidenceIntervalPipe,
         StatisticsFilterPipe,
+        PasswordInputComponent,
     ],
     imports: [
         CommonModule,
@@ -238,6 +240,7 @@ import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
         IsObjectPipe,
         NumberToTextPipe,
         FormatNumberPipe,
+        PasswordInputComponent,
     ],
 })
 export class SharedModule {}

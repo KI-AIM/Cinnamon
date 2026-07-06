@@ -68,8 +68,8 @@ TOP_LEVEL_KEYS = {
 PROCESSING_CAPABILITY_KEYS = {"data_modality", "generation_scope"}
 ALLOWED_DATA_MODALITIES = {"structured_only", "text_only", "mixed"}
 ALLOWED_GENERATION_SCOPES = {"structured_only", "text_only"}
-CONFIG_REQUIRED_SECTIONS = {"model_fitting"}
-CONFIG_OPTIONAL_SECTIONS = {"llm_profile", "model_parameter", "sampling"}
+CONFIG_REQUIRED_SECTIONS = set()
+CONFIG_OPTIONAL_SECTIONS = {"llm_profile", "model_parameter", "model_fitting", "sampling"}
 CONFIG_ALLOWED_SECTIONS = CONFIG_REQUIRED_SECTIONS | CONFIG_OPTIONAL_SECTIONS
 SECTION_KEYS = {"display_name", "description", "parameters"}
 

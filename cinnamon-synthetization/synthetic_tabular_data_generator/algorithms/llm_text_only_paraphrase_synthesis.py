@@ -2,19 +2,33 @@ from __future__ import annotations
 
 import cloudpickle
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
 
 from data_processing.utils import FAILED_TEXT_GENERATION, MISSING_VALUE_STRING
 from synthetic_tabular_data_generator.llm import ConfiguredLlmSynthesizerBase
+from synthetic_tabular_data_generator.llm.client import create_llm_client, load_llm_client_config
 from synthetic_tabular_data_generator.llm.response_validation import require_first_dict_row
+from synthetic_tabular_data_generator.llm.synthesizer_support import LlmSynthesizerSupport
 
 
 class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
     """
     Rewrite TEXT-only rows with changed wording while preserving the source information.
     """
+
+    _SUSPICIOUS_TEXT_ONLY_VALUES = {
+        "column_0",
+        "column_1",
+        "text",
+        "document_text",
+        "dokument_text",
+        "note",
+        "notes",
+        "free_text",
+        "freitext",
+    }
 
     def __init__(
         self,
@@ -36,29 +50,19 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
         )
 
     def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
-        configurations = attribute_config.get("configurations", [])
-        if not configurations:
-            raise ValueError("Attribute configuration is empty.")
-
-        ordered_configs = sorted(configurations, key=lambda cfg: cfg.get("index", float("inf")))
-        non_text_columns = [
-            cfg["name"] for cfg in ordered_configs if str(cfg.get("type", "STRING")).upper() != "TEXT"
-        ]
-        if non_text_columns:
-            raise ValueError(
-                "llm_text_only_paraphrase_synthesis only supports TEXT columns. "
-                f"Found non-TEXT columns: {non_text_columns}."
-            )
-
+        ordered_configs = self._validate_single_text_column_configuration(
+            attribute_config,
+            synthesizer_name="llm_text_only_paraphrase_synthesis",
+        )
         self.attribute_config = attribute_config
         self._ordered_column_configs = ordered_configs
         self._text_columns = [cfg["name"] for cfg in ordered_configs]
 
     def _initialize_dataset(self, df: pd.DataFrame) -> None:
-        self.dataset = df.copy()
+        self.dataset = self._drop_header_like_rows(df.copy())
 
     def initialize_reference_dataset(self, df: pd.DataFrame) -> None:
-        self.reference_dataset = df.copy()
+        self.reference_dataset = self._drop_header_like_rows(df.copy())
 
     def _initialize_synthesizer(self) -> None:
         if self._fitting_kwargs is None:
@@ -73,6 +77,7 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
         if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration is not initialized.")
 
+        self._validate_text_only_source_content()
         self._prompt_prefix = self._build_prompt_prefix()
 
     def _sample(self) -> pd.DataFrame:
@@ -143,28 +148,30 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
         )
 
     def _build_prompt_prefix(self) -> str:
-        column_order = [cfg["name"] for cfg in self._ordered_column_configs]
+        text_column = self._text_columns[0]
         domain_context = ""
         if self._user_prompt_domain_context:
             domain_context = f"Domain context: {self._user_prompt_domain_context}\n"
 
         return (
-            "You rewrite TEXT values of a table row without losing information.\n"
+            "You rewrite the TEXT value of a table row without losing information.\n"
             f"{domain_context}"
             "Important:\n"
-            "- Each TEXT field already contains the source content.\n"
-            "- Rewrite every non-missing TEXT field with different wording.\n"
+            "- The TEXT field already contains the source content.\n"
+            "- Rewrite the non-missing TEXT field with different wording.\n"
+            "- Rewrite each sentence with substantially different wording and sentence structure.\n"
+            "- Prefer changing active/passive voice, clause order, and sentence openings.\n"
             "- Preserve every fact, number, measurement, diagnosis, negation, uncertainty, and temporal relation.\n"
             "- Do not add information.\n"
             "- Do not remove information.\n"
             "- Keep short fixed technical terms unchanged when paraphrasing would distort meaning.\n"
-            f"- Keep missing TEXT values as '{MISSING_VALUE_STRING}'.\n"
+            f"- Keep a missing TEXT value as '{MISSING_VALUE_STRING}'.\n"
             "Output rules:\n"
             "- Return ONLY valid JSON.\n"
             "- Use exactly this shape: {\"row\": { ... }}\n"
-            f"- Include all columns exactly in this list: {column_order}\n"
-            f"- Rewrite only these TEXT columns: {self._text_columns}\n"
-            f"- For missing strings/text use '{MISSING_VALUE_STRING}'\n"
+            f"- Include exactly this column in row: {text_column}\n"
+            f"- Rewrite only this TEXT column: {text_column}\n"
+            f"- For a missing string/text use '{MISSING_VALUE_STRING}'\n"
             "\n"
         )
 
@@ -214,12 +221,206 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
             for column_name in rewritable_columns
         )
 
+    def _validate_text_only_source_content(self) -> None:
+        if self.dataset is None or not self._text_columns:
+            return
+
+        suspicious_tokens = {
+            token.strip().lower() for token in self._SUSPICIOUS_TEXT_ONLY_VALUES
+        }
+        suspicious_tokens.update(column_name.strip().lower() for column_name in self._text_columns)
+
+        observed_values = []
+        for column_name in self._text_columns:
+            for value in self.dataset[column_name].tolist():
+                if self._is_missing_text(value):
+                    continue
+                observed_values.append(str(value).strip())
+
+        if not observed_values:
+            return
+
+        normalized_values = [value.lower() for value in observed_values]
+        if all(value in suspicious_tokens for value in normalized_values):
+            raise ValueError(
+                "Input TEXT data appears to contain only column-header or placeholder values "
+                f"instead of real document content: {observed_values[:3]}"
+            )
+
+    def _drop_header_like_rows(self, df: pd.DataFrame) -> pd.DataFrame:
+        if df.empty or not self._text_columns:
+            return df
+
+        mask = df.apply(self._row_looks_like_header_or_placeholder, axis=1)
+        if not bool(mask.any()):
+            return df
+
+        filtered = df.loc[~mask].reset_index(drop=True)
+        if filtered.empty:
+            return df
+        dropped_count = int(mask.sum())
+        print(f"[TEXT_ONLY_SANITIZE] Dropped {dropped_count} header-like TEXT row(s) before LLM processing.")
+        return filtered
+
+    def _row_looks_like_header_or_placeholder(self, row: pd.Series) -> bool:
+        observed_values = []
+        for column_name in self._text_columns:
+            value = row.get(column_name)
+            if self._is_missing_text(value):
+                continue
+            observed_values.append(str(value).strip())
+
+        return bool(observed_values) and all(
+            self._is_suspicious_text_only_value(value, column_names=self._text_columns)
+            for value in observed_values
+        )
+
+    @classmethod
+    def _is_suspicious_text_only_value(cls, value: Any, *, column_names: list[str]) -> bool:
+        normalized_value = str(value).strip().lower()
+        if not normalized_value:
+            return False
+
+        suspicious_tokens = {token.strip().lower() for token in cls._SUSPICIOUS_TEXT_ONLY_VALUES}
+        suspicious_tokens.update(column_name.strip().lower() for column_name in column_names)
+        return normalized_value in suspicious_tokens
+
     @staticmethod
     def _is_missing_text(value: Any) -> bool:
         if value is None:
             return True
         text = str(value).strip()
         return not text or text == MISSING_VALUE_STRING or text.lower() in {"nan", "null", "none", "<na>"}
+
+    @staticmethod
+    def _validate_single_text_column_configuration(
+        attribute_configuration: Dict[str, Any],
+        *,
+        synthesizer_name: str,
+    ) -> list[dict[str, Any]]:
+        configurations = attribute_configuration.get("configurations", [])
+        if not configurations:
+            raise ValueError("Attribute configuration is empty.")
+
+        ordered_configs = sorted(configurations, key=lambda cfg: cfg.get("index", float("inf")))
+        non_text_columns = [
+            cfg["name"] for cfg in ordered_configs if str(cfg.get("type", "STRING")).upper() != "TEXT"
+        ]
+        if non_text_columns:
+            raise ValueError(
+                f"{synthesizer_name} only supports TEXT columns. "
+                f"Found non-TEXT columns: {non_text_columns}."
+            )
+        if len(ordered_configs) != 1:
+            raise ValueError(
+                f"{synthesizer_name} requires exactly one TEXT column. "
+                f"Found {len(ordered_configs)} columns."
+            )
+        return ordered_configs
+
+    @staticmethod
+    def _sample_non_missing_examples(series: pd.Series, *, max_examples: int) -> list[str]:
+        values = []
+        for value in series.tolist():
+            text = str(value).strip() if value is not None else ""
+            if not text or text == MISSING_VALUE_STRING or text.lower() in {"nan", "null", "none", "<na>"}:
+                continue
+            if LlmTextOnlyParaphraseSynthesisSynthesizer._is_suspicious_text_only_value(
+                text,
+                column_names=[],
+            ):
+                continue
+            values.append(text)
+            if len(values) >= max_examples:
+                break
+        return values
+
+    @staticmethod
+    def _normalize_named_attributes(raw_value: Any, *, field_name: str) -> list[dict[str, str]]:
+        if raw_value in (None, ""):
+            return []
+        if not isinstance(raw_value, list):
+            raise ValueError(f"{field_name} must be a list.")
+
+        normalized: list[dict[str, str]] = []
+        for item in raw_value:
+            if not isinstance(item, dict):
+                raise ValueError(f"Each {field_name} entry must be an object.")
+            name = str(item.get("name", "")).strip()
+            description = str(item.get("description", "")).strip()
+            if not name:
+                raise ValueError(f"Each {field_name} entry must define a non-empty name.")
+            normalized.append({
+                "name": name,
+                "description": description,
+            })
+        return normalized
+
+    @staticmethod
+    def _extract_named_attributes(parsed_json: Any, *, field_name: str) -> list[dict[str, Any]]:
+        if isinstance(parsed_json, dict):
+            raw_attributes = parsed_json.get(field_name)
+            if isinstance(raw_attributes, list):
+                return [item for item in raw_attributes if isinstance(item, dict)]
+
+            row = require_first_dict_row(parsed_json)
+            raw_attributes = row.get(field_name)
+            if isinstance(raw_attributes, list):
+                return [item for item in raw_attributes if isinstance(item, dict)]
+
+        raise ValueError(f"No {field_name} list found in LLM response.")
+
+    @staticmethod
+    def _deduplicate_named_attributes(items: list[dict[str, str]]) -> list[dict[str, str]]:
+        deduplicated: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for item in items:
+            key = item["name"].strip().lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            deduplicated.append(item)
+        return deduplicated
+
+    @classmethod
+    def _suggest_named_attributes_from_examples(
+        cls,
+        *,
+        attribute_configuration: Dict[str, Any],
+        algorithm_configuration: Dict[str, Any],
+        dataset: pd.DataFrame,
+        max_examples: int,
+        synthesizer_name: str,
+        field_name: str,
+        prompt_builder: Callable[[str, list[str], Dict[str, Any]], str],
+    ) -> list[dict[str, str]]:
+        ordered_configs = cls._validate_single_text_column_configuration(
+            attribute_configuration,
+            synthesizer_name=synthesizer_name,
+        )
+        text_column = ordered_configs[0]["name"]
+        if text_column not in dataset.columns:
+            raise ValueError(f"Dataset does not contain the TEXT column '{text_column}'.")
+
+        examples = cls._sample_non_missing_examples(dataset[text_column], max_examples=max_examples)
+        if not examples:
+            raise ValueError(f"Dataset column '{text_column}' does not contain any non-missing text examples.")
+
+        llm_config = load_llm_client_config(algorithm_configuration)
+        llm_client = create_llm_client(llm_config)
+        llm_client.initialize()
+
+        try:
+            prompt = prompt_builder(text_column, examples, algorithm_configuration)
+            content = llm_client.generate_text(prompt)
+            parsed = LlmSynthesizerSupport.parse_json_with_fallback(content)
+            raw_attributes = cls._extract_named_attributes(parsed, field_name=field_name)
+            normalized = cls._normalize_named_attributes(raw_attributes, field_name=field_name)
+            return cls._deduplicate_named_attributes(normalized)
+        finally:
+            close = getattr(llm_client, "close", None)
+            if callable(close):
+                close()
 
     def _get_model(self) -> bytes:
         return cloudpickle.dumps(self)

@@ -2,7 +2,7 @@ name: llm_text_only_semantic_variation_synthesis
 version: "0.1"
 type: cross-sectional
 display_name: LLM Text-only Semantic Variation Synthesis
-description: Generate new TEXT-only rows for fictional but plausible patients by sampling source texts and asking an LLM to create semantically similar variations. The generated text may add, omit, or change details as long as it remains close in topic and style to the sampled source.
+description: Generate a new single TEXT column for fictional but plausible patients by sampling source texts and asking an LLM to create semantically similar variations. The generated free text may add, omit, or change details as long as it remains close in topic and style to the sampled source.
 URL: /start_synthetization_process/llm_text_only_semantic_variation_synthesis
 processing_capabilities:
   data_modality: text_only

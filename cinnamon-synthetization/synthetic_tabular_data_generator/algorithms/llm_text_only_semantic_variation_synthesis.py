@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
@@ -82,7 +83,6 @@ class LlmTextOnlySemanticVariationSynthesisSynthesizer(LlmTextOnlyParaphraseSynt
                 candidate = require_first_dict_row(parsed)
                 merged = self._merge_rewritten_row(base_row, candidate)
                 rewritten = self._coerce_row(merged)
-                self._ensure_required_attributes_present(rewritten)
                 if self._is_verbatim_copy(base_row, rewritten):
                     raise ValueError("LLM returned the source text unchanged.")
                 return rewritten
@@ -107,7 +107,7 @@ class LlmTextOnlySemanticVariationSynthesisSynthesizer(LlmTextOnlyParaphraseSynt
         )
 
     def _build_prompt_prefix(self) -> str:
-        column_order = [cfg["name"] for cfg in self._ordered_column_configs]
+        text_column = self._text_columns[0]
         domain_context = ""
         if self._user_prompt_domain_context:
             domain_context = f"Domain context: {self._user_prompt_domain_context}\n"
@@ -128,69 +128,104 @@ class LlmTextOnlySemanticVariationSynthesisSynthesizer(LlmTextOnlyParaphraseSynt
             )
 
         return (
-            "You generate new TEXT values for a fictional patient based on a source table row.\n"
+            "You generate a new TEXT value for a fictional patient based on a source table row.\n"
             f"{domain_context}"
             "Important:\n"
-            "- Each TEXT field contains source content from one real case.\n"
+            "- The TEXT field contains source content from one real case.\n"
             "- Generate a new but semantically related fictional case.\n"
             "- The generated text should stay in the same medical domain, topic, and level of specificity.\n"
             "- It may add, omit, or change details when the result stays plausible and similar in content.\n"
             "- The generated patient must be fictional and should not be a copy of the source case.\n"
             "- Keep the language, tone, and style close to the source text.\n"
-            "- Keep multiple TEXT columns consistent with each other.\n"
             "- Avoid copying sentences verbatim from the source.\n"
             "- Keep short fixed technical terms unchanged when needed for plausibility.\n"
             "- Do not mention that the text is synthetic, generated, fictional, or paraphrased.\n"
-            f"- Keep missing TEXT values as '{MISSING_VALUE_STRING}'.\n"
-            "- Every required attribute must appear by name in the generated text.\n"
+            f"- Keep a missing TEXT value as '{MISSING_VALUE_STRING}'.\n"
+            "- Cover every required attribute in the generated text.\n"
+            "- Treat attribute descriptions as the requirement; do not force the literal attribute label into the text unless it fits naturally.\n"
             f"{required_attributes_block}"
             "Output rules:\n"
             "- Return ONLY valid JSON.\n"
             "- Use exactly this shape: {\"row\": { ... }}\n"
-            f"- Include all columns exactly in this list: {column_order}\n"
-            f"- Generate values only for these TEXT columns: {self._text_columns}\n"
-            f"- For missing strings/text use '{MISSING_VALUE_STRING}'\n"
+            f"- Include exactly this column in row: {text_column}\n"
+            f"- Generate a value only for this TEXT column: {text_column}\n"
+            f"- For a missing string/text use '{MISSING_VALUE_STRING}'\n"
             "\n"
         )
 
-    def _ensure_required_attributes_present(self, rewritten_row: Dict[str, Any]) -> None:
-        if not self._required_attributes:
-            return
-
-        combined_text = " ".join(
-            self.coerce_text(rewritten_row.get(column_name)).lower()
-            for column_name in self._text_columns
-            if not self._is_missing_text(rewritten_row.get(column_name))
-        )
-
-        missing = [
-            item["name"]
-            for item in self._required_attributes
-            if item["name"].strip().lower() not in combined_text
-        ]
-        if missing:
-            raise ValueError(
-                "Generated text does not include all required attributes by name. "
-                f"Missing: {missing}."
-            )
-
     @staticmethod
     def _normalize_required_attributes(raw_value: Any) -> list[dict[str, str]]:
-        if raw_value in (None, ""):
-            return []
-        if not isinstance(raw_value, list):
-            raise ValueError("required_attributes must be a list.")
+        return LlmTextOnlyParaphraseSynthesisSynthesizer._normalize_named_attributes(
+            raw_value,
+            field_name="required_attributes",
+        )
 
-        normalized: list[dict[str, str]] = []
-        for item in raw_value:
-            if not isinstance(item, dict):
-                raise ValueError("Each required_attributes entry must be an object.")
-            name = str(item.get("name", "")).strip()
-            description = str(item.get("description", "")).strip()
-            if not name:
-                raise ValueError("Each required_attributes entry must define a non-empty name.")
-            normalized.append({
-                "name": name,
-                "description": description,
-            })
-        return normalized
+    @classmethod
+    def suggest_required_attributes(
+        cls,
+        *,
+        attribute_configuration: Dict[str, Any],
+        algorithm_configuration: Dict[str, Any],
+        dataset: pd.DataFrame,
+        max_examples: int = 10,
+    ) -> list[dict[str, str]]:
+        return cls._suggest_named_attributes_from_examples(
+            attribute_configuration=attribute_configuration,
+            algorithm_configuration=algorithm_configuration,
+            dataset=dataset,
+            max_examples=max_examples,
+            synthesizer_name="llm_text_only_semantic_variation_synthesis",
+            field_name="required_attributes",
+            prompt_builder=cls._build_required_attribute_suggestion_prompt,
+        )
+
+    @staticmethod
+    def _build_required_attribute_suggestion_prompt(
+        text_column: str,
+        examples: list[str],
+        algorithm_configuration: Dict[str, Any],
+    ) -> str:
+        training_params = (
+            algorithm_configuration.get("synthetization_configuration", {})
+            .get("algorithm", {})
+            .get("model_fitting", {})
+        )
+        domain_context = str(training_params.get("user_prompt_domain_context", "")).strip()
+        domain_block = f"Domain context: {domain_context}\n" if domain_context else ""
+        example_lines = [
+            f"{index + 1}. {json.dumps(example, ensure_ascii=False)}"
+            for index, example in enumerate(examples)
+        ]
+        return (
+            "You propose required_attributes entries for semantic medical text generation.\n"
+            f"{domain_block}"
+            "Task:\n"
+            "- Read the example texts from one TEXT column.\n"
+            "- Suggest short, reusable attribute names and optional descriptions that a user can use to steer future text generation.\n"
+            "- Focus on medically relevant concepts, entities, findings, procedures, therapies, measurements, or document anchors that recur or would be useful control knobs.\n"
+            "- Prefer canonical names over literal wording from one example.\n"
+            "- Keep the list compact and practical.\n"
+            "- Do not invent patient-specific values.\n"
+            "- If an attribute name would be unclear alone, add a short description.\n"
+            "- Return at most 12 attributes.\n"
+            "Output rules:\n"
+            "- Return ONLY valid JSON.\n"
+            "- Use exactly this shape: {\"required_attributes\": [{\"name\": \"...\", \"description\": \"...\"}]}\n"
+            "- Every entry must contain a non-empty name.\n"
+            f"- The source column name is: {text_column}\n"
+            "\n"
+            "EXAMPLE TEXTS\n"
+            "----------------------------------------\n"
+            f"{chr(10).join(example_lines)}\n"
+        )
+
+    @staticmethod
+    def _extract_required_attributes(parsed_json: Any) -> list[dict[str, Any]]:
+        return LlmTextOnlyParaphraseSynthesisSynthesizer._extract_named_attributes(
+            parsed_json,
+            field_name="required_attributes",
+        )
+
+    @staticmethod
+    def _deduplicate_required_attributes(items: list[dict[str, str]]) -> list[dict[str, str]]:
+        return LlmTextOnlyParaphraseSynthesisSynthesizer._deduplicate_named_attributes(items)

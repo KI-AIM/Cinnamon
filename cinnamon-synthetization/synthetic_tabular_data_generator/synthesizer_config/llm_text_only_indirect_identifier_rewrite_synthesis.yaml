@@ -1,0 +1,60 @@
+name: llm_text_only_indirect_identifier_rewrite_synthesis
+version: "0.1"
+type: cross-sectional
+display_name: LLM Text-only Indirect Identifier Rewrite Synthesis
+description: Rewrite a single TEXT input column with an LLM while preserving medically relevant content and anonymizing direct or indirect identifiers through natural-language generalization.
+URL: /start_synthetization_process/llm_text_only_indirect_identifier_rewrite_synthesis
+processing_capabilities:
+  data_modality: text_only
+  generation_scope: text_only
+configurations:
+  llm_profile:
+    display_name: LLM Profile
+    description: Select which configured LLM instance should be used.
+    parameters:
+      - name: llm_profile
+        type: string
+        label: LLM Profile
+        description: Select the configured LLM profile.
+        default_value: ""
+        values: []
+        mandatory: true
+  model_fitting:
+    display_name: Prompt Configuration
+    description: Configure how strongly indirect identifiers should be generalized. Direct identifiers are always removed or replaced.
+    parameters:
+      - name: indirect_identifier_level
+        type: string
+        label: Indirect Identifier Anonymization Level
+        description: Select how strongly indirect identifiers should be generalized. Low stays closest to the source, medium balances privacy and fidelity, and high keeps only broad clinical meaning.
+        default_value: medium
+        values:
+          - low
+          - medium
+          - high
+        mandatory: true
+  sampling:
+    display_name: Sampling
+    description: Configure the deterministic output behavior. This synthesizer always produces exactly one rewritten row per input row.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Number of Samples
+        description: Must match the number of rows in the provided dataset because each input row is rewritten exactly once.
+        default_value: $dataset.original.numberRows
+        min_value: 1
+        max_value: $dataset.original.numberRows
+      - name: temperature
+        type: float
+        label: Temperature
+        description: Controls randomness of token sampling. Lower values are more deterministic.
+        default_value: 0.2
+        min_value: 0.0
+        max_value: 2.0
+      - name: top_p
+        type: float
+        label: Top-p
+        description: Controls nucleus sampling by limiting candidate tokens to a probability mass.
+        default_value: 0.9
+        min_value: 0.0
+        max_value: 1.0

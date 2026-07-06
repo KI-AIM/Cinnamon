@@ -1,15 +1,22 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmDefinition;
 import de.kiaim.cinnamon.model.configuration.algorithms.AvailableAlgorithms;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
+import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
+import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,6 +31,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/config")
 @Tag(name = "/api/config", description = "API for managing configurations. " +
@@ -31,16 +42,25 @@ import org.springframework.web.bind.annotation.*;
 public class ConfigurationController {
 
 	private final ConfigurationService configurationService;
+	private final DatabaseService databaseService;
+	private final DataProcessorService dataProcessorService;
 	private final ExternalConfigurationService externalConfigurationService;
 	private final ProjectService projectService;
 	private final UserService userService;
+	private final ObjectMapper yamlMapper;
 
 	public ConfigurationController(final ConfigurationService configurationService,
+	                               final DatabaseService databaseService,
+	                               final DataProcessorService dataProcessorService,
 	                               final ExternalConfigurationService externalConfigurationService,
+	                               final SerializationConfig serializationConfig,
 	                               final ProjectService projectService,
 	                               final UserService userService) {
 		this.configurationService = configurationService;
+		this.databaseService = databaseService;
+		this.dataProcessorService = dataProcessorService;
 		this.externalConfigurationService = externalConfigurationService;
+		this.yamlMapper = serializationConfig.yamlMapper();
 		this.projectService = projectService;
 		this.userService = userService;
 	}
@@ -213,6 +233,65 @@ public class ConfigurationController {
 		final ProjectEntity project = projectService.getProject(user);
 		return externalConfigurationService.fetchAlgorithmDefinition(project, request.getConfigurationName(),
 		                                                             request.getDefinitionPath());
+	}
+
+	@PostMapping(value = "/synthetization/named-list/{listName}/suggest",
+	             consumes = MediaType.APPLICATION_JSON_VALUE,
+	             produces = MediaType.APPLICATION_JSON_VALUE)
+	public JsonNode suggestNamedList(
+			@PathVariable("listName") final String listName,
+			@RequestBody final Map<String, Object> algorithmValues,
+			@AuthenticationPrincipal UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
+		final ProjectEntity project = projectService.getProject(user);
+
+		if (project.getOriginalData().getDataSet() == null) {
+			throw new BadStateException(BadStateException.NO_DATA_SET, "No original data set is present.");
+		}
+
+		final DataSet dataSet = databaseService.exportDataSet(project.getOriginalData().getDataSet(), HoldOutSelector.ALL);
+		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
+
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		dataProcessorService.getDataProcessor(FileType.CSV).write(outputStream, dataSet);
+
+		final Map<String, Object> algorithm = new HashMap<>(algorithmValues);
+		algorithm.putIfAbsent("synthesizer", resolveSynthesizerForNamedList(listName));
+		final Map<String, Object> wrappedConfiguration = Map.of(
+				"synthetization_configuration",
+				Map.of("algorithm", algorithm)
+		);
+
+		final String attributeConfigurationYaml;
+		final String algorithmConfigurationYaml;
+		try {
+			attributeConfigurationYaml = yamlMapper.writeValueAsString(dataConfiguration);
+			algorithmConfigurationYaml = yamlMapper.writeValueAsString(wrappedConfiguration);
+		} catch (final JsonProcessingException e) {
+			throw new InternalInvalidStateException(
+					InternalInvalidStateException.INVALID_CONFIGURATION,
+					"Failed to serialize the named-list suggestion request.",
+					e
+			);
+		}
+
+		return externalConfigurationService.suggestNamedList(
+				listName,
+				attributeConfigurationYaml,
+				algorithmConfigurationYaml,
+				outputStream.toByteArray()
+		);
+	}
+
+	private String resolveSynthesizerForNamedList(final String listName) throws BadStateException {
+		return switch (listName) {
+			case "required_attributes" -> "llm_text_only_semantic_variation_synthesis";
+			default -> throw new BadStateException(
+					BadStateException.CONFIGURATION,
+					"Unsupported named list suggestion target: " + listName
+			);
+		};
 	}
 
 }

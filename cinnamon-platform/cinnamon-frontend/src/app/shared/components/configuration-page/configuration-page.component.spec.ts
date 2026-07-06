@@ -50,6 +50,29 @@ describe('ConfigurationPageComponent', () => {
     expect(component['submitInvalid']).toBeTrue();
   });
 
+  it('allows free-text configurations without model_fitting group', () => {
+    const form = new FormGroup({
+      text_synthesis_configuration: new FormGroup({
+        synthetization_configuration: new FormGroup({
+          algorithm: new FormGroup({
+            synthesizer: new FormControl('llm_text_only_paraphrase_synthesis'),
+            llm_profile: new FormGroup({
+              llm_profile: new FormControl('Test Profile'),
+            }),
+            sampling: new FormGroup({}),
+          }),
+        }),
+      }),
+    });
+
+    (component as any).forms = { form };
+    (component as any).oneEnabled = true;
+    (component as any).selectedAlgorithm = { name: 'ctgan' };
+    (component as any).formValid = true;
+
+    expect(component['submitInvalid']).toBeFalse();
+  });
+
   it('uses free-text headers and four steps for text-only datasets', () => {
     const dataConfiguration = new DataConfiguration();
     dataConfiguration.configurations = [{ type: DataType.TEXT } as any];

@@ -2,7 +2,7 @@ name: llm_text_only_paraphrase_synthesis
 version: "0.1"
 type: cross-sectional
 display_name: LLM Text-only Paraphrase Synthesis
-description: Rewrite TEXT-only input rows with an LLM while preserving the original information content. The model rewrites each non-missing TEXT field in new wording and keeps missing fields unchanged.
+description: Rewrite a single TEXT input column with an LLM while preserving the original information content. The model rewrites the non-missing free-text value in new wording and keeps missing values unchanged.
 URL: /start_synthetization_process/llm_text_only_paraphrase_synthesis
 processing_capabilities:
   data_modality: text_only
@@ -19,18 +19,6 @@ configurations:
         default_value: ""
         values: []
         mandatory: true
-  model_fitting:
-    display_name: Prompt Configuration
-    description: Configure optional domain context for information-preserving text rewriting.
-    parameters:
-      - name: user_prompt_domain_context
-        type: string
-        multiline: true
-        rows: 5
-        label: Domain Context
-        description: Optional domain context to guide terminology and style during text rewriting.
-        default_value: ""
-        mandatory: false
   sampling:
     display_name: Sampling
     description: Configure how many input rows are rewritten and how deterministic the LLM output should be.

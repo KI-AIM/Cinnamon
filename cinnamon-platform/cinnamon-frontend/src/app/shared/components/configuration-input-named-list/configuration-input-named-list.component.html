@@ -14,6 +14,14 @@
            title="Remove all attributes">
             <span>Remove all attributes</span>
         </a>
+        <a *ngIf="canSuggestValues()"
+           class="configuration-link ms-2"
+           [disabled]="disabled || suggesting"
+           (click)="suggestValues()"
+           mat-raised-button color="accent"
+           title="Suggest attributes from example texts">
+            <span>{{ suggesting ? 'Suggesting...' : 'Suggest attributes' }}</span>
+        </a>
     </div>
 
     <div class="mt-4" [formArrayName]="configurationInputDefinition.name">

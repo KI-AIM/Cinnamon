@@ -21,7 +21,6 @@ def _attribute_config() -> dict:
     return {
         "configurations": [
             {"index": 0, "name": "summary", "type": "TEXT"},
-            {"index": 1, "name": "recommendation", "type": "TEXT"},
         ]
     }
 
@@ -85,7 +84,6 @@ def test_llm_text_only_paraphrase_synthesis_retries_verbatim_copy_and_returns_re
     dataset = pd.DataFrame(
         {
             "summary": ["Patient stable after treatment and discharge tomorrow."],
-            "recommendation": ["Follow-up in two weeks."],
         }
     )
 
@@ -95,9 +93,10 @@ def test_llm_text_only_paraphrase_synthesis_retries_verbatim_copy_and_returns_re
         if method == "POST" and url.endswith("/api/generate"):
             post_attempts["count"] += 1
             prompt = kwargs["json"]["prompt"]
-            assert "You rewrite TEXT values of a table row without losing information." in prompt
+            assert "You rewrite the TEXT value of a table row without losing information." in prompt
+            assert "Rewrite each sentence with substantially different wording and sentence structure." in prompt
+            assert "Prefer changing active/passive voice, clause order, and sentence openings." in prompt
             assert '"summary": "Patient stable after treatment and discharge tomorrow."' in prompt
-            assert '"recommendation": "Follow-up in two weeks."' in prompt
             if post_attempts["count"] == 1:
                 return _DummyResponse(
                     {
@@ -105,7 +104,6 @@ def test_llm_text_only_paraphrase_synthesis_retries_verbatim_copy_and_returns_re
                             {
                                 "row": {
                                     "summary": "Patient stable after treatment and discharge tomorrow.",
-                                    "recommendation": "Follow-up in two weeks.",
                                 }
                             }
                         )
@@ -117,7 +115,6 @@ def test_llm_text_only_paraphrase_synthesis_retries_verbatim_copy_and_returns_re
                         {
                             "row": {
                                 "summary": "The patient is stable after treatment and is expected to be discharged tomorrow.",
-                                "recommendation": "A follow-up visit is recommended in two weeks.",
                             }
                         }
                     )
@@ -141,7 +138,6 @@ def test_llm_text_only_paraphrase_synthesis_retries_verbatim_copy_and_returns_re
     assert sample.to_dict(orient="records") == [
         {
             "summary": "The patient is stable after treatment and is expected to be discharged tomorrow.",
-            "recommendation": "A follow-up visit is recommended in two weeks.",
         }
     ]
 
@@ -153,7 +149,6 @@ def test_llm_text_only_paraphrase_synthesis_marks_failed_text_after_invalid_resp
     dataset = pd.DataFrame(
         {
             "summary": ["Patient stable after treatment."],
-            "recommendation": [MISSING_VALUE_STRING],
         }
     )
 
@@ -180,7 +175,6 @@ def test_llm_text_only_paraphrase_synthesis_marks_failed_text_after_invalid_resp
     assert sample.to_dict(orient="records") == [
         {
             "summary": FAILED_TEXT_GENERATION,
-            "recommendation": MISSING_VALUE_STRING,
         }
     ]
     assert any("[LLM_TEXT_REWRITE]" in entry for entry in logs)
@@ -198,3 +192,91 @@ def test_llm_text_only_paraphrase_synthesis_rejects_non_text_columns():
                 ]
             }
         )
+
+
+def test_llm_text_only_paraphrase_synthesis_rejects_multiple_text_columns():
+    synthesizer = LlmTextOnlyParaphraseSynthesisSynthesizer()
+
+    with pytest.raises(SynthesizerOperationError, match="requires exactly one TEXT column"):
+        synthesizer.initialize_attribute_configuration(
+            {
+                "configurations": [
+                    {"index": 0, "name": "summary", "type": "TEXT"},
+                    {"index": 1, "name": "recommendation", "type": "TEXT"},
+                ]
+            }
+        )
+
+
+def test_llm_text_only_paraphrase_synthesis_rejects_header_like_placeholder_input(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    dataset = pd.DataFrame(
+        {
+            "summary": ["dokument_text"],
+        }
+    )
+
+    synthesizer = LlmTextOnlyParaphraseSynthesisSynthesizer()
+    synthesizer.initialize_anonymization_configuration(_algorithm_config())
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(dataset)
+    synthesizer.initialize_reference_dataset(dataset)
+    monkeypatch.setattr(synthesizer, "_initialize_llm_backend", lambda **_kwargs: None)
+    synthesizer.initialize_synthesizer()
+
+    with pytest.raises(SynthesizerOperationError, match="column-header or placeholder values"):
+        synthesizer.fit()
+
+
+def test_llm_text_only_paraphrase_synthesis_skips_header_like_first_row_before_prompting(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    dataset = pd.DataFrame(
+        {
+            "summary": [
+                "dokument_text",
+                "Patient stable after treatment and discharge tomorrow.",
+            ],
+        }
+    )
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            prompt = kwargs["json"]["prompt"]
+            assert '"summary": "dokument_text"' not in prompt
+            assert '"summary": "Patient stable after treatment and discharge tomorrow."' in prompt
+            return _DummyResponse(
+                {
+                    "response": json.dumps(
+                        {
+                            "row": {
+                                "summary": "The patient is stable after treatment and is expected to be discharged tomorrow.",
+                            }
+                        }
+                    )
+                }
+            )
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    synthesizer = LlmTextOnlyParaphraseSynthesisSynthesizer()
+    config = _algorithm_config()
+    config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+    synthesizer.initialize_anonymization_configuration(config)
+    synthesizer.initialize_attribute_configuration(_attribute_config())
+    synthesizer.initialize_dataset(dataset)
+    synthesizer.initialize_reference_dataset(dataset)
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    sample = synthesizer.sample()
+
+    assert sample.to_dict(orient="records") == [
+        {
+            "summary": "The patient is stable after treatment and is expected to be discharged tomorrow.",
+        }
+    ]

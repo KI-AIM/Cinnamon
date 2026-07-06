@@ -185,11 +185,13 @@ export class ConfigurationPageComponent implements OnInit {
         const modelFitting = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.model_fitting");
         const sampling = this.forms?.form?.get("text_synthesis_configuration.synthetization_configuration.algorithm.sampling");
 
-        if (llmProfile == null || modelParameter == null || modelFitting == null || sampling == null) {
+        if (llmProfile == null || sampling == null) {
             return true;
         }
 
-        return llmProfile.invalid || modelParameter.invalid || modelFitting.invalid || sampling.invalid;
+        return [llmProfile, modelParameter, modelFitting, sampling]
+            .filter(control => control != null)
+            .some(control => control.invalid);
     }
 
     protected get submitInvalid(): boolean {

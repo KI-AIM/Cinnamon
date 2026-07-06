@@ -1,0 +1,100 @@
+direct_identifier_categories:
+- id: NAME
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Names, initials, aliases, usernames, or handles of patients, relatives, household members, employers, caregivers,
+    clinicians, or other persons mentioned in relation to the medical record.
+  action: Redact detected values of this category by replacing the original span with [NAME].
+- id: LOCATION
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Geographic or address-related information, including street addresses, house numbers, apartments, cities, counties,
+    precincts, ZIP codes, countries, exact residences, and address-like descriptions.
+  action: Redact detected values of this category by replacing the original span with [LOCATION].
+- id: FACILITY_OR_ORGANIZATION
+  source: i2b2_2014_MEDDOCAN_custom_extension
+  description: Names of hospitals, clinics, laboratories, departments, wards, rooms, companies, employers, schools, institutions,
+    or other organizations that may identify the patient, staff, or care context.
+  action: Redact detected values of this category by replacing the original span with [FACILITY_OR_ORGANIZATION].
+- id: DATE_AGE_TIME
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Dates and age/time expressions directly related to a person, including birth dates, admission dates, discharge
+    dates, death dates, appointment dates, exact ages, ages over 89, and exact clock times connected to the individual or
+    care episode.
+  action: Redact detected values of this category by replacing the original span with [DATE_AGE_TIME].
+- id: CONTACT
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Contact information such as telephone numbers, fax numbers, email addresses, pager numbers, personal web URLs,
+    messaging handles, and similar communication identifiers.
+  action: Redact detected values of this category by replacing the original span with [CONTACT].
+- id: DIGITAL_IDENTIFIER
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Digital identifiers such as IP addresses, URLs, domains, user accounts, account handles, login names, device
+    network identifiers, or other online identifiers.
+  action: Redact detected values of this category by replacing the original span with [DIGITAL_IDENTIFIER].
+- id: MEDICAL_RECORD_OR_HEALTH_ID
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Medical record numbers, patient IDs, encounter IDs, admission IDs, health plan beneficiary numbers, insurance
+    numbers, registry IDs, study IDs, and other health-system identifiers.
+  action: Redact detected values of this category by replacing the original span with [MEDICAL_RECORD_OR_HEALTH_ID].
+- id: ACCOUNT_FINANCIAL_ID
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Account numbers, billing identifiers, payment identifiers, invoice numbers, claim numbers, financial transaction
+    identifiers, or other payment-related identifiers.
+  action: Redact detected values of this category by replacing the original span with [ACCOUNT_FINANCIAL_ID].
+- id: GOVERNMENT_OR_LEGAL_ID
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Social security numbers, national IDs, passport numbers, certificate numbers, license numbers, professional
+    registration numbers, legal case numbers, or other government/legal identifiers.
+  action: Redact detected values of this category by replacing the original span with [GOVERNMENT_OR_LEGAL_ID].
+- id: VEHICLE_OR_DEVICE_ID
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Vehicle identifiers, license plates, serial numbers, device identifiers, implant serial numbers, equipment
+    IDs, or other machine-readable or manufacturer-linked identifiers.
+  action: Redact detected values of this category by replacing the original span with [VEHICLE_OR_DEVICE_ID].
+- id: BIOMETRIC_OR_IMAGE_IDENTIFIER
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Biometric identifiers, fingerprints, voiceprints, facial photographs, comparable images, image filenames containing
+    identifiers, or textual references to identifiable visual/biometric material.
+  action: Redact detected values of this category by replacing the original span with [BIOMETRIC_OR_IMAGE_IDENTIFIER].
+- id: RELATIVE_EMPLOYER_HOUSEHOLD_IDENTIFIER
+  source: HIPAA_Safe_Harbor_custom_extension
+  description: Direct identifiers of relatives, employers, household members, proxies, guardians, or caregivers, including
+    their names, addresses, contacts, workplaces, or unique identifiers.
+  action: Redact detected values of this category by replacing the original span with [RELATIVE_EMPLOYER_HOUSEHOLD_IDENTIFIER].
+- id: OTHER_UNIQUE_IDENTIFIER
+  source:
+  - HIPAA_Safe_Harbor
+  - i2b2_2014
+  - MEDDOCAN
+  description: Any other unique identifying number, characteristic, code, label, file name, barcode, QR code, accession code,
+    local study code, or institution-specific identifier not covered by another category.
+  action: Redact detected values of this category by replacing the original span with [OTHER_UNIQUE_IDENTIFIER].

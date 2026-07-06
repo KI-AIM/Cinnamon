@@ -9,6 +9,11 @@ import { AlgorithmDefinition } from "../../../shared/model/algorithm-definition"
 import { map, Observable, ReplaySubject } from "rxjs";
 import { parse } from "yaml";
 import { plainToInstance } from "class-transformer";
+import { environments } from "src/environments/environment";
+
+interface NamedListSuggestionResponse {
+    items: Array<{name: string, description: string}>;
+}
 
 @Injectable({
     providedIn: 'root',
@@ -17,6 +22,7 @@ export class SynthetizationService extends AlgorithmService {
 
     /** Path to the study definition served by the synthetization backend. */
     private static readonly STUDY_DEFINITION_PATH = "/hyperparameter_tuning/study.yaml";
+    private static readonly NAMED_LIST_SUGGESTION_PATH = "/api/config/synthetization/named-list";
 
     /** Hyperparameter-tuning config set by the synthetization-configuration component. */
     private _hyperparameterConfig: object = { enabled: false };
@@ -31,10 +37,10 @@ export class SynthetizationService extends AlgorithmService {
     public readonly hyperparameterConfigLoaded$ = this._hyperparameterConfigLoaded.asObservable();
 
     constructor(
-        http: HttpClient,
+        private readonly httpClient: HttpClient,
         configurationService: ConfigurationService,
     ) {
-        super(http, configurationService);
+        super(httpClient, configurationService);
     }
 
     public override getConfigurationName(): string {
@@ -58,6 +64,15 @@ export class SynthetizationService extends AlgorithmService {
     public loadStudyDefinition(): Observable<AlgorithmDefinition> {
         return this.fetchAlgorithmDefinition(SynthetizationService.STUDY_DEFINITION_PATH).pipe(
             map((value: string) => plainToInstance(AlgorithmDefinition, parse(value))),
+        );
+    }
+
+    public suggestNamedList(config: object, listName: string): Observable<Array<{name: string, description: string}>> {
+        return this.httpClient.post<NamedListSuggestionResponse>(
+            `${environments.apiUrl}${SynthetizationService.NAMED_LIST_SUGGESTION_PATH}/${listName}/suggest`,
+            config,
+        ).pipe(
+            map(response => response.items ?? []),
         );
     }
 

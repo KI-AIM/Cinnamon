@@ -21,7 +21,6 @@ def _attribute_config() -> dict:
     return {
         "configurations": [
             {"index": 0, "name": "summary", "type": "TEXT"},
-            {"index": 1, "name": "recommendation", "type": "TEXT"},
         ]
     }
 
@@ -91,7 +90,6 @@ def test_llm_text_only_semantic_variation_synthesis_generates_related_fictional_
     dataset = pd.DataFrame(
         {
             "summary": ["Patient stable after treatment and discharge tomorrow."],
-            "recommendation": ["Follow-up in two weeks."],
         }
     )
 
@@ -101,30 +99,16 @@ def test_llm_text_only_semantic_variation_synthesis_generates_related_fictional_
         if method == "POST" and url.endswith("/api/generate"):
             post_attempts["count"] += 1
             prompt = kwargs["json"]["prompt"]
-            assert "You generate new TEXT values for a fictional patient based on a source table row." in prompt
+            assert "You generate a new TEXT value for a fictional patient based on a source table row." in prompt
             assert "- Blutdruck: Nur Hinweise auf hohen Blutdruck einschliessen." in prompt
+            assert "do not force the literal attribute label into the text unless it fits naturally." in prompt
             assert '"summary": "Patient stable after treatment and discharge tomorrow."' in prompt
-            assert '"recommendation": "Follow-up in two weeks."' in prompt
-            if post_attempts["count"] == 1:
-                return _DummyResponse(
-                    {
-                        "response": json.dumps(
-                            {
-                                "row": {
-                                    "summary": "A clinically stable patient is planned for discharge later this week after an uncomplicated recovery.",
-                                    "recommendation": "Outpatient reassessment within ten days is advised.",
-                                }
-                            }
-                        )
-                    }
-                )
             return _DummyResponse(
                 {
                         "response": json.dumps(
                             {
                                 "row": {
-                                    "summary": "Symptoms improved under therapy, and the fictional patient can likely leave the ward soon despite elevated Blutdruck values.",
-                                    "recommendation": "Primary care follow-up should be arranged for the next one to two weeks because the Blutdruck should be rechecked.",
+                                    "summary": "Symptoms improved under therapy, and the fictional patient can likely leave the ward soon despite persistent hypertension.",
                                 }
                             }
                         )
@@ -144,16 +128,14 @@ def test_llm_text_only_semantic_variation_synthesis_generates_related_fictional_
 
     sample = synthesizer.sample()
 
-    assert post_attempts["count"] == 3
+    assert post_attempts["count"] == 2
     assert len(sample) == 2
     assert sample.to_dict(orient="records") == [
         {
-            "summary": "Symptoms improved under therapy, and the fictional patient can likely leave the ward soon despite elevated Blutdruck values.",
-            "recommendation": "Primary care follow-up should be arranged for the next one to two weeks because the Blutdruck should be rechecked.",
+            "summary": "Symptoms improved under therapy, and the fictional patient can likely leave the ward soon despite persistent hypertension.",
         },
         {
-            "summary": "Symptoms improved under therapy, and the fictional patient can likely leave the ward soon despite elevated Blutdruck values.",
-            "recommendation": "Primary care follow-up should be arranged for the next one to two weeks because the Blutdruck should be rechecked.",
+            "summary": "Symptoms improved under therapy, and the fictional patient can likely leave the ward soon despite persistent hypertension.",
         },
     ]
 
@@ -165,7 +147,6 @@ def test_llm_text_only_semantic_variation_synthesis_marks_failed_text_after_inva
     dataset = pd.DataFrame(
         {
             "summary": ["Patient stable after treatment."],
-            "recommendation": [MISSING_VALUE_STRING],
         }
     )
 
@@ -192,11 +173,9 @@ def test_llm_text_only_semantic_variation_synthesis_marks_failed_text_after_inva
     assert sample.to_dict(orient="records") == [
         {
             "summary": FAILED_TEXT_GENERATION,
-            "recommendation": MISSING_VALUE_STRING,
         },
         {
             "summary": FAILED_TEXT_GENERATION,
-            "recommendation": MISSING_VALUE_STRING,
         },
     ]
     assert any("[LLM_TEXT_REWRITE]" in entry for entry in logs)
@@ -214,3 +193,133 @@ def test_llm_text_only_semantic_variation_synthesis_rejects_non_text_columns():
                 ]
             }
         )
+
+
+def test_llm_text_only_semantic_variation_synthesis_rejects_multiple_text_columns():
+    synthesizer = LlmTextOnlySemanticVariationSynthesisSynthesizer()
+
+    with pytest.raises(SynthesizerOperationError, match="requires exactly one TEXT column"):
+        synthesizer.initialize_attribute_configuration(
+            {
+                "configurations": [
+                    {"index": 0, "name": "summary", "type": "TEXT"},
+                    {"index": 1, "name": "recommendation", "type": "TEXT"},
+                ]
+            }
+        )
+
+
+def test_llm_text_only_semantic_variation_suggests_required_attributes_from_up_to_ten_examples(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    dataset = pd.DataFrame(
+        {
+            "summary": [
+                "Patient with diabetes and elevated blood pressure.",
+                "Blood pressure remained stable after therapy.",
+                "Insulin regimen was adjusted because of diabetes.",
+                "Follow-up for hypertension and diabetes was recommended.",
+            ]
+        }
+    )
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            prompt = kwargs["json"]["prompt"]
+            assert "You propose required_attributes entries for semantic medical text generation." in prompt
+            assert '1. "Patient with diabetes and elevated blood pressure."' in prompt
+            assert '4. "Follow-up for hypertension and diabetes was recommended."' in prompt
+            return _DummyResponse(
+                {
+                    "response": json.dumps(
+                        {
+                            "required_attributes": [
+                                {
+                                    "name": "Diabetes",
+                                    "description": "Mention diabetes or antidiabetic treatment when clinically relevant.",
+                                },
+                                {
+                                    "name": "Blood Pressure",
+                                    "description": "Include relevant blood pressure findings or hypertension context.",
+                                },
+                            ]
+                        }
+                    )
+                }
+            )
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    suggestions = LlmTextOnlySemanticVariationSynthesisSynthesizer.suggest_required_attributes(
+        attribute_configuration=_attribute_config(),
+        algorithm_configuration=_algorithm_config(),
+        dataset=dataset,
+        max_examples=10,
+    )
+
+    assert suggestions == [
+        {
+            "name": "Diabetes",
+            "description": "Mention diabetes or antidiabetic treatment when clinically relevant.",
+        },
+        {
+            "name": "Blood Pressure",
+            "description": "Include relevant blood pressure findings or hypertension context.",
+        },
+    ]
+
+
+def test_llm_text_only_semantic_variation_suggestion_skips_header_like_examples(monkeypatch):
+    _set_shared_llm_env(monkeypatch)
+
+    dataset = pd.DataFrame(
+        {
+            "summary": [
+                "dokument_text",
+                "Patient with diabetes and elevated blood pressure.",
+                "Blood pressure remained stable after therapy.",
+            ]
+        }
+    )
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET" and url.endswith("/api/tags"):
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        if method == "POST" and url.endswith("/api/generate"):
+            prompt = kwargs["json"]["prompt"]
+            assert '1. "dokument_text"' not in prompt
+            assert '1. "Patient with diabetes and elevated blood pressure."' in prompt
+            return _DummyResponse(
+                {
+                    "response": json.dumps(
+                        {
+                            "required_attributes": [
+                                {
+                                    "name": "Diabetes",
+                                    "description": "",
+                                },
+                            ]
+                        }
+                    )
+                }
+            )
+        raise AssertionError(f"Unexpected request: {method} {url}")
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    suggestions = LlmTextOnlySemanticVariationSynthesisSynthesizer.suggest_required_attributes(
+        attribute_configuration=_attribute_config(),
+        algorithm_configuration=_algorithm_config(),
+        dataset=dataset,
+        max_examples=10,
+    )
+
+    assert suggestions == [
+        {
+            "name": "Diabetes",
+            "description": "",
+        },
+    ]

@@ -1,7 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormArray, FormGroup } from '@angular/forms';
+import { NotificationService } from '@core/services/notification.service';
 
 import { ConfigurationInputNamedListComponent } from './configuration-input-named-list.component';
+import { ErrorHandlingService } from '../../services/error-handling.service';
+import { SynthetizationService } from '../../../features/synthetization/services/synthetization.service';
 
 describe('ConfigurationInputNamedListComponent', () => {
   let component: ConfigurationInputNamedListComponent;
@@ -9,7 +12,12 @@ describe('ConfigurationInputNamedListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ConfigurationInputNamedListComponent ]
+      declarations: [ ConfigurationInputNamedListComponent ],
+      providers: [
+        { provide: ErrorHandlingService, useValue: { addError: jasmine.createSpy('addError') } },
+        { provide: NotificationService, useValue: { addNotification: jasmine.createSpy('addNotification') } },
+        { provide: SynthetizationService, useValue: { suggestNamedList: jasmine.createSpy('suggestNamedList') } },
+      ],
     })
     .compileComponents();
 

@@ -14,7 +14,10 @@
 
         @if (user$ | async; as user) {
             <div class="user-center-current-user">
-                {{ user.username }}
+                <span class="user-center-avatar" aria-hidden="true">
+                    {{ user.username.slice(0, 2) | uppercase }}
+                </span>
+                <span class="user-center-username">{{ user.username }}</span>
             </div>
         }
 

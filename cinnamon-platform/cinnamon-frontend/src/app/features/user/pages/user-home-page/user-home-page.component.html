@@ -1,11 +1,16 @@
+<div class="vertical-boxes">
+
+    <div class="box">
+        <h2 class="box-name">Projects</h2>
+
 
 @if (pageData$ | async; as pageData) {
 
-    <button mat-raised-button color="primary" (click)="dialog.open(createProjectDialog, { width: '60%' })">
+    <button mat-raised-button color="primary" class="mb-2" (click)="dialog.open(createProjectDialog, { width: '60%' })">
         Create Project
     </button>
 
-    <table mat-table [dataSource]="pageData.projects">
+    <table mat-table [dataSource]="pageData.projects" class="mat-elevation-z8">
 
         <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>
@@ -14,13 +19,22 @@
 
         <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
-            <td mat-cell *matCellDef="let project">
-                <mat-icon class="icon-enabled" [routerLink]="['/project', project.id]">open_in_new</mat-icon>
+            <td mat-cell *matCellDef="let project" >
+                <span style="cursor: pointer" [routerLink]="['/project', project.id]">
+                    <mat-icon class="icon-enabled">open_in_new</mat-icon>
+                    <span class="ms-1">Open</span>
+                </span>
             </td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="['name', 'actions']"></tr>
         <tr mat-row *matRowDef="let project; columns: ['name', 'actions']"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center" style="height: 4rem;" colspan="2">
+                You have no projects yet
+            </td>
+        </tr>
 
     </table>
 
@@ -52,4 +66,6 @@
 
 
 
+    </div>
 
+</div>

@@ -11,7 +11,7 @@ import {
     MatColumnDef,
     MatHeaderCell,
     MatHeaderCellDef,
-    MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef,
+    MatHeaderRow, MatHeaderRowDef, MatNoDataRow, MatRow, MatRowDef,
     MatTable
 } from "@angular/material/table";
 import { RouterLink } from "@angular/router";
@@ -53,6 +53,7 @@ import { UserSettingsComponent } from './pages/user-settings/user-settings.compo
         MatLabel,
         MatError,
         MatInput,
+        MatNoDataRow,
         MatSuffix,
         ReactiveFormsModule,
         RouterLink,

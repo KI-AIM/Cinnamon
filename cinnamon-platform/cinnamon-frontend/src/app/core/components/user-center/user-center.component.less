@@ -18,6 +18,30 @@
 }
 
 .user-center-current-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-center-avatar {
+    display: inline-flex;
+    flex: 0 0 40px;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: @color-border;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.user-center-username {
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .user-center-list {
@@ -34,7 +58,7 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
-    padding: 8px 0;
+    padding: 6px 0;
     cursor: pointer;
 
     border-radius: @border-radius;

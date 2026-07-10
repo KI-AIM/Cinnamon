@@ -11,6 +11,9 @@ from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_knowledge_
 from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
     LlmTextOnlyParaphraseSynthesisSynthesizer,
 )
+from synthetic_tabular_data_generator.algorithms.llm_text_only_embedding_nearest_neighbor_synthesis import (
+    LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
+)
 from synthetic_tabular_data_generator.algorithms.llm_text_only_indirect_identifier_rewrite_synthesis import (
     LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer,
 )
@@ -92,6 +95,14 @@ synthesizer_classes = {
         'display_name': 'LLM Text-only Paraphrase Synthesis',
         'description': 'Rewrite a single TEXT input column with an LLM while preserving the original information content. This synthesizer expects exactly one free-text column and rephrases each non-missing value without changing meaning.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_paraphrase_synthesis.yaml'
+    },
+    'llm_text_only_embedding_nearest_neighbor_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
+        'display_name': 'LLM Text-only Nearest-neighbor Synthesis',
+        'description': 'Generate a new single TEXT column for fictional but plausible patients by retrieving similar reference texts and using them as in-context examples. The initial implementation supports BM25-style sparse nearest-neighbor retrieval and Ollama-based embedding retrieval for exactly one free-text column.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_embedding_nearest_neighbor_synthesis.yaml'
     },
     'llm_text_only_indirect_identifier_rewrite_synthesis': {
         'version': '0.1',

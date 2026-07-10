@@ -26,6 +26,7 @@ from data_processing.utils import (
     set_text_columns_to_pending,
 )
 from synthetic_tabular_data_generator.llm import get_llm_profile_names
+from synthetic_tabular_data_generator.embedding_profiles import get_embedding_profile_names
 from synthetic_tabular_data_generator.algorithms.llm_text_only_semantic_variation_synthesis import (
     LlmTextOnlySemanticVariationSynthesisSynthesizer,
 )
@@ -515,6 +516,34 @@ def inject_llm_profile_parameter(config_content):
         llm_profile_parameter["default_value"] = ""
         llm_profile_parameter["mandatory"] = True
 
+    return config_content
+
+
+def inject_embedding_profile_parameter(config_content):
+    profile_names = get_embedding_profile_names()
+    if not profile_names:
+        return config_content
+
+    model_parameter_group = (config_content.setdefault("configurations", {})).get("model_parameter")
+    if not isinstance(model_parameter_group, dict):
+        return config_content
+
+    parameters = model_parameter_group.get("parameters", [])
+    if not isinstance(parameters, list):
+        return config_content
+
+    embedding_model_parameter = None
+    for parameter in parameters:
+        if parameter.get("name") == "embedding_model":
+            embedding_model_parameter = parameter
+            break
+
+    if embedding_model_parameter is None:
+        return config_content
+
+    embedding_model_parameter["values"] = profile_names
+    embedding_model_parameter["default_value"] = ""
+    embedding_model_parameter["mandatory"] = False
     return config_content
 
 
@@ -1327,10 +1356,17 @@ def get_synthesizer_config(module_name, filename):
         if module_name == "synthetic_tabular_data_generator":
             with open(config_path, "r", encoding="utf-8") as file:
                 config_content = yaml.safe_load(file) or {}
-            is_dynamic_llm_definition = "llm_profile" in (config_content.get("configurations", {}) or {})
-        if not is_dynamic_llm_definition:
+            configurations = config_content.get("configurations", {}) or {}
+            is_dynamic_llm_definition = "llm_profile" in configurations
+            has_dynamic_embedding_definition = "model_parameter" in configurations
+        else:
+            has_dynamic_embedding_definition = False
+        if not is_dynamic_llm_definition and not has_dynamic_embedding_definition:
             return send_from_directory(config_directory, filename)
-        config_content = inject_llm_profile_parameter(config_content)
+        if is_dynamic_llm_definition:
+            config_content = inject_llm_profile_parameter(config_content)
+        if has_dynamic_embedding_definition:
+            config_content = inject_embedding_profile_parameter(config_content)
         return Response(yaml.safe_dump(config_content, sort_keys=False), mimetype='text/yaml')
     except FileNotFoundError:
         error_message = 'The requested file was not found. Please check the filename and try again.'

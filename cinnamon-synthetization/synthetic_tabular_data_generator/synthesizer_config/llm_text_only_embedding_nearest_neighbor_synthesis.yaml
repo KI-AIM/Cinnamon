@@ -1,0 +1,97 @@
+name: llm_text_only_embedding_nearest_neighbor_synthesis
+version: "0.1"
+type: cross-sectional
+display_name: LLM Text-only Nearest-neighbor Synthesis
+description: Generate a new single TEXT column by retrieving the N nearest original text neighbors and using them as in-context examples for LLM generation. The initial implementation supports sparse BM25 retrieval and Ollama-based embedding retrieval for exactly one TEXT column.
+URL: /start_synthetization_process/llm_text_only_embedding_nearest_neighbor_synthesis
+processing_capabilities:
+  data_modality: text_only
+  generation_scope: text_only
+configurations:
+  llm_profile:
+    display_name: LLM Profile
+    description: Select which configured LLM instance should be used.
+    parameters:
+      - name: llm_profile
+        type: string
+        label: LLM Profile
+        description: Select the configured LLM profile.
+        default_value: ""
+        values: []
+        mandatory: true
+  model_parameter:
+    display_name: Embedding Retrieval Parameters
+    description: Configure how text embeddings are built and how nearest neighbors are selected for each generated text row.
+    parameters:
+      - name: few_shot_examples
+        type: integer
+        label: Nearest Neighbors
+        description: Number of nearest-neighbor original texts to include as in-context examples for each generated row.
+        default_value: 3
+        min_value: 0
+        max_value: 20
+      - name: embedding_provider
+        type: string
+        label: Embedding Provider
+        description: Select how source and reference texts are encoded for nearest-neighbor retrieval. bm25 uses sparse lexical retrieval without a separate embedding model. Ollama support is planned but not implemented yet.
+        default_value: bm25
+        values:
+          - bm25
+          - ollama
+      - name: embedding_model
+        type: string
+        label: Embedding Profile
+        description: Select the configured embedding profile for Ollama-based retrieval. The selectable profiles are loaded dynamically from the environment. For bm25 this field is ignored.
+        default_value: ""
+        values: []
+        mandatory: false
+      - name: similarity_function
+        type: string
+        label: Similarity Function
+        description: Similarity metric applied to embedding vectors. Use sparse_cosine or sparse_dot with bm25. Use cosine, dot, angular, euclidean, or manhattan with ollama embeddings.
+        default_value: sparse_cosine
+        values:
+          - sparse_cosine
+          - sparse_dot
+          - cosine
+          - dot
+          - angular
+          - euclidean
+          - manhattan
+  model_fitting:
+    display_name: Prompt Configuration
+    description: Configure optional domain context for text generation after nearest-neighbor retrieval.
+    parameters:
+      - name: user_prompt_domain_context
+        type: string
+        multiline: true
+        rows: 5
+        label: Domain Context
+        description: Optional domain context to guide terminology, style, and plausibility during generation.
+        default_value: ""
+        mandatory: false
+  sampling:
+    display_name: Sampling
+    description: Configure how many synthetic text rows are generated and how deterministic the LLM output should be.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Number of Samples
+        description: Number of synthetic text rows to generate. Source rows may be sampled repeatedly when more rows are requested than are available in the input dataset.
+        default_value: $dataset.original.numberRows
+        min_value: 1
+        max_value: 1000000
+      - name: temperature
+        type: float
+        label: Temperature
+        description: Controls randomness of token sampling. Higher values usually increase variation across generated texts.
+        default_value: 0.8
+        min_value: 0.0
+        max_value: 2.0
+      - name: top_p
+        type: float
+        label: Top-p
+        description: Controls nucleus sampling by limiting candidate tokens to a probability mass.
+        default_value: 0.95
+        min_value: 0.0
+        max_value: 1.0

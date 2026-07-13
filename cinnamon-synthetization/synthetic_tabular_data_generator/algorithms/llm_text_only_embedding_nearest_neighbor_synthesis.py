@@ -208,12 +208,48 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
         self._build_ollama_reference_index(reference_texts)
 
     def _build_prompt_prefix(self) -> str:
+        text_column = self._text_columns[0]
+        domain_context = ""
+        if self._user_prompt_domain_context:
+            domain_context = f"Domain context: {self._user_prompt_domain_context}\n"
+
+        required_attributes_block = ""
+        if self._required_attributes:
+            lines = [
+                f"- {item['name']}: {item['description']}" if item["description"] else f"- {item['name']}"
+                for item in self._required_attributes
+            ]
+            required_attributes_block = (
+                "Required attributes that must be mentioned explicitly in the generated text:\n"
+                + "\n".join(lines)
+                + "\n"
+            )
+
         return (
-            f"{super()._build_prompt_prefix()}"
-            "Reference examples:\n"
-            "- When similar reference texts are provided, use them as semantic and stylistic guidance.\n"
-            "- Do not copy a reference example verbatim.\n"
-            "- Generate a new plausible case that stays close to the source row and the retrieved examples.\n"
+            "You generate a new TEXT value for a fictional patient based on a source table row and similar reference texts.\n"
+            f"{domain_context}"
+            "Information:\n"
+            "- Preserve the medical domain, document type, language, tone, structure, and level of detail.\n"
+            "- The generated case may remain clinically similar to the source, but it must not be a direct paraphrase.\n"
+            "- Use the source row as the main clinical basis and the reference texts as additional semantic and stylistic guidance.\n"
+            "- Change at least three relevant case aspects, such as chronology, symptoms, medication, treatment response, complications, findings, or discharge plan.\n"
+            "- Do not reproduce an entire distinctive sequence of events or a complete case-specific paragraph with only names, dates, sides, or numbers changed.\n"
+            "- Standard medical phrases, section headings, diagnoses, and technical terms may remain unchanged when appropriate.\n"
+            "- Ensure that all dates are chronologically valid.\n"
+            "- The document date must not precede the described discharge date.\n"
+            "- Ensure that diagnoses, ICD codes, symptoms, medication, dosage, treatment, findings, and outcome are medically plausible and mutually consistent.\n"
+            "- Do not add findings that are unrelated to the clinical course or remain unexplained.\n"
+            "- Avoid impossible treatment periods, contradictory timelines, implausible dosages, and unsupported diagnoses.\n"
+            "- Before returning the result, internally check: 1. chronology, 2. diagnosis and ICD consistency, 3. medication plausibility, 4. consistency between findings, treatment, and discharge.\n"
+            "- Do not mention that the text is synthetic, fictional, generated, anonymized, or paraphrased.\n"
+            f"- Keep a missing TEXT value as '{MISSING_VALUE_STRING}'.\n"
+            f"{required_attributes_block}"
+            "Output rules:\n"
+            "- Return ONLY valid JSON.\n"
+            "- Use exactly this shape: {\"row\": { ... }}\n"
+            f"- Include exactly this column in row: {text_column}\n"
+            f"- Generate a value only for this TEXT column: {text_column}\n"
+            f"- For a missing string/text use '{MISSING_VALUE_STRING}'\n"
             "\n"
         )
 

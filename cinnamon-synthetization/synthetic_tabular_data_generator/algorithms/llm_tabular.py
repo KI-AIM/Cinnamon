@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import cloudpickle
 import json
 import math
@@ -6,27 +8,14 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
 
-from data_processing.utils import MISSING_VALUE_STRING, TEXT_PENDING_LLM
-from synthetic_tabular_data_generator.llm import (
-    ColumnProfileOptions,
-    ConfiguredLlmSynthesizerBase,
-)
-from synthetic_tabular_data_generator.llm.prompt_builders import (
-    build_tabular_non_text_generation_prompt_from_prefix,
-    build_tabular_non_text_generation_prompt_prefix,
-    build_tabular_text_completion_prompt_from_prefix,
-    build_tabular_text_completion_prompt_prefix,
-)
-from synthetic_tabular_data_generator.llm.response_validation import (
-    require_first_dict_row,
-    require_non_empty_rows,
-)
+from data_processing.utils import MISSING_VALUE_STRING
+from synthetic_tabular_data_generator.llm import ColumnProfileOptions, ConfiguredLlmSynthesizerBase
+from synthetic_tabular_data_generator.llm.prompt_builders import build_tabular_non_text_generation_prompt_from_prefix
+from synthetic_tabular_data_generator.llm.response_validation import require_non_empty_rows
 
 
 class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
-    """
-    LLM-based tabular synthesizer backed by a configurable LLM provider.
-    """
+    """Generate structured-only synthetic rows from statistical column profiles."""
 
     NUMERIC_TYPES = {"INTEGER", "DECIMAL", "DATE"}
 
@@ -38,443 +27,250 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         super().__init__(attribute_configuration, anonymization_configuration)
         self.attribute_config: Optional[Dict[str, Any]] = None
         self.dataset: Optional[pd.DataFrame] = None
-
         self._ordered_column_configs: List[Dict[str, Any]] = []
         self._column_profiles: Dict[str, Dict[str, Any]] = {}
-        self._few_shot_source_df: Optional[pd.DataFrame] = None
-        self._non_text_prompt_prefix: Optional[str] = None
-        self._text_prompt_prefix: Optional[str] = None
+        self._requested_profile_rows: Optional[int] = None
+        self._profile_rows_used = 0
+        self._generation_prompt_prefix: Optional[str] = None
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
-        """
-        Core logic for initializing anonymization configuration.
-        """
-        self._initialize_common_llm_configuration(
-            config,
-            default_few_shot_rows=20,
-        )
+        _, model_params, _ = self._initialize_common_llm_configuration(config)
+        raw_profile_rows = model_params.get("profile_rows")
+        if raw_profile_rows is None or (
+            isinstance(raw_profile_rows, str) and raw_profile_rows.strip().startswith("$")
+        ):
+            self._requested_profile_rows = None
+            return
+
+        profile_rows = int(raw_profile_rows)
+        if profile_rows <= 0:
+            raise ValueError("profile_rows must be greater than 0.")
+        self._requested_profile_rows = profile_rows
 
     def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
-        """
-        Core logic for initializing attribute configuration.
-        """
         configurations = attribute_config.get("configurations", [])
         if not configurations:
             raise ValueError("Attribute configuration is empty.")
 
-        self.attribute_config = attribute_config
-        self._ordered_column_configs = sorted(configurations, key=lambda cfg: cfg.get("index", math.inf))
+        ordered_configs = sorted(configurations, key=lambda config: config.get("index", math.inf))
+        text_columns = [
+            config["name"]
+            for config in ordered_configs
+            if str(config.get("type", "STRING")).upper() == "TEXT"
+        ]
+        if text_columns:
+            raise ValueError(
+                "llm_tabular only supports structured data. "
+                f"Found TEXT columns: {text_columns}."
+            )
 
-    def _initialize_dataset(self, df: pd.DataFrame) -> None:
-        """
-        Core logic for initializing the dataset.
-        """
-        self.dataset = df.copy()
+        self.attribute_config = attribute_config
+        self._ordered_column_configs = ordered_configs
+
+    def _initialize_dataset(self, dataset: pd.DataFrame) -> None:
+        missing_columns = [
+            config["name"] for config in self._ordered_column_configs if config["name"] not in dataset.columns
+        ]
+        if missing_columns:
+            raise ValueError(f"Dataset is missing configured columns: {missing_columns}.")
+        self.dataset = dataset.copy()
 
     def _initialize_synthesizer(self) -> None:
-        """
-        Core logic for initializing the synthesizer.
-        """
-        if self._fitting_kwargs is None:
-            raise ValueError("Anonymization configuration must be initialized before synthesizer setup.")
-        self._initialize_llm_backend()
+        self._initialize_llm_backend(mode="structured_tabular")
 
     def _fit(self) -> None:
-        """
-        Build schema and value profiles that are used in the LLM prompts.
-        """
         if self.dataset is None:
             raise ValueError("Dataset is not initialized.")
+        if self.dataset.empty:
+            raise ValueError("Dataset must contain at least one row for profile calculation.")
         if not self._ordered_column_configs:
             raise ValueError("Attribute configuration is not initialized.")
-        if self._fitting_kwargs is None:
-            raise ValueError("Anonymization configuration is not initialized.")
 
-        profile_df = self._build_profile_dataframe(self.dataset)
+        available_rows = len(self.dataset)
+        self._profile_rows_used = min(self._requested_profile_rows or available_rows, available_rows)
+        profile_df = (
+            self.dataset.copy()
+            if self._profile_rows_used == available_rows
+            else self.dataset.sample(n=self._profile_rows_used)
+        )
 
         self._column_profiles = {}
-        for column_config in self._ordered_column_configs:
-            column_name = column_config["name"]
-            column_type = str(column_config.get("type", "STRING")).upper()
-            self._column_profiles[column_name] = self._build_column_profile(profile_df, column_name, column_type)
+        for config in self._ordered_column_configs:
+            column_name = config["name"]
+            column_type = str(config.get("type", "STRING")).upper()
+            self._column_profiles[column_name] = self.build_column_profile(
+                profile_df,
+                column_name,
+                column_type,
+                options=ColumnProfileOptions(categorical_top_k=15, include_text_examples=False),
+            )
 
-        few_shot_rows = self._fitting_kwargs["few_shot_rows"]
-        if few_shot_rows > 0 and not profile_df.empty:
-            self._few_shot_source_df = profile_df.copy()
-        else:
-            self._few_shot_source_df = None
-
-        self._non_text_prompt_prefix = self._build_non_text_generation_prompt_prefix()
-        self._text_prompt_prefix = self._build_text_completion_prompt_prefix()
+        self._generation_prompt_prefix = self._build_generation_prompt_prefix()
 
     def _sample(self) -> pd.DataFrame:
-        """
-        Generate synthetic tabular data via the configured LLM using one request per row.
-        """
-        if self._sampling is None:
-            raise ValueError("Sampling configuration is not initialized.")
-        if self._fitting_kwargs is None:
-            raise ValueError("Anonymization configuration is not initialized.")
-        if self._llm_config is None:
-            raise ValueError("Model configuration is not initialized.")
-
         if self.dataset is None:
             raise ValueError("Dataset is not initialized.")
+        if self._fitting_kwargs is None:
+            raise ValueError("Anonymization configuration is not initialized.")
+        if self._llm_client is None:
+            raise ValueError("LLM client is not initialized.")
 
         num_samples = self._resolve_num_samples(len(self.dataset), allow_exceed_default=True)
         max_retries = self._fitting_kwargs["max_retries"]
         self._sample_start_time = pd.Timestamp.utcnow().timestamp()
         self._reset_generation_counters()
 
-        generated_rows = self._generate_rows_sequentially(num_samples, max_retries)
+        rows = []
+        for row_index in range(num_samples):
+            rows.append(self._generate_row(row_index, num_samples, max_retries))
+            self.report_remaining_time(self._sample_start_time, len(rows), num_samples)
 
-        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
-        generated = pd.DataFrame(generated_rows)
-        for column_name in ordered_columns:
-            if column_name not in generated.columns:
-                generated[column_name] = pd.NA
+        ordered_columns = [config["name"] for config in self._ordered_column_configs]
+        return pd.DataFrame(rows, columns=ordered_columns)
 
-        return generated[ordered_columns]
-
-    def _get_model(self) -> bytes:
-        """
-        Core logic for serializing the model object.
-        """
-        return cloudpickle.dumps(self)
-
-    def _load_model(self, filepath: str) -> "LlmTabularSynthesizer":
-        """
-        Core logic for loading a serialized synthesizer instance from a file.
-        """
-        with open(filepath, "rb") as f:
-            model: "LlmTabularSynthesizer" = cloudpickle.load(f)
-        return model
-
-    def _save_data(self, sample: pd.DataFrame, filename: str) -> None:
-        """
-        Core logic for saving a data sample to a CSV file.
-        """
-        sample.to_csv(filename, index=False)
-
-    def _build_column_profile(self, df: pd.DataFrame, column_name: str, column_type: str) -> Dict[str, Any]:
-        return self.build_column_profile(
-            df,
-            column_name,
-            column_type,
-            options=ColumnProfileOptions(
-                categorical_top_k=15,
-                include_text_examples=False,
-                excluded_text_values=(MISSING_VALUE_STRING, TEXT_PENDING_LLM),
-            ),
-        )
-
-    def _generate_rows_sequentially(
-        self,
-        target_rows: int,
-        max_retries: int,
-    ) -> List[Dict[str, Any]]:
-        accepted_rows: List[Dict[str, Any]] = []
-
-        for row_index in range(target_rows):
-            accepted_rows.append(self._generate_single_row(row_index, target_rows, max_retries))
-            self._print_remaining_time(len(accepted_rows), target_rows)
-
-        return accepted_rows
-
-    def _generate_single_row(
-        self,
-        row_index: int,
-        target_rows: int,
-        max_retries: int,
-    ) -> Dict[str, Any]:
-        few_shot_examples = self._draw_few_shot_examples()
-        structured_row = self._generate_non_text_row(row_index, target_rows, max_retries, few_shot_examples)
-        if not any(str(cfg.get("type", "STRING")).upper() == "TEXT" for cfg in self._ordered_column_configs):
-            return structured_row
-        return self._generate_text_row(structured_row, row_index, target_rows, max_retries, few_shot_examples)
-
-    def _generate_non_text_row(
-        self,
-        row_index: int,
-        target_rows: int,
-        max_retries: int,
-        few_shot_examples: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+    def _generate_row(self, row_index: int, total_rows: int, max_retries: int) -> Dict[str, Any]:
         last_error: Optional[Exception] = None
-        last_attempt_details: Optional[str] = None
+        last_details = ""
 
         for attempt_index in range(max_retries):
             non_dict_rows = 0
             unusable_rows = 0
             coercion_errors = 0
-            attempt_error: Optional[Exception] = None
-
             try:
-                content = self._request_non_text_row_from_llm(1, row_index, target_rows, few_shot_examples)
-                raw_rows = self._extract_rows(content)
-
-                for row in raw_rows:
+                for row in self._request_rows_from_llm():
                     if not isinstance(row, dict):
                         non_dict_rows += 1
                         continue
-
                     aligned_row, used_positional_mapping = self._align_row_to_schema(row)
                     if not self._is_row_usable(row, aligned_row, used_positional_mapping):
                         unusable_rows += 1
                         continue
-
                     try:
-                        return self._coerce_non_text_row(aligned_row)
+                        return self._coerce_row(aligned_row)
                     except Exception:  # noqa: BLE001
                         coercion_errors += 1
-                        continue
             except Exception as exc:  # noqa: BLE001
-                attempt_error = exc
+                last_error = exc
 
-            if attempt_error is None:
-                attempt_error = ValueError("No usable rows were accepted from the LLM response.")
-
-            last_attempt_details = (
+            if last_error is None:
+                last_error = ValueError("No usable rows were accepted from the LLM response.")
+            last_details = (
                 f"non_dict_rows={non_dict_rows}, unusable_rows={unusable_rows}, "
                 f"coercion_errors={coercion_errors}"
             )
-            last_error = attempt_error
             self._log_generation_attempt_failure(
-                mode="TABULAR_NON_TEXT_GENERATION",
+                mode="TABULAR_STRUCTURED_GENERATION",
                 row_index=row_index,
-                total_rows=target_rows,
+                total_rows=total_rows,
                 attempt_index=attempt_index,
                 max_retries=max_retries,
-                error=attempt_error,
-                details=last_attempt_details,
+                error=last_error,
+                details=last_details,
             )
 
         return self._handle_generation_failure(
             message=(
-                f"LLM returned no valid structured row for sample {row_index + 1}/{target_rows} "
-                f"after {max_retries} attempts."
-                f"{'' if last_attempt_details is None else f' Last attempt stats: {last_attempt_details}.'}"
+                f"LLM returned no valid structured row for sample {row_index + 1}/{total_rows} "
+                f"after {max_retries} attempts. Last attempt stats: {last_details}."
             ),
             last_error=last_error,
         )
 
-    def _generate_text_row(
-        self,
-        structured_row: Dict[str, Any],
-        row_index: int,
-        target_rows: int,
-        max_retries: int,
-        few_shot_examples: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
-        last_error: Optional[Exception] = None
-
-        for attempt_index in range(max_retries):
-            try:
-                content = self._request_text_row_from_llm(structured_row, few_shot_examples)
-                parsed = self.parse_json_with_fallback(content)
-                candidate_row = require_first_dict_row(parsed)
-                merged = self._merge_text_only_row(structured_row, candidate_row)
-                return self._coerce_row(merged)
-            except Exception as exc:  # noqa: BLE001
-                last_error = exc
-                self._log_generation_attempt_failure(
-                    mode="TABULAR_TEXT_GENERATION",
-                    row_index=row_index,
-                    total_rows=target_rows,
-                    attempt_index=attempt_index,
-                    max_retries=max_retries,
-                    error=exc,
-                )
-
-        return self._handle_generation_failure(
-            message=(
-                f"LLM returned no valid text row for sample {row_index + 1}/{target_rows} "
-                f"after {max_retries} attempts."
-            ),
-            last_error=last_error,
-        )
-
-    def _request_non_text_row_from_llm(
-        self,
-        num_rows: int,
-        row_index: int,
-        target_rows: int,
-        few_shot_examples: List[Dict[str, Any]],
-    ) -> str:
+    def _request_rows_from_llm(self) -> List[Dict[str, Any]]:
         if self._llm_client is None:
             raise ValueError("LLM client is not initialized.")
-
-        prompt = self._build_non_text_generation_prompt(num_rows, row_index, target_rows, few_shot_examples)
-        return self._llm_client.generate_text(prompt)
-
-    def _request_text_row_from_llm(
-        self,
-        structured_row: Dict[str, Any],
-        few_shot_examples: List[Dict[str, Any]],
-    ) -> str:
-        if self._llm_client is None:
-            raise ValueError("LLM client is not initialized.")
-
-        prompt = self._build_text_completion_prompt(structured_row, few_shot_examples)
-        return self._llm_client.generate_text(prompt)
-
-    def _build_non_text_generation_prompt_prefix(self) -> str:
-        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
-        non_text_columns = [
-            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() != "TEXT"
-        ]
-        text_columns = [
-            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() == "TEXT"
-        ]
-        profile_lines = []
-        for config in self._ordered_column_configs:
-            name = config["name"]
-            column_type = str(config.get("type", "STRING")).upper()
-            profile_lines.append(self._profile_line(name, column_type, self._column_profiles.get(name, {})))
-
-        return build_tabular_non_text_generation_prompt_prefix(
-            ordered_columns=ordered_columns,
-            non_text_columns=non_text_columns,
-            text_columns=text_columns,
-            profile_lines=profile_lines,
-            missing_value_string=MISSING_VALUE_STRING,
-            domain_context=self._user_prompt_domain_context,
-        )
-
-    def _build_text_completion_prompt_prefix(self) -> str:
-        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
-        text_columns = [
-            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() == "TEXT"
-        ]
-        return build_tabular_text_completion_prompt_prefix(
-            column_order=ordered_columns,
-            text_columns=text_columns,
-            missing_value_string=MISSING_VALUE_STRING,
-            domain_context=self._user_prompt_domain_context,
-        )
-
-    def _build_non_text_generation_prompt(
-        self,
-        num_rows: int,
-        row_index: int,
-        target_rows: int,
-        few_shot_examples: List[Dict[str, Any]],
-    ) -> str:
-        del row_index, target_rows
-        prompt_prefix = self._non_text_prompt_prefix or self._build_non_text_generation_prompt_prefix()
-        return build_tabular_non_text_generation_prompt_from_prefix(
-            prompt_prefix,
-            num_rows=num_rows,
-            few_shot_examples=few_shot_examples,
-        )
-
-    def _build_text_completion_prompt(
-        self,
-        structured_row: Dict[str, Any],
-        few_shot_examples: List[Dict[str, Any]],
-    ) -> str:
-        prompt_prefix = self._text_prompt_prefix or self._build_text_completion_prompt_prefix()
-        return build_tabular_text_completion_prompt_from_prefix(
-            prompt_prefix,
-            base_row=self.serialize_row_for_prompt(structured_row, self._ordered_column_configs),
-            reference_examples=self._text_only_examples(few_shot_examples),
-        )
-
-    def _draw_few_shot_examples(self) -> List[Dict[str, Any]]:
-        if self._fitting_kwargs is None:
-            return []
-
-        few_shot_rows = self._fitting_kwargs.get("few_shot_rows", 0)
-        if few_shot_rows <= 0 or self._few_shot_source_df is None or self._few_shot_source_df.empty:
-            return []
-
-        n_examples = min(few_shot_rows, len(self._few_shot_source_df))
-        examples = self._few_shot_source_df.sample(n=n_examples).to_dict(orient="records")
-        return [self.serialize_row_for_prompt(example, self._ordered_column_configs) for example in examples]
-
-    def _text_only_examples(self, examples: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        text_columns = [
-            cfg["name"] for cfg in self._ordered_column_configs if str(cfg.get("type", "STRING")).upper() == "TEXT"
-        ]
-        return [
-            {column_name: example.get(column_name) for column_name in text_columns if column_name in example}
-            for example in examples
-        ]
-
-    def _profile_line(self, column_name: str, column_type: str, profile: Dict[str, Any]) -> str:
-        matching_config = next(
-            (config for config in self._ordered_column_configs if config["name"] == column_name),
-            {"name": column_name, "type": column_type},
-        )
-        line = self.build_prompt_profile_line(matching_config, profile)
-        line = line.replace("no observed values.", "no observed training values.")
-        line = line.replace("frequent_values=", "frequent values ")
-        return line
-
-    def _extract_rows(self, response_content: str) -> List[Dict[str, Any]]:
-        parsed_json = self.parse_json_with_fallback(response_content)
+        prefix = self._generation_prompt_prefix or self._build_generation_prompt_prefix()
+        prompt = build_tabular_non_text_generation_prompt_from_prefix(prefix, num_rows=1)
+        content = self._llm_client.generate_text(prompt)
+        parsed_json = self.parse_json_with_fallback(content)
         rows = self.rows_from_json(parsed_json)
         if not rows:
-            rows = self._extract_rows_from_repeated_rows_blocks(response_content)
+            rows = self._extract_rows_from_repeated_rows_blocks(content)
         return require_non_empty_rows(rows)
 
+    def _build_generation_prompt_prefix(self) -> str:
+        ordered_columns = [config["name"] for config in self._ordered_column_configs]
+        shape = json.dumps(
+            {"rows": [{column_name: "<value>" for column_name in ordered_columns}]},
+            ensure_ascii=False,
+        )
+        profile_lines = [
+            self.build_prompt_profile_line(config, self._column_profiles.get(config["name"], {}))
+            for config in self._ordered_column_configs
+        ]
+        domain_context = (
+            f"Domain context: {self._user_prompt_domain_context}\n"
+            if self._user_prompt_domain_context
+            else ""
+        )
+        dataset_rows = len(self.dataset) if self.dataset is not None else self._profile_rows_used
+
+        return (
+            "You generate new synthetic rows containing only structured tabular data.\n"
+            f"{domain_context}"
+            "Information:\n"
+            f"- The statistical profiles were calculated from {self._profile_rows_used} of {dataset_rows} input rows.\n"
+            "- Use the column schema and statistical profiles to generate plausible new rows.\n"
+            "- Preserve plausible value ranges, categorical frequencies, missingness, and relationships between columns.\n"
+            "- Do not reconstruct or copy an original input row.\n"
+            "- Each generated row must be internally consistent.\n"
+            "- Avoid impossible numerical, categorical, boolean, or chronological combinations.\n"
+            "Output rules:\n"
+            "- Return ONLY valid JSON.\n"
+            f"- Use exactly this shape: {shape}\n"
+            "- Use one top-level key only: rows.\n"
+            f"- Include exactly these columns in this order: {ordered_columns}\n"
+            "- Do not add comments, markdown, code fences, explanations, or extra keys.\n"
+            "Type rules:\n"
+            "- INTEGER: integer number\n"
+            "- DECIMAL: decimal number\n"
+            "- DATE: a date string using the configured column format\n"
+            "- BOOLEAN: true or false\n"
+            f"- STRING: plain text; use '{MISSING_VALUE_STRING}' for missing values\n"
+            "Statistical column profiles:\n"
+            f"{chr(10).join(profile_lines)}\n"
+        )
+
     def _extract_rows_from_repeated_rows_blocks(self, content: str) -> List[Dict[str, Any]]:
-        extracted_rows: List[Dict[str, Any]] = []
-
+        rows: List[Dict[str, Any]] = []
         for match in re.finditer(r'"rows"\s*:\s*\[', content):
-            array_start = match.end() - 1
-            array_end = self._find_matching_bracket(content, array_start)
-            if array_end is None:
+            start = match.end() - 1
+            end = self._find_matching_bracket(content, start)
+            if end is None:
                 continue
-
-            candidate = content[array_start : array_end + 1]
             try:
-                parsed = json.loads(candidate)
+                candidate = json.loads(content[start : end + 1])
             except json.JSONDecodeError:
                 continue
-
-            if isinstance(parsed, list):
-                extracted_rows.extend([row for row in parsed if isinstance(row, dict)])
-
-        return extracted_rows
+            if isinstance(candidate, list):
+                rows.extend(row for row in candidate if isinstance(row, dict))
+        return rows
 
     @staticmethod
     def _find_matching_bracket(text: str, start_index: int) -> Optional[int]:
         depth = 0
         for index in range(start_index, len(text)):
-            char = text[index]
-            if char == "[":
+            if text[index] == "[":
                 depth += 1
-            elif char == "]":
+            elif text[index] == "]":
                 depth -= 1
                 if depth == 0:
                     return index
         return None
 
     def _align_row_to_schema(self, row: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
-        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
-        if not ordered_columns:
+        ordered_columns = [config["name"] for config in self._ordered_column_configs]
+        if any(column_name in row for column_name in ordered_columns):
             return row, False
 
-        expected_matches = sum(1 for col in ordered_columns if col in row)
-        if expected_matches > 0:
-            return row, False
-
-        row_keys = list(row.keys())
-        positional_map = self._build_positional_key_map(row_keys)
+        positional_map = self._build_positional_key_map(list(row.keys()))
         if positional_map:
-            aligned = {}
-            for idx, column_name in enumerate(ordered_columns):
-                source_key = positional_map.get(idx)
-                aligned[column_name] = row.get(source_key) if source_key is not None else None
-            return aligned, True
-
-        if len(row_keys) == len(ordered_columns):
-            aligned_by_order = {}
-            for column_name, value in zip(ordered_columns, row.values()):
-                aligned_by_order[column_name] = value
-            return aligned_by_order, True
-
+            return {
+                column_name: row.get(positional_map.get(index))
+                for index, column_name in enumerate(ordered_columns)
+            }, True
+        if len(row) == len(ordered_columns):
+            return dict(zip(ordered_columns, row.values())), True
         return row, False
 
     def _build_positional_key_map(self, row_keys: Sequence[Any]) -> Dict[int, str]:
@@ -486,27 +282,21 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             if position is None or position < 0:
                 return {}
             indexed_keys.append((position, key))
-
-        indexed_keys.sort(key=lambda item: item[0])
-        return {position: key for position, key in indexed_keys}
+        return dict(sorted(indexed_keys))
 
     @staticmethod
     def _extract_positional_index(key: str) -> Optional[int]:
-        lowered = key.lower().strip()
-
-        numeric_match = re.match(r"^(?:column|col|feature|field|attribute)[_\-\s]?(\d+)$", lowered)
+        normalized = key.lower().strip()
+        numeric_match = re.match(r"^(?:column|col|feature|field|attribute)[_\-\s]?(\d+)$", normalized)
         if numeric_match:
             return int(numeric_match.group(1)) - 1
-
-        alpha_match = re.match(r"^(?:column|col|feature|field|attribute)[_\-\s]?([a-z]+)$", lowered)
-        if alpha_match:
-            letters = alpha_match.group(1)
-            value = 0
-            for char in letters:
-                value = value * 26 + (ord(char) - ord("a") + 1)
-            return value - 1
-
-        return None
+        alpha_match = re.match(r"^(?:column|col|feature|field|attribute)[_\-\s]?([a-z]+)$", normalized)
+        if not alpha_match:
+            return None
+        value = 0
+        for character in alpha_match.group(1):
+            value = value * 26 + ord(character) - ord("a") + 1
+        return value - 1
 
     def _is_row_usable(
         self,
@@ -514,86 +304,56 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         aligned_row: Dict[str, Any],
         used_positional_mapping: bool,
     ) -> bool:
-        ordered_columns = [cfg["name"] for cfg in self._ordered_column_configs]
-        if not ordered_columns:
-            return False
-
-        values = [aligned_row.get(col) for col in ordered_columns]
+        ordered_columns = [config["name"] for config in self._ordered_column_configs]
+        values = [aligned_row.get(column_name) for column_name in ordered_columns]
         if not any(value is not None for value in values):
             return False
-
-        # Reject rows that mirror schema labels instead of real values, e.g. {"Age":"Age", ...}
-        echoed_columns = 0
-        for col, value in zip(ordered_columns, values):
-            if isinstance(value, str) and value.strip().lower() == col.strip().lower():
-                echoed_columns += 1
-        if echoed_columns >= max(1, math.ceil(len(ordered_columns) * 0.5)):
-            return False
-
-        # Reject rows containing nested structures in expected fields.
         if any(isinstance(value, (dict, list, tuple, set)) for value in values if value is not None):
             return False
-
+        echoed_columns = sum(
+            isinstance(value, str) and value.strip().lower() == column_name.lower()
+            for column_name, value in zip(ordered_columns, values)
+        )
+        if echoed_columns >= max(1, math.ceil(len(ordered_columns) * 0.5)):
+            return False
         if used_positional_mapping:
-            return any(value is not None for value in aligned_row.values())
-
-        expected_matches = sum(1 for col in ordered_columns if col in original_row)
-        return expected_matches >= max(1, math.ceil(len(ordered_columns) * 0.5))
+            return True
+        matches = sum(column_name in original_row for column_name in ordered_columns)
+        return matches >= max(1, math.ceil(len(ordered_columns) * 0.5))
 
     def _coerce_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
-        coerced: Dict[str, Any] = {}
-
+        result: Dict[str, Any] = {}
         for config in self._ordered_column_configs:
             column_name = config["name"]
             column_type = str(config.get("type", "STRING")).upper()
             value = row.get(column_name)
-            coerced[column_name] = self._coerce_value(column_name, column_type, value)
+            if column_type == "BOOLEAN":
+                result[column_name] = self.coerce_boolean(value)
+            elif column_type == "DATE":
+                result[column_name] = self.coerce_date(
+                    column_name,
+                    value,
+                    self._column_profiles,
+                    column_config=config,
+                )
+            elif column_type in self.NUMERIC_TYPES:
+                result[column_name] = self.coerce_numeric(
+                    column_name,
+                    column_type,
+                    value,
+                    self._column_profiles,
+                )
+            else:
+                result[column_name] = self.coerce_string(value)
+        return result
 
-        return coerced
+    def _get_model(self) -> bytes:
+        return cloudpickle.dumps(self)
 
-    def _coerce_non_text_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
-        coerced = self._coerce_row(row)
-        for config in self._ordered_column_configs:
-            column_name = config["name"]
-            column_type = str(config.get("type", "STRING")).upper()
-            if column_type == "TEXT":
-                coerced[column_name] = MISSING_VALUE_STRING
-        return coerced
+    def _load_model(self, filepath: str) -> "LlmTabularSynthesizer":
+        with open(filepath, "rb") as file:
+            model: "LlmTabularSynthesizer" = cloudpickle.load(file)
+        return model
 
-    def _merge_text_only_row(self, structured_row: Dict[str, Any], candidate_row: Dict[str, Any]) -> Dict[str, Any]:
-        merged: Dict[str, Any] = {}
-        for config in self._ordered_column_configs:
-            column_name = config["name"]
-            column_type = str(config.get("type", "STRING")).upper()
-            if column_type == "TEXT":
-                merged[column_name] = candidate_row.get(column_name, structured_row.get(column_name))
-                continue
-            merged[column_name] = structured_row.get(column_name)
-        return merged
-
-    def _coerce_value(self, column_name: str, column_type: str, value: Any) -> Any:
-        if column_type == "BOOLEAN":
-            return self.coerce_boolean(value)
-
-        if column_type == "DATE":
-            matching_config = next(
-                (config for config in self._ordered_column_configs if config["name"] == column_name),
-                None,
-            )
-            return self.coerce_date(
-                column_name,
-                value,
-                self._column_profiles,
-                column_config=matching_config,
-            )
-
-        if column_type in self.NUMERIC_TYPES:
-            return self.coerce_numeric(column_name, column_type, value, self._column_profiles)
-
-        if column_type == "TEXT":
-            return self.coerce_text(value)
-
-        return self.coerce_string(value)
-
-    def _print_remaining_time(self, generated: int, total: int) -> None:
-        self.report_remaining_time(self._sample_start_time, generated, total)
+    def _save_data(self, sample: pd.DataFrame, filename: str) -> None:
+        sample.to_csv(filename, index=False)

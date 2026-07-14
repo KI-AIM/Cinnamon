@@ -5,6 +5,7 @@ from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_few_shot_text_synthesis import (
     LlmNearestNeighborFewShotTextSynthesisSynthesizer,
 )
+from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
     LlmTextOnlyParaphraseSynthesisSynthesizer,
 )
@@ -73,6 +74,14 @@ synthesizer_classes = {
         'display_name': 'LLM Nearest-neighbor Few-shot Text Synthesis',
         'description': 'LLM Nearest-neighbor Few-shot Text Synthesis is a language-model-based synthesizer designed to generate realistic text fields for synthetic tabular rows while using original data as semantic context. Leveraging large language models, it creates text values that align with the surrounding structured columns and can correct inconsistent structured values when necessary. This approach is especially useful for datasets that combine tabular attributes with free-text descriptions, comments, reports, or notes. It helps maintain semantic coherence between generated text and structured data, improving the usability of synthetic datasets for downstream analysis or testing. The structured data is not created by this model',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml'
+    },
+    'llm_tabular': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTabularSynthesizer,
+        'display_name': 'LLM Structured Tabular Synthesis',
+        'description': 'Generate structured-only synthetic tabular rows with an LLM from statistical column profiles calculated on a configurable sample of the input dataset.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     },
     'llm_text_only_paraphrase_synthesis': {
         'version': '0.1',

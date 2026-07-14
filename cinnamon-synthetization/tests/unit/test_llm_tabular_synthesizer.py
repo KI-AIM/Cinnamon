@@ -3,13 +3,14 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from data_processing.utils import MISSING_VALUE_STRING
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
+from synthetic_tabular_data_generator.tabular_data_synthesizer import SynthesizerOperationError
 
 
 def _attribute_config() -> dict:
@@ -23,56 +24,21 @@ def _attribute_config() -> dict:
     }
 
 
-def _algorithm_config(provider: str = "ollama") -> dict:
+def _algorithm_config(*, profile_rows=2, num_samples=3) -> dict:
     return {
         "synthetization_configuration": {
             "algorithm": {
-                "llm_profile": {
-                    "llm_profile": "Test Profile",
-                },
-                "model_parameter": {},
-                "model_fitting": {
-                    "few_shot_rows": 2,
-                },
+                "llm_profile": {"llm_profile": "Test Profile"},
+                "model_parameter": {"profile_rows": profile_rows},
+                "model_fitting": {"user_prompt_domain_context": "Clinical registry data."},
                 "sampling": {
-                    "num_samples": 3,
+                    "num_samples": num_samples,
                     "temperature": 0.3,
                     "top_p": 0.9,
                 },
             }
         }
     }
-
-
-def _set_shared_llm_env(monkeypatch, provider: str) -> None:
-    endpoint_path = "/api/generate" if provider == "ollama" else "/v1/chat/completions"
-    healthcheck_path = "/api/tags" if provider == "ollama" else "/v1/models"
-    base_url = "http://127.0.0.1:11434" if provider == "ollama" else "http://gpu.example.org:7086"
-    model_name = "llama3.1:8b" if provider == "ollama" else "gpt-test"
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_IDS", "test-profile")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_NAME", "Test Profile")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_PROVIDER", provider)
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MODEL_NAME", model_name)
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_BASE_URL", base_url)
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_ENDPOINT_PATH", endpoint_path)
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_HEALTHCHECK_PATH", healthcheck_path)
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_API_KEY", "")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_TIMEOUT_SECONDS", "5")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MAX_RETRIES", "2")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_VERIFY_SSL", "true")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MAX_TOKENS", "1024")
-
-
-class _DummyResponse:
-    def __init__(self, payload: dict):
-        self._payload = payload
-        self.status_code = 200
-
-    def raise_for_status(self):
-        return None
-
-    def json(self):
-        return self._payload
 
 
 def _dataset() -> pd.DataFrame:
@@ -86,427 +52,214 @@ def _dataset() -> pd.DataFrame:
     )
 
 
-def _attribute_config_with_text() -> dict:
-    return {
-        "configurations": [
-            {"index": 0, "name": "age", "type": "INTEGER"},
-            {"index": 1, "name": "group", "type": "STRING"},
-            {"index": 2, "name": "notes", "type": "TEXT"},
-        ]
-    }
-
-
-def _dataset_with_text() -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "age": [28, 35, 44],
-            "group": ["A", "B", "A"],
-            "notes": ["stable patient", "high risk patient", "follow-up needed"],
-        }
+def _set_llm_env(monkeypatch, provider="ollama") -> None:
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_IDS", "test-profile")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_NAME", "Test Profile")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_PROVIDER", provider)
+    monkeypatch.setenv(
+        "CINNAMON_LLM_PROFILE_TEST_PROFILE_MODEL_NAME",
+        "llama3.1:8b" if provider == "ollama" else "gpt-test",
     )
-
-
-def test_llm_tabular_synthesizer_generates_requested_rows_via_ollama(monkeypatch):
-    call_counter = {"count": 0}
-    _set_shared_llm_env(monkeypatch, provider="ollama")
-
-    def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/api/tags"):
-            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-
-        if method == "POST" and url.endswith("/api/generate"):
-            call_counter["count"] += 1
-            prompt = kwargs["json"]["prompt"]
-            assert "You generate non-TEXT fields for synthetic tabular rows." in prompt
-            assert "GENERATION TASK" in prompt
-            assert "Generate exactly 1 row." in prompt
-
-            rows = [
-                {"age": 30 + call_counter["count"], "height": 170.0 + call_counter["count"], "risk": True, "group": "A"},
-            ]
-            return _DummyResponse({"response": json.dumps({"rows": rows})})
-
-        raise AssertionError(f"Unexpected request: {method} {url}")
-
-    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_anonymization_configuration(_algorithm_config(provider="ollama"))
-    synthesizer.initialize_attribute_configuration(_attribute_config())
-    synthesizer.initialize_dataset(_dataset())
-    synthesizer.initialize_synthesizer()
-    synthesizer.fit()
-
-    sample = synthesizer.sample()
-
-    assert list(sample.columns) == ["age", "height", "risk", "group"]
-    assert len(sample) == 3
-    assert call_counter["count"] == 3
-    assert sample["age"].between(28, 44).all()
-    assert sample["height"].between(168.0, 182.1).all()
-    assert sample["risk"].isin([True, False]).all()
-
-
-def test_llm_tabular_synthesizer_generates_requested_rows_via_openai_compatible(monkeypatch):
-    call_counter = {"count": 0}
-    _set_shared_llm_env(monkeypatch, provider="openai_compatible")
-
-    def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/v1/models"):
-            return _DummyResponse({"data": [{"id": "gpt-test"}]})
-
-        if method == "POST" and url.endswith("/v1/chat/completions"):
-            call_counter["count"] += 1
-            prompt = kwargs["json"]["messages"][1]["content"]
-            assert "You generate non-TEXT fields for synthetic tabular rows." in prompt
-            assert "GENERATION TASK" in prompt
-            assert "Generate exactly 1 row." in prompt
-            content = json.dumps(
-                {
-                    "rows": [
-                        {
-                            "age": 28 + call_counter["count"],
-                            "height": 169.5 + call_counter["count"],
-                            "risk": call_counter["count"] % 2 == 0,
-                            "group": chr(ord("A") + call_counter["count"] - 1),
-                        },
-                    ]
-                }
-            )
-            return _DummyResponse({"choices": [{"message": {"content": content}}]})
-
-        raise AssertionError(f"Unexpected request: {method} {url}")
-
-    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_anonymization_configuration(_algorithm_config(provider="openai_compatible"))
-    synthesizer.initialize_attribute_configuration(_attribute_config())
-    synthesizer.initialize_dataset(_dataset())
-    synthesizer.initialize_synthesizer()
-    synthesizer.fit()
-
-    sample = synthesizer.sample()
-
-    assert len(sample) == 3
-    assert call_counter["count"] == 3
-    assert sample["age"].tolist() == [29, 30, 31]
-    assert sample["group"].tolist() == ["A", "B", "C"]
-
-
-def test_llm_tabular_synthesizer_maps_positional_column_names(monkeypatch):
-    call_counter = {"count": 0}
-    _set_shared_llm_env(monkeypatch, provider="ollama")
-
-    def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/api/tags"):
-            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-
-        if method == "POST" and url.endswith("/api/generate"):
-            call_counter["count"] += 1
-            rows = [
-                {
-                    "column_a": 30 + call_counter["count"],
-                    "column_b": 170.5 + call_counter["count"],
-                    "column_c": call_counter["count"] % 2 == 1,
-                    "column_d": chr(ord("A") + call_counter["count"] - 1),
-                },
-            ]
-            return _DummyResponse({"response": json.dumps({"rows": rows})})
-
-        raise AssertionError(f"Unexpected request: {method} {url}")
-
-    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    algorithm_config = _algorithm_config(provider="ollama")
-    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 2
-
-    synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
-    synthesizer.initialize_attribute_configuration(_attribute_config())
-    synthesizer.initialize_dataset(_dataset())
-    synthesizer.initialize_synthesizer()
-    synthesizer.fit()
-
-    sample = synthesizer.sample()
-
-    assert len(sample) == 2
-    assert call_counter["count"] == 2
-    assert sample["age"].tolist() == [31, 32]
-    assert sample["group"].tolist() == ["A", "B"]
-
-
-def test_llm_tabular_synthesizer_preserves_sparse_positional_indices():
-    synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_attribute_configuration(_attribute_config())
-
-    aligned_row, used_positional_mapping = synthesizer._align_row_to_schema(  # type: ignore[attr-defined]
-        {
-            "column_b": 176.5,
-            "column_d": "B",
-        }
+    monkeypatch.setenv(
+        "CINNAMON_LLM_PROFILE_TEST_PROFILE_BASE_URL",
+        "http://127.0.0.1:11434" if provider == "ollama" else "http://gpu.example.org:7086",
     )
-
-    assert used_positional_mapping is True
-    assert aligned_row == {
-        "age": None,
-        "height": 176.5,
-        "risk": None,
-        "group": "B",
-    }
-
-
-def test_llm_tabular_synthesizer_generates_text_in_single_step(monkeypatch):
-    _set_shared_llm_env(monkeypatch, provider="ollama")
-    post_count = {"count": 0}
-
-    def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/api/tags"):
-            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-
-        if method == "POST" and url.endswith("/api/generate"):
-            post_count["count"] += 1
-            prompt = kwargs["json"]["prompt"]
-            assert "Domain context: Hospital discharge documentation in German." in prompt
-            if "You generate non-TEXT fields for synthetic tabular rows." in prompt:
-                assert "REFERENCE EXAMPLES" in prompt
-                assert "- notes (TEXT): missing_ratio=" in prompt
-                assert "- notes (TEXT): frequent values [" not in prompt
-                return _DummyResponse(
-                    {
-                        "response": json.dumps(
-                            {
-                                "rows": [
-                                    {"age": 33, "group": "A", "notes": MISSING_VALUE_STRING},
-                                ]
-                            }
-                        )
-                    }
-                )
-
-            assert "You generate TEXT fields for repaired synthetic tabular rows." in prompt
-            assert "SYNTHETIC EXAMPLE" in prompt
-            return _DummyResponse(
-                {
-                    "response": json.dumps(
-                        {
-                            "row": {"age": 99, "group": "Z", "notes": "Patient shows stable recovery."},
-                        }
-                    )
-                }
-            )
-
-        raise AssertionError(f"Unexpected request: {method} {url}")
-
-    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    algorithm_config = _algorithm_config(provider="ollama")
-    algorithm_config["synthetization_configuration"]["algorithm"]["model_fitting"]["user_prompt_domain_context"] = (
-        "Hospital discharge documentation in German."
+    monkeypatch.setenv(
+        "CINNAMON_LLM_PROFILE_TEST_PROFILE_ENDPOINT_PATH",
+        "/api/generate" if provider == "ollama" else "/v1/chat/completions",
     )
-    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+    monkeypatch.setenv(
+        "CINNAMON_LLM_PROFILE_TEST_PROFILE_HEALTHCHECK_PATH",
+        "/api/tags" if provider == "ollama" else "/v1/models",
+    )
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_TIMEOUT_SECONDS", "5")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MAX_RETRIES", "2")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_VERIFY_SSL", "true")
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_TEST_PROFILE_MAX_TOKENS", "1024")
 
+
+class _DummyResponse:
+    def __init__(self, payload: dict):
+        self.payload = payload
+        self.status_code = 200
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self.payload
+
+
+def _initialize_synthesizer(config: dict) -> LlmTabularSynthesizer:
     synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
-    synthesizer.initialize_attribute_configuration(_attribute_config_with_text())
-    synthesizer.initialize_dataset(_dataset_with_text())
-    synthesizer.initialize_synthesizer()
-    synthesizer.fit()
-
-    sample = synthesizer.sample()
-
-    assert len(sample) == 1
-    assert post_count["count"] == 2
-    assert sample["notes"].iloc[0] == "Patient shows stable recovery."
-
-
-def test_llm_tabular_ignores_profile_rows_and_prefers_model_parameter_few_shot(monkeypatch):
-    _set_shared_llm_env(monkeypatch, provider="ollama")
-
-    def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/api/tags"):
-            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-        if method == "POST" and url.endswith("/api/generate"):
-            return _DummyResponse({"response": json.dumps({"rows": [{"age": 30, "height": 170.0, "risk": True, "group": "A"}]})})
-        raise AssertionError(f"Unexpected request: {method} {url}")
-
-    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    algorithm_config = _algorithm_config(provider="ollama")
-    algorithm = algorithm_config["synthetization_configuration"]["algorithm"]
-    algorithm["model_parameter"] = {"profile_rows": 2, "few_shot_rows": 1}
-    algorithm["model_fitting"]["profile_rows"] = 999
-    algorithm["model_fitting"]["few_shot_rows"] = 999
-    algorithm["sampling"]["num_samples"] = 1
-
-    synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_anonymization_configuration(config)
     synthesizer.initialize_attribute_configuration(_attribute_config())
     synthesizer.initialize_dataset(_dataset())
     synthesizer.initialize_synthesizer()
     synthesizer.fit()
-
-    assert "profile_rows" not in synthesizer._fitting_kwargs
-    assert synthesizer._fitting_kwargs["few_shot_rows"] == 1
-    assert synthesizer._few_shot_source_df is not None
-    assert len(synthesizer._few_shot_source_df) == len(_dataset())
+    return synthesizer
 
 
-def test_llm_tabular_draws_new_few_shot_examples_for_each_prompt(monkeypatch):
-    call_counter = {"count": 0}
-    _set_shared_llm_env(monkeypatch, provider="ollama")
-
+def test_llm_tabular_generates_structured_rows_and_includes_profiles(monkeypatch):
+    _set_llm_env(monkeypatch)
     prompts = []
 
     def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/api/tags"):
+        if method == "GET":
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-
-        if method == "POST" and url.endswith("/api/generate"):
-            call_counter["count"] += 1
-            prompt = kwargs["json"]["prompt"]
-            prompts.append(prompt)
-            return _DummyResponse(
-                {
-                    "response": json.dumps(
-                        {
-                            "rows": [
-                                {"age": 30 + call_counter["count"], "height": 170.0, "risk": True, "group": "A"},
-                            ]
-                        }
-                    )
-                }
-            )
-
-        raise AssertionError(f"Unexpected request: {method} {url}")
+        prompts.append(kwargs["json"]["prompt"])
+        index = len(prompts)
+        return _DummyResponse(
+            {
+                "response": json.dumps(
+                    {
+                        "rows": [
+                            {"age": 30 + index, "height": 170.0 + index, "risk": True, "group": "A"}
+                        ]
+                    }
+                )
+            }
+        )
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    algorithm_config = _algorithm_config(provider="ollama")
-    algorithm_config["synthetization_configuration"]["algorithm"]["model_parameter"]["few_shot_rows"] = 1
-    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 3
-
-    synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
-    synthesizer.initialize_attribute_configuration(_attribute_config())
-    synthesizer.initialize_dataset(_dataset())
-    synthesizer.initialize_synthesizer()
-    synthesizer.fit()
-
-    draw_counter = {"count": 0}
-
-    def fake_draw_examples():
-        draw_counter["count"] += 1
-        return [{"age": 100 + draw_counter["count"], "height": 171.0, "risk": True, "group": "X"}]
-
-    synthesizer._draw_few_shot_examples = fake_draw_examples  # type: ignore[assignment]
-
-    sample = synthesizer.sample()
+    sample = _initialize_synthesizer(_algorithm_config()).sample()
 
     assert len(sample) == 3
-    assert call_counter["count"] == 3
-    assert draw_counter["count"] == 3
-    assert "REFERENCE EXAMPLES" in prompts[0]
-    assert '"age": 101' in prompts[0]
-    assert '"age": 102' in prompts[1]
-    assert '"age": 103' in prompts[2]
+    assert list(sample.columns) == ["age", "height", "risk", "group"]
+    assert len(prompts) == 3
+    assert "only structured tabular data" in prompts[0]
+    assert "calculated from 2 of 3 input rows" in prompts[0]
+    assert "Statistical column profiles:" in prompts[0]
+    assert "- age (INTEGER): min=" in prompts[0]
+    assert '"rows": [{"age": "<value>"' in prompts[0]
+    assert "Generate exactly 1 row." in prompts[0]
+    assert "REFERENCE EXAMPLES" not in prompts[0]
 
 
-def test_llm_tabular_reports_sampling_remaining_time_via_callback(monkeypatch):
-    _set_shared_llm_env(monkeypatch, provider="ollama")
+def test_llm_tabular_supports_openai_compatible(monkeypatch):
+    _set_llm_env(monkeypatch, provider="openai_compatible")
+    calls = {"count": 0}
 
     def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/api/tags"):
-            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-        if method == "POST" and url.endswith("/api/generate"):
-            return _DummyResponse({"response": json.dumps({"rows": [{"age": 30, "height": 170.0, "risk": True, "group": "A"}]})})
-        raise AssertionError(f"Unexpected request: {method} {url}")
+        if method == "GET":
+            return _DummyResponse({"data": [{"id": "gpt-test"}]})
+        calls["count"] += 1
+        content = json.dumps(
+            {"rows": [{"age": 29, "height": 169.5, "risk": False, "group": "B"}]}
+        )
+        return _DummyResponse({"choices": [{"message": {"content": content}}]})
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+    sample = _initialize_synthesizer(_algorithm_config(num_samples=1)).sample()
 
-    algorithm_config = _algorithm_config(provider="ollama")
-    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
+    assert calls["count"] == 1
+    assert sample.to_dict(orient="records") == [
+        {"age": 29, "height": 169.5, "risk": False, "group": "B"}
+    ]
 
+
+def test_llm_tabular_rejects_text_columns():
+    synthesizer = LlmTabularSynthesizer()
+    with pytest.raises(SynthesizerOperationError, match="only supports structured data"):
+        synthesizer.initialize_attribute_configuration(
+            {"configurations": [{"index": 0, "name": "notes", "type": "TEXT"}]}
+        )
+
+
+def test_llm_tabular_caps_profile_rows_at_dataset_size(monkeypatch):
+    _set_llm_env(monkeypatch)
+    monkeypatch.setattr(
+        "synthetic_tabular_data_generator.llm.client.requests.request",
+        lambda method, url, **kwargs: _DummyResponse({"models": [{"name": "llama3.1:8b"}]}),
+    )
+    synthesizer = _initialize_synthesizer(_algorithm_config(profile_rows=999, num_samples=1))
+
+    assert synthesizer._requested_profile_rows == 999
+    assert synthesizer._profile_rows_used == len(_dataset())
+    assert "calculated from 3 of 3 input rows" in synthesizer._generation_prompt_prefix
+
+
+def test_llm_tabular_uses_all_rows_for_unresolved_dataset_placeholder(monkeypatch):
+    _set_llm_env(monkeypatch)
+    monkeypatch.setattr(
+        "synthetic_tabular_data_generator.llm.client.requests.request",
+        lambda method, url, **kwargs: _DummyResponse({"models": [{"name": "llama3.1:8b"}]}),
+    )
+    synthesizer = _initialize_synthesizer(
+        _algorithm_config(profile_rows="$dataset.original.numberRows", num_samples=1)
+    )
+
+    assert synthesizer._profile_rows_used == len(_dataset())
+
+
+def test_llm_tabular_rejects_non_positive_profile_rows(monkeypatch):
+    _set_llm_env(monkeypatch)
+    synthesizer = LlmTabularSynthesizer()
+    with pytest.raises(SynthesizerOperationError, match="profile_rows must be greater than 0"):
+        synthesizer.initialize_anonymization_configuration(_algorithm_config(profile_rows=0))
+
+
+def test_llm_tabular_maps_positional_column_names(monkeypatch):
+    _set_llm_env(monkeypatch)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET":
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        return _DummyResponse(
+            {
+                "response": json.dumps(
+                    {"rows": [{"column_a": 31, "column_b": 171.0, "column_c": True, "column_d": "A"}]}
+                )
+            }
+        )
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+    sample = _initialize_synthesizer(_algorithm_config(num_samples=1)).sample()
+
+    assert sample.to_dict(orient="records") == [
+        {"age": 31, "height": 171.0, "risk": True, "group": "A"}
+    ]
+
+
+def test_llm_tabular_reports_sampling_completion(monkeypatch):
+    _set_llm_env(monkeypatch)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET":
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        return _DummyResponse(
+            {"response": json.dumps({"rows": [{"age": 30, "height": 170.0, "risk": True, "group": "A"}]})}
+        )
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
     synthesizer = LlmTabularSynthesizer()
     updates = []
-    synthesizer.set_progress_callback(lambda step, remaining_time: updates.append((step, remaining_time)))
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.set_progress_callback(lambda step, remaining: updates.append((step, remaining)))
+    synthesizer.initialize_anonymization_configuration(_algorithm_config(num_samples=1))
     synthesizer.initialize_attribute_configuration(_attribute_config())
     synthesizer.initialize_dataset(_dataset())
     synthesizer.initialize_synthesizer()
     synthesizer.fit()
-
     synthesizer.sample()
 
     assert updates[-1] == ("sampling", 0)
 
 
-def test_llm_tabular_caches_generation_prompt_prefix(monkeypatch):
-    _set_shared_llm_env(monkeypatch, provider="ollama")
-
-    def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/api/tags"):
-            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-        if method == "POST" and url.endswith("/api/generate"):
-            return _DummyResponse(
-                {"response": json.dumps({"rows": [{"age": 30, "height": 170.0, "risk": True, "group": "A"}]})}
-            )
-        raise AssertionError(f"Unexpected request: {method} {url}")
-
-    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    algorithm_config = _algorithm_config(provider="ollama")
-    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 2
-
-    synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
-    synthesizer.initialize_attribute_configuration(_attribute_config())
-    synthesizer.initialize_dataset(_dataset())
-    synthesizer.initialize_synthesizer()
-
-    original_builder = synthesizer._build_non_text_generation_prompt_prefix
-    build_counter = {"count": 0}
-
-    def counted_builder():
-        build_counter["count"] += 1
-        return original_builder()
-
-    synthesizer._build_non_text_generation_prompt_prefix = counted_builder  # type: ignore[assignment]
-
-    synthesizer.fit()
-    synthesizer.sample()
-
-    assert build_counter["count"] == 1
-
-
-def test_llm_tabular_logs_diagnostics_for_invalid_generation_attempts(monkeypatch):
-    _set_shared_llm_env(monkeypatch, provider="ollama")
+def test_llm_tabular_logs_invalid_response_diagnostics(monkeypatch):
+    _set_llm_env(monkeypatch)
     logs = []
 
     def fake_request(method, url, **kwargs):
-        if method == "GET" and url.endswith("/api/tags"):
+        if method == "GET":
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-        if method == "POST" and url.endswith("/api/generate"):
-            return _DummyResponse({"response": json.dumps({"rows": [{"age": "age"}]})})
-        raise AssertionError(f"Unexpected request: {method} {url}")
+        return _DummyResponse({"response": json.dumps({"rows": [{"age": "age"}]})})
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
     monkeypatch.setattr("builtins.print", lambda message: logs.append(message))
+    synthesizer = _initialize_synthesizer(_algorithm_config(num_samples=1))
 
-    algorithm_config = _algorithm_config(provider="ollama")
-    algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = 1
-
-    synthesizer = LlmTabularSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
-    synthesizer.initialize_attribute_configuration(_attribute_config())
-    synthesizer.initialize_dataset(_dataset())
-    synthesizer.initialize_synthesizer()
-    synthesizer.fit()
-
-    try:
+    with pytest.raises(SynthesizerOperationError):
         synthesizer.sample()
-    except RuntimeError:
-        pass
 
-    assert any("[LLM_TABULAR_NON_TEXT_GENERATION]" in entry for entry in logs)
-    assert any("unusable_rows=" in entry for entry in logs)
+    assert any("[LLM_TABULAR_STRUCTURED_GENERATION]" in message for message in logs)
+    assert any("unusable_rows=" in message for message in logs)

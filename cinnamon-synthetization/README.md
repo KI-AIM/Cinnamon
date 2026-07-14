@@ -259,10 +259,6 @@ Logs are written under `outputs/prompts/` by default.
 
 Used when structured rows already exist and only TEXT fields should be synthesized or enriched. It can optionally repair inconsistent structured values before generating text.
 
-### `llm_nearest_neighbor_knowledge_grounded_text_synthesis`
-
-Currently exposes the knowledge-grounded variant, but knowledge-base grounding is not implemented yet. The available `knowledge_source_type` is therefore currently limited.
-
 ## Development Notes
 
 - Status files are written to `outputs/status/`

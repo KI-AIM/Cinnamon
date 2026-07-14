@@ -347,79 +347,6 @@ def test_start_synthetization_process_allows_missing_original_data_for_text_synt
     assert isinstance(app_module.tasks["session-without-original-data"], StartedProcess)
 
 
-def test_suggest_required_attributes_returns_llm_suggestions(monkeypatch):
-    client = app_module.app.test_client()
-
-    monkeypatch.setattr(
-        app_module.LlmTextOnlySemanticVariationSynthesisSynthesizer,
-        "suggest_required_attributes",
-        lambda **_kwargs: [
-            {"name": "Diabetes", "description": "Mention diabetes when relevant."},
-            {"name": "Blutdruck", "description": "Include blood pressure findings when relevant."},
-        ],
-    )
-
-    response = client.post(
-        "/suggest_required_attributes/llm_text_only_semantic_variation_synthesis",
-        data={
-            "attribute_config": (
-                io.BytesIO(b"configurations:\n  - name: note\n    type: TEXT\n"),
-                "attribute_config.yaml",
-            ),
-            "algorithm_config": (
-                io.BytesIO(
-                    b"synthetization_configuration:\n"
-                    b"  algorithm:\n"
-                    b"    llm_profile:\n"
-                    b"      llm_profile: Test Profile\n"
-                ),
-                "algorithm_config.yaml",
-            ),
-            "data": (io.BytesIO(b"note\nalpha\nbeta\n"), "data.csv"),
-        },
-        content_type="multipart/form-data",
-    )
-
-    assert response.status_code == 200
-    payload = response.get_json()
-    assert payload == {
-        "required_attributes": [
-            {"name": "Diabetes", "description": "Mention diabetes when relevant."},
-            {"name": "Blutdruck", "description": "Include blood pressure findings when relevant."},
-        ],
-        "sample_size": 2,
-        "column_name": "note",
-    }
-
-
-def test_suggest_required_attributes_rejects_other_synthesizers():
-    client = app_module.app.test_client()
-
-    response = client.post(
-        "/suggest_required_attributes/llm_text_only_paraphrase_synthesis",
-        data={},
-        content_type="multipart/form-data",
-    )
-
-    assert response.status_code == 400
-    payload = response.get_json()
-    assert "not supported" in payload["message"]
-
-
-def test_suggest_named_list_rejects_unsupported_targets():
-    client = app_module.app.test_client()
-
-    response = client.post(
-        "/suggest_named_list/llm_text_only_paraphrase_synthesis/whitelist_attributes",
-        data={},
-        content_type="multipart/form-data",
-    )
-
-    assert response.status_code == 400
-    payload = response.get_json()
-    assert "not supported" in payload["message"]
-
-
 def test_start_synthetization_process_allows_missing_original_data_for_structured_synthesis(monkeypatch):
     app_module.tasks.clear()
     monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
@@ -1061,8 +988,8 @@ def test_build_text_synthesis_algorithm_config_preserves_num_samples_for_direct_
                 }
             }
         },
-        "llm_text_only_semantic_variation_synthesis",
-        "llm_text_only_semantic_variation_synthesis",
+        "llm_text_only_embedding_nearest_neighbor_synthesis",
+        "llm_text_only_embedding_nearest_neighbor_synthesis",
         57,
     )
 

@@ -28,13 +28,13 @@ describe("TextSynthesisConfigurationService", () => {
         const group = service.createGroup({
             synthetization_configuration: {
                 algorithm: {
-                    synthesizer: "llm_nearest_neighbor_knowledge_grounded_text_synthesis",
+                    synthesizer: "llm_nearest_neighbor_few_shot_text_synthesis",
                 },
             },
         }, false);
 
         const algorithmGroup = group.get("synthetization_configuration.algorithm") as any;
-        expect(algorithmGroup?.get("synthesizer")?.value).toBe("llm_nearest_neighbor_knowledge_grounded_text_synthesis");
+        expect(algorithmGroup?.get("synthesizer")?.value).toBe("llm_nearest_neighbor_few_shot_text_synthesis");
     });
 
     it("syncs only the parameters defined by the selected free-text algorithm", () => {
@@ -74,35 +74,13 @@ describe("TextSynthesisConfigurationService", () => {
         expect(algorithmGroup.get("sampling.temperature")?.value).toBe(0.3);
     });
 
-    it("includes knowledge_source_type when the YAML definition contains it", () => {
-        const root = new FormGroup({});
-        service.initForm(root, {
-            synthetization_configuration: {
-                algorithm: {
-                    synthesizer: "llm_nearest_neighbor_knowledge_grounded_text_synthesis",
-                    model_parameter: {
-                        knowledge_source_type: "NOT_IMPLEMENTED",
-                    },
-                },
-            },
-        } as any, false);
-
-        service.syncFormWithDefinition(root, createKnowledgeGroundedDefinition(), dataConfiguration, false);
-
-        const algorithmGroup = root.get("text_synthesis_configuration.synthetization_configuration.algorithm") as any;
-        expect(algorithmGroup.get("model_parameter.knowledge_source_type")?.value).toBe("NOT_IMPLEMENTED");
-    });
 });
 
 function createFewShotDefinition(): AlgorithmDefinition {
-    return createDefinition(false);
+    return createDefinition();
 }
 
-function createKnowledgeGroundedDefinition(): AlgorithmDefinition {
-    return createDefinition(true);
-}
-
-function createDefinition(includeKnowledgeSourceType: boolean): AlgorithmDefinition {
+function createDefinition(): AlgorithmDefinition {
     return {
         name: "free_text",
         version: "0.1",
@@ -164,19 +142,6 @@ function createDefinition(includeKnowledgeSourceType: boolean): AlgorithmDefinit
                         values: ["Random", "Attributes"],
                         switch: null,
                     },
-                    ...(includeKnowledgeSourceType ? [{
-                        name: "knowledge_source_type",
-                        type: ConfigurationInputType.STRING,
-                        label: "Knowledge Source Type",
-                        description: "",
-                        default_value: "NOT_IMPLEMENTED",
-                        mandatory: true,
-                        invert: null,
-                        min_value: null,
-                        max_value: null,
-                        values: ["NOT_IMPLEMENTED"],
-                        switch: null,
-                    }] : []),
                 ],
                 configurations: {},
                 options: {},

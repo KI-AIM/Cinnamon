@@ -14,8 +14,8 @@ from synthetic_tabular_data_generator.embedding_profiles import (
     EmbeddingProfileConfig,
     load_embedding_profile_config,
 )
-from synthetic_tabular_data_generator.algorithms.llm_text_only_semantic_variation_synthesis import (
-    LlmTextOnlySemanticVariationSynthesisSynthesizer,
+from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
+    LlmTextOnlyParaphraseSynthesisSynthesizer,
 )
 
 
@@ -116,7 +116,7 @@ def _manhattan(u: DenseVector, v: DenseVector) -> float:
 
 
 class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
-    LlmTextOnlySemanticVariationSynthesisSynthesizer
+    LlmTextOnlyParaphraseSynthesisSynthesizer
 ):
     """
     Generate TEXT-only rows using sparse BM25-style nearest-neighbor retrieval as prompt context.
@@ -207,23 +207,38 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
 
         self._build_ollama_reference_index(reference_texts)
 
+    def _sample(self) -> pd.DataFrame:
+        if self.dataset is None:
+            raise ValueError("Dataset is not initialized.")
+        if self._llm_client is None:
+            raise ValueError("LLM client is not initialized.")
+
+        source = self.dataset.copy().reset_index(drop=True)
+        num_samples = self._resolve_num_samples(len(source), allow_exceed_default=True)
+        source = source.sample(n=num_samples, replace=num_samples > len(source)).reset_index(drop=True)
+
+        rows = source.to_dict(orient="records")
+        total = len(rows)
+        self._sample_start_time = pd.Timestamp.utcnow().timestamp()
+        self._reset_generation_counters()
+
+        generated_rows = []
+        for row_index, row in enumerate(rows):
+            generated_rows.append(self._rewrite_row(row, row_index, total))
+            self.report_remaining_time(self._sample_start_time, len(generated_rows), total)
+
+        ordered_columns = [config["name"] for config in self._ordered_column_configs]
+        generated = pd.DataFrame(generated_rows)
+        for column_name in ordered_columns:
+            if column_name not in generated.columns:
+                generated[column_name] = pd.NA
+        return generated[ordered_columns]
+
     def _build_prompt_prefix(self) -> str:
         text_column = self._text_columns[0]
         domain_context = ""
         if self._user_prompt_domain_context:
             domain_context = f"Domain context: {self._user_prompt_domain_context}\n"
-
-        required_attributes_block = ""
-        if self._required_attributes:
-            lines = [
-                f"- {item['name']}: {item['description']}" if item["description"] else f"- {item['name']}"
-                for item in self._required_attributes
-            ]
-            required_attributes_block = (
-                "Required attributes that must be mentioned explicitly in the generated text:\n"
-                + "\n".join(lines)
-                + "\n"
-            )
 
         return (
             "You generate a new TEXT value for a fictional patient based on a source table row and similar reference texts.\n"
@@ -247,7 +262,6 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
             "- Before returning the result, compare it with every input case. If its event sequence, paragraph structure, or case-specific wording is still recognizably derived from one case, redesign and rewrite it.\n"
             "- Do not mention that the text is synthetic, fictional, generated, anonymized, or paraphrased.\n"
             f"- Keep a missing TEXT value as '{MISSING_VALUE_STRING}'.\n"
-            f"{required_attributes_block}"
             "Output rules:\n"
             "- Return ONLY valid JSON.\n"
             "- Use exactly this shape: {\"row\": { ... }}\n"

@@ -5,9 +5,6 @@ from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_few_shot_text_synthesis import (
     LlmNearestNeighborFewShotTextSynthesisSynthesizer,
 )
-from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_knowledge_grounded_text_synthesis import (
-    LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
-)
 from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
     LlmTextOnlyParaphraseSynthesisSynthesizer,
 )
@@ -16,9 +13,6 @@ from synthetic_tabular_data_generator.algorithms.llm_text_only_embedding_nearest
 )
 from synthetic_tabular_data_generator.algorithms.llm_text_only_indirect_identifier_rewrite_synthesis import (
     LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer,
-)
-from synthetic_tabular_data_generator.algorithms.llm_text_only_semantic_variation_synthesis import (
-    LlmTextOnlySemanticVariationSynthesisSynthesizer,
 )
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
@@ -80,14 +74,6 @@ synthesizer_classes = {
         'description': 'LLM Nearest-neighbor Few-shot Text Synthesis is a language-model-based synthesizer designed to generate realistic text fields for synthetic tabular rows while using original data as semantic context. Leveraging large language models, it creates text values that align with the surrounding structured columns and can correct inconsistent structured values when necessary. This approach is especially useful for datasets that combine tabular attributes with free-text descriptions, comments, reports, or notes. It helps maintain semantic coherence between generated text and structured data, improving the usability of synthetic datasets for downstream analysis or testing. The structured data is not created by this model',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml'
     },
-    'llm_nearest_neighbor_knowledge_grounded_text_synthesis': {
-        'version': '0.1',
-        'type': 'cross-sectional',
-        'class': LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
-        'display_name': 'LLM Knowledge-grounded Text Synthesis',
-        'description': 'Generate synthetic medical free-text fields using an LLM with dynamically selected similar original examples. Knowledge-base grounding is not implemented yet and is currently exposed only as NOT_IMPLEMENTED.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml'
-    },
     'llm_text_only_paraphrase_synthesis': {
         'version': '0.1',
         'type': 'cross-sectional',
@@ -111,14 +97,6 @@ synthesizer_classes = {
         'display_name': 'LLM Text-only Indirect Identifier Rewrite Synthesis',
         'description': 'Rewrite a single TEXT input column with an LLM while preserving medically relevant content and generalizing direct or indirect identifiers. This synthesizer expects exactly one free-text column and produces exactly one rewritten output row per input row.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_indirect_identifier_rewrite_synthesis.yaml'
-    },
-    'llm_text_only_semantic_variation_synthesis': {
-        'version': '0.1',
-        'type': 'cross-sectional',
-        'class': LlmTextOnlySemanticVariationSynthesisSynthesizer,
-        'display_name': 'LLM Text-only Semantic Variation Synthesis',
-        'description': 'Generate a new single TEXT column for fictional but plausible patients by sampling source texts and asking an LLM to create semantically similar variations. This synthesizer expects exactly one free-text column.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_semantic_variation_synthesis.yaml'
     }
 }
 

@@ -11,12 +11,9 @@ import de.kiaim.cinnamon.platform.model.configuration.*;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Collection;
@@ -31,9 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class ExternalConfigurationService {
-	private static final String NAMED_LIST_SUGGESTION_PATH_TEMPLATE =
-			"/suggest_named_list/%s/%s";
-
 	private final ObjectMapper yamlMapper;
 	private final WebClient yamlWebClient;
 
@@ -379,81 +373,6 @@ public class ExternalConfigurationService {
 					}
 				}
 			}
-		}
-	}
-
-	public JsonNode suggestNamedList(
-			final String listName,
-			final String attributeConfigurationYaml,
-			final String algorithmConfigurationYaml,
-			final byte[] dataCsv
-	) throws BadConfigurationNameException, InternalRequestException {
-		final String configurationName = "synthetization_configuration";
-		final ExternalConfiguration externalConfiguration = stepService.getExternalConfiguration(configurationName);
-		final ExternalServer externalServer = externalConfiguration.getExternalServer();
-		final ExternalServerInstance instance = externalServerInstanceService.findAvailableExternalServerInstance(
-				externalServer, true);
-
-		if (instance == null) {
-			throw new InternalRequestException(InternalRequestException.NO_INSTANCE_AVAILABLE,
-			                                   "No available external server instance found for configuration '" +
-			                                   configurationName + "'");
-		}
-
-		final MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
-		bodyBuilder.part("attribute_config", new ByteArrayResource(attributeConfigurationYaml.getBytes()) {
-			@Override
-			public String getFilename() {
-				return "attribute_config.yaml";
-			}
-		}).contentType(MediaType.APPLICATION_OCTET_STREAM);
-		bodyBuilder.part("algorithm_config", new ByteArrayResource(algorithmConfigurationYaml.getBytes()) {
-			@Override
-			public String getFilename() {
-				return "algorithm_config.yaml";
-			}
-		}).contentType(MediaType.APPLICATION_OCTET_STREAM);
-		bodyBuilder.part("data", new ByteArrayResource(dataCsv) {
-			@Override
-			public String getFilename() {
-				return "data.csv";
-			}
-		}).contentType(MediaType.TEXT_PLAIN);
-
-		try {
-			final String synthesizerName = switch (listName) {
-				case "required_attributes" -> "llm_text_only_semantic_variation_synthesis";
-				default -> throw new InternalRequestException(
-						InternalRequestException.CONFIGURATION_DEFINITION,
-						"Unsupported named list suggestion target: " + listName
-				);
-			};
-			final String path = NAMED_LIST_SUGGESTION_PATH_TEMPLATE.formatted(synthesizerName, listName);
-			return yamlWebClient.mutate()
-			                    .baseUrl(instance.getUrl())
-			                    .build()
-			                    .post()
-			                    .uri(path)
-			                    .contentType(MediaType.MULTIPART_FORM_DATA)
-			                    .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
-			                    .accept(MediaType.APPLICATION_JSON)
-			                    .retrieve()
-			                    .onStatus(HttpStatusCode::isError,
-			                              errorResponse -> errorResponse.toEntity(String.class)
-			                                                            .map(httpService::buildErrorResponse))
-			                    .bodyToMono(JsonNode.class)
-			                    .block();
-		} catch (final RequestRuntimeException e) {
-			final String message = httpService.buildError(e, "suggest named list values");
-			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
-			throw new InternalRequestException(InternalRequestException.CONFIGURATION_DEFINITION, message,
-			                                   errorDetails, e);
-		} catch (final Exception e) {
-			final String message = "Failed to suggest named list values for configuration '" + configurationName +
-			                      "' and list '" + listName + "'! " + e.getMessage();
-			final ErrorDetails errorDetails = new ErrorDetails().withConfigurationName(configurationName);
-			throw new InternalRequestException(InternalRequestException.CONFIGURATION_DEFINITION, message,
-			                                   errorDetails, e);
 		}
 	}
 

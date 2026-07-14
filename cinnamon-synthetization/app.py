@@ -27,9 +27,6 @@ from data_processing.utils import (
 )
 from synthetic_tabular_data_generator.llm import get_llm_profile_names
 from synthetic_tabular_data_generator.embedding_profiles import get_embedding_profile_names
-from synthetic_tabular_data_generator.algorithms.llm_text_only_semantic_variation_synthesis import (
-    LlmTextOnlySemanticVariationSynthesisSynthesizer,
-)
 
 
 app = Flask(__name__)
@@ -268,36 +265,6 @@ def initialize_input_data(synthesizer_name):
         return str(exc), 400
 
     return session_key, callback_url, file_path_status, attribute_config, algorithm_config, data, original_data
-
-
-def _load_named_list_suggestion_request():
-    if 'attribute_config' not in request.files:
-        raise ValueError("No attribute_config file provided")
-    if 'algorithm_config' not in request.files:
-        raise ValueError("No algorithm_config file provided")
-    if 'data' not in request.files:
-        raise ValueError("No data file provided")
-
-    attribute_config = _load_yaml_file(request.files['attribute_config'], 'attribute_config', required_keys=('configurations',))
-    _validate_attribute_config(attribute_config)
-
-    algorithm_config = _load_yaml_file(
-        request.files['algorithm_config'],
-        'algorithm_config',
-        required_keys=('synthetization_configuration',),
-    )
-    _validate_algorithm_config(algorithm_config)
-
-    data = _load_csv_file(request.files['data'], 'data')
-    return attribute_config, algorithm_config, data
-
-
-NAMED_LIST_SUGGESTERS = {
-    ("llm_text_only_semantic_variation_synthesis", "required_attributes"): (
-        LlmTextOnlySemanticVariationSynthesisSynthesizer,
-        "suggest_required_attributes",
-    ),
-}
 
 
 def prepare_callback_data(samples, synthesizer_model):
@@ -1267,62 +1234,6 @@ def start_synthetization_process(synthesizer_name):
             'error': str(e),
             'session_key': task_id
         }), 500
-
-
-def _suggest_named_list_response(synthesizer_name, list_name, *, include_items=True):
-    suggester = NAMED_LIST_SUGGESTERS.get((synthesizer_name, list_name))
-    if suggester is None:
-        return jsonify({
-            "message": f"{list_name} suggestions are not supported for synthesizer '{synthesizer_name}'.",
-        }), 400
-
-    suggester_class, suggester_method_name = suggester
-    suggest_fn = getattr(suggester_class, suggester_method_name)
-
-    try:
-        attribute_config, algorithm_config, data = _load_named_list_suggestion_request()
-        text_column = attribute_config["configurations"][0]["name"]
-        sample_size = len(
-            LlmTextOnlySemanticVariationSynthesisSynthesizer._sample_non_missing_examples(
-                data[text_column],
-                max_examples=10,
-            )
-        )
-        suggestions = suggest_fn(
-            attribute_configuration=attribute_config,
-            algorithm_configuration=algorithm_config,
-            dataset=data,
-            max_examples=10,
-        )
-        payload = {
-            list_name: suggestions,
-            "sample_size": sample_size,
-            "column_name": text_column,
-        }
-        if include_items:
-            payload["items"] = suggestions
-        return jsonify(payload)
-    except ValueError as exc:
-        return jsonify({"message": str(exc)}), 400
-    except Exception as exc:
-        return jsonify({
-            "message": f"Failed to suggest {list_name}.",
-            "error": str(exc),
-        }), 500
-
-
-@app.route('/suggest_required_attributes/<string:synthesizer_name>', methods=['POST'])
-def suggest_required_attributes(synthesizer_name):
-    return _suggest_named_list_response(
-        synthesizer_name,
-        "required_attributes",
-        include_items=False,
-    )
-
-
-@app.route('/suggest_named_list/<string:synthesizer_name>/<string:list_name>', methods=['POST'])
-def suggest_named_list(synthesizer_name, list_name):
-    return _suggest_named_list_response(synthesizer_name, list_name)
 
 
 @app.route('/<string:module_name>/synthesizer_config/<string:filename>', methods=['GET'])

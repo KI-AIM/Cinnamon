@@ -104,12 +104,15 @@ def test_llm_text_only_embedding_nearest_neighbor_synthesis_uses_bm25_reference_
             prompt = kwargs["json"]["prompt"]
             assert "NEAREST-NEIGHBOR REFERENCE EXAMPLES" in prompt
             assert "Information:\n" in prompt
-            assert "Preserve the medical domain, document type, language, tone, structure, and level of detail." in prompt
-            assert "The generated case may remain clinically similar to the source, but it must not be a direct paraphrase." in prompt
-            assert "Change at least three relevant case aspects" in prompt
+            assert "Treat the source row and reference texts as pools of domain, content, and style signals" in prompt
+            assert "Preserve only the medical domain, document type, language, tone, approximate length" in prompt
+            assert "must differ substantially from the source in at least five of these areas" in prompt
+            assert "Do not preserve the source case's narrative blueprint" in prompt
             assert "The document date must not precede the described discharge date." in prompt
             assert "internally check: 1. chronology, 2. diagnosis and ICD consistency" in prompt
             assert "Keep a missing TEXT value as '__MISSING_VALUE__'." in prompt
+            assert "Use the source row as the main clinical basis" not in prompt
+            assert "Change at least three relevant case aspects" not in prompt
             assert "Hypertension follow-up was scheduled after persistently elevated blood pressure." in prompt
             assert "The patient enjoyed gardening and adopted a new cat." not in prompt
             return _DummyResponse(

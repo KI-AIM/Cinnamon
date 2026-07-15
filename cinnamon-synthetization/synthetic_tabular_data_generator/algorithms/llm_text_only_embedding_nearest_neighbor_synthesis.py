@@ -179,6 +179,10 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
     def _fit(self) -> None:
         super()._fit()
 
+        self._fit_embedding_index()
+
+    def _fit_embedding_index(self) -> None:
+
         if self.dataset is None:
             raise ValueError("Dataset is not initialized.")
 
@@ -272,7 +276,8 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
         )
 
     def _build_rewrite_prompt(self, base_row: Dict[str, Any]) -> str:
-        prompt_row = self.serialize_row_for_prompt(base_row, self._ordered_column_configs)
+        text_column = self._text_columns[0]
+        prompt_row = {text_column: self.serialize_value(base_row.get(text_column))}
         reference_examples = self._neighbor_examples(base_row)
         reference_block = ""
         if reference_examples:

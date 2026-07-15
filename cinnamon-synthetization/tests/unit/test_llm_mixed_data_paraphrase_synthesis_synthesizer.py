@@ -1,5 +1,6 @@
 import json
 import sys
+import types
 from pathlib import Path
 
 import pandas as pd
@@ -14,6 +15,9 @@ from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synth
 )
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_indirect_identifier_rewrite_synthesis import (
     LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_mixed_data_embedding_nearest_neighbor_synthesis import (
+    LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
 )
 
 
@@ -165,3 +169,111 @@ def test_mixed_indirect_identifier_rewrite_then_aligns_structured_values(monkeyp
     assert '"age"' not in prompts[0]
     assert "Statistical profiles were calculated from 1 of 1 reference rows." in prompts[1]
     assert '"note": "Der etwa 80-jährige Patient wurde entlassen."' in prompts[1]
+
+
+def test_mixed_embedding_combines_structured_similarity_and_generates_extra_rows(monkeypatch):
+    _set_llm_env(monkeypatch)
+    prompts = []
+    numeric_ranges = []
+
+    def fake_linear(*, max):
+        numeric_ranges.append(max)
+        return lambda x, y: 1.0 - min(abs(float(x) - float(y)) / max, 1.0)
+
+    fake_cbrkit = types.ModuleType("cbrkit")
+    fake_cbrkit.sim = types.SimpleNamespace(
+        numbers=types.SimpleNamespace(linear=fake_linear),
+        generic=types.SimpleNamespace(equality=lambda: (lambda x, y: 1.0 if x == y else 0.0)),
+    )
+    monkeypatch.setitem(sys.modules, "cbrkit", fake_cbrkit)
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET":
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+
+        prompt = kwargs["json"]["prompt"]
+        prompts.append(prompt)
+        if "SOURCE ROW" in prompt:
+            assert '"age"' not in prompt.split("SOURCE ROW", 1)[1].split("NEAREST-NEIGHBOR", 1)[0]
+            assert "Gardening was discussed during an otherwise routine visit." in prompt
+            assert "Hypertension required urgent medication adjustment." not in prompt
+            return _DummyResponse(
+                {"response": json.dumps({"row": {"note": "A new clinically plausible report."}})}
+            )
+        return _DummyResponse(
+            {"response": json.dumps({"row": {"age": 80, "visit_date": "02.01.2024", "note": "ignored"}})}
+        )
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    date_config = {
+        "index": 1,
+        "name": "visit_date",
+        "type": "DATE",
+        "configurations": [{"dateFormatter": "dd.MM.yyyy"}],
+    }
+    attribute_config = {
+        "configurations": [
+            {"index": 0, "name": "age", "type": "INTEGER"},
+            date_config,
+            {"index": 2, "name": "note", "type": "TEXT"},
+        ]
+    }
+    algorithm_config = {
+        "synthetization_configuration": {
+            "algorithm": {
+                "llm_profile": {"llm_profile": "Test Profile"},
+                "model_parameter": {
+                    "profile_rows": 99,
+                    "few_shot_examples": 1,
+                    "embedding_provider": "bm25",
+                    "similarity_function": "sparse_cosine",
+                    "exclude_self_match": True,
+                    "text_similarity_weight": 0.0,
+                    "structured_similarity_weight": 1.0,
+                },
+                "model_fitting": {},
+                "sampling": {"num_samples": 3, "temperature": 0.8, "top_p": 0.95},
+            }
+        }
+    }
+    source_date = int(pd.Timestamp("2024-01-02").timestamp())
+    old_date = int(pd.Timestamp("2010-01-01").timestamp())
+    dataset = pd.DataFrame([{"age": 80, "visit_date": source_date, "note": "Hypertension follow-up."}])
+    reference = pd.DataFrame(
+        [
+            {
+                "age": 20,
+                "visit_date": old_date,
+                "note": "Hypertension required urgent medication adjustment.",
+            },
+            {
+                "age": 80,
+                "visit_date": source_date,
+                "note": "Gardening was discussed during an otherwise routine visit.",
+            },
+        ]
+    )
+
+    synthesizer = LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(attribute_config)
+    synthesizer.initialize_dataset(dataset)
+    synthesizer.initialize_reference_dataset(reference)
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    sample = synthesizer.sample()
+
+    assert len(sample) == 3
+    assert sample["age"].tolist() == [80, 80, 80]
+    assert sample["note"].tolist() == ["A new clinically plausible report."] * 3
+    assert len(prompts) == 6
+    assert synthesizer._structured_similarity_backend == "cbrkit"
+    assert len(numeric_ranges) == 2
+    assert all(
+        "Statistical profiles were calculated from 2 of 2 reference rows." in prompt
+        for prompt in prompts
+        if "ROW WITH REWRITTEN TEXT" in prompt
+    )
+    assert synthesizer._normalize_structured_similarity_value(date_config, "02.01.2024") == source_date

@@ -24,11 +24,11 @@ DenseVector = list[float]
 
 
 @dataclass(slots=True)
-class _FallbackSparseBm25Encoder:
+class _SparseTextEncoder:
     vocabulary: dict[str, int]
 
     @classmethod
-    def from_texts(cls, texts: list[str]) -> "_FallbackSparseBm25Encoder":
+    def from_texts(cls, texts: list[str]) -> "_SparseTextEncoder":
         vocabulary: dict[str, int] = {}
         for text in texts:
             for token in cls._tokenize(text):
@@ -138,8 +138,7 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
         self._exclude_self_match = True
         self._reference_rows: list[dict[str, Any]] = []
         self._reference_vectors: list[Any] = []
-        self._fallback_encoder: Optional[_FallbackSparseBm25Encoder] = None
-        self._cbrkit_bm25_encoder: Any = None
+        self._sparse_encoder: Optional[_SparseTextEncoder] = None
         self._embedding_profile: Optional[EmbeddingProfileConfig] = None
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
@@ -199,8 +198,7 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
 
         self._reference_rows = reference_rows
         self._reference_vectors = []
-        self._fallback_encoder = None
-        self._cbrkit_bm25_encoder = None
+        self._sparse_encoder = None
 
         if not reference_texts:
             return
@@ -326,19 +324,9 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
         return [text for _, text in scored_examples[: self._few_shot_examples]]
 
     def _build_sparse_reference_index(self, reference_texts: list[str]) -> None:
-        # ponytail: use cbrkit[bm25] when available; keep a tiny local fallback so the feature works in the current image.
-        try:
-            from cbrkit.sim.embed import bm25 as cbrkit_bm25
-        except Exception:
-            encoder = _FallbackSparseBm25Encoder.from_texts(reference_texts)
-            self._fallback_encoder = encoder
-            self._reference_vectors = [encoder.encode(text) for text in reference_texts]
-            return
-
-        encoder = cbrkit_bm25(language="english")
-        encoder.put_index(reference_texts)
-        self._cbrkit_bm25_encoder = encoder
-        self._reference_vectors = list(encoder(reference_texts))
+        encoder = _SparseTextEncoder.from_texts(reference_texts)
+        self._sparse_encoder = encoder
+        self._reference_vectors = [encoder.encode(text) for text in reference_texts]
 
     def _build_ollama_reference_index(self, reference_texts: list[str]) -> None:
         self._reference_vectors = self._embed_ollama_texts(reference_texts)
@@ -349,12 +337,9 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
         return self._encode_dense_query(query_text)
 
     def _encode_sparse_query(self, query_text: str) -> SparseVector:
-        if self._cbrkit_bm25_encoder is not None:
-            vectors = self._cbrkit_bm25_encoder([query_text])
-            return vectors[0] if vectors else {}
-        if self._fallback_encoder is None:
+        if self._sparse_encoder is None:
             return {}
-        return self._fallback_encoder.encode(query_text)
+        return self._sparse_encoder.encode(query_text)
 
     def _encode_dense_query(self, query_text: str) -> DenseVector:
         vectors = self._embed_ollama_texts([query_text])

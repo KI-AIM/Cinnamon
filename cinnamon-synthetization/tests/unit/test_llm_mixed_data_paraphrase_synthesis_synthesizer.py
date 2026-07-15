@@ -1,6 +1,5 @@
 import json
 import sys
-import types
 from pathlib import Path
 
 import pandas as pd
@@ -174,18 +173,6 @@ def test_mixed_indirect_identifier_rewrite_then_aligns_structured_values(monkeyp
 def test_mixed_embedding_combines_structured_similarity_and_generates_extra_rows(monkeypatch):
     _set_llm_env(monkeypatch)
     prompts = []
-    numeric_ranges = []
-
-    def fake_linear(*, max):
-        numeric_ranges.append(max)
-        return lambda x, y: 1.0 - min(abs(float(x) - float(y)) / max, 1.0)
-
-    fake_cbrkit = types.ModuleType("cbrkit")
-    fake_cbrkit.sim = types.SimpleNamespace(
-        numbers=types.SimpleNamespace(linear=fake_linear),
-        generic=types.SimpleNamespace(equality=lambda: (lambda x, y: 1.0 if x == y else 0.0)),
-    )
-    monkeypatch.setitem(sys.modules, "cbrkit", fake_cbrkit)
 
     def fake_request(method, url, **kwargs):
         if method == "GET":
@@ -269,8 +256,6 @@ def test_mixed_embedding_combines_structured_similarity_and_generates_extra_rows
     assert sample["age"].tolist() == [80, 80, 80]
     assert sample["note"].tolist() == ["A new clinically plausible report."] * 3
     assert len(prompts) == 6
-    assert synthesizer._structured_similarity_backend == "cbrkit"
-    assert len(numeric_ranges) == 2
     assert all(
         "Statistical profiles were calculated from 2 of 2 reference rows." in prompt
         for prompt in prompts

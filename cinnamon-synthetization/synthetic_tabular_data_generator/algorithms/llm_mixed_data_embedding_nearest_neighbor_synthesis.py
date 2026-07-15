@@ -38,7 +38,6 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
         self._text_similarity_weight = 0.7
         self._structured_similarity_weight = 0.3
         self._structured_similarity_functions: Dict[str, SimilarityFunction] = {}
-        self._structured_similarity_backend = "fallback"
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
         LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer._initialize_anonymization_configuration(
@@ -153,12 +152,6 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
         return [text for _, text in scored_examples[: self._few_shot_examples]]
 
     def _build_structured_similarity_functions(self) -> None:
-        try:
-            from cbrkit import sim
-        except Exception:
-            sim = None
-
-        self._structured_similarity_backend = "cbrkit" if sim is not None else "fallback"
         functions: Dict[str, SimilarityFunction] = {}
         for config in self._structured_column_configs:
             name = config["name"]
@@ -169,13 +162,9 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
                 minimum = self.to_float(profile.get("min"))
                 value_range = (maximum - minimum) if maximum is not None and minimum is not None else 1.0
                 max_distance = max(abs(value_range), 1.0)
-                base_function = (
-                    sim.numbers.linear(max=max_distance)
-                    if sim is not None
-                    else self._linear_similarity(max_distance)
-                )
+                base_function = self._linear_similarity(max_distance)
             else:
-                base_function = sim.generic.equality() if sim is not None else self._equality_similarity
+                base_function = self._equality_similarity
             functions[name] = self._missing_aware_similarity(base_function)
         self._structured_similarity_functions = functions
 

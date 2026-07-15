@@ -148,7 +148,7 @@ def test_update_component_status_updates_only_target_component(tmp_path):
     update_component_status(
         str(status_path),
         "llm_synthesis",
-        synthesizer_name="llm_nearest_neighbor_few_shot_text_synthesis",
+        synthesizer_name="llm_mixed_data_paraphrase_synthesis",
         duration=3.5,
         initialization_duration=0.5,
         fitting_duration=1.0,
@@ -162,7 +162,7 @@ def test_update_component_status_updates_only_target_component(tmp_path):
     structured_component = _get_component(data, "structured_synthesis")
 
     assert llm_component == {
-        "synthesizer_name": "llm_nearest_neighbor_few_shot_text_synthesis",
+        "synthesizer_name": "llm_mixed_data_paraphrase_synthesis",
         "duration": "3.5",
         "initialization_duration": "0.5",
         "fitting_duration": "1.0",

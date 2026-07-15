@@ -46,7 +46,6 @@ def _is_tabular_base(base: ast.expr) -> bool:
     valid_base_names = {
         "TabularDataSynthesizer",
         "ConfiguredLlmSynthesizerBase",
-        "LlmTextSynthesisBase",
     }
     if isinstance(base, ast.Name):
         return base.id in valid_base_names

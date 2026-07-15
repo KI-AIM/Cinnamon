@@ -253,12 +253,6 @@ Available variables:
 
 Logs are written under `outputs/prompts/` by default.
 
-## Notes On LLM-Based Synthesizers
-
-### `llm_nearest_neighbor_few_shot_text_synthesis`
-
-Used when structured rows already exist and only TEXT fields should be synthesized or enriched. It can optionally repair inconsistent structured values before generating text.
-
 ## Development Notes
 
 - Status files are written to `outputs/status/`

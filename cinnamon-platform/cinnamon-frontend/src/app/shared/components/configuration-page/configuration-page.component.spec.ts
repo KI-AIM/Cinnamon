@@ -28,7 +28,7 @@ describe('ConfigurationPageComponent', () => {
       text_synthesis_configuration: new FormGroup({
         synthetization_configuration: new FormGroup({
           algorithm: new FormGroup({
-            synthesizer: new FormControl('llm_nearest_neighbor_few_shot_text_synthesis'),
+            synthesizer: new FormControl('llm_mixed_data_paraphrase_synthesis'),
             llm_profile: new FormGroup({
               llm_profile: new FormControl(''),
             }),

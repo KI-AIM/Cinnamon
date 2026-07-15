@@ -316,7 +316,6 @@ def test_start_synthetization_process_returns_400_when_callback_is_missing():
 
 def test_start_synthetization_process_allows_missing_original_data_for_text_synthesis(monkeypatch):
     app_module.tasks.clear()
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_nearest_neighbor_few_shot_text_synthesis")
     monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
     monkeypatch.setattr(app_module.PROCESS_CONTEXT, "Process", StartedProcess)
     client = app_module.app.test_client()
@@ -349,7 +348,6 @@ def test_start_synthetization_process_allows_missing_original_data_for_text_synt
 
 def test_start_synthetization_process_allows_missing_original_data_for_structured_synthesis(monkeypatch):
     app_module.tasks.clear()
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
     monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (True, False))
     client = app_module.app.test_client()
 
@@ -586,8 +584,7 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
             "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
+    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: ("text_only", "text_only"))
     monkeypatch.setattr(
         app_module,
         "load_text_synthesis_defaults",
@@ -641,10 +638,8 @@ def test_synthesize_data_runs_mixed_llm_without_structured_synthesis(monkeypatch
         "synthesizer_classes",
         {
             "llm_mixed": {"class": object},
-            "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
     monkeypatch.setattr(
         app_module,
         "get_processing_capabilities",
@@ -707,8 +702,7 @@ def test_synthesize_data_marks_llm_component_before_text_stage_starts(monkeypatc
             "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
+    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: ("text_only", "text_only"))
     monkeypatch.setattr(
         app_module,
         "load_text_synthesis_defaults",
@@ -761,8 +755,7 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
             "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
+    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: ("text_only", "text_only"))
     monkeypatch.setattr(
         app_module,
         "load_text_synthesis_defaults",
@@ -790,14 +783,13 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
 
     assert result["status_code"] == 200
     assert len(captured_calls) == 1
-    expected_input_data = app_module.create_text_synthesis_input(data, _text_attribute_config())
-    assert captured_calls[0]["input_data"].equals(expected_input_data)
+    assert captured_calls[0]["input_data"].equals(data)
     assert captured_calls[0]["reference_data"].equals(data)
 
     _delete_status_file(session_key)
 
 
-def test_synthesize_data_uses_original_data_for_two_stage_text_reference(monkeypatch):
+def test_synthesize_data_rejects_structured_synthesizer_for_text_columns(monkeypatch):
     captured_calls = []
 
     class DummyResponse:
@@ -810,31 +802,16 @@ def test_synthesize_data_uses_original_data_for_two_stage_text_reference(monkeyp
 
     def fake_run_synthesizer_stage(**kwargs):
         captured_calls.append(kwargs)
-        input_data = kwargs["input_data"].copy()
-        if kwargs["stage_label"] == "STRUCTURED_SYNTHESIS":
-            return input_data, b"structured-model", 0.1, 0.2, 0.3
-        return input_data, b"text-model", 0.1, 0.2, 0.3
-
-    capability_map = {
-        "ctgan": (True, False),
-        "llm_text_synth": (False, True),
-    }
+        return kwargs["input_data"].copy(), b"model", 0.1, 0.2, 0.3
 
     monkeypatch.setattr(
         app_module,
         "synthesizer_classes",
         {
             "ctgan": {"class": object},
-            "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda name: capability_map[name])
-    monkeypatch.setattr(
-        app_module,
-        "load_text_synthesis_defaults",
-        lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
-    )
+    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (True, False))
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
     monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
@@ -856,13 +833,8 @@ def test_synthesize_data_uses_original_data_for_two_stage_text_reference(monkeyp
         session_key,
     )
 
-    assert result["status_code"] == 200
-    assert len(captured_calls) == 2
-    assert captured_calls[0]["stage_label"] == "STRUCTURED_SYNTHESIS"
-    assert captured_calls[0]["reference_data"] is None
-    assert captured_calls[1]["stage_label"] == "TEXT_SYNTHESIS"
-    assert captured_calls[1]["reference_data"].equals(original_data)
-    assert list(captured_calls[1]["input_data"].columns) == ["age", "note"]
+    assert result["status_code"] == 500
+    assert captured_calls == []
 
     _delete_status_file(session_key)
 
@@ -897,7 +869,7 @@ def test_get_synthesizer_config_normalizes_llm_profile_into_model_parameter(monk
     monkeypatch.setattr(app_module, "get_llm_profile_names", lambda: ["profile-a", "profile-b"])
 
     client = app_module.app.test_client()
-    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml")
+    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_paraphrase_synthesis.yaml")
 
     assert response.status_code == 200
 
@@ -916,7 +888,7 @@ def test_get_synthesizer_config_omits_llm_profile_when_no_profiles_exist(monkeyp
     monkeypatch.setattr(app_module, "get_llm_profile_names", lambda: [])
 
     client = app_module.app.test_client()
-    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml")
+    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_paraphrase_synthesis.yaml")
 
     assert response.status_code == 200
 
@@ -927,49 +899,6 @@ def test_get_synthesizer_config_omits_llm_profile_when_no_profiles_exist(monkeyp
     llm_profile_parameters = configurations["llm_profile"]["parameters"]
     assert len(llm_profile_parameters) == 1
     assert llm_profile_parameters[0]["values"] == []
-
-
-def test_build_text_synthesis_algorithm_config_prefers_nested_text_configuration():
-    config = app_module.build_text_synthesis_algorithm_config(
-        {
-            "synthetization_configuration": {
-                "algorithm": {
-                    "synthesizer": "ctgan",
-                },
-                "text_synthesis_configuration": {
-                    "synthetization_configuration": {
-                        "algorithm": {
-                            "llm_profile": {
-                                "llm_profile": "Profile Nested",
-                            },
-                            "sampling": {
-                                "temperature": 0.4,
-                                "top_p": 0.8,
-                            },
-                        }
-                    }
-                },
-            },
-            "text_synthesis_configuration": {
-                "synthetization_configuration": {
-                    "algorithm": {
-                        "llm_profile": {
-                            "llm_profile": "Profile Legacy",
-                        },
-                    }
-                }
-            },
-        },
-        "ctgan",
-        "llm_nearest_neighbor_few_shot_text_synthesis",
-        5,
-    )
-
-    algorithm = config["synthetization_configuration"]["algorithm"]
-    assert algorithm["llm_profile"]["llm_profile"] == "Profile Nested"
-    assert algorithm["sampling"]["temperature"] == 0.4
-    assert algorithm["sampling"]["top_p"] == 0.8
-    assert algorithm["sampling"]["num_samples"] == 5
 
 
 def test_format_synthesis_exception_message_classifies_llm_configuration_errors():
@@ -1051,7 +980,6 @@ def test_build_text_synthesis_algorithm_config_preserves_num_samples_for_direct_
                 }
             }
         },
-        "llm_text_only_embedding_nearest_neighbor_synthesis",
         "llm_text_only_embedding_nearest_neighbor_synthesis",
         57,
     )

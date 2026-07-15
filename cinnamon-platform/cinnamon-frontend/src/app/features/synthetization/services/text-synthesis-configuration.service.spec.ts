@@ -28,13 +28,13 @@ describe("TextSynthesisConfigurationService", () => {
         const group = service.createGroup({
             synthetization_configuration: {
                 algorithm: {
-                    synthesizer: "llm_nearest_neighbor_few_shot_text_synthesis",
+                    synthesizer: "llm_mixed_data_paraphrase_synthesis",
                 },
             },
         }, false);
 
         const algorithmGroup = group.get("synthetization_configuration.algorithm") as any;
-        expect(algorithmGroup?.get("synthesizer")?.value).toBe("llm_nearest_neighbor_few_shot_text_synthesis");
+        expect(algorithmGroup?.get("synthesizer")?.value).toBe("llm_mixed_data_paraphrase_synthesis");
     });
 
     it("syncs only the parameters defined by the selected free-text algorithm", () => {
@@ -42,7 +42,7 @@ describe("TextSynthesisConfigurationService", () => {
         service.initForm(root, {
             synthetization_configuration: {
                 algorithm: {
-                    synthesizer: "llm_nearest_neighbor_few_shot_text_synthesis",
+                    synthesizer: "llm_mixed_data_paraphrase_synthesis",
                     llm_profile: {
                         llm_profile: "Local Ollama",
                     },

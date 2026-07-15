@@ -18,6 +18,8 @@ from synthetic_tabular_data_generator.llm.response_validation import require_fir
 class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisSynthesizer):
     """Paraphrase one TEXT column, then align the structured columns with it."""
 
+    _blank_structured_consistency_input = False
+
     def __init__(
         self,
         attribute_configuration: Optional[Dict[str, Any]] = None,
@@ -151,12 +153,17 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
             try:
                 content = self._llm_client.generate_text(self._build_consistency_prompt(rewritten_row))
                 candidate = require_first_dict_row(self.parse_json_with_fallback(content))
-                merged = dict(rewritten_row)
+                merged = (
+                    {self._text_columns[0]: rewritten_row[self._text_columns[0]]}
+                    if self._blank_structured_consistency_input
+                    else dict(rewritten_row)
+                )
                 for config in self._structured_column_configs:
                     name = config["name"]
-                    if str(config.get("type", "STRING")).upper() != "ID" and name in candidate:
+                    if name in candidate:
                         merged[name] = candidate[name]
-                return self._coerce_mixed_row(merged, base_row)
+                fallback_row = {} if self._blank_structured_consistency_input else base_row
+                return self._coerce_mixed_row(merged, fallback_row)
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 self._log_generation_attempt_failure(
@@ -189,31 +196,44 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
             else ""
         )
         return (
-            "You align the structured values of a mixed table row with its rewritten TEXT.\n"
+            "You derive a complete structured record from a rewritten TEXT value.\n"
             f"{domain_context}"
             "Information:\n"
             f"- Statistical profiles were calculated from {self._profile_rows_used} of {available_rows} reference rows.\n"
-            f"- Treat {text_column} as fixed ground truth and do not change it.\n"
-            "- Change a structured value only when the TEXT clearly supports the correction.\n"
-            "- Keep structured values that are already consistent with the TEXT.\n"
-            "- Do not invent facts that are absent from the TEXT.\n"
-            "- Keep ID columns unchanged and do not reconstruct identifiers.\n"
-            "- Respect the statistical profiles, configured types, plausible ranges, and chronological relationships.\n"
-            "- Ensure the final row is internally consistent.\n"
+            f"- Treat {text_column} as the sole source of case-specific truth. Return it unchanged.\n"
+            "- Re-evaluate and populate every structured column from the TEXT; do not assume a supplied structured value is correct.\n"
+            "- Replace every structured value that conflicts with the TEXT, including names, dates, demographics, document metadata, measurements, and categories.\n"
+            "- Copy facts stated in the TEXT accurately. Derive a value only when it follows unambiguously, for example BMI from stated height and weight or a document category from its heading.\n"
+            "- Treat existing structured values as untrusted candidates and null values as empty placeholders, never as ground truth.\n"
+            "- Use the statistical profiles only for data types, formatting, plausible ranges, and category conventions; they are not evidence about this case.\n"
+            f"- If a structured value cannot be determined from the TEXT, return '{MISSING_VALUE_STRING}' for that field instead of copying an old value or inventing a fact.\n"
+            "- For an identifier stated in the TEXT, use the rewritten identifier. If none is stated, mark it as missing; never reconstruct an original identifier.\n"
+            "- Ensure dates are chronological, measurements and derived values agree, and all structured values are mutually consistent with the TEXT.\n"
             "Output rules:\n"
             "- Return ONLY valid JSON using exactly this shape: {\"row\": { ... }}\n"
             f"- Include exactly these columns in this order: {columns}\n"
-            f"- Return the TEXT column unchanged and adjust only these structured columns when necessary: {structured_columns}\n"
-            f"- Use '{MISSING_VALUE_STRING}' for missing string or TEXT values.\n"
+            f"- Return the TEXT column unchanged and populate all of these structured columns: {structured_columns}\n"
+            f"- Use '{MISSING_VALUE_STRING}' for every unavailable value, regardless of its configured type.\n"
             "Statistical column profiles:\n"
             f"{chr(10).join(profile_lines)}\n\n"
         )
 
     def _build_consistency_prompt(self, rewritten_row: Dict[str, Any]) -> str:
-        prompt_row = self.serialize_row_for_prompt(rewritten_row, self._ordered_column_configs)
+        if self._blank_structured_consistency_input:
+            text_column = self._text_columns[0]
+            prompt_row = {
+                config["name"]: (
+                    self.serialize_value(rewritten_row.get(text_column))
+                    if config["name"] == text_column
+                    else None
+                )
+                for config in self._ordered_column_configs
+            }
+        else:
+            prompt_row = self.serialize_row_for_prompt(rewritten_row, self._ordered_column_configs)
         return (
             f"{self._consistency_prompt_prefix}"
-            "ROW WITH REWRITTEN TEXT\n"
+            "STRUCTURED OUTPUT TEMPLATE WITH REWRITTEN TEXT\n"
             "----------------------------------------\n\n"
             f"{json.dumps({'row': prompt_row}, ensure_ascii=False, indent=2)}\n"
         )
@@ -227,6 +247,8 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
             fallback = base_row.get(name)
             if column_type == "TEXT":
                 result[name] = self.coerce_text(value, fallback_value=fallback)
+            elif name not in row or self._is_explicit_missing_structured_value(value):
+                result[name] = MISSING_VALUE_STRING
             elif column_type == "BOOLEAN":
                 result[name] = self.coerce_boolean(value, fallback_value=fallback)
             elif column_type == "DATE":
@@ -248,6 +270,23 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
             else:
                 result[name] = self.coerce_string(value, fallback_value=fallback)
         return result
+
+    @staticmethod
+    def _is_explicit_missing_structured_value(value: Any) -> bool:
+        if value is None or value is pd.NA:
+            return True
+        if isinstance(value, float) and math.isnan(value):
+            return True
+        return str(value).strip().lower() in {
+            "",
+            "na",
+            "n/a",
+            "nan",
+            "null",
+            "none",
+            "<na>",
+            MISSING_VALUE_STRING.lower(),
+        }
 
     def _load_model(self, filepath: str) -> "LlmMixedDataParaphraseSynthesisSynthesizer":
         with open(filepath, "rb") as file:

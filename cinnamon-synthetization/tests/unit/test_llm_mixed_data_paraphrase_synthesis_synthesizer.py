@@ -188,7 +188,7 @@ def test_mixed_embedding_combines_structured_similarity_and_generates_extra_rows
                 {"response": json.dumps({"row": {"note": "A new clinically plausible report."}})}
             )
         return _DummyResponse(
-            {"response": json.dumps({"row": {"age": 80, "visit_date": "02.01.2024", "note": "ignored"}})}
+            {"response": json.dumps({"row": {"age": 45, "visit_date": "02.01.2024", "note": "ignored"}})}
         )
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
@@ -253,12 +253,17 @@ def test_mixed_embedding_combines_structured_similarity_and_generates_extra_rows
     sample = synthesizer.sample()
 
     assert len(sample) == 3
-    assert sample["age"].tolist() == [80, 80, 80]
+    assert sample["age"].tolist() == [45, 45, 45]
     assert sample["note"].tolist() == ["A new clinically plausible report."] * 3
     assert len(prompts) == 6
     assert all(
         "Statistical profiles were calculated from 2 of 2 reference rows." in prompt
         for prompt in prompts
-        if "ROW WITH REWRITTEN TEXT" in prompt
+        if "STRUCTURED OUTPUT TEMPLATE WITH REWRITTEN TEXT" in prompt
+    )
+    assert all(
+        '"age": null' in prompt and '"visit_date": null' in prompt
+        for prompt in prompts
+        if "STRUCTURED OUTPUT TEMPLATE WITH REWRITTEN TEXT" in prompt
     )
     assert synthesizer._normalize_structured_similarity_value(date_config, "02.01.2024") == source_date

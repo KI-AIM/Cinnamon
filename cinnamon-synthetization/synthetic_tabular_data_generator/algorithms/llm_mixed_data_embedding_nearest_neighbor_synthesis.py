@@ -29,6 +29,8 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
 ):
     """Generate text from mixed nearest neighbors, then align structured values with it."""
 
+    _blank_structured_consistency_input = True
+
     def __init__(
         self,
         attribute_configuration: Optional[Dict[str, Any]] = None,

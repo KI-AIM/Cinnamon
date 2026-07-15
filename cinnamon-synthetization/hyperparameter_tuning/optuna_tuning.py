@@ -41,31 +41,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
-# Support both `from .artifact_writer import ...` (when imported as a package
-# member) and `from artifact_writer import ...` (when this file is loaded via the
-# script-mode `python hyperparameter_tuning/main.py` flow that the existing CLI
-# uses).
-#
-# NOTE: the synthesizer-config / parameter-grid / utility-score helpers used to
-# live in a sibling module `hyperparameter_tuning.hyperparameter_tuning`. That
-# module was lost (never committed), so the helpers are now inlined below to keep
-# this Optuna engine fully self-contained.
 try:
-    from .artifact_writer import save_artifact as _save_artifact  # type: ignore[no-redef]
-except ImportError:  # pragma: no cover - script-mode fallback
-    from artifact_writer import save_artifact as _save_artifact  # type: ignore[no-redef]
+    from .artifact_writer import save_artifact as _save_artifact
+except ImportError:
+    from artifact_writer import save_artifact as _save_artifact
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Inlined config / grid / scoring helpers
-#
-# Recovered from the lost `hyperparameter_tuning.hyperparameter_tuning` module so
-# the Optuna path depends only on this file. `_repo_relative` resolves against
-# this file's location; since it sits in `hyperparameter_tuning/` (same as the
-# original module), `parents[1]` is the `cinnamon-synthetization/` package root.
-# ---------------------------------------------------------------------------
 
 
 def _repo_relative(*parts: str) -> Path:
@@ -78,9 +59,8 @@ DEFAULT_SYNTHESIZER_CONFIG_DIR = _repo_relative(
 )
 DEFAULT_PARAMETER_GRIDS_DIR = _repo_relative("hyperparameter_tuning", "parameter_grids")
 
-#: Default directory under which one timestamped artifact subdirectory is
-#: written per completed study (e.g. ``outputs/hyperparameter_tuning/<study>_<ts>``).
 DEFAULT_ARTIFACT_DIR = _repo_relative("outputs", "hyperparameter_tuning")
+CONFIG_GROUPS = ("model_parameter", "model_fitting", "sampling")
 
 
 def _load_yaml(path: Path) -> Dict[str, Any]:
@@ -112,13 +92,13 @@ def extract_default_hyperparameters(
         if not isinstance(params, list):
             continue
         group_defaults: Dict[str, Any] = {}
-        for p in params:
-            if not isinstance(p, dict):
+        for parameter in params:
+            if not isinstance(parameter, dict):
                 continue
-            name = p.get("name")
+            name = parameter.get("name")
             if not name:
                 continue
-            group_defaults[str(name)] = p.get("default_value")
+            group_defaults[str(name)] = parameter.get("default_value")
         defaults[str(group_name)] = group_defaults
     return defaults
 
@@ -168,12 +148,8 @@ def get_parameter_grid(
             )
         return {}
     data = _load_yaml(path)
-    if "model_parameter" not in data:
-        data["model_parameter"] = {}
-    if "model_fitting" not in data:
-        data["model_fitting"] = {}
-    if "sampling" not in data:
-        data["sampling"] = {}
+    for group_name in CONFIG_GROUPS:
+        data.setdefault(group_name, {})
     return data
 
 
@@ -201,21 +177,14 @@ def build_algorithm_config_from_params(params: Mapping[str, Any]) -> Dict[str, A
     if synth:
         algo["synthesizer"] = synth
 
-    for k, v in params.items():
-        if k in {"synthesizer_name", "algorithm_config_base"}:
+    for key, value in params.items():
+        if key in {"synthesizer_name", "algorithm_config_base"}:
             continue
-        group, param = _split_param_key(k)
+        group, param = _split_param_key(key)
         if group is None:
             continue
-        if group not in algo:
-            algo[group] = {}
-        algo[group][param] = v
+        algo.setdefault(group, {})[param] = value
     return cfg
-
-
-# ---------------------------------------------------------------------------
-# Result container
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -249,11 +218,6 @@ class OptunaResult:
     per_synthesizer: List[Dict[str, Any]] = field(default_factory=list)
 
 
-# ---------------------------------------------------------------------------
-# Sampler / pruner factories
-# ---------------------------------------------------------------------------
-
-
 def _build_sampler(
     name: str,
     search_space: Optional[Mapping[str, Sequence[Any]]] = None,
@@ -274,7 +238,7 @@ def _build_sampler(
     map parameter names to the *exact* lists of values the search will
     enumerate.
     """
-    import optuna  # local import: keep package import light
+    import optuna
 
     key = (name or "tpe").strip().lower()
     if key == "tpe":
@@ -318,11 +282,6 @@ def _build_pruner(name: Optional[str]) -> Any:
     raise ValueError(f"Unknown pruner: {name!r}")
 
 
-# ---------------------------------------------------------------------------
-# YAML -> search space
-# ---------------------------------------------------------------------------
-
-
 def _is_hashable(value: Any) -> bool:
     try:
         hash(value)
@@ -337,7 +296,7 @@ def _flatten_yaml_grid(grid_yaml: Mapping[str, Any]) -> Dict[str, Any]:
     ``"<group>__<param>"`` while preserving the original value shape.
     """
     flat: Dict[str, Any] = {}
-    for group in ("model_parameter", "model_fitting", "sampling"):
+    for group in CONFIG_GROUPS:
         group_grid = grid_yaml.get(group) or {}
         if not isinstance(group_grid, dict):
             raise ValueError(f"YAML group '{group}' must be a mapping")
@@ -358,13 +317,12 @@ def _suggest_for(
     trial: Any,
     key: str,
     spec: Any,
-    index_lookup: Dict[str, List[Any]],
 ) -> Any:
     """
     Single suggestion call dispatcher used inside the optuna objective.
 
-    Mutates ``index_lookup`` for categorical-with-unhashable specs so that
-    the caller can resolve the chosen index back to the real value.
+    Unhashable categorical values are represented by an integer index in
+    Optuna and resolved before being passed to the synthesizer.
     """
     if _is_range_dict(spec):
         lo = spec["min"]
@@ -398,13 +356,10 @@ def _suggest_for(
             raise ValueError(f"Empty list for parameter {key!r}")
         if all(_is_hashable(v) for v in spec):
             return trial.suggest_categorical(key, spec)
-        # Fall back to index categorical for unhashable members (nested lists).
-        index_lookup[key] = list(spec)
         idx_key = f"{key}__idx"
         idx = trial.suggest_categorical(idx_key, list(range(len(spec))))
         return deepcopy(spec[int(idx)])
 
-    # Scalar -> single-value categorical (still recorded in the study).
     return trial.suggest_categorical(key, [spec])
 
 
@@ -436,9 +391,6 @@ def _build_search_space(grid_yaml: Mapping[str, Any]) -> Dict[str, List[Any]]:
                 step_i = int(step) if step else 1
                 space[key] = list(range(int(lo), int(hi) + 1, step_i))
             else:
-                # Float range with a step is materialisable; without step we
-                # can't enumerate it for the grid sampler, so we sample the
-                # endpoints + midpoint as a coarse fallback.
                 if step is None:
                     mid = (float(lo) + float(hi)) / 2.0
                     space[key] = [float(lo), mid, float(hi)]
@@ -459,26 +411,21 @@ def _build_search_space(grid_yaml: Mapping[str, Any]) -> Dict[str, List[Any]]:
     return space
 
 
-def _params_to_sklearn_dict(
+def _build_algorithm_config_inputs(
     synthesizer: str,
     base_config: Mapping[str, Any],
     params: Mapping[str, Any],
 ) -> Dict[str, Any]:
-    """Convert ``best_params`` -> a dict ready for ``build_algorithm_config_from_params``."""
-    out: Dict[str, Any] = {
+    """Build the inputs consumed by ``build_algorithm_config_from_params``."""
+    config_inputs: Dict[str, Any] = {
         "synthesizer_name": synthesizer,
         "algorithm_config_base": deepcopy(base_config),
     }
-    for k, v in params.items():
-        if k.endswith("__idx"):
+    for key, value in params.items():
+        if key.endswith("__idx"):
             continue
-        out[k] = v
-    return out
-
-
-# ---------------------------------------------------------------------------
-# Optimize
-# ---------------------------------------------------------------------------
+        config_inputs[key] = value
+    return config_inputs
 
 
 def _run_single(
@@ -511,29 +458,26 @@ def _run_single(
     else:
         base_cfg = deepcopy(algorithm_config_base)
     grid_yaml = get_parameter_grid(synthesizer, grids_dir=grids_dir, strict=True)
-    flat = _flatten_yaml_grid(grid_yaml)
+    parameter_specs = _flatten_yaml_grid(grid_yaml)
 
     grid_space = _build_search_space(grid_yaml) if sampler.lower() == "grid" else None
     sampler_obj = _build_sampler(sampler, search_space=grid_space, seed=random_state)
     pruner_obj = _build_pruner(pruner)
 
-    # Track the best config/params across trials. Optuna only stores the flat
-    # param dict (with list-valued params encoded as ``__idx``), so we keep the
-    # already-resolved values to reconstruct the winning algorithm_config.
-    _maximize = direction.lower() != "minimize"
-    best_box: Dict[str, Any] = {
-        "score": float("-inf") if _maximize else float("inf"),
-        "cfg": None, "params": None,
+    maximize = direction.lower() != "minimize"
+    best_result: Dict[str, Any] = {
+        "score": float("-inf") if maximize else float("inf"),
+        "config": None,
+        "params": None,
     }
 
     def objective(trial: "optuna.trial.Trial") -> float:
-        index_lookup: Dict[str, List[Any]] = {}
         resolved: Dict[str, Any] = {}
-        for key, spec in flat.items():
-            resolved[key] = _suggest_for(trial, key, spec, index_lookup)
+        for key, spec in parameter_specs.items():
+            resolved[key] = _suggest_for(trial, key, spec)
 
-        sklearn_params = _params_to_sklearn_dict(synthesizer, base_cfg, resolved)
-        algorithm_config = build_algorithm_config_from_params(sklearn_params)
+        config_inputs = _build_algorithm_config_inputs(synthesizer, base_cfg, resolved)
+        algorithm_config = build_algorithm_config_from_params(config_inputs)
 
         logger.info(
             "Optuna trial: synthesizer=%s trial=%s params=%s",
@@ -545,8 +489,6 @@ def _run_single(
         try:
             metric = fit_metric_fn(algorithm_config)
         except Exception as exc:
-            # Don't crash the whole study on a single bad config — record
-            # the error on the trial and prune. No silent fail.
             trial.set_user_attr("error", repr(exc))
             logger.warning(
                 "Trial %s failed: synthesizer=%s error=%s",
@@ -556,9 +498,6 @@ def _run_single(
             )
             raise optuna.TrialPruned() from exc
 
-        # A synthesizer that does not expose a fit metric (e.g. ctgan/tvae,
-        # whose tuning support comes later) returns None — prune the trial with
-        # a clear reason rather than scoring it.
         if metric is None or (isinstance(metric, float) and math.isnan(metric)):
             reason = (
                 f"synthesizer '{synthesizer}' did not return a fit metric "
@@ -576,11 +515,11 @@ def _run_single(
             score,
         )
 
-        is_better = score > best_box["score"] if _maximize else score < best_box["score"]
+        is_better = score > best_result["score"] if maximize else score < best_result["score"]
         if is_better:
-            best_box["score"] = score
-            best_box["cfg"] = algorithm_config
-            best_box["params"] = resolved
+            best_result["score"] = score
+            best_result["config"] = algorithm_config
+            best_result["params"] = resolved
 
         return score
 
@@ -594,8 +533,13 @@ def _run_single(
     )
 
     start_time = datetime.now(timezone.utc)
-    study.optimize(objective, n_trials=n_trials, timeout=timeout, gc_after_trial=True,
-                   show_progress_bar=show_progress_bar)
+    study.optimize(
+        objective,
+        n_trials=n_trials,
+        timeout=timeout,
+        gc_after_trial=True,
+        show_progress_bar=show_progress_bar,
+    )
     end_time = datetime.now(timezone.utc)
 
     if artifact_dir is not None:
@@ -623,19 +567,16 @@ def _run_single(
 
     completed = [t for t in study.trials if t.state.name == "COMPLETE"]
     if completed:
-        best_trial = study.best_trial  # respects direction (maximize or minimize)
-        # ``best_box`` tracks the best completed trial with the same direction
-        # as the study and preserves resolved (list-valued) params, so prefer
-        # it. Fall back to rebuilding from ``best_trial`` if it is unset.
-        if best_box["params"] is not None:
-            best_params = best_box["params"]
-            best_score = best_box["score"]
-            best_cfg = best_box["cfg"]
+        best_trial = study.best_trial
+        if best_result["params"] is not None:
+            best_params = best_result["params"]
+            best_score = best_result["score"]
+            best_cfg = best_result["config"]
         else:
             best_params = {k: v for k, v in best_trial.params.items() if not k.endswith("__idx")}
             best_score = float(best_trial.value or 0.0)
-            sklearn_params = _params_to_sklearn_dict(synthesizer, base_cfg, best_params)
-            best_cfg = build_algorithm_config_from_params(sklearn_params)
+            config_inputs = _build_algorithm_config_inputs(synthesizer, base_cfg, best_params)
+            best_cfg = build_algorithm_config_from_params(config_inputs)
     else:
         logger.warning("No COMPLETE trials for synthesizer=%s.", synthesizer)
         best_params = {}
@@ -736,7 +677,7 @@ def optimize(
         if name is not None and not single_mode:
             name = f"{name}_{synth}"
         try:
-            res = _run_single(
+            result = _run_single(
                 fit_metric_fn=fit_metric_fn,
                 real=real,
                 target_variable=target_variable,
@@ -761,7 +702,7 @@ def optimize(
         except Exception as exc:
             logger.error("Synthesizer %s failed: %s", synth, exc)
             continue
-        results.append((synth, res))
+        results.append((synth, result))
 
     if not results:
         raise RuntimeError("All synthesizers failed; no OptunaResult to return.")
@@ -769,12 +710,11 @@ def optimize(
     if single_mode:
         return results[0][1]
 
-    # Pick the best across synthesizers.
-    best_synth, best_res = max(
+    best_synthesizer, best_result = max(
         results,
-        key=lambda kv: kv[1].best_score if kv[1].best_score is not None else float("-inf"),
+        key=lambda item: item[1].best_score if item[1].best_score is not None else float("-inf"),
     )
-    best_res.per_synthesizer = [
+    best_result.per_synthesizer = [
         {
             "synthesizer": s,
             "best_score": r.best_score,
@@ -783,8 +723,12 @@ def optimize(
         }
         for s, r in results
     ]
-    logger.info("Best synthesizer overall: %s score=%.4f", best_synth, best_res.best_score)
-    return best_res
+    logger.info(
+        "Best synthesizer overall: %s score=%.4f",
+        best_synthesizer,
+        best_result.best_score,
+    )
+    return best_result
 
 
 __all__ = [

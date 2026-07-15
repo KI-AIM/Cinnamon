@@ -31,20 +31,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import yaml
+
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# YAML helpers
-# ---------------------------------------------------------------------------
 
 
 def _yaml_safe(obj: Any) -> Any:
     """Recursively coerce non-YAML-safe types (datetime, Path, numpy scalars)."""
     if obj is None:
         return obj
-    # numpy / pandas scalars FIRST – they subclass float/int and would
-    # otherwise slip through and break yaml.safe_dump.
     if not isinstance(obj, (bool, str, bytes, dict, list, tuple, set)) and hasattr(obj, "item"):
         try:
             obj = obj.item()
@@ -64,16 +59,14 @@ def _yaml_safe(obj: Any) -> Any:
 
 
 def _dump_yaml(path: Path, data: Any) -> None:
-    import yaml  # type: ignore
     path.write_text(
         yaml.safe_dump(_yaml_safe(data), allow_unicode=True, sort_keys=False),
         encoding="utf-8",
     )
 
 
-# ---------------------------------------------------------------------------
-# Distribution serialisation / deserialisation
-# ---------------------------------------------------------------------------
+def _load_yaml(path: Path) -> Any:
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
 def _serialize_distribution(dist: Any) -> Dict[str, Any]:
@@ -110,8 +103,8 @@ def _deserialize_distribution(data: Dict[str, Any]) -> Any:
     Reconstruct an Optuna distribution from a plain dict produced by
     :func:`_serialize_distribution`.
 
-    Falls back to ``CategoricalDistribution([data_value])`` for unknown types
-    so that the study can still be loaded for inspection.
+    Falls back to an unbounded ``FloatDistribution`` for unknown types so that
+    the study can still be loaded for inspection.
     """
     import optuna.distributions as od
 
@@ -132,37 +125,31 @@ def _deserialize_distribution(data: Dict[str, Any]) -> Any:
             log=bool(data.get("log", False)),
             step=int(data.get("step", 1)),
         )
-    # Unknown – use a float placeholder so the trial can still be imported
     logger.warning("Unknown distribution type %r – using FloatDistribution placeholder.", dtype)
     return od.FloatDistribution(low=float("-inf"), high=float("inf"))
-
-
-# ---------------------------------------------------------------------------
-# Per-section helpers
-# ---------------------------------------------------------------------------
 
 
 def _serialize_best_trial(study: Any) -> Optional[Dict[str, Any]]:
     """Return the best trial as a plain dict, or ``None`` when none exist."""
     try:
-        t = study.best_trial
+        trial = study.best_trial
     except ValueError:
         return None
 
     duration_sec: Optional[float] = None
-    if t.datetime_start is not None and t.datetime_complete is not None:
-        duration_sec = (t.datetime_complete - t.datetime_start).total_seconds()
+    if trial.datetime_start is not None and trial.datetime_complete is not None:
+        duration_sec = (trial.datetime_complete - trial.datetime_start).total_seconds()
 
     return {
         "study_name": study.study_name,
-        "number": t.number,
-        "params": dict(t.params),
-        "value": t.value,
-        "datetime_start": t.datetime_start,
-        "datetime_complete": t.datetime_complete,
+        "number": trial.number,
+        "params": dict(trial.params),
+        "value": trial.value,
+        "datetime_start": trial.datetime_start,
+        "datetime_complete": trial.datetime_complete,
         "duration_seconds": duration_sec,
-        "user_attrs": dict(t.user_attrs),
-        "system_attrs": dict(t.system_attrs),
+        "user_attrs": dict(trial.user_attrs),
+        "system_attrs": dict(trial.system_attrs),
     }
 
 
@@ -223,9 +210,7 @@ def _read_yaml_file(path: Optional[str]) -> Optional[Any]:
     if not path:
         return None
     try:
-        import yaml
-        with open(path, "r", encoding="utf-8") as fh:
-            return yaml.safe_load(fh)
+        return _load_yaml(Path(path))
     except Exception as exc:
         logger.warning("Could not read YAML file %s: %s", path, exc)
         return None
@@ -267,13 +252,11 @@ def _dump_study_yaml(path: Path, study: Any) -> None:
             user_attrs: {}
           - ...
     """
-    import yaml  # type: ignore
-
     trials = study.trials
     state_counts: Dict[str, int] = {}
-    for t in trials:
-        n = t.state.name
-        state_counts[n] = state_counts.get(n, 0) + 1
+    for trial in trials:
+        state_name = trial.state.name
+        state_counts[state_name] = state_counts.get(state_name, 0) + 1
 
     best_dict: Optional[dict] = None
     try:
@@ -289,15 +272,14 @@ def _dump_study_yaml(path: Path, study: Any) -> None:
         "n_trials_pruned": state_counts.get("PRUNED", 0),
         "n_trials_failed": state_counts.get("FAIL", 0),
         "best_trial": best_dict,
-        "trials": [_serialize_trial(t) for t in trials],
+        "trials": [_serialize_trial(trial) for trial in trials],
     }
 
-    path.write_text(yaml.dump(doc, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    _dump_yaml(path, doc)
 
 
-# ---------------------------------------------------------------------------
-# Loading helpers
-# ---------------------------------------------------------------------------
+def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
+    return datetime.fromisoformat(value) if value else None
 
 
 def load_study_from_yaml(yaml_path: Path) -> Any:
@@ -328,12 +310,10 @@ def load_study_from_yaml(yaml_path: Path) -> Any:
     >>> print(study.best_trial.value)
     >>> print(study.best_params)
     """
-    import yaml
     import optuna
     import optuna.trial as ot
 
-    with open(yaml_path, "r", encoding="utf-8") as fh:
-        doc = yaml.safe_load(fh)
+    doc = _load_yaml(yaml_path)
 
     direction_raw: str = doc.get("direction", "MAXIMIZE")
     direction = (
@@ -347,7 +327,7 @@ def load_study_from_yaml(yaml_path: Path) -> Any:
         direction="maximize" if direction == optuna.study.StudyDirection.MAXIMIZE else "minimize",
     )
 
-    _state_map = {
+    state_by_name = {
         "COMPLETE":  ot.TrialState.COMPLETE,
         "PRUNED":    ot.TrialState.PRUNED,
         "FAIL":      ot.TrialState.FAIL,
@@ -356,35 +336,30 @@ def load_study_from_yaml(yaml_path: Path) -> Any:
     }
 
     frozen_trials: List[ot.FrozenTrial] = []
-    for raw in doc.get("trials", []):
-        state = _state_map.get(raw.get("state", "COMPLETE"), ot.TrialState.COMPLETE)
+    for raw_trial in doc.get("trials", []):
+        state = state_by_name.get(raw_trial.get("state", "COMPLETE"), ot.TrialState.COMPLETE)
 
         distributions = {
             name: _deserialize_distribution(dist_data)
-            for name, dist_data in raw.get("distributions", {}).items()
+            for name, dist_data in raw_trial.get("distributions", {}).items()
         }
 
-        # If a trial has params but no distributions (old format), infer
-        # CategoricalDistribution with the observed value as the only choice.
-        for param, value in raw.get("params", {}).items():
+        for param, value in raw_trial.get("params", {}).items():
             if param not in distributions:
                 import optuna.distributions as od
                 distributions[param] = od.CategoricalDistribution(choices=(value,))
 
-        def _parse_dt(s: Optional[str]) -> Optional[datetime]:
-            return datetime.fromisoformat(s) if s else None
-
         trial = ot.FrozenTrial(
-            number=raw["number"],
-            trial_id=raw["number"],
+            number=raw_trial["number"],
+            trial_id=raw_trial["number"],
             state=state,
-            value=raw.get("value"),
+            value=raw_trial.get("value"),
             values=None,
-            datetime_start=_parse_dt(raw.get("datetime_start")),
-            datetime_complete=_parse_dt(raw.get("datetime_complete")),
-            params=raw.get("params", {}),
+            datetime_start=_parse_datetime(raw_trial.get("datetime_start")),
+            datetime_complete=_parse_datetime(raw_trial.get("datetime_complete")),
+            params=raw_trial.get("params", {}),
             distributions=distributions,
-            user_attrs=raw.get("user_attrs", {}),
+            user_attrs=raw_trial.get("user_attrs", {}),
             system_attrs={},
             intermediate_values={},
         )
@@ -407,11 +382,11 @@ def load_artifact(run_dir: Path) -> Dict[str, Any]:
         ``optuna.Study`` loaded from ``study.joblib`` (exact binary copy).
         ``None`` if joblib is not available or the file is missing.
     ``run_metadata``
-        Parsed content of ``run_metadata.json``.
+        Parsed content of ``run_metadata.yaml``.
     ``best_trial``
-        Parsed content of ``best_trial.json``.
+        Parsed content of ``best_trial.yaml``.
     ``param_importances``
-        Parsed content of ``param_importances.json``.
+        Parsed content of ``param_importances.yaml``.
     ``run_dir``
         The ``Path`` of the run directory.
 
@@ -431,7 +406,6 @@ def load_artifact(run_dir: Path) -> Dict[str, Any]:
     """
     result: Dict[str, Any] = {"run_dir": run_dir}
 
-    # study.yaml → optuna.Study
     yaml_path = run_dir / "study.yaml"
     if yaml_path.exists():
         result["study"] = load_study_from_yaml(yaml_path)
@@ -439,7 +413,6 @@ def load_artifact(run_dir: Path) -> Dict[str, Any]:
         result["study"] = None
         logger.warning("study.yaml not found in %s", run_dir)
 
-    # study.joblib → optuna.Study (binary fallback)
     joblib_path = run_dir / "study.joblib"
     try:
         import joblib
@@ -448,17 +421,15 @@ def load_artifact(run_dir: Path) -> Dict[str, Any]:
         logger.warning("Could not load study.joblib: %s", exc)
         result["study_joblib"] = None
 
-    # YAML metadata files
-    import yaml as _yaml
     for key, filename in [
         ("run_metadata",      "run_metadata.yaml"),
         ("best_trial",        "best_trial.yaml"),
         ("param_importances", "param_importances.yaml"),
     ]:
-        fpath = run_dir / filename
-        if fpath.exists():
+        file_path = run_dir / filename
+        if file_path.exists():
             try:
-                result[key] = _yaml.safe_load(fpath.read_text(encoding="utf-8"))
+                result[key] = _load_yaml(file_path)
             except Exception as exc:
                 logger.warning("Could not read %s: %s", filename, exc)
                 result[key] = None
@@ -466,11 +437,6 @@ def load_artifact(run_dir: Path) -> Dict[str, Any]:
             result[key] = None
 
     return result
-
-
-# ---------------------------------------------------------------------------
-# Public save entry-point
-# ---------------------------------------------------------------------------
 
 
 def save_artifact(
@@ -546,9 +512,6 @@ def save_artifact(
         logger.error("Failed to create artifact directory %s: %s", run_dir, exc)
         return run_dir
 
-    # ------------------------------------------------------------------ #
-    # 1. run_metadata.json
-    # ------------------------------------------------------------------ #
     optuna_config_content = _read_yaml_file(optuna_config_path)
 
     grid_yaml_path: Optional[str] = None
@@ -598,42 +561,24 @@ def save_artifact(
             "optuna_version": optuna.__version__,
         },
     }
-    try:
-        _dump_yaml(run_dir / "run_metadata.yaml", run_metadata)
-        logger.debug("Artifact: wrote run_metadata.yaml")
-    except Exception as exc:
-        logger.error("Artifact: failed to write run_metadata.yaml: %s", exc)
+    yaml_artifacts = (
+        ("run_metadata.yaml", lambda: run_metadata),
+        ("best_trial.yaml", lambda: _serialize_best_trial(study)),
+        ("param_importances.yaml", lambda: _compute_importances(study)),
+    )
+    for filename, build_content in yaml_artifacts:
+        try:
+            _dump_yaml(run_dir / filename, build_content())
+            logger.debug("Artifact: wrote %s", filename)
+        except Exception as exc:
+            logger.error("Artifact: failed to write %s: %s", filename, exc)
 
-    # ------------------------------------------------------------------ #
-    # 2. best_trial.yaml
-    # ------------------------------------------------------------------ #
-    try:
-        _dump_yaml(run_dir / "best_trial.yaml", _serialize_best_trial(study))
-        logger.debug("Artifact: wrote best_trial.yaml")
-    except Exception as exc:
-        logger.error("Artifact: failed to write best_trial.yaml: %s", exc)
-
-    # ------------------------------------------------------------------ #
-    # 3. param_importances.yaml
-    # ------------------------------------------------------------------ #
-    try:
-        _dump_yaml(run_dir / "param_importances.yaml", _compute_importances(study))
-        logger.debug("Artifact: wrote param_importances.yaml")
-    except Exception as exc:
-        logger.error("Artifact: failed to write param_importances.yaml: %s", exc)
-
-    # ------------------------------------------------------------------ #
-    # 4. study.yaml  (human-readable + round-trippable)
-    # ------------------------------------------------------------------ #
     try:
         _dump_study_yaml(run_dir / "study.yaml", study)
         logger.debug("Artifact: wrote study.yaml")
     except Exception as exc:
         logger.error("Artifact: failed to write study.yaml: %s", exc)
 
-    # ------------------------------------------------------------------ #
-    # 5. study.joblib  (binary, exact copy)
-    # ------------------------------------------------------------------ #
     try:
         import joblib
         joblib.dump(study, run_dir / "study.joblib")

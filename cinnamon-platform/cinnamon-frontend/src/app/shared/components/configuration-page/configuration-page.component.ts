@@ -14,7 +14,7 @@ import { environments } from "src/environments/environment";
 import { stringify } from "yaml";
 import {
     Algorithm,
-    isMixedTextSynthesizer,
+    isMixedDataSynthesizer,
     isStructuredOnlySynthesizer,
     isTextOnlySynthesizer,
 } from "../../model/algorithm";
@@ -231,7 +231,7 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected getFreeTextAlgorithms(algorithms: Algorithm[]): Algorithm[] {
-        return algorithms.filter(item => isMixedTextSynthesizer(item));
+        return algorithms.filter(item => isMixedDataSynthesizer(item));
     }
 
     protected getPrimaryAlgorithms(algorithms: Algorithm[], dataConfiguration: DataConfiguration): Algorithm[] {
@@ -240,6 +240,9 @@ export class ConfigurationPageComponent implements OnInit {
         }
         if (isTextOnlyDataConfiguration(dataConfiguration)) {
             return this.getTextOnlyAlgorithms(algorithms);
+        }
+        if (isMixedDataConfiguration(dataConfiguration)) {
+            return this.getFreeTextAlgorithms(algorithms);
         }
         return this.getStructuredAlgorithms(algorithms);
     }
@@ -262,11 +265,7 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected getNumberSteps(dataConfiguration: DataConfiguration): number {
-        if (!this.isSynthetizationConfiguration) {
-            return 4;
-        }
-
-        return isMixedDataConfiguration(dataConfiguration) ? 6 : 4;
+        return 4;
     }
 
     protected getTotalStepCount(dataConfiguration: DataConfiguration): number {
@@ -290,7 +289,7 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected shouldShowFreeTextSteps(dataConfiguration: DataConfiguration): boolean {
-        return this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration);
+        return false;
     }
 
     protected isTextOnlyDataset(dataConfiguration: DataConfiguration): boolean {

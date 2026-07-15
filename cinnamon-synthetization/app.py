@@ -49,18 +49,10 @@ HYPERPARAMETER_TUNING_DIR = os.path.join(os.path.dirname(__file__), "hyperparame
 PROCESSING_MODALITY_STRUCTURED_ONLY = "structured_only"
 PROCESSING_MODALITY_TEXT_ONLY = "text_only"
 PROCESSING_MODALITY_MIXED = "mixed"
-PROCESSING_SCOPE_STRUCTURED_ONLY = "structured_only"
-PROCESSING_SCOPE_TEXT_ONLY = "text_only"
-PROCESSING_SCOPE_MIXED = "mixed"
 PROCESSING_MODALITIES = {
     PROCESSING_MODALITY_STRUCTURED_ONLY,
     PROCESSING_MODALITY_TEXT_ONLY,
     PROCESSING_MODALITY_MIXED,
-}
-PROCESSING_SCOPES = {
-    PROCESSING_SCOPE_STRUCTURED_ONLY,
-    PROCESSING_SCOPE_TEXT_ONLY,
-    PROCESSING_SCOPE_MIXED,
 }
 
 
@@ -304,22 +296,6 @@ def post_callback_request(callback_url, *, files, data, timeout):
         )
 
 
-def _to_bool(value, default):
-    if value is None:
-        return default
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return value != 0
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"1", "true", "yes", "y", "on"}:
-            return True
-        if normalized in {"0", "false", "no", "n", "off"}:
-            return False
-    return default
-
-
 @lru_cache(maxsize=None)
 def load_synthesizer_config(synthesizer_name):
     config_file = os.path.join(SYNTHESIZER_CONFIG_DIR, f"{synthesizer_name}.yaml")
@@ -345,51 +321,19 @@ def get_study_parameter_default(parameter_name):
     )
 
 
-def get_processing_capabilities(synthesizer_name):
+def get_data_modality(synthesizer_name):
     config = load_synthesizer_config(synthesizer_name)
     capabilities = config.get("processing_capabilities", {})
     data_modality = capabilities.get("data_modality")
-    generation_scope = capabilities.get("generation_scope")
-
-    if data_modality in PROCESSING_MODALITIES and generation_scope in PROCESSING_SCOPES:
-        return data_modality, generation_scope
-
-    return _normalize_processing_capabilities(
-        (
-            capabilities.get("supports_structured_data"),
-            capabilities.get("supports_free_text_data"),
-        ),
-        synthesizer_name=synthesizer_name,
-    )
-
-
-def _normalize_processing_capabilities(capabilities, *, synthesizer_name=None):
-    if not isinstance(capabilities, tuple) or len(capabilities) != 2:
-        raise ValueError(f"Invalid processing_capabilities for synthesizer '{synthesizer_name}'.")
-
-    data_modality, generation_scope = capabilities
-    if data_modality in PROCESSING_MODALITIES and generation_scope in PROCESSING_SCOPES:
-        return data_modality, generation_scope
-
-    supports_structured = _to_bool(data_modality, True)
-    supports_free_text = _to_bool(generation_scope, False)
-
-    if supports_structured and not supports_free_text:
-        return PROCESSING_MODALITY_STRUCTURED_ONLY, PROCESSING_SCOPE_STRUCTURED_ONLY
-
-    if not supports_structured and supports_free_text:
-        if synthesizer_name == "llm_text_only_paraphrase_synthesis":
-            return PROCESSING_MODALITY_TEXT_ONLY, PROCESSING_SCOPE_TEXT_ONLY
-        return PROCESSING_MODALITY_MIXED, PROCESSING_SCOPE_TEXT_ONLY
-
-    raise ValueError(
-        f"Unsupported processing_capabilities for synthesizer '{synthesizer_name}': {capabilities}."
-    )
+    if data_modality not in PROCESSING_MODALITIES:
+        raise ValueError(
+            f"Invalid data_modality for synthesizer '{synthesizer_name}': {data_modality!r}."
+        )
+    return data_modality
 
 
 def is_llm_synthesizer(synthesizer_name: str) -> bool:
-    _, generation_scope = _normalize_processing_capabilities(get_processing_capabilities(synthesizer_name))
-    return generation_scope in {PROCESSING_SCOPE_TEXT_ONLY, PROCESSING_SCOPE_MIXED}
+    return get_data_modality(synthesizer_name) != PROCESSING_MODALITY_STRUCTURED_ONLY
 
 
 def split_attribute_configurations(attribute_config):
@@ -884,14 +828,12 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             return {'message': error_message, 'session_key': session_key, 'status_code': 400}
 
         structured_configs, text_configs = split_attribute_configurations(attribute_config)
-        data_modality, generation_scope = _normalize_processing_capabilities(
-            get_processing_capabilities(synthesizer_name)
-        )
+        data_modality = get_data_modality(synthesizer_name)
         text_reference_data = original_data if original_data is not None else data
 
         print(
             "Processing capabilities resolved: "
-            f"data_modality={data_modality}, generation_scope={generation_scope}, "
+            f"data_modality={data_modality}, "
             f"structured_columns={len(structured_configs)}, text_columns={len(text_configs)}"
         )
         print(
@@ -907,7 +849,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         final_model = None
 
         # 1) Selected synthesizer handles mixed rows directly without a separate structured synthesizer.
-        if generation_scope == PROCESSING_SCOPE_MIXED and data_modality == PROCESSING_MODALITY_MIXED:
+        if data_modality == PROCESSING_MODALITY_MIXED:
             print("Pipeline mode: direct mixed-data synthesis.")
             announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
             mixed_input = order_dataframe_by_config(data.copy(), attribute_config.get("configurations", []))
@@ -942,7 +884,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             )
 
         # 2) Selected synthesizer rewrites a TEXT-only dataset directly.
-        elif generation_scope == PROCESSING_SCOPE_TEXT_ONLY and data_modality == PROCESSING_MODALITY_TEXT_ONLY:
+        elif data_modality == PROCESSING_MODALITY_TEXT_ONLY:
             print("Pipeline mode: text-only synthesis.")
             announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
             text_input = order_dataframe_by_config(data.copy(), attribute_config.get("configurations", []))
@@ -977,7 +919,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             )
 
         # Structured-only synthesizers cannot process datasets containing free text.
-        elif text_configs and generation_scope == PROCESSING_SCOPE_STRUCTURED_ONLY:
+        elif text_configs and data_modality == PROCESSING_MODALITY_STRUCTURED_ONLY:
             raise ValueError(
                 f"Synthesizer '{synthesizer_name}' only supports structured data, but the dataset "
                 "contains TEXT columns. Select a mixed-data synthesizer instead."

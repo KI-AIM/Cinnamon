@@ -1,6 +1,6 @@
 import {
   Algorithm,
-  isMixedTextSynthesizer,
+  isMixedDataSynthesizer,
   isStructuredOnlySynthesizer,
   isTextOnlySynthesizer,
   supportsFreeTextData,
@@ -17,7 +17,6 @@ describe('Algorithm', () => {
     algorithm.name = 'ctgan';
     algorithm.processing_capabilities = {
       data_modality: 'structured_only',
-      generation_scope: 'structured_only',
     };
 
     expect(supportsStructuredData(algorithm)).toBeTrue();
@@ -28,12 +27,12 @@ describe('Algorithm', () => {
 
   it('should fall back to legacy name-based detection if capabilities are missing', () => {
     const algorithm = new Algorithm();
-    algorithm.name = 'llm_text_synthesis';
+    algorithm.name = 'llm_mixed_data_paraphrase_synthesis';
 
     expect(supportsStructuredData(algorithm)).toBeTrue();
     expect(supportsFreeTextData(algorithm)).toBeTrue();
     expect(isTextOnlySynthesizer(algorithm)).toBeFalse();
-    expect(isMixedTextSynthesizer(algorithm)).toBeTrue();
+    expect(isMixedDataSynthesizer(algorithm)).toBeTrue();
   });
 
   it('should detect text-only synthesizers from metadata', () => {
@@ -41,7 +40,6 @@ describe('Algorithm', () => {
     algorithm.name = 'llm_text_only_paraphrase_synthesis';
     algorithm.processing_capabilities = {
       data_modality: 'text_only',
-      generation_scope: 'text_only',
     };
 
     expect(supportsStructuredData(algorithm)).toBeFalse();
@@ -54,11 +52,10 @@ describe('Algorithm', () => {
     algorithm.name = 'llm_mixed_data_paraphrase_synthesis';
     algorithm.processing_capabilities = {
       data_modality: 'mixed',
-      generation_scope: 'mixed',
     };
 
     expect(supportsStructuredData(algorithm)).toBeTrue();
     expect(supportsFreeTextData(algorithm)).toBeTrue();
-    expect(isMixedTextSynthesizer(algorithm)).toBeFalse();
+    expect(isMixedDataSynthesizer(algorithm)).toBeTrue();
   });
 });

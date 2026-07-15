@@ -6,7 +6,6 @@ description: Paraphrase one TEXT column and then align the structured values wit
 URL: /start_synthetization_process/llm_mixed_data_paraphrase_synthesis
 processing_capabilities:
   data_modality: mixed
-  generation_scope: mixed
 configurations:
   llm_profile:
     display_name: LLM Profile

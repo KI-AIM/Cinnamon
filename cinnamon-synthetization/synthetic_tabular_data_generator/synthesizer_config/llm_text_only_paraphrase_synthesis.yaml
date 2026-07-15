@@ -6,7 +6,6 @@ description: Rewrite a single TEXT input column with an LLM while preserving the
 URL: /start_synthetization_process/llm_text_only_paraphrase_synthesis
 processing_capabilities:
   data_modality: text_only
-  generation_scope: text_only
 configurations:
   llm_profile:
     display_name: LLM Profile

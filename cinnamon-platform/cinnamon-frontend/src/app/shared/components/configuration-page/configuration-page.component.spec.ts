@@ -83,12 +83,12 @@ describe('ConfigurationPageComponent', () => {
     expect(component['shouldShowFreeTextSteps'](dataConfiguration)).toBeFalse();
   });
 
-  it('keeps the free-text pipeline only for mixed datasets', () => {
+  it('uses direct mixed-data synthesis without extra free-text steps', () => {
     const dataConfiguration = new DataConfiguration();
     dataConfiguration.configurations = [{ type: DataType.INTEGER } as any, { type: DataType.TEXT } as any];
 
-    expect(component['getNumberSteps'](dataConfiguration)).toBe(6);
-    expect(component['shouldShowFreeTextSteps'](dataConfiguration)).toBeTrue();
+    expect(component['getNumberSteps'](dataConfiguration)).toBe(4);
+    expect(component['shouldShowFreeTextSteps'](dataConfiguration)).toBeFalse();
   });
 
   it('auto-resolves the only available text-only synthesizer', () => {
@@ -99,7 +99,6 @@ describe('ConfigurationPageComponent', () => {
       name: 'llm_text_only_paraphrase_synthesis',
       processing_capabilities: {
         data_modality: 'text_only',
-        generation_scope: 'text_only',
       },
     } as any;
 

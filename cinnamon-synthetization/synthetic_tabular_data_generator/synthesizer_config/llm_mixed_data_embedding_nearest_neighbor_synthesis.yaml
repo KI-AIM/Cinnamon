@@ -6,7 +6,6 @@ description: Generate TEXT from weighted free-text and structured nearest neighb
 URL: /start_synthetization_process/llm_mixed_data_embedding_nearest_neighbor_synthesis
 processing_capabilities:
   data_modality: mixed
-  generation_scope: mixed
 configurations:
   llm_profile:
     display_name: LLM Profile

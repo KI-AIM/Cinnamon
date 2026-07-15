@@ -65,9 +65,8 @@ TOP_LEVEL_KEYS = {
     "processing_capabilities",
     "configurations",
 }
-PROCESSING_CAPABILITY_KEYS = {"data_modality", "generation_scope"}
+PROCESSING_CAPABILITY_KEYS = {"data_modality"}
 ALLOWED_DATA_MODALITIES = {"structured_only", "text_only", "mixed"}
-ALLOWED_GENERATION_SCOPES = {"structured_only", "text_only", "mixed"}
 CONFIG_REQUIRED_SECTIONS = set()
 CONFIG_OPTIONAL_SECTIONS = {"llm_profile", "model_parameter", "model_fitting", "sampling"}
 CONFIG_ALLOWED_SECTIONS = CONFIG_REQUIRED_SECTIONS | CONFIG_OPTIONAL_SECTIONS
@@ -110,11 +109,6 @@ def test_top_level_structure_and_filename_match():
         assert isinstance(config["processing_capabilities"], dict)
         assert set(config["processing_capabilities"].keys()) == PROCESSING_CAPABILITY_KEYS
         assert config["processing_capabilities"]["data_modality"] in ALLOWED_DATA_MODALITIES
-        assert config["processing_capabilities"]["generation_scope"] in ALLOWED_GENERATION_SCOPES
-        if config["processing_capabilities"]["generation_scope"] == "structured_only":
-            assert config["processing_capabilities"]["data_modality"] == "structured_only"
-        if config["processing_capabilities"]["generation_scope"] == "mixed":
-            assert config["processing_capabilities"]["data_modality"] == "mixed"
         assert config["URL"].startswith("/start_synthetization_process/")
         assert config["URL"].endswith(f"/{config['name']}")
         section_names = set(config["configurations"].keys())

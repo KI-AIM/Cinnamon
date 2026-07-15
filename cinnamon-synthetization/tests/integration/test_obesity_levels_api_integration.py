@@ -159,7 +159,7 @@ def test_obesity_levels_api_generates_synthetic_dataset(monkeypatch):
         "Process",
         InlineProcess,
     )
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (True, False))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "structured_only")
     monkeypatch.setattr(app_module, "post_callback_request", fake_requests_post)
     monkeypatch.setitem(
         app_module.synthesizer_classes,

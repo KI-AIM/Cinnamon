@@ -6,7 +6,6 @@ description: Rewrite one TEXT column to reduce direct and indirect identifiabili
 URL: /start_synthetization_process/llm_mixed_data_indirect_identifier_rewrite_synthesis
 processing_capabilities:
   data_modality: mixed
-  generation_scope: mixed
 configurations:
   llm_profile:
     display_name: LLM Profile

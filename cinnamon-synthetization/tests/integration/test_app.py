@@ -316,7 +316,7 @@ def test_start_synthetization_process_returns_400_when_callback_is_missing():
 
 def test_start_synthetization_process_allows_missing_original_data_for_text_synthesis(monkeypatch):
     app_module.tasks.clear()
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "text_only")
     monkeypatch.setattr(app_module.PROCESS_CONTEXT, "Process", StartedProcess)
     client = app_module.app.test_client()
 
@@ -348,7 +348,7 @@ def test_start_synthetization_process_allows_missing_original_data_for_text_synt
 
 def test_start_synthetization_process_allows_missing_original_data_for_structured_synthesis(monkeypatch):
     app_module.tasks.clear()
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (True, False))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "structured_only")
     client = app_module.app.test_client()
 
     response = client.post(
@@ -584,7 +584,7 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
             "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: ("text_only", "text_only"))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "text_only")
     monkeypatch.setattr(
         app_module,
         "load_text_synthesis_defaults",
@@ -642,8 +642,8 @@ def test_synthesize_data_runs_mixed_llm_without_structured_synthesis(monkeypatch
     )
     monkeypatch.setattr(
         app_module,
-        "get_processing_capabilities",
-        lambda name: ("mixed", "mixed") if name == "llm_mixed" else ("mixed", "text_only"),
+        "get_data_modality",
+        lambda _name: "mixed",
     )
     monkeypatch.setattr(
         app_module,
@@ -702,7 +702,7 @@ def test_synthesize_data_marks_llm_component_before_text_stage_starts(monkeypatc
             "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: ("text_only", "text_only"))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "text_only")
     monkeypatch.setattr(
         app_module,
         "load_text_synthesis_defaults",
@@ -755,7 +755,7 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
             "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: ("text_only", "text_only"))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "text_only")
     monkeypatch.setattr(
         app_module,
         "load_text_synthesis_defaults",
@@ -811,7 +811,7 @@ def test_synthesize_data_rejects_structured_synthesizer_for_text_columns(monkeyp
             "ctgan": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (True, False))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "structured_only")
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
     monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
@@ -862,7 +862,7 @@ def test_get_algorithms_includes_processing_capabilities(monkeypatch):
     payload = response.get_data(as_text=True)
     assert "processing_capabilities:" in payload
     assert "data_modality: structured_only" in payload
-    assert "generation_scope: structured_only" in payload
+    assert "generation_scope" not in payload
 
 
 def test_get_synthesizer_config_normalizes_llm_profile_into_model_parameter(monkeypatch):

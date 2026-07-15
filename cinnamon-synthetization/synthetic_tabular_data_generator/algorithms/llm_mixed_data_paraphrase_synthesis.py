@@ -32,6 +32,9 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
         _, model_params, _ = self._initialize_common_llm_configuration(config, default_few_shot_rows=0)
+        self._initialize_profile_rows_configuration(model_params)
+
+    def _initialize_profile_rows_configuration(self, model_params: Dict[str, Any]) -> None:
         raw_profile_rows = model_params.get("profile_rows")
         if raw_profile_rows is None or (
             isinstance(raw_profile_rows, str) and raw_profile_rows.strip().startswith("$")

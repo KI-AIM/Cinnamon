@@ -12,6 +12,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synthesis import (
     LlmMixedDataParaphraseSynthesisSynthesizer,
 )
+from synthetic_tabular_data_generator.algorithms.llm_mixed_data_indirect_identifier_rewrite_synthesis import (
+    LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
+)
 
 
 def _set_llm_env(monkeypatch) -> None:
@@ -103,3 +106,62 @@ def test_mixed_paraphrase_rewrites_text_then_aligns_structured_values(monkeypatc
     assert "Statistical profiles were calculated from 1 of 1 reference rows." in prompts[1]
     assert '"age": 80' in prompts[1]
     assert '"note": "Der 83-jährige Patient wurde entlassen."' in prompts[1]
+
+
+def test_mixed_indirect_identifier_rewrite_then_aligns_structured_values(monkeypatch):
+    _set_llm_env(monkeypatch)
+    prompts = []
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET":
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        prompt = kwargs["json"]["prompt"]
+        prompts.append(prompt)
+        if len(prompts) == 1:
+            return _DummyResponse(
+                {"response": json.dumps({"row": {"note": "Der etwa 80-jährige Patient wurde entlassen."}})}
+            )
+        return _DummyResponse(
+            {"response": json.dumps({"row": {"age": 80, "note": "must be ignored"}})}
+        )
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+
+    attribute_config = {
+        "configurations": [
+            {"index": 0, "name": "age", "type": "INTEGER"},
+            {"index": 1, "name": "note", "type": "TEXT"},
+        ]
+    }
+    algorithm_config = {
+        "synthetization_configuration": {
+            "algorithm": {
+                "llm_profile": {"llm_profile": "Test Profile"},
+                "model_parameter": {"profile_rows": 100},
+                "model_fitting": {"indirect_identifier_level": "high"},
+                "sampling": {"num_samples": 1, "temperature": 0.2, "top_p": 0.9},
+            }
+        }
+    }
+    dataset = pd.DataFrame([{"age": 83, "note": "Der 83-jährige Max Mustermann wurde entlassen."}])
+    reference = pd.DataFrame([{"age": 80, "note": "Referenztext"}])
+
+    synthesizer = LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer()
+    synthesizer.initialize_anonymization_configuration(algorithm_config)
+    synthesizer.initialize_attribute_configuration(attribute_config)
+    synthesizer.initialize_dataset(dataset)
+    synthesizer.initialize_reference_dataset(reference)
+    synthesizer.initialize_synthesizer()
+    synthesizer.fit()
+
+    sample = synthesizer.sample()
+
+    assert sample.to_dict(orient="records") == [
+        {"age": 80, "note": "Der etwa 80-jährige Patient wurde entlassen."}
+    ]
+    assert len(prompts) == 2
+    assert "expert clinical de-identification rewriter" in prompts[0]
+    assert "selected anonymization level: HIGH" in prompts[0]
+    assert '"age"' not in prompts[0]
+    assert "Statistical profiles were calculated from 1 of 1 reference rows." in prompts[1]
+    assert '"note": "Der etwa 80-jährige Patient wurde entlassen."' in prompts[1]

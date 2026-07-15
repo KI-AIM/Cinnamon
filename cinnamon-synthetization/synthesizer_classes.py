@@ -6,6 +6,9 @@ from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_few_shot_t
     LlmNearestNeighborFewShotTextSynthesisSynthesizer,
 )
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_mixed_data_indirect_identifier_rewrite_synthesis import (
+    LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
+)
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synthesis import (
     LlmMixedDataParaphraseSynthesisSynthesizer,
 )
@@ -85,6 +88,14 @@ synthesizer_classes = {
         'display_name': 'LLM Structured Tabular Synthesis',
         'description': 'Generate structured-only synthetic tabular rows with an LLM from statistical column profiles calculated on a configurable sample of the input dataset.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
+    },
+    'llm_mixed_data_indirect_identifier_rewrite_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
+        'display_name': 'LLM Mixed-data Indirect Identifier Rewrite Synthesis',
+        'description': 'Rewrite one TEXT column to reduce direct and indirect identifiability, then align structured values with the rewritten text using statistical column profiles.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_indirect_identifier_rewrite_synthesis.yaml'
     },
     'llm_mixed_data_paraphrase_synthesis': {
         'version': '0.1',

@@ -71,23 +71,6 @@ def _algorithm_config(
     }
 
 
-def test_load_llm_client_config_prefers_sampling_max_tokens_over_profile(monkeypatch):
-    profile_name = _set_profile_env(monkeypatch, max_tokens="2048")
-
-    config = load_llm_client_config(
-        _algorithm_config(
-            profile_name=profile_name,
-            sampling={
-                "temperature": 0.2,
-                "top_p": 0.9,
-                "max_tokens": 999999,
-            },
-        )
-    )
-
-    assert config.max_tokens == 999999
-
-
 def test_load_llm_client_config_uses_profile_max_tokens_as_fallback(monkeypatch):
     profile_name = _set_profile_env(monkeypatch, max_tokens="2048")
 

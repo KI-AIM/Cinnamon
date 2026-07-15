@@ -32,7 +32,7 @@
             </app-workstep-item>
 
             <!-- Hyperparameter Tuning (optional, injected by the parent page) -->
-            <app-workstep-item *ngIf="intermediateStep && !isTextOnlyDataset(data.dataConfiguration)" header="Configure hyperparameter tuning"
+            <app-workstep-item *ngIf="shouldShowIntermediateStep(data.dataConfiguration)" header="Configure hyperparameter tuning"
                                [locked]="data.locked" [stepIndex]="3">
                 <ng-container *ngTemplateOutlet="intermediateStep"></ng-container>
             </app-workstep-item>
@@ -154,7 +154,7 @@
             </app-configuration-selection>
         </app-workstep-box>
 
-        <app-workstep-box *ngIf="intermediateStep && !isTextOnlyDataset(data.dataConfiguration)" header="Hyperparameter Tuning">
+        <app-workstep-box *ngIf="shouldShowIntermediateStep(data.dataConfiguration)" header="Hyperparameter Tuning">
             <ng-container *ngTemplateOutlet="intermediateStep"></ng-container>
         </app-workstep-box>
 

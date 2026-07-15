@@ -30,6 +30,7 @@ import { ConfigurationSelectionComponent } from "../configuration-selection/conf
 import {
     DataConfiguration,
     isMixedDataConfiguration,
+    isStructuredOnlyDataConfiguration,
     isTextOnlyDataConfiguration,
 } from "../../model/data-configuration";
 import { TextSynthesisConfigurationService } from "../../../features/synthetization/services/text-synthesis-configuration.service";
@@ -269,31 +270,31 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected getTotalStepCount(dataConfiguration: DataConfiguration): number {
-        const hasIntermediateStep = this.intermediateStep != null && !isTextOnlyDataConfiguration(dataConfiguration);
+        const hasIntermediateStep = this.shouldShowIntermediateStep(dataConfiguration);
         return this.getNumberSteps(dataConfiguration) + (hasIntermediateStep ? 1 : 0);
     }
 
     protected getAlgorithmConfigurationStepIndex(dataConfiguration: DataConfiguration): number {
-        const hasIntermediateStep = this.intermediateStep != null && !isTextOnlyDataConfiguration(dataConfiguration);
+        const hasIntermediateStep = this.shouldShowIntermediateStep(dataConfiguration);
         return hasIntermediateStep ? 4 : 3;
     }
 
     protected getFreeTextSelectionStepIndex(dataConfiguration: DataConfiguration): number {
-        const hasIntermediateStep = this.intermediateStep != null && !isTextOnlyDataConfiguration(dataConfiguration);
+        const hasIntermediateStep = this.shouldShowIntermediateStep(dataConfiguration);
         return hasIntermediateStep ? 5 : 4;
     }
 
     protected getFreeTextConfigurationStepIndex(dataConfiguration: DataConfiguration): number {
-        const hasIntermediateStep = this.intermediateStep != null && !isTextOnlyDataConfiguration(dataConfiguration);
+        const hasIntermediateStep = this.shouldShowIntermediateStep(dataConfiguration);
         return hasIntermediateStep ? 6 : 5;
+    }
+
+    protected shouldShowIntermediateStep(dataConfiguration: DataConfiguration): boolean {
+        return this.intermediateStep != null && isStructuredOnlyDataConfiguration(dataConfiguration);
     }
 
     protected shouldShowFreeTextSteps(dataConfiguration: DataConfiguration): boolean {
         return false;
-    }
-
-    protected isTextOnlyDataset(dataConfiguration: DataConfiguration): boolean {
-        return isTextOnlyDataConfiguration(dataConfiguration);
     }
 
     protected getFreeTextAlgorithmDefinition(
@@ -335,6 +336,9 @@ export class ConfigurationPageComponent implements OnInit {
         if (this.isSynthetizationConfiguration && isTextOnlyDataConfiguration(dataConfiguration)) {
             return "Select the free-text synthesizer";
         }
+        if (this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration)) {
+            return "Select the mixed-data synthesizer";
+        }
         if (this.isSynthetizationConfiguration) {
             return "Select the structured synthesizer";
         }
@@ -344,6 +348,9 @@ export class ConfigurationPageComponent implements OnInit {
     protected getConfigurationStepHeader(dataConfiguration: DataConfiguration): string {
         if (this.isSynthetizationConfiguration && isTextOnlyDataConfiguration(dataConfiguration)) {
             return "Configure the free-text synthesizer";
+        }
+        if (this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration)) {
+            return "Configure the mixed-data synthesizer";
         }
         if (this.isSynthetizationConfiguration) {
             return "Configure the structured synthesizer";

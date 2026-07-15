@@ -4,7 +4,7 @@ import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
-import { Algorithm } from "../../../shared/model/algorithm";
+import { Algorithm, isStructuredOnlySynthesizer } from "../../../shared/model/algorithm";
 import { AlgorithmDefinition } from "../../../shared/model/algorithm-definition";
 import { map, Observable, ReplaySubject } from "rxjs";
 import { parse } from "yaml";
@@ -88,7 +88,9 @@ export class SynthetizationService extends AlgorithmService {
                     synthesizer: selectedAlgorithm.name,
                     type: selectedAlgorithm.type,
                     version: selectedAlgorithm.version,
-                    hyperparameter_tuning: this._hyperparameterConfig,
+                    ...(isStructuredOnlySynthesizer(selectedAlgorithm)
+                        ? {hyperparameter_tuning: this._hyperparameterConfig}
+                        : {}),
                     ...formData,
                 },
             },

@@ -48,4 +48,17 @@ describe('Algorithm', () => {
     expect(supportsFreeTextData(algorithm)).toBeTrue();
     expect(isTextOnlySynthesizer(algorithm)).toBeTrue();
   });
+
+  it('should recognize a mixed-generation synthesizer as supporting both data kinds', () => {
+    const algorithm = new Algorithm();
+    algorithm.name = 'llm_mixed_data_paraphrase_synthesis';
+    algorithm.processing_capabilities = {
+      data_modality: 'mixed',
+      generation_scope: 'mixed',
+    };
+
+    expect(supportsStructuredData(algorithm)).toBeTrue();
+    expect(supportsFreeTextData(algorithm)).toBeTrue();
+    expect(isMixedTextSynthesizer(algorithm)).toBeFalse();
+  });
 });

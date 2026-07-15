@@ -8,7 +8,7 @@ export class Algorithm {
     URL: string
     processing_capabilities?: {
         data_modality?: "structured_only" | "text_only" | "mixed"
-        generation_scope?: "structured_only" | "text_only"
+        generation_scope?: "structured_only" | "text_only" | "mixed"
         supports_structured_data?: boolean
         supports_free_text_data?: boolean
     }
@@ -29,7 +29,7 @@ function getDataModality(algorithm: Algorithm): "structured_only" | "text_only" 
     return algorithm.name.includes("text") ? "mixed" : "structured_only";
 }
 
-function getGenerationScope(algorithm: Algorithm): "structured_only" | "text_only" {
+function getGenerationScope(algorithm: Algorithm): "structured_only" | "text_only" | "mixed" {
     const scope = algorithm.processing_capabilities?.generation_scope;
     if (scope != null) {
         return scope;
@@ -48,7 +48,7 @@ export function supportsStructuredData(algorithm: Algorithm): boolean {
 }
 
 export function supportsFreeTextData(algorithm: Algorithm): boolean {
-    return getGenerationScope(algorithm) === "text_only";
+    return getGenerationScope(algorithm) !== "structured_only";
 }
 
 export function isTextOnlySynthesizer(algorithm: Algorithm): boolean {

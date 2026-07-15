@@ -622,6 +622,69 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
     _delete_status_file(session_key)
 
 
+def test_synthesize_data_runs_mixed_llm_without_structured_synthesis(monkeypatch):
+    captured_calls = []
+
+    class DummyResponse:
+        status_code = 200
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    def fake_run_synthesizer_stage(**kwargs):
+        captured_calls.append(kwargs)
+        return kwargs["input_data"].copy(), b"model", 0.1, 0.2, 0.3
+
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_classes",
+        {
+            "llm_mixed": {"class": object},
+            "llm_text_synth": {"class": object},
+        },
+    )
+    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
+    monkeypatch.setattr(
+        app_module,
+        "get_processing_capabilities",
+        lambda name: ("mixed", "mixed") if name == "llm_mixed" else ("mixed", "text_only"),
+    )
+    monkeypatch.setattr(
+        app_module,
+        "load_text_synthesis_defaults",
+        lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
+    )
+    monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
+
+    data = app_module.pd.DataFrame([{"age": 80, "note": "83-year-old patient"}])
+    session_key = "direct-mixed-synthesis"
+    status_path = _status_file_path(session_key)
+    _delete_status_file(session_key)
+    initialize_status_file(str(status_path), session_key, "llm_mixed")
+
+    result = app_module.synthesize_data(
+        "llm_mixed",
+        str(status_path),
+        _text_attribute_config(),
+        _algorithm_config(),
+        data,
+        None,
+        "http://callback.local/test",
+        session_key,
+    )
+
+    assert result["status_code"] == 200
+    assert len(captured_calls) == 1
+    assert captured_calls[0]["stage_label"] == "MIXED_SYNTHESIS"
+    assert captured_calls[0]["replace_text_with_pending"] is False
+    assert captured_calls[0]["input_data"].equals(data)
+    assert captured_calls[0]["reference_data"].equals(data)
+
+    _delete_status_file(session_key)
+
+
 def test_synthesize_data_marks_llm_component_before_text_stage_starts(monkeypatch):
     class DummyResponse:
         status_code = 200

@@ -52,6 +52,7 @@ PROCESSING_MODALITY_TEXT_ONLY = "text_only"
 PROCESSING_MODALITY_MIXED = "mixed"
 PROCESSING_SCOPE_STRUCTURED_ONLY = "structured_only"
 PROCESSING_SCOPE_TEXT_ONLY = "text_only"
+PROCESSING_SCOPE_MIXED = "mixed"
 PROCESSING_MODALITIES = {
     PROCESSING_MODALITY_STRUCTURED_ONLY,
     PROCESSING_MODALITY_TEXT_ONLY,
@@ -60,6 +61,7 @@ PROCESSING_MODALITIES = {
 PROCESSING_SCOPES = {
     PROCESSING_SCOPE_STRUCTURED_ONLY,
     PROCESSING_SCOPE_TEXT_ONLY,
+    PROCESSING_SCOPE_MIXED,
 }
 
 
@@ -388,7 +390,7 @@ def _normalize_processing_capabilities(capabilities, *, synthesizer_name=None):
 
 def is_llm_synthesizer(synthesizer_name: str) -> bool:
     _, generation_scope = _normalize_processing_capabilities(get_processing_capabilities(synthesizer_name))
-    return generation_scope == PROCESSING_SCOPE_TEXT_ONLY
+    return generation_scope in {PROCESSING_SCOPE_TEXT_ONLY, PROCESSING_SCOPE_MIXED}
 
 
 DEFAULT_TEXT_SYNTHESIZER_NAME = "llm_nearest_neighbor_few_shot_text_synthesis"
@@ -962,8 +964,44 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         final_samples = None
         final_model = None
 
-        # 1) Selected synthesizer rewrites a TEXT-only dataset directly.
-        if generation_scope == PROCESSING_SCOPE_TEXT_ONLY and data_modality == PROCESSING_MODALITY_TEXT_ONLY:
+        # 1) Selected synthesizer handles mixed rows directly without a separate structured synthesizer.
+        if generation_scope == PROCESSING_SCOPE_MIXED and data_modality == PROCESSING_MODALITY_MIXED:
+            print("Pipeline mode: direct mixed-data synthesis.")
+            announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
+            mixed_input = order_dataframe_by_config(data.copy(), attribute_config.get("configurations", []))
+            mixed_algorithm_config = build_text_synthesis_algorithm_config(
+                algorithm_config,
+                synthesizer_name,
+                synthesizer_name,
+                len(mixed_input),
+            )
+
+            final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                stage_label="MIXED_SYNTHESIS",
+                synthesizer_name=synthesizer_name,
+                stage_attribute_config=attribute_config,
+                stage_algorithm_config=mixed_algorithm_config,
+                input_data=mixed_input,
+                reference_data=text_reference_data,
+                file_path_status=file_path_status,
+                replace_text_with_pending=False,
+                fill_text_with_pending=False,
+                session_key=session_key,
+                status_component_name="llm_synthesis",
+            )
+            total_init_duration += init_duration
+            total_fit_duration += fit_duration
+            total_sample_duration += sample_duration
+            update_pipeline_totals(
+                file_path_status,
+                total_init_duration,
+                total_fit_duration,
+                total_sample_duration,
+                completed=True,
+            )
+
+        # 2) Selected synthesizer rewrites a TEXT-only dataset directly.
+        elif generation_scope == PROCESSING_SCOPE_TEXT_ONLY and data_modality == PROCESSING_MODALITY_TEXT_ONLY:
             print("Pipeline mode: text-only synthesis.")
             announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
             text_input = order_dataframe_by_config(data.copy(), attribute_config.get("configurations", []))
@@ -998,7 +1036,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 completed=True,
             )
 
-        # 2) Selected synthesizer enriches TEXT fields on top of an already existing mixed row base.
+        # 3) Selected synthesizer enriches TEXT fields on top of an already existing mixed row base.
         elif generation_scope == PROCESSING_SCOPE_TEXT_ONLY and data_modality == PROCESSING_MODALITY_MIXED:
             print("Pipeline mode: text enrichment.")
             announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
@@ -1034,7 +1072,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                 completed=True,
             )
 
-        # 3) Selected synthesizer does not support text generation:
+        # 4) Selected synthesizer does not support text generation:
         #    first synthesize structured columns, then synthesize text via the default few-shot text synthesizer.
         elif text_configs and generation_scope == PROCESSING_SCOPE_STRUCTURED_ONLY:
             print("Pipeline mode: two-stage (structured -> text synthesis).")
@@ -1110,7 +1148,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             if final_model is None:
                 final_model = structured_model
 
-        # 4) Selected synthesizer handles structured data directly in one stage.
+        # 5) Selected synthesizer handles structured data directly in one stage.
         else:
             print("Pipeline mode: single-stage synthesis.")
             announce_component_synthesis(file_path_status, "structured_synthesis", synthesizer_name)

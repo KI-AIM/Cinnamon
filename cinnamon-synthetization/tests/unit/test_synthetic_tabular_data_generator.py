@@ -55,6 +55,24 @@ def _is_tabular_base(base: ast.expr) -> bool:
     return False
 
 
+def _algorithm_class_map() -> dict[str, ast.ClassDef]:
+    classes = {}
+    for path in _algorithm_files():
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        classes.update({node.name: node for node in tree.body if isinstance(node, ast.ClassDef)})
+    return classes
+
+
+def _is_tabular_subclass(cls: ast.ClassDef, class_map: dict[str, ast.ClassDef]) -> bool:
+    for base in cls.bases:
+        if _is_tabular_base(base):
+            return True
+        parent = class_map.get(_annotation_to_str(base))
+        if parent is not None and _is_tabular_subclass(parent, class_map):
+            return True
+    return False
+
+
 def _get_params(method: ast.FunctionDef) -> list[ast.arg]:
     return method.args.posonlyargs + method.args.args
 
@@ -138,11 +156,12 @@ def test_algorithm_wrapper_files_present():
 
 
 def test_wrapper_has_tabular_synthesizer_subclass():
+    class_map = _algorithm_class_map()
     for path in _algorithm_files():
         tree = ast.parse(path.read_text(encoding="utf-8"))
         classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
         synth_classes = [
-            cls for cls in classes if any(_is_tabular_base(base) for base in cls.bases)
+            cls for cls in classes if _is_tabular_subclass(cls, class_map)
         ]
         assert synth_classes, f"{path.name} must define a TabularDataSynthesizer subclass"
 

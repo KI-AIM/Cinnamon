@@ -151,7 +151,7 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
     }
 
     protected get username(): string {
-        return this.userService.getUser().username;
+        return this.userService.getUser().userInfo.username;
     }
 
     /**

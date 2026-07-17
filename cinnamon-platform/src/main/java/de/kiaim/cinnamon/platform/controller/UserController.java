@@ -46,10 +46,10 @@ public class UserController {
 			@ApiResponse(responseCode = "200",
 			             description = "User credential are correct.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = Boolean.class),
+			                                 schema = @Schema(implementation = UserInfo.class),
 			                                 examples = {@ExampleObject("true")}),
 			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = Boolean.class),
+			                                 schema = @Schema(implementation = UserInfo.class),
 			                                 examples = {@ExampleObject("true")})}),
 			@ApiResponse(responseCode = "401",
 			             description = "User is not authorized.",
@@ -57,8 +57,8 @@ public class UserController {
 	})
 	@GetMapping(value = "/login",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public boolean login() {
-		return true;
+	public UserInfo login(@AuthenticationPrincipal final UserEntity user) throws BadUserException {
+		return userService.getUserInfo(user);
 	}
 
 	@Operation(summary = "Registers a new user.",
@@ -121,22 +121,24 @@ public class UserController {
 
 	@PostMapping(value = "/-/update-username",
 	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public void updateUsername(
+	public UserInfo updateUsername(
 			@RequestBody @Valid final UpdateUsernameRequest updateUsernameRequest,
-			@AuthenticationPrincipal final UserEntity user
+			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		userService.updateUsername(user.getUsername(), updateUsernameRequest.getCurrentPassword(),
-		                           updateUsernameRequest.getNewUsername());
+		user = userService.updateUsername(user.getUsername(), updateUsernameRequest.getCurrentPassword(),
+		                                  updateUsernameRequest.getNewUsername());
+		return userService.getUserInfo(user);
 	}
 
 	@PostMapping(value = "/-/update-password",
 	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public void updatePassword(
+	public UserInfo updatePassword(
 			@RequestBody @Valid final UpdatePasswordRequest updatePasswordRequest,
-			@AuthenticationPrincipal final UserEntity user
+			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		userService.updatePassword(user.getUsername(), updatePasswordRequest.getCurrentPassword(),
-		                           updatePasswordRequest.getNewPassword());
+		user = userService.updatePassword(user.getUsername(), updatePasswordRequest.getCurrentPassword(),
+		                                  updatePasswordRequest.getNewPassword());
+		return userService.getUserInfo(user);
 	}
 
 	@Operation(summary = "Returns all projects of the currently authenticated user.")

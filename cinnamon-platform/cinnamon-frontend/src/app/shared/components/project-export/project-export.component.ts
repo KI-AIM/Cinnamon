@@ -147,7 +147,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
                     const minutes = now.getMinutes().toString().padStart(2, '0');
                     const seconds = now.getSeconds().toString().padStart(2, '0');
                     const localDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-                    fileName = this.userService.getUser().username + "_" + localDateTime + "_Cinnamon.zip";
+                    fileName = this.userService.getUser().userInfo.username + "_" + localDateTime + "_Cinnamon.zip";
                 }
 
                 const element = document.createElement('a');

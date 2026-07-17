@@ -4,9 +4,9 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from "@angular/forms";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
 import { Project } from "@shared/model/project";
-import { User } from "@shared/model/user";
+import { User, UserInfo } from "@shared/model/user";
 import { PasswordRequirements } from "@shared/services/app-config.service";
-import { BehaviorSubject, from, Observable, Subject, switchMap, tap } from "rxjs";
+import { BehaviorSubject, from, Observable, Subject, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 
 @Injectable({
@@ -87,12 +87,10 @@ export class UserService {
             credentials ? {authorization: "Basic " + token} : {}
         );
 
-        return this.http.get<any>(this.baseURL + "/login", {headers: headers}).pipe(
-            tap(data => {
-                if (typeof data === "boolean" && data) {
-                    this.setUser(this.createLoggedInUser(credentials.username, credentials.password));
-                    this.loginSubject.next();
-                }
+        return this.http.get<UserInfo>(this.baseURL + "/login", {headers: headers}).pipe(
+            tap(userInfo => {
+                this.setUser(this.createLoggedInUser(credentials.username, credentials.password, userInfo));
+                this.loginSubject.next();
             }),
         );
     }
@@ -124,7 +122,7 @@ export class UserService {
      * @param mode The mode defining the displayed message.
      */
     public logout(mode: LogoutMode) {
-        const user = this.getUser().username || null;
+        const user = this.getUser().userInfo.username || null;
 
         this.setUser(this.createLoggedOutUser());
 
@@ -152,29 +150,29 @@ export class UserService {
         });
     }
 
-    public updateUsername(newUsername: string, currentPassword: string): Observable<void> {
+    public updateUsername(newUsername: string, currentPassword: string): Observable<UserInfo> {
         const body = {
             newUsername,
             currentPassword
         };
 
-        return this.http.post<void>(this.baseURL + "/-/update-username", body).pipe(
-            tap(() => {
-                this.setUser(this.createLoggedInUser(newUsername, currentPassword));
+        return this.http.post<UserInfo>(this.baseURL + "/-/update-username", body).pipe(
+            tap(userInfo => {
+                this.setUser(this.createLoggedInUser(newUsername, currentPassword, userInfo));
             }),
         );
     }
 
-    public updatePassword(currentPassword: string, newPassword: string, newPasswordRepeated: string): Observable<void> {
+    public updatePassword(currentPassword: string, newPassword: string, newPasswordRepeated: string): Observable<UserInfo> {
         const body = {
             currentPassword,
             newPassword,
             newPasswordRepeated
         };
 
-        return this.http.post<void>(this.baseURL + "/-/update-password", body).pipe(
-            tap(() => {
-                this.setUser(this.createLoggedInUser(this.getUser().username, newPassword));
+        return this.http.post<UserInfo>(this.baseURL + "/-/update-password", body).pipe(
+            tap(userInfo => {
+                this.setUser(this.createLoggedInUser(this.getUser().userInfo.username, newPassword, userInfo));
             }),
         );
     }
@@ -204,12 +202,12 @@ export class UserService {
     }
 
     private createLoggedOutUser(): User {
-        return new User(false, "", "");
+        return new User(false, new UserInfo(), "");
     }
 
-    private createLoggedInUser(username: string, password: string): User {
+    private createLoggedInUser(username: string, password: string, userInfo: UserInfo): User {
         const token = btoa(username + ":" + password);
-        return new User(true, username, token);
+        return new User(true, userInfo, token);
     }
 
     private setUser(user: User): void {

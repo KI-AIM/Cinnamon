@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.service;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
+import de.kiaim.cinnamon.platform.model.dto.UserInfo;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
@@ -36,6 +37,10 @@ public class UserService implements UserDetailsService {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.projectService = projectService;
+	}
+
+	public UserInfo getUserInfo(final UserEntity user) throws BadUserException {
+		return new UserInfo(user.getUsername(), Set.of(user.getUserRole()));
 	}
 
 	@Nullable
@@ -72,14 +77,17 @@ public class UserService implements UserDetailsService {
 	}
 
 	@Transactional
-	public void updatePassword(final String username, final String currentPassword, final String rawPassword)
+	public UserEntity updatePassword(final String username, final String currentPassword, final String rawPassword)
 			throws BadUserException, BadUserConfirmationException {
 		final UserEntity user = getUserByUsernameOrThrow(username);
 
 		confirmPassword(currentPassword, user);
 
 		user.setPassword(passwordEncoder.encode(rawPassword));
+
 		log.debug("Updated password for user with username '{}'", username);
+
+		return user;
 	}
 
 	/**
@@ -92,13 +100,13 @@ public class UserService implements UserDetailsService {
 	 * @throws BadUserConfirmationException If the password is incorrect.
 	 */
 	@Transactional
-	public void updateUsername(final String username, final String currentPassword, final String newUsername)
+	public UserEntity updateUsername(final String username, final String currentPassword, final String newUsername)
 			throws BadUserException, BadUserConfirmationException {
 		final UserEntity user = getUserByUsernameOrThrow(username);
 
 		confirmPassword(currentPassword, user);
 		if (Objects.equals(username, newUsername)) {
-			return;
+			return user;
 		}
 		if (doesUserWithUsernameExist(newUsername)) {
 			throw new BadUserException(BadUserException.ALREADY_EXISTS,
@@ -108,6 +116,8 @@ public class UserService implements UserDetailsService {
 		user.setUsername(newUsername);
 
 		log.debug("Updated username from '{}' to '{}'", username, newUsername);
+
+		return user;
 	}
 
 	/**

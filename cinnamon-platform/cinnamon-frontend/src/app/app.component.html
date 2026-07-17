@@ -12,6 +12,13 @@
             </div>
             <div class="title-actions">
                 @if (user$ | async; as user) {
+
+                    @if (user.userInfo.roles.includes(UserRole.ROLE_ADMIN)) {
+                        <a title="Administration" class="icon icon-enabled" [routerLink]="['admin']">
+                            <mat-icon>settings</mat-icon>
+                        </a>
+                    }
+
                     @if (user.authenticated) {
                         <app-user-center></app-user-center>
                     }

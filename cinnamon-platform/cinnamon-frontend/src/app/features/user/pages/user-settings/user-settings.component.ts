@@ -68,7 +68,7 @@ export class UserSettingsComponent implements OnInit {
     }
 
     protected get username(): string {
-        return this.userService.getUser().username;
+        return this.userService.getUser().userInfo.username;
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ changeUsername ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

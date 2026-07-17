@@ -36,7 +36,7 @@ public class UserControllerTest extends ControllerTest {
 	public void login() throws Exception {
 		mockMvc.perform(get("/api/user/login"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string("true"));
+		       .andExpect(content().json("{username: 'test_user', roles: ['ROLE_USER']}"));
 	}
 
 	@Test
@@ -227,7 +227,8 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/-/update-username")
 				                .contentType(MediaType.APPLICATION_JSON)
 				                .content(updateUsernameJson("changeme", "new_test_user")))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{username: 'new_test_user', roles: ['ROLE_USER']}"));
 
 		var user = userService.getUserByUsername("new_test_user");
 		assertNotNull(user);
@@ -353,7 +354,8 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/-/update-password")
 				                .contentType(MediaType.APPLICATION_JSON)
 				                .content(updatePasswordJson("changeme", "$tr0ngPa$$w0rd", "$tr0ngPa$$w0rd")))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{username: 'test_user', roles: ['ROLE_USER']}"));
 
 		var user = getTestUser();
 		assertTrue(passwordEncoder.matches("$tr0ngPa$$w0rd", user.getPassword()));

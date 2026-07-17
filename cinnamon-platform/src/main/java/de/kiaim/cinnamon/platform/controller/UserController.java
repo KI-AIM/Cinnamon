@@ -2,10 +2,7 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
-import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
-import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
-import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
-import de.kiaim.cinnamon.platform.model.dto.UpdatePasswordRequest;
+import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -122,6 +119,15 @@ public class UserController {
 		userService.deleteUser(userService.getUserByUsername(user.getUsername()));
 	}
 
+	@PostMapping(value = "/-/update-username",
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public void updateUsername(
+			@RequestBody @Valid final UpdateUsernameRequest updateUsernameRequest,
+			@AuthenticationPrincipal final UserEntity user
+	) throws ApiException {
+		userService.updateUsername(user.getUsername(), updateUsernameRequest.getCurrentPassword(),
+		                           updateUsernameRequest.getNewUsername());
+	}
 
 	@PostMapping(value = "/-/update-password",
 	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})

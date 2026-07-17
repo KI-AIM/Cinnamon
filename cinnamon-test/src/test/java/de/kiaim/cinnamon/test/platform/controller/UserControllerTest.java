@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.dto.UpdatePasswordRequest;
+import de.kiaim.cinnamon.platform.model.dto.UpdateUsernameRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
@@ -217,6 +218,131 @@ public class UserControllerTest extends ControllerTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must be at least 12 characters long!",
 		                                  "Password must contain at least one uppercase character!"));
+	}
+    //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ updateUsername ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updateUsername() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-username")
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updateUsernameJson("changeme", "new_test_user")))
+		       .andExpect(status().isOk());
+
+		var user = userService.getUserByUsername("new_test_user");
+		assertNotNull(user);
+		assertEquals("new_test_user", user.getUsername());
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updateUsernameWrongCurrentPassword() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-username")
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updateUsernameJson("invalid", "new_test_user")))
+		       .andExpect(status().isForbidden())
+		       .andExpect(errorCode("PLATFORM_1_12_2"))
+		       .andExpect(errorMessage("Password incorrect!"));
+
+		var user = getTestUser();
+		assertEquals("test_user", user.getUsername());
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updateUsernameSameAsCurrent() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-username")
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updateUsernameJson("changeme", "test_user")))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("newUsername", "Username is not available!"));
+
+		var user = getTestUser();
+		assertEquals("test_user", user.getUsername());
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updateUsernameAlreadyExists() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-username")
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updateUsernameJson("changeme", "test_user")))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("newUsername", "Username is not available!"));
+
+		var user = getTestUser();
+		assertEquals("test_user", user.getUsername());
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updateUsernameMissing() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-username")
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updateUsernameJson("changeme", null)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("newUsername", "Username is required!"));
+
+		var user = getTestUser();
+		assertEquals("test_user", user.getUsername());
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updateUsernameBlank() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-username")
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updateUsernameJson("changeme", "  ")))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("newUsername", "Username must be between 1 and 255 characters long!"));
+
+		var user = getTestUser();
+		assertEquals("test_user", user.getUsername());
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updateUsernameTooShort() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-username")
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updateUsernameJson("changeme", "")))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("newUsername", "Username must be between 1 and 255 characters long!"));
+
+		var user = getTestUser();
+		assertEquals("test_user", user.getUsername());
+	}
+
+	@Test
+	@WithUserDetails("test_user")
+	public void updateUsernameTooLong() throws Exception {
+		mockMvc.perform(post("/api/user/-/update-username")
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updateUsernameJson("changeme", "a".repeat(256))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_3_2_1"))
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(validationError("newUsername", "Username must be between 1 and 255 characters long!"));
+
+		var user = getTestUser();
+		assertEquals("test_user", user.getUsername());
+	}
+
+	private String updateUsernameJson(final String currentPassword, final String newUsername) throws Exception {
+		final UpdateUsernameRequest request = new UpdateUsernameRequest();
+		request.setCurrentPassword(currentPassword);
+		request.setNewUsername(newUsername);
+		return objectMapper.writeValueAsString(request);
 	}
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ updatePassword ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

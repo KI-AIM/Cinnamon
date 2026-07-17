@@ -65,7 +65,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	private UUID testProjectId;
 
 	protected UserEntity getTestUser() {
-		Optional<UserEntity> userOptional = userRepository.findById("test_user");
+		Optional<UserEntity> userOptional = userRepository.findByUsername("test_user");
 		if (userOptional.isEmpty()) {
 			fail("Set up failed. Could not find 'test_user'!");
 		}

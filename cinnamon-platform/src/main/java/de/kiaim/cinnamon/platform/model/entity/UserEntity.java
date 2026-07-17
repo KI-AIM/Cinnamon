@@ -17,7 +17,11 @@ import java.util.*;
 @AllArgsConstructor
 public class UserEntity implements UserDetails {
 
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
+	private Long id;
+
+	@Column(nullable = false, unique = true)
 	private String username;
 
 	@Column(nullable = false)

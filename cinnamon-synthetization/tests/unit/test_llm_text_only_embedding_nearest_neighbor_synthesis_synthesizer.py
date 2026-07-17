@@ -103,6 +103,7 @@ def test_llm_text_only_embedding_nearest_neighbor_synthesis_uses_bm25_reference_
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
             assert "NEAREST-NEIGHBOR REFERENCE EXAMPLES" in prompt
+            assert "Always write the output TEXT in the same language as the source TEXT. Do not translate it" in prompt
             assert "Information:\n" in prompt
             assert "Treat the source row and reference texts as pools of domain, content, and style signals" in prompt
             assert "Preserve only the medical domain, document type, language, tone, approximate length" in prompt

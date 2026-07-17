@@ -94,6 +94,7 @@ def test_llm_text_only_paraphrase_synthesis_retries_verbatim_copy_and_returns_re
             post_attempts["count"] += 1
             prompt = kwargs["json"]["prompt"]
             assert "You rewrite the TEXT value of a table row without losing information." in prompt
+            assert "Always write the output TEXT in the same language as the source TEXT. Do not translate it" in prompt
             assert "Rewrite each sentence with substantially different wording and sentence structure." in prompt
             assert "Prefer changing active/passive voice, clause order, and sentence openings." in prompt
             assert '"summary": "Patient stable after treatment and discharge tomorrow."' in prompt

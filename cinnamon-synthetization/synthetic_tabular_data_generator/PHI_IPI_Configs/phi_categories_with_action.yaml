@@ -7,6 +7,11 @@ direct_identifier_categories:
   description: Names, initials, aliases, usernames, or handles of patients, relatives, household members, employers, caregivers,
     clinicians, or other persons mentioned in relation to the medical record.
   action: Redact detected values of this category by replacing the original span with [NAME].
+- id: NAME_TITLE
+  source: custom_extension
+  description: Honorifics, salutations, professional titles, and academic or medical degrees attached to or identifying a person,
+    including equivalent titles and degree abbreviations in any language, whether they occur alone or next to a name.
+  action: Redact detected values of this category by replacing the original span with [NAME_TITLE].
 - id: LOCATION
   source:
   - HIPAA_Safe_Harbor

@@ -162,6 +162,7 @@ class LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer(
         return (
             "You are an expert clinical de-identification rewriter.\n"
             "Rewrite the TEXT value of one clinical table row into a safer version with lower re-identification risk.\n"
+            f"{self._SOURCE_LANGUAGE_RULE}"
             "Core objectives:\n"
             "- Rewrite the non-missing TEXT field in fluent clinical language.\n"
             f"- {preservation_line}\n"

@@ -244,6 +244,7 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
 
         return (
             "You generate a new TEXT value for a fictional patient based on a source table row and similar reference texts.\n"
+            f"{self._SOURCE_LANGUAGE_RULE}"
             f"{domain_context}"
             "Information:\n"
             "- Create an independent new clinical case. Novelty from every individual input case is more important than preserving the source case.\n"

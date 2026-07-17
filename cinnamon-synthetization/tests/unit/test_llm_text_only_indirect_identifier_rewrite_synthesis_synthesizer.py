@@ -94,6 +94,7 @@ def test_llm_text_only_indirect_identifier_rewrite_synthesis_rewrites_with_selec
             prompt = kwargs["json"]["prompt"]
             assert "You are an expert clinical de-identification rewriter." in prompt
             assert "Rewrite the TEXT value of one clinical table row into a safer version with lower re-identification risk." in prompt
+            assert "Always write the output TEXT in the same language as the source TEXT. Do not translate it" in prompt
             assert "selected anonymization level: MEDIUM" in prompt
             assert "Rewrite the non-missing TEXT field in fluent clinical language." in prompt
             assert "Preserve the clinical meaning, but reduce direct and indirect identifiability." in prompt

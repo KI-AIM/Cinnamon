@@ -29,6 +29,10 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
         "free_text",
         "freitext",
     }
+    _SOURCE_LANGUAGE_RULE = (
+        "- Always write the output TEXT in the same language as the source TEXT. "
+        "Do not translate it, even if the instructions or domain context use another language.\n"
+    )
 
     def __init__(
         self,
@@ -155,6 +159,7 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
 
         return (
             "You rewrite the TEXT value of a table row without losing information.\n"
+            f"{self._SOURCE_LANGUAGE_RULE}"
             f"{domain_context}"
             "Important:\n"
             "- The TEXT field already contains the source content.\n"

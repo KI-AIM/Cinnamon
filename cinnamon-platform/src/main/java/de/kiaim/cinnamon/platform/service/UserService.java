@@ -83,6 +83,34 @@ public class UserService implements UserDetailsService {
 	}
 
 	/**
+	 * Updates a user's username after confirming their password.
+	 *
+	 * @param username        The current username.
+	 * @param currentPassword The user's current password.
+	 * @param newUsername     The new username.
+	 * @throws BadUserException             If the current user does not exist, or the new username is already in use.
+	 * @throws BadUserConfirmationException If the password is incorrect.
+	 */
+	@Transactional
+	public void updateUsername(final String username, final String currentPassword, final String newUsername)
+			throws BadUserException, BadUserConfirmationException {
+		final UserEntity user = getUserByUsernameOrThrow(username);
+
+		confirmPassword(currentPassword, user);
+		if (Objects.equals(username, newUsername)) {
+			return;
+		}
+		if (doesUserWithUsernameExist(newUsername)) {
+			throw new BadUserException(BadUserException.ALREADY_EXISTS,
+					"User with username " + newUsername + " already exists");
+		}
+
+		user.setUsername(newUsername);
+
+		log.debug("Updated username from '{}' to '{}'", username, newUsername);
+	}
+
+	/**
 	 * Confirms if the given user credentials match the given user.
 	 * Meant for confirmation after the user is already authenticated.
 	 *

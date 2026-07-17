@@ -25,6 +25,9 @@ export class UserSettingsComponent implements OnInit {
      */
     protected deletionError: string | null = null;
 
+    protected updateUsernameForm: FormGroup;
+    private updateUsernameDialog: MatDialogRef<MatDialog> | null = null;
+
     protected updatePasswordForm: FormGroup;
     private updatePasswordDialog: MatDialogRef<MatDialog> | null = null;
 
@@ -48,6 +51,11 @@ export class UserSettingsComponent implements OnInit {
             password: ['', {validators: [Validators.required]}],
         });
 
+        this.updateUsernameForm = this.formBuilder.group({
+            newUsername: ['', {validators: [Validators.required]}],
+            currentPassword: ['', {validators: [Validators.required]}],
+        });
+
         this.appConfig$ = this.appConfigService.appConfig$.pipe(
             tap(appConfig => {
                 this.updatePasswordForm = this.formBuilder.group({
@@ -61,6 +69,56 @@ export class UserSettingsComponent implements OnInit {
 
     protected get username(): string {
         return this.userService.getUser().username;
+    }
+
+    //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ changeUsername ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    protected get changeUsernameNewUsernameControl(): FormControl<string> {
+        return this.updateUsernameForm.get('newUsername') as FormControl<string>;
+    }
+
+    protected get changeUsernameCurrentPasswordControl(): FormControl<string> {
+        return this.updateUsernameForm.get('currentPassword') as FormControl<string>;
+    }
+
+    protected openChangeUsernameDialog(dialog: any): void {
+        this.updateUsernameDialog = this.matDialog.open(dialog, {
+            width: '500px',
+            autoFocus: false,
+            disableClose: false,
+            hasBackdrop: true,
+        });
+
+        this.updateUsernameDialog.afterClosed().subscribe(() => {
+            this.updateUsernameDialog = null;
+            this.updateUsernameForm.reset();
+        });
+    }
+
+    protected closeChangeUsernameDialog(): void {
+        if (this.updateUsernameDialog) {
+            this.updateUsernameDialog.close();
+        }
+    }
+
+    protected changeUsername(): void {
+        this.userService.updateUsername(
+            this.changeUsernameNewUsernameControl.value,
+            this.changeUsernameCurrentPasswordControl.value
+        ).subscribe({
+            next: () => {
+                this.closeChangeUsernameDialog();
+
+                const notification = new AppNotification("Username changed successfully.", 'success');
+                notification.user = this.username;
+                this.notificationService.addNotification(notification);
+            },
+            error: e => {
+                this.closeChangeUsernameDialog();
+
+                this.errorHandlingService.addError(e);
+            },
+        });
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ changePassword ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -85,9 +143,10 @@ export class UserSettingsComponent implements OnInit {
             hasBackdrop: true,
         });
 
-        this.updatePasswordDialog.afterClosed().subscribe({
-            next: () => this.updatePasswordDialog = null,
-        })
+        this.updatePasswordDialog.afterClosed().subscribe(() => {
+            this.updatePasswordDialog = null;
+            this.updatePasswordForm.reset();
+        });
     }
 
     protected closeChangePasswordDialog(): void {
@@ -138,6 +197,7 @@ export class UserSettingsComponent implements OnInit {
 
         this.deletionDialog.afterClosed().subscribe(() => {
             this.deletionDialog = null;
+            this.confirmDeletionForm.reset();
         });
     }
 

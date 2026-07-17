@@ -1,5 +1,66 @@
 @import "../../../../styles/layout.less";
 
+@color-settings-danger: rgba(211, 47, 47, .06);
+
+.settings-page {
+    width: min(100%, 840px);
+    margin: 0 auto;
+}
+
+.section-heading p,
+.setting-copy p,
+.settings-dialog-description {
+    margin: 0;
+}
+
+.settings-card {
+    overflow: hidden;
+    margin-bottom: 24px;
+    border-radius: @border-radius;
+    background: @color-foreground;
+    box-shadow: @shadow-box;
+}
+
+.section-heading {
+    display: flex;
+    gap: 14px;
+    padding: 22px 24px;
+    background: @color-gray-background;
+
+    mat-icon { color: @color-secondary-icon }
+    h2 { margin: 0 0 3px; font-size: 1.125rem; font-weight: 600; }
+    p { font-size: .875rem; }
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    padding: 22px 24px;
+
+    & + & { border-top: 1px solid var(--mat-app-outline-variant, rgba(0, 0, 0, .1)); }
+    button { flex: 0 0 auto; }
+}
+
+.setting-copy {
+    h3 { margin: 0 0 4px; font-size: 1rem; font-weight: 600; }
+    p { font-size: .875rem; line-height: 1.45; }
+}
+
+.danger-heading {
+    background: @color-settings-danger;
+    mat-icon, h2 { color: var(--mat-form-field-error-text-color); }
+}
+
+.settings-dialog-description { margin-bottom: 20px; line-height: 1.5; }
+.new-password-fields { margin-top: 8px; }
+
 .error-text {
     color: var(--mat-form-field-error-text-color);
+}
+
+@media (max-width: 600px) {
+    .setting-row { align-items: stretch; flex-direction: column; gap: 16px; }
+    .setting-row button { width: 100%; }
 }

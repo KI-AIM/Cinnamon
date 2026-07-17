@@ -1,107 +1,154 @@
-<div class="vertical-boxes">
+<main class="settings-page">
 
-    <div class="box">
-
-        <div class="config-input-row">
-            <div class="config-input-row-label">
-                <span>Change Password</span>
-            </div>
-            <div class="config-input-row-button">
-                <button mat-raised-button color="primary" (click)="openChangePasswordDialog(changePasswordDialog)">Change Password</button>
+    <section class="settings-card">
+        <div class="section-heading">
+            <mat-icon>shield</mat-icon>
+            <div>
+                <h2 id="security-heading">Account & security</h2>
+                <p>Manage your sign-in details.</p>
             </div>
         </div>
 
-        <div class="config-input-row">
-            <div class="config-input-row-label">
-                <span>Delete Account</span>
+        <div class="setting-row">
+            <div class="setting-copy">
+                <h3>Username</h3>
+                <p>Update the name you use to sign in.</p>
             </div>
-            <div class="config-input-row-button">
-                <button mat-raised-button color="warn" (click)="openDeleteAccountDialog(deleteAccountDialog)">Delete
-                    Account
-                </button>
-            </div>
-
+            <button mat-stroked-button color="primary"
+                    (click)="openChangeUsernameDialog(changeUsernameDialog)">
+                Change username
+            </button>
         </div>
 
-    </div>
+        <div class="setting-row">
+            <div class="setting-copy">
+                <h3>Password</h3>
+                <p>Choose a strong, unique password for your account.</p>
+            </div>
+            <button mat-stroked-button color="primary"
+                    (click)="openChangePasswordDialog(changePasswordDialog)">
+                Change password
+            </button>
+        </div>
+    </section>
 
-</div>
+    <section class="settings-card">
+        <div class="section-heading danger-heading">
+            <mat-icon>warning</mat-icon>
+            <div>
+                <h2>Danger zone</h2>
+                <p>Actions in this section cannot be undone.</p>
+            </div>
+        </div>
+        <div class="setting-row">
+            <div class="setting-copy">
+                <h3>Delete account</h3>
+                <p>Permanently delete your account and all of your projects.</p>
+            </div>
+            <button mat-stroked-button color="warn"
+                    (click)="openDeleteAccountDialog(deleteAccountDialog)">
+                Delete account
+            </button>
+        </div>
+    </section>
+</main>
+
+<ng-template #changeUsernameDialog>
+    <h2 mat-dialog-title>Change username</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+
+        <div class="box">
+            <p class="settings-dialog-description">Enter a new username and confirm the change with your current password.</p>
+
+            <div class="config-input-row">
+                <div class="config-input-row-label">
+                    Choose a new username
+                </div>
+                <mat-form-field class="config-input-row-field">
+                    <mat-label>New username</mat-label>
+                    <input type="text" matInput autocomplete="username"
+                           [formControl]="changeUsernameNewUsernameControl">
+                </mat-form-field>
+            </div>
+
+            <app-password-input label="Current password" heading="Enter your current password"
+                                [control]="changeUsernameCurrentPasswordControl">
+            </app-password-input>
+        </div>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
+        <button mat-raised-button color="primary" type="button" [disabled]="!updateUsernameForm.valid"
+                (click)="changeUsername()">Change username</button>
+    </mat-dialog-actions>
+</ng-template>
 
 <ng-template #changePasswordDialog>
-
-    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Change Password</h2>
+    <h2 mat-dialog-title>Change password</h2>
     <mat-dialog-content class="mat-typography dialog-content">
-        <div class="vertical-boxes">
-            <div class="box">
 
-                @if (appConfig$ | async; as appConfig) {
-                    <app-password-input label="Current Password" heading="Enter your current password"
-                                        [control]="currentPasswordControl">
+        <div class="box">
+            <p class="settings-dialog-description">Use a strong password that you do not use for another account.</p>
+            @if (appConfig$ | async; as appConfig) {
+                <app-password-input label="Current password" heading="Enter your current password"
+                                    [control]="currentPasswordControl">
+                </app-password-input>
+                <div class="new-password-fields">
+                    <app-password-input label="New password" heading="Choose a new password"
+                                        [passwordRequirements]="appConfig.passwordRequirements"
+                                        autocomplete="new-password" [control]="newPasswordControl">
                     </app-password-input>
-
-                    <div class="workstep-part">
-                        <app-password-input label="New Password" heading="Choose a new password"
-                                            [passwordRequirements]="appConfig.passwordRequirements"
-                                            autocomplete="new-password" [control]="newPasswordControl">
-                        </app-password-input>
-                        <app-password-input label="Confirm New Password" autocomplete="new-password"
-                                            [control]="newPasswordRepeatedControl">
-                        </app-password-input>
-                    </div>
-                }
-
-            </div>
+                    <app-password-input label="Confirm new password" autocomplete="new-password"
+                                        [control]="newPasswordRepeatedControl">
+                    </app-password-input>
+                </div>
+            }
         </div>
+
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
         <button mat-raised-button color="primary" type="button" [disabled]="!updatePasswordForm.valid"
-                (click)="changePassword()">
-            Change Password
-        </button>
+                (click)="changePassword()">Change password</button>
     </mat-dialog-actions>
 </ng-template>
 
 <ng-template #deleteAccountDialog>
-    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Delete Account</h2>
+    <h2 mat-dialog-title>Delete account?</h2>
     <mat-dialog-content class="mat-typography dialog-content">
-        <div class="vertical-boxes">
-            <div class="box">
-                <div class="config-input-row workstep-part">
-                    <div class="config-input-row-label">
-                        <span>Are you sure you want to delete your account and all your projects? This action cannot be undone.</span>
-                        <br/>
-                    </div>
-                </div>
 
-                <div>
-                    <span>Please confirm your username and password to proceed.</span>
-                    <mat-form-field class="w-100 hide-mat-error-gap">
-                        <mat-label>Username</mat-label>
-                        <input type="text" matInput [formControl]="confirmDeletionUsernameControl">
-                    </mat-form-field>
+        <app-info-card typeClass="card-warn">
+            <p><strong>This action is permanent.</strong> Your account and all of your projects will be deleted.</p>
+        </app-info-card>
 
-                    <app-password-input label="Password" [control]="confirmDeletionPasswordControl">
-                    </app-password-input>
+        <div class="box">
+            <p class="settings-dialog-description">To confirm, enter your username <strong>{{ username }}</strong> and
+                password.</p>
 
-                    <div *ngIf="deletionError != null" class="error-text">
-                        {{ deletionError }}
-                    </div>
-
-                </div>
-
+            <div class="config-input-row">
+                <mat-form-field class="config-input-row-field">
+                    <mat-label>Username</mat-label>
+                    <input type="text" matInput autocomplete="username" [formControl]="confirmDeletionUsernameControl">
+                </mat-form-field>
             </div>
+
+            <app-password-input label="Password" [control]="confirmDeletionPasswordControl">
+            </app-password-input>
+
+            @if (deletionError != null) {
+                <div class="error-text" role="alert">{{ deletionError }}</div>
+            }
+
         </div>
+
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
         <button mat-raised-button color="warn" type="button"
                 [disabled]="confirmDeletionUsernameControl.value === '' || confirmDeletionPasswordControl.value === ''"
                 (click)="deleteAccount(confirmDeletionUsernameControl.value, confirmDeletionPasswordControl.value)">
-            Delete Account
+            Delete account
         </button>
     </mat-dialog-actions>
-
 </ng-template>
-
-

@@ -152,6 +152,19 @@ export class UserService {
         });
     }
 
+    public updateUsername(newUsername: string, currentPassword: string): Observable<void> {
+        const body = {
+            newUsername,
+            currentPassword
+        };
+
+        return this.http.post<void>(this.baseURL + "/-/update-username", body).pipe(
+            tap(() => {
+                this.setUser(this.createLoggedInUser(newUsername, currentPassword));
+            }),
+        );
+    }
+
     public updatePassword(currentPassword: string, newPassword: string, newPasswordRepeated: string): Observable<void> {
         const body = {
             currentPassword,

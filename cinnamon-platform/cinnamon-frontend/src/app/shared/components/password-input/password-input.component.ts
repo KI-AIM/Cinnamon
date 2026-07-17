@@ -45,8 +45,6 @@ export class PasswordInputComponent {
 
         const errors: string[] = [];
 
-        console.log(this.control.errors);
-
         if (this.control.hasError('required')) {
             errors.push('not be empty');
         }

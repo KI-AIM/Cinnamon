@@ -153,12 +153,13 @@ export class UserService {
     }
 
     public updatePassword(currentPassword: string, newPassword: string, newPasswordRepeated: string): Observable<void> {
-        const formData = new FormData();
-        formData.append("currentPassword", currentPassword);
-        formData.append("newPassword", newPassword);
-        formData.append("newPasswordRepeated", newPasswordRepeated);
+        const body = {
+            currentPassword,
+            newPassword,
+            newPasswordRepeated
+        };
 
-        return this.http.post<void>(this.baseURL + "/-/update-password", formData).pipe(
+        return this.http.post<void>(this.baseURL + "/-/update-password", body).pipe(
             tap(() => {
                 this.setUser(this.createLoggedInUser(this.getUser().username, newPassword));
             }),

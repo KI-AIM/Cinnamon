@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
+import de.kiaim.cinnamon.platform.model.dto.UpdatePasswordRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
@@ -224,11 +225,8 @@ public class UserControllerTest extends ControllerTest {
 	@WithUserDetails("test_user")
 	public void updatePassword() throws Exception {
 		mockMvc.perform(post("/api/user/-/update-password")
-				                .contentType(MediaType.MULTIPART_FORM_DATA)
-				                .param("currentPassword", "changeme")
-				                .param("newPassword", "$tr0ngPa$$w0rd")
-				                .param("newPasswordRepeated", "$tr0ngPa$$w0rd")
-		       )
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updatePasswordJson("changeme", "$tr0ngPa$$w0rd", "$tr0ngPa$$w0rd")))
 		       .andExpect(status().isOk());
 
 		var user = getTestUser();
@@ -239,11 +237,8 @@ public class UserControllerTest extends ControllerTest {
 	@WithUserDetails("test_user")
 	public void updatePasswordWrongCurrentPassword() throws Exception {
 		mockMvc.perform(post("/api/user/-/update-password")
-				                .contentType(MediaType.MULTIPART_FORM_DATA)
-				                .param("currentPassword", "invalid")
-				                .param("newPassword", "$tr0ngPa$$w0rd")
-				                .param("newPasswordRepeated", "$tr0ngPa$$w0rd")
-		       )
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updatePasswordJson("invalid", "$tr0ngPa$$w0rd", "$tr0ngPa$$w0rd")))
 		       .andExpect(status().isForbidden())
 		       .andExpect(errorCode("PLATFORM_1_12_2"))
 		       .andExpect(errorMessage("Password incorrect!"));
@@ -256,11 +251,8 @@ public class UserControllerTest extends ControllerTest {
 	@WithUserDetails("test_user")
 	public void updatePasswordNotMatching() throws Exception {
 		mockMvc.perform(post("/api/user/-/update-password")
-				                .contentType(MediaType.MULTIPART_FORM_DATA)
-				                .param("currentPassword", "changeme")
-				                .param("newPassword", "$tr0ngPa$$w0rd")
-				                .param("newPasswordRepeated", "invalid")
-		       )
+				                .contentType(MediaType.APPLICATION_JSON)
+				                .content(updatePasswordJson("changeme", "$tr0ngPa$$w0rd", "invalid")))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_3_2_1"))
 		       .andExpect(errorMessage("Request validation failed"))
@@ -269,6 +261,17 @@ public class UserControllerTest extends ControllerTest {
 		var user = getTestUser();
 		assertTrue(passwordEncoder.matches("changeme", user.getPassword()));
 	}
+
+	private String updatePasswordJson(final String currentPassword, final String newPassword,
+	                                  final String newPasswordRepeated) throws Exception {
+		final UpdatePasswordRequest request = new UpdatePasswordRequest();
+		request.setCurrentPassword(currentPassword);
+		request.setNewPassword(newPassword);
+		request.setNewPasswordRepeated(newPasswordRepeated);
+		return objectMapper.writeValueAsString(request);
+	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ createProject ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	@Test
 	@WithUserDetails("test_user")

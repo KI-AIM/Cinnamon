@@ -124,9 +124,9 @@ public class UserController {
 
 
 	@PostMapping(value = "/-/update-password",
-	             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public void updatePassword(
-			@ParameterObject @Valid final UpdatePasswordRequest updatePasswordRequest,
+			@RequestBody @Valid final UpdatePasswordRequest updatePasswordRequest,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
 		userService.updatePassword(user.getUsername(), updatePasswordRequest.getCurrentPassword(),

@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.cinnamon.platform.model.validation.PasswordRequirements;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -27,16 +28,19 @@ public class UpdatePasswordRequest implements MatchingPasswords {
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━ Implementation of MatchingPasswords ━━━━━━━━━━━━━━━━━━━━━━━━
 
+	@JsonIgnore
 	@Override
 	public String getPassword() {
 		return newPassword;
 	}
 
+	@JsonIgnore
 	@Override
 	public String getPasswordRepeated() {
 		return newPasswordRepeated;
 	}
 
+	@JsonIgnore
 	@Override
 	public String getPasswordRepeatedFieldName() {
 		return "newPasswordRepeated";

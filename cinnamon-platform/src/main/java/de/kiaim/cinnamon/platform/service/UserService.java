@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,31 +40,33 @@ public class UserService implements UserDetailsService {
 
 	@Nullable
 	public UserEntity getUserByUsername(final String username) {
-		return userRepository.findById(username).orElse(null);
+		return userRepository.findByUsername(username).orElse(null);
 	}
 
+	@Transactional(readOnly = true)
 	public UserEntity getUserByUsernameOrThrow(final String username) throws BadUserException {
-		return userRepository.findById(username).orElseThrow(
+		return userRepository.findByUsername(username).orElseThrow(
 				() -> new BadUserException(BadUserException.NOT_FOUND, "User with username " + username + " not found"));
 	}
 
+	@Transactional(readOnly = true)
 	public boolean doesUserWithUsernameExist(final String username) {
-		return userRepository.existsById(username);
+		return userRepository.existsByUsername(username);
 	}
 
-	public UserEntity save(final String username, final String rawPassword) {
-		Optional<UserEntity> user = userRepository.findById(username);
-		UserEntity userEntity;
-		if (user.isEmpty()) {
-			userEntity = new UserEntity();
-			userEntity.setPassword(passwordEncoder.encode(rawPassword));
-			log.debug("Creating new user with username '{}'", username);
-		} else {
-			userEntity = user.get();
+	@Transactional
+	public UserEntity register(final String username, final String rawPassword) throws BadUserException {
+		if (doesUserWithUsernameExist(username)) {
+			throw new BadUserException(BadUserException.ALREADY_EXISTS,
+			                           "User with username " + username + " already exists");
 		}
+
+		final UserEntity userEntity = new UserEntity();
 		userEntity.setUsername(username);
 		userEntity.setPassword(passwordEncoder.encode(rawPassword));
+
 		userRepository.save(userEntity);
+		log.debug("Created new user with username '{}'", username);
 
 		return userEntity;
 	}
@@ -206,7 +207,7 @@ public class UserService implements UserDetailsService {
 
 	@Override
 	public UserEntity loadUserByUsername(final String username) throws UsernameNotFoundException {
-		return userRepository.findById(username).orElseThrow(
+		return userRepository.findByUsername(username).orElseThrow(
 				() -> new UsernameNotFoundException("User with username" + username + "not found!"));
 	}
 }

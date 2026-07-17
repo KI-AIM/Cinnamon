@@ -71,7 +71,7 @@ public class UserController {
 			             description = "Successfully registered the new user.",
 			             content = @Content),
 			@ApiResponse(responseCode = "400",
-			             description = "Invalid request. Email is not available or passwords do not match.",
+			             description = "Invalid request. Username is not available or passwords do not match.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class)),
 			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
@@ -85,8 +85,8 @@ public class UserController {
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE),
 			           schema = @Schema(implementation = RegisterRequest.class))
 			final @RequestBody @Valid RegisterRequest registerRequest
-	) {
-		userService.save(registerRequest.getUsername(), registerRequest.getPassword());
+	) throws BadUserException {
+		userService.register(registerRequest.getUsername(), registerRequest.getPassword());
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 

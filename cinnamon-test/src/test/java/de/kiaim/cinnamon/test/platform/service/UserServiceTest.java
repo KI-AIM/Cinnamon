@@ -67,7 +67,7 @@ public class UserServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void createProject() {
-		var user = userService.save("email", "password");
+		var user = assertDoesNotThrow(() -> userService.register("email", "password"));
 
 		var project = assertDoesNotThrow(() -> userService.createProject(user, null, null));
 

@@ -664,7 +664,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
 
 		// Start second
-		final var user = userService.save("test_user_3", "changeme");
+		final var user = userService.register("test_user_3", "changeme");
 		var project = userService.createProject(user, null, null);
 		postData(false, "test_user_3", project.getExternalId());
 		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/config")

@@ -15,6 +15,11 @@ public class BadUserException extends BadRequestException {
 	 */
 	public static final String NOT_FOUND = "1";
 
+	/**
+	 * Exception code for a username that is already in use.
+	 */
+	public static final String ALREADY_EXISTS = "2";
+
 	public BadUserException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

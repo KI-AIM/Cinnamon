@@ -34,6 +34,7 @@ export class UserCenterComponent implements OnInit {
 
         this.dialog = this.matDialog.open(dialog, {
             width: '300px',
+            autoFocus: false,
             disableClose: false,
             hasBackdrop: true,
             position: {

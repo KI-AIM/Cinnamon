@@ -1,56 +1,63 @@
 <main class="settings-page">
 
-    <section class="settings-card">
-        <div class="section-heading">
-            <mat-icon>shield</mat-icon>
-            <div>
-                <h2 id="security-heading">Account & security</h2>
-                <p>Manage your sign-in details.</p>
+    <div class="vertical-boxes">
+
+        <div class="box">
+            <div class="box-header box-header-expanded" id="security-heading">
+                <span class="box-header-icon icon-enabled"><mat-icon>shield</mat-icon></span>
+                <span>Account &amp; security</span>
+            </div>
+
+            <div class="settings-divided">
+
+                <div class="setting-row">
+                    <div>
+                        <div class="settings-label">Username</div>
+                        <div class="settings-info">Update the name you use to sign in.</div>
+                    </div>
+                    <button mat-raised-button color="primary"
+                            (click)="openChangeUsernameDialog(changeUsernameDialog)">
+                        Change username
+                    </button>
+                </div>
+
+                <div class="setting-row">
+                    <div>
+                        <div class="settings-label">Password</div>
+                        <div class="settings-info">Choose a strong, unique password for your account.</div>
+                    </div>
+                    <button mat-raised-button color="primary"
+                            (click)="openChangePasswordDialog(changePasswordDialog)">
+                        Change password
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="setting-row">
-            <div class="setting-copy">
-                <h3>Username</h3>
-                <p>Update the name you use to sign in.</p>
+        <div class="box">
+            <div class="box-header box-header-expanded box-header-danger">
+                <span class="box-header-icon"><mat-icon>warning</mat-icon></span>
+                <span>Danger zone</span>
             </div>
-            <button mat-stroked-button color="primary"
-                    (click)="openChangeUsernameDialog(changeUsernameDialog)">
-                Change username
-            </button>
+
+            <div class="settings-divided">
+
+                <div class="setting-row">
+                    <div>
+                        <div class="settings-label">Delete account</div>
+                        <div class="settings-info">Permanently delete your account and all of your projects.</div>
+                    </div>
+                    <button mat-raised-button color="warn"
+                            (click)="openDeleteAccountDialog(deleteAccountDialog)">
+                        Delete account
+                    </button>
+                </div>
+
+            </div>
         </div>
 
-        <div class="setting-row">
-            <div class="setting-copy">
-                <h3>Password</h3>
-                <p>Choose a strong, unique password for your account.</p>
-            </div>
-            <button mat-stroked-button color="primary"
-                    (click)="openChangePasswordDialog(changePasswordDialog)">
-                Change password
-            </button>
-        </div>
-    </section>
+    </div>
 
-    <section class="settings-card">
-        <div class="section-heading danger-heading">
-            <mat-icon>warning</mat-icon>
-            <div>
-                <h2>Danger zone</h2>
-                <p>Actions in this section cannot be undone.</p>
-            </div>
-        </div>
-        <div class="setting-row">
-            <div class="setting-copy">
-                <h3>Delete account</h3>
-                <p>Permanently delete your account and all of your projects.</p>
-            </div>
-            <button mat-stroked-button color="warn"
-                    (click)="openDeleteAccountDialog(deleteAccountDialog)">
-                Delete account
-            </button>
-        </div>
-    </section>
 </main>
 
 <ng-template #changeUsernameDialog>

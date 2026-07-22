@@ -78,7 +78,7 @@ public class WorkflowControllerTest extends ControllerTest {
 				                .file(ResourceHelper.loadCsvFile("data"))
 				                .file(ResourceHelper.emptyFile("configuration")))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorCode("PLATFORM_1_14_12"));
+		       .andExpect(errorCode("PLATFORM_1_14_13"));
 	}
 
 	@Test
@@ -226,6 +226,7 @@ public class WorkflowControllerTest extends ControllerTest {
 		                            - name: risk_evaluation
 		                        """;
 		var configuration = ProjectConfigurationTestHelper.generateProjectConfigurationAsYaml() + "\n"
+		                    + FileConfigurationTestHelper.generateDataSourceConfigurationAsYaml() + "\n"
 		                    + FileConfigurationTestHelper.generateFileConfigurationAsYaml() + "\n"
 		                    + DataConfigurationTestHelper.generateDataConfigurationAsYaml() + "\n"
 		                    + dataset + "\n"

@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.platform.exception.BadFileException;
 import de.kiaim.cinnamon.platform.exception.InternalMissingHandlingException;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.util.List;
 @Service
 public class DataProcessorService {
 
+	@Getter
 	private final List<DataProcessor> processors;
 
 	@Autowired

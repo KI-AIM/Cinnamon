@@ -31,6 +31,15 @@
                     </span></div>
                     <div><span>
                         <mat-checkbox #resource color="primary"
+                                      [value]="'configuration.file'"
+                                      [checked]="selectedResources.includes('configuration.file')"
+                                      [disabled]="!statusService.isStepCompleted(Steps.UPLOAD)"
+                                      (input)="updateChecked()">
+                            File Configuration
+                        </mat-checkbox>
+                    </span></div>
+                    <div><span>
+                        <mat-checkbox #resource color="primary"
                                       [value]="'configuration.dataset'"
                                       [checked]="selectedResources.includes('configuration.dateset')"
                                       [disabled]="!statusService.isStepCompleted(Steps.DATA_CONFIG)"

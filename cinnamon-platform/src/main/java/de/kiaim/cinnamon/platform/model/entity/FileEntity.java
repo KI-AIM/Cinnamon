@@ -25,12 +25,26 @@ public class FileEntity {
 	@Nullable
 	private String name = null;
 
+	@Embedded
+	@Getter @Setter
+	@Nullable
+	private FileCompatibilityEntity compatibility = null;
+
 	/**
 	 * Number of attributes in the file.
 	 */
 	@Column(nullable = false)
 	@Getter @Setter
 	private int numberOfAttributes = 0;
+
+	/**
+	 * Configuration for retrieving the data from the data source.
+	 */
+	@OneToOne(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+	@JoinColumn(name = "data_source_configuration_id", referencedColumnName = "id")
+	@Getter @Setter
+	@Nullable
+	private DataSourceConfigurationEntity dataSourceConfiguration = null;
 
 	/**
 	 * Configuration for reading the file.

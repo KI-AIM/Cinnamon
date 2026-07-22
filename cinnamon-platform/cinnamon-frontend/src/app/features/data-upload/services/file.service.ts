@@ -1,15 +1,18 @@
+import { HttpClient } from "@angular/common/http";
+import { Injectable } from "@angular/core";
+import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "@shared/model/csv-file-configuration";
 import {
+    DataSourceConfiguration,
+    DataSourceType,
     FhirFileConfiguration,
     FileConfiguration,
     FileConfigurationEstimation
-} from "../../../shared/model/file-configuration";
-import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "../../../shared/model/csv-file-configuration";
-import { XlsxFileConfiguration } from "src/app/shared/model/xlsx-file-configuration";
-import { HttpClient } from "@angular/common/http";
-import {environments} from "../../../../environments/environment";
-import { finalize, Observable, of, share, tap } from "rxjs";
-import {Injectable} from "@angular/core";
-import {FileInformation} from "../../../shared/model/file-information";
+} from "@shared/model/file-configuration";
+import { FileInformation } from "@shared/model/file-information";
+import { XlsxFileConfiguration } from "@shared/model/xlsx-file-configuration";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
+import { distinctUntilChanged, finalize, Observable, ReplaySubject, share, shareReplay, tap } from "rxjs";
+import { environments } from "src/environments/environment";
 
 @Injectable({
     providedIn: 'root',
@@ -19,12 +22,30 @@ export class FileService {
 
     fileConfiguration: FileConfiguration;
 
-    private _fileInfo: FileInformation | null = null;
-    private _fileInfo$: Observable<FileInformation> | null = null;
+    private readonly _fileInfoSubject: ReplaySubject<FileInformation>;
+    private readonly _fileInfo$: Observable<FileInformation>;
+    private _fileInfoFetched: boolean = false;
+    private _fileInfoLoading$: Observable<FileInformation> | null = null;
+
+    private readonly _dataSourceConfigurationSubject: ReplaySubject<DataSourceConfiguration>;
+    private readonly _dataSourceConfiguration$: Observable<DataSourceConfiguration>;
+    private _dataSourceConfigurationFetched: boolean = false;
+    private _dataSourceConfigurationLoading$: Observable<DataSourceConfiguration> | null = null;
 
 	constructor(
+        private readonly errorHandlingService: ErrorHandlingService,
         private readonly httpClient: HttpClient,
     ) {
+        this._fileInfoSubject = new ReplaySubject<FileInformation>(1);
+        this._fileInfo$ = this._fileInfoSubject.asObservable().pipe(
+            distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
+        );
+
+        this._dataSourceConfigurationSubject = new ReplaySubject<DataSourceConfiguration>(1);
+        this._dataSourceConfiguration$ = this._dataSourceConfigurationSubject.asObservable().pipe(
+            distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
+        );
+
         this.fileConfiguration = new FileConfiguration(
             null,
             new CsvFileConfiguration(Delimiter.COMMA, LineEnding.LF, QuoteChar.DOUBLE_QUOTE, true),
@@ -33,25 +54,113 @@ export class FileService {
     }
 
     public get fileInfo$(): Observable<FileInformation> {
-        if (this._fileInfo) {
-            return of(this._fileInfo);
-        }
-        if (this._fileInfo$) {
-            return this._fileInfo$;
+        if (!this._fileInfoFetched && !this._fileInfoLoading$) {
+            this.refreshFileInfo().subscribe({
+                error : (error) => {
+                    this._fileInfoFetched = false;
+                    this.errorHandlingService.addError(error, "Failed to fetch the file information.");
+                },
+            });
         }
 
-        return this.httpClient.get<FileInformation>(this.baseUrl).pipe(
-            tap(value => this._fileInfo = value),
-            share(),
+        return this._fileInfo$;
+    }
+
+    public refreshFileInfo(): Observable<FileInformation> {
+        if (this._fileInfoLoading$) {
+            return this._fileInfoLoading$;
+        }
+
+        this._fileInfoLoading$ = this.httpClient.get<FileInformation>(this.baseUrl).pipe(
+            tap(value => {
+                this.setFileInfo(value);
+            }),
             finalize(() => {
-                this._fileInfo$ = null;
-            })
+                this._fileInfoLoading$ = null;
+            }),
+            shareReplay({bufferSize: 1, refCount: false}),
+        );
+
+        return this._fileInfoLoading$;
+    }
+
+    public setFileInfo(fileInfo: FileInformation): void {
+        this._fileInfoFetched = true;
+        this._fileInfoSubject.next(fileInfo);
+    }
+
+    public get dataSourceConfiguration$(): Observable<DataSourceConfiguration> {
+        if (!this._dataSourceConfigurationFetched && !this._dataSourceConfigurationLoading$) {
+            this.refreshDataSourceConfiguration().subscribe({
+                error : (error) => {
+                    if (error.error.errorCode === "PLATFORM_1_8_10") {
+                        const config = new DataSourceConfiguration(DataSourceType.LOCAL, null);
+                        this._dataSourceConfigurationSubject.next(config);
+                    } else {
+                        this._fileInfoFetched = false;
+                        this.errorHandlingService.addError(error, "Failed to fetch the data source configuration.");
+                    }
+                }
+            });
+        }
+        return this._dataSourceConfiguration$;
+    }
+
+    public refreshDataSourceConfiguration(): Observable<DataSourceConfiguration> {
+        if (this._dataSourceConfigurationLoading$) {
+            return this._dataSourceConfigurationLoading$;
+        }
+
+        this._dataSourceConfigurationLoading$ = this.httpClient.get<DataSourceConfiguration>(this.baseUrl + "/source").pipe(
+            tap(value => {
+                this._dataSourceConfigurationFetched = true;
+                this._dataSourceConfigurationSubject.next(value);
+            }),
+            finalize(() => {
+                this._dataSourceConfigurationLoading$ = null;
+            }),
+            shareReplay({bufferSize: 1, refCount: false}),
+        );
+
+        return this._dataSourceConfigurationLoading$;
+    }
+
+    /**
+     * Uploads the data source configuration contained in the file configuration object to the server.
+     *
+     * @param dataSourceConfiguration The file configuration containing the data source configuration.
+     * @return An empty observable.
+     */
+    public uploadDataSourceConfiguration(dataSourceConfiguration: DataSourceConfiguration): Observable<FileInformation> {
+        this.setDataSourceConfiguration(dataSourceConfiguration);
+
+        const formData = new FormData();
+        const fileConfigString = JSON.stringify(dataSourceConfiguration);
+        formData.append("dataSourceConfiguration", fileConfigString);
+
+        return this.httpClient.post<FileInformation>(this.baseUrl + "/source", formData).pipe(
+            tap(value => this.setFileInfo(value)),
+        );
+    }
+
+    private setDataSourceConfiguration(dataSourceConfiguration: DataSourceConfiguration) {
+        this._dataSourceConfigurationFetched = true;
+        this._dataSourceConfigurationSubject.next(dataSourceConfiguration);
+    }
+
+    public get fileConfiguration$(): Observable<FileConfiguration> {
+        return this.httpClient.get<FileConfiguration>(this.baseUrl + "/configuration").pipe(
+            tap(value => this.fileConfiguration = value),
+            share(),
         );
     }
 
     public invalidateCache() {
-        this._fileInfo = null;
-        this._fileInfo$ = null;
+        this._fileInfoFetched = false;
+        this._fileInfoLoading$ = null;
+
+        this._dataSourceConfigurationFetched = false;
+        this._dataSourceConfigurationLoading$ = null;
     }
 
     public getFileConfiguration(): FileConfiguration {
@@ -62,28 +171,58 @@ export class FileService {
 		this.fileConfiguration = value;
 	}
 
-    public uploadFile(file: File, fileConfiguration: FileConfiguration): Observable<FileInformation> {
+    public uploadFile(file: File): Observable<FileInformation> {
         const formData = new FormData();
 
         formData.append("file", file);
-        const fileConfigString = JSON.stringify(fileConfiguration);
-        formData.append("fileConfiguration", fileConfigString);
 
         return this.httpClient.post<FileInformation>(this.baseUrl, formData).pipe(tap(value => {
-            this._fileInfo = value;
+            this.setFileInfo(value);
         }));
     }
 
     /**
-     * Estimates the file configuration for the given file.
+     * Stores the given file configuration.
      *
-     * @param file The file
+     * @param fileConfiguration The file configuration.
+     */
+    public uploadFileConfiguration(fileConfiguration: FileConfiguration): Observable<FileInformation> {
+        const formData = new FormData();
+
+        const fileConfigString = JSON.stringify(fileConfiguration);
+        formData.append("fileConfiguration", fileConfigString);
+
+        return this.httpClient.post<FileInformation>(this.baseUrl + "/configuration", formData).pipe(tap(value => {
+            this.setFileInfo(value);
+        }));
+    }
+
+    /**
+     * Estimates the file configuration for the currently stored file.
+     *
      * @return The estimation result.
      */
-    public estimateFileConfiguration(file: File): Observable<FileConfigurationEstimation> {
-        const formData = new FormData();
-        formData.append("file", file);
+    public estimateFileConfiguration(): Observable<FileConfigurationEstimation> {
+        return this.httpClient.post<FileConfigurationEstimation>(this.baseUrl + "/estimation", {}).pipe(
+            tap(value => this.fileConfiguration = value.estimation),
+        );
+    }
 
-        return this.httpClient.post<FileConfigurationEstimation>(this.baseUrl + "/estimation", formData);
+    /**
+     * Retrieves the data from the configured server and estimates the file configuration for the returned file.
+     *
+     * @param fileConfiguration The file configuration defining the file to retrieve.
+     * @return The estimation result.
+     */
+    public retrieveFile(fileConfiguration: FileConfiguration): Observable<FileInformation> {
+        const formData = new FormData();
+        const fileConfigString = JSON.stringify(fileConfiguration);
+        formData.append("fileConfiguration", fileConfigString);
+
+        return this.httpClient.post<FileInformation>(this.baseUrl + "/retrieve", formData).pipe(
+            tap(value => {
+                this.setFileInfo(value);
+            }),
+        );
     }
 }

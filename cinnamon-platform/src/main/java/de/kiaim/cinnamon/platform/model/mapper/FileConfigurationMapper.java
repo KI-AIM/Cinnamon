@@ -27,8 +27,6 @@ public abstract class FileConfigurationMapper {
 		}
 
 		FileConfiguration dto = new FileConfiguration();
-		dto.setDataSourceType(entity.getDataSourceType());
-		dto.setServer(entity.getServer());
 		dto.setFileType(entity.getFileType());
 
 		if (entity instanceof CsvFileConfigurationEntity csvEntity) {
@@ -56,9 +54,6 @@ public abstract class FileConfigurationMapper {
 			case XLSX -> toEntity(configuration.getXlsxFileConfiguration());
 			case FHIR -> toEntity(configuration.getFhirFileConfiguration());
 		};
-
-		result.setDataSourceType(configuration.getDataSourceType());
-		result.setServer(configuration.getServer());
 
 		return result;
 	}

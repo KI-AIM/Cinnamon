@@ -15,6 +15,7 @@ export class WorkstepListComponent implements OnInit, OnDestroy {
     @Input({transform: booleanAttribute}) public invalid: boolean = false;
     @Input({transform: booleanAttribute}) public locked: boolean = false;
     @Input() public numberSteps!: number;
+    @Input({transform: booleanAttribute}) public resetFollowing: boolean = false;
     @Input({transform: booleanAttribute}) public resetSteps: boolean = false
     @Input() public step!: Steps;
 
@@ -27,7 +28,7 @@ export class WorkstepListComponent implements OnInit, OnDestroy {
     }
 
     public ngOnInit() {
-        this.workstepService.init(this.step, this.numberSteps, this.statusService.isStepCompleted(this.step), this.resetSteps);
+        this.workstepService.init(this.step, this.numberSteps, this.resetFollowing, this.statusService.isStepCompleted(this.step), this.resetSteps);
     }
 
     public ngOnDestroy() {

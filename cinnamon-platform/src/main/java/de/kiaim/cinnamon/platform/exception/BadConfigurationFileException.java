@@ -38,34 +38,39 @@ public class BadConfigurationFileException extends BadRequestException {
 	public static final String DATA_SOURCE_CONFIGURATION_DESERIALIZATION = "6";
 
 	/**
+	 * Exception code for failed file configuration deserialization.
+	 */
+	public static final String FILE_CONFIGURATION_DESERIALIZATION = "7";
+
+	/**
 	 * Exception code for failed data configuration serialization.
 	 */
-	public static final String DATA_CONFIGURATION_DESERIALIZATION = "7";
+	public static final String DATA_CONFIGURATION_DESERIALIZATION = "8";
 
 	/**
 	 * Exception code for failed dataset configuration deserialization.
 	 */
-	public static final String DATASET_CONFIGURATION_DESERIALIZATION = "8";
+	public static final String DATASET_CONFIGURATION_DESERIALIZATION = "9";
 
 	/**
 	 * Exception code for failed configuration deserialization.
 	 */
-	public static final String CONFIGURATION_DESERIALIZATION = "9";
+	public static final String CONFIGURATION_DESERIALIZATION = "10";
 
 	/**
 	 * Exception code for files that could not be read.
 	 */
-	public static final String NOT_READABLE = "10";
+	public static final String NOT_READABLE = "11";
 
 	/**
 	 * Exception code for requests that should, but do not contain a configuration file.
 	 */
-	public static final String MISSING = "11";
+	public static final String MISSING = "12";
 
 	/**
 	 * Exception code for empty configuration files.
 	 */
-	public static final String EMPTY = "12";
+	public static final String EMPTY = "13";
 
 	public BadConfigurationFileException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);

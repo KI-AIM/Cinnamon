@@ -1,105 +1,214 @@
-<ng-container *ngIf="pageData$ | async as pageData">
+@if (pageData$ | async; as pageData) {
 
-    <ng-container *ngIf="pageData.status.mode === Mode.STANDARD">
-
+    @if (pageData.status.mode === Mode.STANDARD) {
         <app-workstep-list confirmLabel="Confirm file and start configuration" [locked]="pageData.locked.isLocked"
-                           [invalid]="isInvalid || loadingEstimation"
-                           [numberSteps]="2" resetSteps [step]="Steps.UPLOAD" (confirm)="uploadFile()">
+                           [invalid]="!pageData.fileInfo.name || isInvalid || loadingEstimation"
+                           [numberSteps]="4" resetSteps [resetFollowing]="true" [step]="Steps.UPLOAD"
+                           (confirm)="uploadFile()">
 
-            <app-workstep-item header="Select your dataset" [locked]="pageData.locked.isLocked"
-                               [invalid]="isDataFileInvalid || isFileConfigurationInvalid() || loadingEstimation"
-                               [stepIndex]="0">
-            <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
-                <ng-container *ngTemplateOutlet="info"></ng-container>
+            <app-workstep-item header="Select your data source" [locked]="pageData.locked.isLocked"
+                               [invalid]="isDataSourceTypeInvalid" [stepIndex]="0">
+                <ng-container *ngTemplateOutlet="dataSourceSelector"></ng-container>
+            </app-workstep-item>
+
+            @if (dataSourceType === DataSourceType.LOCAL) {
+                <app-workstep-item header="Select your dataset" [locked]="pageData.locked.isLocked"
+                                   [loading]="loadingEstimation" [invalid]="isDataFileInvalid"
+                                   [stepIndex]="1">
+
+                    <ng-container *ngTemplateOutlet="currentFileDisclaimer"></ng-container>
+
+                    <ng-container [ngTemplateOutlet]="dataFileUpload"
+                                  [ngTemplateOutletContext]="{showFileConfigButton: false}"></ng-container>
+                </app-workstep-item>
+            } @else {
+                <app-workstep-item header="Configure the FHIR-Server" [locked]="pageData.locked.isLocked"
+                                   [invalid]="isDataSourceInvalid" [stepIndex]="1" (confirm)="fetchDataFile(false)">
+                    <ng-container *ngTemplateOutlet="fhirServerConfig"></ng-container>
+                </app-workstep-item>
+            }
+
+            <app-workstep-item header="Specify the file's content" [locked]="pageData.locked.isLocked"
+                               [invalid]="isFileConfigurationInvalid() || loadingEstimation" [stepIndex]="2">
+                <ng-container *ngTemplateOutlet="fileConfigurationForm"></ng-container>
             </app-workstep-item>
 
             <app-workstep-item header="Select a data configuration if available" [locked]="pageData.locked.isLocked"
-                               [invalid]="isConfigFileInvalid" [stepIndex]="1"
+                               [invalid]="isConfigFileInvalid" [stepIndex]="3"
                                altConfirm="Continue without a configuration">
                 <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
             </app-workstep-item>
 
         </app-workstep-list>
-
-    </ng-container>
-
-    <ng-container *ngIf="pageData.status.mode === Mode.EXPERT">
-
+    } @else if (pageData.status.mode === Mode.EXPERT) {
         <app-workstep-box header="Upload your dataset and data configuration">
-            <div>
-                <ng-container *ngTemplateOutlet="dataFileUpload"></ng-container>
-            </div>
 
-            <div class="mt-4">
-                <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
-            </div>
+            <ng-container *ngTemplateOutlet="currentFileDisclaimer"></ng-container>
+            <ng-container *ngTemplateOutlet="dataSourceSelector"></ng-container>
 
-            <div class="mt-4">
-                <div *ngIf="isFileConfigurationInvalid()" class="cinnamon-error">
-                    Please correct the errors in the file configuration.
+            @if (dataSourceType === DataSourceType.LOCAL) {
+                <ng-container [ngTemplateOutlet]="dataFileUpload"
+                              [ngTemplateOutletContext]="{showFileConfigButton: true}"></ng-container>
+            } @else {
+                <ng-container *ngTemplateOutlet="fhirServerConfig"></ng-container>
+
+                <div class="workstep-part">
+                    <div class="config-input-row">
+                        <div class="config-input-row-label">
+                            Fetch the dataset and configure the data file:
+                        </div>
+                        <div class="config-input-row-button">
+                            <button mat-raised-button color="primary" (click)="fetchDataFile(true)"
+                                    [disabled]="locked || loadingEstimation || isDataSourceInvalid">Fetch dataset
+                            </button>
+                        </div>
+                        <div class="config-input-row-info">
+                            <ng-container *ngTemplateOutlet="fileConfigurationButton"></ng-container>
+                        </div>
+                    </div>
                 </div>
+            }
+
+            <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
+
+            <div class="workstep-part">
+                @if (isFileConfigurationInvalid()) {
+                    <div class="cinnamon-error">
+                        Please correct the errors in the file configuration.
+                    </div>
+                }
                 <button mat-raised-button color="primary" (click)="uploadFile()"
-                        [disabled]="isInvalid || loadingEstimation">
+                        [disabled]="!pageData.fileInfo.name || isInvalid || loadingEstimation">
                     Confirm file and start configuration
                 </button>
             </div>
 
-            <ng-container *ngTemplateOutlet="info"></ng-container>
         </app-workstep-box>
+    }
 
-    </ng-container>
-
-    <ng-template #dataFileUpload>
-        <ng-container *ngIf="pageData.fileInfo.name !== null; else noFile">
-            <span>You previously uploaded the file: </span>
-            <span>{{ pageData.fileInfo.name }}</span><br/>
-            <span *ngIf="!pageData.locked.isLocked">You can select another dataset by uploading a new file:</span>
-            <span *ngIf="pageData.locked.isLocked">You already confirmed the dataset. If you want to select another dataset, you have to delete the current dataset on the "Data validation" page first.</span>
-        </ng-container>
-        <ng-template #noFile>
-            Select the file containing the dataset you want to anonymize:
-        </ng-template>
-
-        <div class="mt-2">
-            <div class="config-input-row align-items-center">
-                <app-file-upload accept=".csv,.json,.xlsx" [disabled]="pageData.locked.isLocked"
-                                 (input)="onFileInput($event)" class="flex-grow-1"></app-file-upload>
-
-                <div *ngIf="loadingEstimation" class="ms-1">
-                    <mat-spinner [diameter]="24"></mat-spinner>
+    <ng-template #dataSourceSelector>
+        <div class="workstep-part">
+            <div class="config-input-row">
+                <div class="config-input-row-label">
+                    You can either import the dataset by uploading a file from your local machine or let Cinnamon fetch it from a remote data source.
+                    What data source do you want to use?
                 </div>
-                <div *ngIf="!loadingEstimation" class="ms-1">
-                    <a *ngIf="!isDataFileInvalid" title="Additional Settings"
-                       (click)="openDialog(fileConfigurationDialog)" class="icon icon-enabled"
-                       [class.icon-error]="isFileConfigurationInvalid()">
+                <mat-form-field class="config-input-row-field" [formGroup]="dataSourceConfigurationForm">
+                    <mat-label>Data Source</mat-label>
+                    <mat-select formControlName="dataSourceType">
+                        <mat-option [value]="DataSourceType.LOCAL">Local File</mat-option>
+                        <mat-option [value]="DataSourceType.FHIR_SERVER">FHIR-Server</mat-option>
+                    </mat-select>
+                </mat-form-field>
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="dataSourcesInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template #fhirServerConfig>
+        <div class="workstep-part">
+            <div class="config-input-row" [formGroup]="dataSourceConfigurationForm">
+                <div class="config-input-row-label">
+                    Please specify the URL of the FHIR-Server:
+                </div>
+
+                <mat-form-field class="config-input-row-field" formGroupName="server">
+                    <mat-label>Server URL</mat-label>
+                    <input type="text" matInput placeholder="Server URL" formControlName="url">
+                    <mat-error>Please provide a valid URL</mat-error>
+                </mat-form-field>
+
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="fhirServerUrlInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template #currentFileDisclaimer>
+        <div class="workstep-part">
+            @if (pageData.fileInfo.name != null) {
+                <span>The following file is currently stored: </span>
+                <span><b>{{ pageData.fileInfo.name }}</b></span><br/>
+                @if (pageData.locked.isLocked) {
+                    <span>You already confirmed the dataset. If you want to select another dataset, you have to delete the current dataset first.</span>
+                } @else {
+                    <span>You can select another dataset by importing a new file.</span>
+                }
+            } @else {
+                <span>No file is currently stored. Please import one.</span>
+            }
+        </div>
+    </ng-template>
+
+    <ng-template #dataFileUpload let-showFileConfigButton="showFileConfigButton">
+        <div class="workstep-part">
+            <div class="config-input-row">
+                <div class="config-input-row-label">
+                    Select the file containing the dataset you want to anonymize:
+                </div>
+                <div class="config-input-row-field">
+                    <app-file-upload accept=".csv,.json,.xlsx" [disabled]="pageData.locked.isLocked"
+                                     (input)="onFileInput($event, showFileConfigButton)"></app-file-upload>
+                </div>
+
+                @if (showFileConfigButton) {
+                    <div class="config-input-row-info">
+                        <ng-container *ngTemplateOutlet="fileConfigurationButton"></ng-container>
+                    </div>
+                }
+
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="dataFileInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template #fileConfigurationButton>
+        <div class="ms-1">
+            @if (loadingEstimation) {
+                <mat-spinner [diameter]="24"></mat-spinner>
+            } @else {
+                @if (pageData.fileInfo.name) {
+                    <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
+                       class="icon icon-enabled" [class.icon-error]="isFileConfigurationInvalid()">
                         <mat-icon fontIcon="settings"></mat-icon>
                         <div class="icon-error-background"></div>
                         <mat-icon fontIcon="error" class="icon-error-foreground"></mat-icon>
                     </a>
-                    <span *ngIf="isDataFileInvalid"
-                          title="Additional Settings" class="icon-disabled">
+                } @else {
+                    <span title="Additional Settings" class="icon-disabled">
                         <mat-icon fontIcon="settings"></mat-icon>
                     </span>
-                </div>
-
-            </div>
+                }
+            }
         </div>
-
     </ng-template>
 
     <ng-template #configFileUpload>
-        If you already have a configuration file, you can upload it here.
-        If not, you can continue without a configuration and a data configuration will be estimated based on the
-        selected dateset.
-
-        <div class="mt-2">
-            <app-file-upload accept=".yml,.yaml" [disabled]="pageData.locked.isLocked"
-                             (input)="onDataConfigurationFileInput($event)"></app-file-upload>
+        <div class="workstep-part">
+            <div class="config-input-row">
+                <div class="config-input-row-label">
+                    If you already have a configuration file, you can upload it here.
+                    If not, you can continue without a configuration and a data configuration will be estimated based on
+                    the selected dateset.
+                </div>
+                <div class="config-input-row-field">
+                    <app-file-upload accept=".yml,.yaml" [disabled]="pageData.locked.isLocked"
+                                     (input)="onDataConfigurationFileInput($event)"></app-file-upload>
+                </div>
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="configFileInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
         </div>
     </ng-template>
 
     <ng-template #info>
-        <div class="mt-4">
+        <div class="workstep-part">
             <p>
                 <b>Supported File Types:</b>
                 <br/>
@@ -122,15 +231,14 @@
             <p>
                 <b>File Size Limit:</b>
                 <br/>
-                <ng-container *ngIf="pageData.appConfig.maxFileSize >= 0 else noFileSizeLimit">
+                @if (pageData.appConfig.maxFileSize >= 0) {
                     The maximum file size is {{ formatMaxFileSize(pageData.appConfig.maxFileSize) }}.
-                    Most algorithms by this application take a long time to process.
-                    To ensure that processing times are somewhat reasonable, we have to limit the dataset size.
-                </ng-container>
-                <ng-template #noFileSizeLimit>
+                        Most algorithms by this application take a long time to process.
+                        To ensure that processing times are somewhat reasonable, we have to limit the dataset size.
+                } @else {
                     There is no limit for the file size.
-                    But be aware that processing times can be long for large datasets.
-                </ng-template>
+                        But be aware that processing times can be long for large datasets.
+                }
                 <br/><br/>
                 <b>Upload Progress:</b>
                 <br/>
@@ -151,77 +259,328 @@
     <ng-template #fileConfigurationDialog>
         <mat-dialog-content class="mat-typography">
             <h1>Configure the file</h1>
-            <div *ngIf="this.fileConfiguration.fileType === FileType.CSV">
-                <div>
-                    <mat-form-field class="d-block">
-                        <mat-label>Column Separator</mat-label>
-                        <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.columnSeparator">
-                            <mat-option *ngFor="let delimiter of delimiters" [value]="delimiter">
-                                {{ delimiterLabels[delimiter] }}
-                            </mat-option>
-                        </mat-select>
-                    </mat-form-field>
-                </div>
-                <div>
-                    <mat-form-field class="d-block">
-                        <mat-label>Line break</mat-label>
-                        <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.lineSeparator">
-                            <mat-option *ngFor="let lineEnd of lineEndings" [value]="lineEnd">
-                                {{ lineEndingLabels[lineEnd] }}
-                            </mat-option>
-                        </mat-select>
-                    </mat-form-field>
-                </div>
-                <div>
-                    <mat-form-field class="d-block">
-                        <mat-label>Quote Char</mat-label>
-                        <mat-select [(ngModel)]="this.fileConfiguration.csvFileConfiguration.quoteChar">
-                            <mat-option *ngFor="let quoteChar of quoteChars" [value]="quoteChar">
-                                {{ quoteCharLabels[quoteChar] }}
-                            </mat-option>
-                        </mat-select>
-                    </mat-form-field>
-                </div>
-                <div>
-                    <mat-checkbox [(ngModel)]="this.fileConfiguration.csvFileConfiguration.hasHeader" color="primary">
-                        Use first row as header
-                    </mat-checkbox>
-                </div>
-            </div>
-            <div *ngIf="this.fileConfiguration.fileType === FileType.XLSX">
-                <div>
-                    <mat-checkbox [(ngModel)]="this.fileConfiguration.xlsxFileConfiguration.hasHeader" color="primary">
-                        Use first row as header
-                    </mat-checkbox>
-                </div>
-            </div>
-            <div *ngIf="this.fileConfiguration.fileType === FileType.FHIR">
-                <div>
-                    <div class="config-input-row">
-                        <mat-form-field class="config-input-row-field">
-                            <mat-label>FHIR Resource Type</mat-label>
-                            <mat-select [(ngModel)]="this.fileConfiguration.fhirFileConfiguration.resourceType" required>
-                                <mat-option *ngFor="let option of fhirResourceTypes" [value]="option">
-                                    {{ option }}
-                                </mat-option>
-                            </mat-select>
-                            <mat-error>Resource type must be selected</mat-error>
-                        </mat-form-field>
-
-                        <div class="config-input-row-info">
-                            <span>
-                                <app-configuration-input-info [configurationInputDefinition]="fhirResourceTypeDefinition">
-                                </app-configuration-input-info>
-                            </span>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
+            <ng-container *ngTemplateOutlet="fileConfigurationForm"></ng-container>
         </mat-dialog-content>
         <mat-dialog-actions align="end">
             <button mat-raised-button mat-dialog-close color="primary">Close</button>
         </mat-dialog-actions>
     </ng-template>
 
-</ng-container>
+    <ng-template #fileConfigurationForm>
+
+        @if (this.fileConfiguration.fileType === FileType.CSV) {
+            <div class="workstep-part">
+                These settings define how the file's content is interpreted.
+                If you are uncertain what you to configure, you can continue with the default settings.
+                You will notice that these settings may need adjustments if Cinnamon detects an unexpected number of attributes or rows.
+            </div>
+
+            <div class="config-input-row">
+                <mat-form-field class="config-input-row-field">
+                    <mat-label>Column Separator</mat-label>
+                    <mat-select [disabled]="pageData.locked.isLocked"
+                                [(ngModel)]="this.fileConfiguration.csvFileConfiguration!.columnSeparator" required>
+                        @for (delimiter of delimiters; track delimiter) {
+                            <mat-option [value]="delimiter">{{ delimiterLabels[delimiter] }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="columnSeparatorInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
+            <div class="config-input-row">
+                <mat-form-field class="config-input-row-field">
+                    <mat-label>Line break</mat-label>
+                    <mat-select [disabled]="pageData.locked.isLocked"
+                                [(ngModel)]="this.fileConfiguration.csvFileConfiguration!.lineSeparator" required>
+                        @for (lineEnd of lineEndings; track lineEnd) {
+                            <mat-option [value]="lineEnd">{{ lineEndingLabels[lineEnd] }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="lineBreakInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
+            <div class="config-input-row">
+                <mat-form-field class="config-input-row-field">
+                    <mat-label>Quote Char</mat-label>
+                    <mat-select [disabled]="pageData.locked.isLocked"
+                                [(ngModel)]="this.fileConfiguration.csvFileConfiguration!.quoteChar" required>
+                        @for (quoteChar of quoteChars; track quoteChar) {
+                            <mat-option [value]="quoteChar">{{ quoteCharLabels[quoteChar] }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="quoteCharInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
+            <div class="config-input-row">
+                <div class="config-input-row-field">
+                    <mat-checkbox [disabled]="pageData.locked.isLocked"
+                                  [(ngModel)]="this.fileConfiguration.csvFileConfiguration!.hasHeader" color="primary">
+                        Use first row as header
+                    </mat-checkbox>
+                </div>
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="hasHeaderInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
+        } @else if (this.fileConfiguration.fileType === FileType.XLSX) {
+            <div class="config-input-row">
+                <div class="config-input-row-field">
+                    <mat-checkbox [disabled]="pageData.locked.isLocked"
+                                  [(ngModel)]="this.fileConfiguration.xlsxFileConfiguration!.hasHeader" color="primary">
+                        Use first row as header
+                    </mat-checkbox>
+                </div>
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="hasHeaderInfo.handleClick($event)">info</mat-icon>
+                </div>
+            </div>
+        } @else if (this.fileConfiguration.fileType === FileType.FHIR) {
+
+            <div class="config-input-row">
+                <div class="config-input-row-label">
+                    Select which ressource from the FHIR bundle should be imported:
+                </div>
+                <mat-form-field class="config-input-row-field">
+                    <mat-label>FHIR Resource Type</mat-label>
+                    <mat-select [disabled]="pageData.locked.isLocked"
+                                [(ngModel)]="this.fileConfiguration.fhirFileConfiguration!.resourceType" required>
+                        @for (resourceType of fhirResourceTypes; track resourceType) {
+                            <mat-option [value]="resourceType">{{ resourceType }}</mat-option>
+                        }
+                    </mat-select>
+                    <mat-error>Resource type must be selected</mat-error>
+                </mat-form-field>
+
+                <div class="config-input-row-info">
+                    <mat-icon class="icon-enabled" (click)="fhirResourceInfo.handleClick($event)">info</mat-icon>
+                </div>
+
+            </div>
+        }
+    </ng-template>
+
+    <app-information-dialog #columnSeparatorInfo title="Column Separator (Delimiter)">
+        <info-explanation>
+            <p>
+                The column separator, or also called delimiter, is the character that separates columns .
+            </p>
+        </info-explanation>
+        <info-options>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Character</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @for (delimiter of delimiters; track delimiter) {
+                    <tr>
+                        <td [class.current-type]="fileConfiguration.csvFileConfiguration?.columnSeparator === delimiter">
+                            {{ delimiterLabels[delimiter] }}
+                        </td>
+                        <td style="white-space: pre-line;">{{ delimiterExamples[delimiter] }}</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </info-options>
+    </app-information-dialog>
+
+    <app-information-dialog #lineBreakInfo title="Line Break">
+        <info-explanation>
+            <p>
+                The line break is the character that separates rows in a file.
+                The most common line breaks are <b>Windows</b> (CRLF) and <b>Unix</b> (LF).
+                In the past Mac OS used the <b>Mac</b> (CR) line break.
+            </p>
+            <p>
+                The line break cannot be seen directly when opening the file.
+                Instead, you can use a text editor to view the line breaks.
+                Selecting the line break used by your operating system is most likely the best choice.
+            </p>
+        </info-explanation>
+        <info-options>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Character</th>
+                    <th>Operating system</th>
+                </tr>
+                </thead>
+                <tbody>
+                @for (lineBreak of lineEndings; track lineBreak) {
+                    <tr>
+                        <td [class.current-type]="fileConfiguration.csvFileConfiguration?.lineSeparator === lineBreak">
+                            {{ lineEndingLabels[lineBreak] }}
+                        </td>
+                        <td [class.current-type]="isUserOs(lineBreak)">
+                            {{ lineEndingOs[lineBreak] }}
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </info-options>
+    </app-information-dialog>
+
+    <app-information-dialog #quoteCharInfo title="Quote Character (Quote)">
+        <info-explanation>
+            <p>
+                The quote character is the character that is used to enclose values that contain special characters.
+                Not every value needs to be enclosed.
+            </p>
+        </info-explanation>
+        <info-options>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Character</th>
+                    <th>Example</th>
+                </tr>
+                </thead>
+                <tbody>
+                    @for (quoteChar of quoteChars; track quoteChar) {
+                        <tr>
+                            <td [class.current-type]="fileConfiguration.csvFileConfiguration?.quoteChar === quoteChar">
+                                {{ quoteCharLabels[quoteChar] }}
+                            </td>
+                            <td style="white-space: pre-line;">
+                                {{ quoteCharExamples[quoteChar] }}
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </info-options>
+    </app-information-dialog>
+
+    <app-information-dialog #hasHeaderInfo title="Header Row">
+        <info-explanation>
+            <p>
+                Determines if the first row of the file contains column names (Checked) or an entry of the dataset (Unchecked).
+            </p>
+        </info-explanation>
+        <info-options>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Has Header</th>
+                    <th>Example</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td [class.current-type]="hasCurrentFileHeader()">
+                        Yes (Checked)
+                    </td>
+                    <td>
+                        PID,name,age
+                        <br/>
+                        123656,John,36
+                    </td>
+                </tr>
+                <tr>
+                    <td [class.current-type]="!hasCurrentFileHeader()">
+                        No (Unchecked)
+                    </td>
+                    <td>
+                        123656,John,36
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </info-options>
+    </app-information-dialog>
+
+    <app-information-dialog #fhirResourceInfo title="Header Row">
+        <info-explanation>
+            <p>
+                Select the resource type you want to anonymize.
+                In one project, only a single resource type contained in the bundle can be anonymized.
+                The protected dataset will only contain data of this resource.
+                If you want to anonymize multiple resource types, create one project for each of them.
+            </p>
+        </info-explanation>
+    </app-information-dialog>
+
+    <app-information-dialog #dataSourcesInfo title="Data Sources">
+        <info-explanation>
+            <p>
+                To import a dataset into Cinnamon, you can either upload a file containing your dataset from your local
+                machine or fetch the dataset from a FHIR server.
+            </p>
+        </info-explanation>
+        <info-options>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Data Source</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td [class.current-type]="dataSourceType === DataSourceType.LOCAL">Local Files</td>
+                    <td>Selecting this source lets you upload a file containing your dataset from your local machine.</td>
+                </tr>
+                <tr>
+                    <td [class.current-type]="dataSourceType === DataSourceType.FHIR_SERVER">FHIR Servers</td>
+                    <td>This data source offers the ability to fetch the dataset from a FHIR server.</td>
+                </tr>
+                </tbody>
+            </table>
+        </info-options>
+    </app-information-dialog>
+
+    <app-information-dialog #dataFileInfo title="Data File">
+        <info-explanation>
+            <ng-container *ngTemplateOutlet="info"></ng-container>
+        </info-explanation>
+    </app-information-dialog>
+
+    <app-information-dialog #configFileInfo title="Data Configuration File">
+        <info-explanation>
+            <p>
+                The configuration file contains the data configuration, which specified the attributes inside the dataset.
+                It has to be created specifically for the attributes contained in the dataset.
+                You can obtain a configuration from a previous project which used the same attributes.
+                In case you don't have a configuration file, you can continue without a configuration.
+                The data configuration will be estimated based on the selected dataset and can be adjusted afterwards.
+            </p>
+        </info-explanation>
+    </app-information-dialog>
+
+    <app-information-dialog #fhirServerUrlInfo title="FHIR Server URL">
+        <info-explanation>
+            <p>
+                The FHIR server URL is the address of the FHIR server from which the dataset will be fetched.
+                It has to include the entire FHIR search parameter.
+                For more information see the <a href="https://hl7.org/fhir/R4/search.html" target="_blank">official FHIR
+                Search documentation</a>.
+            </p>
+        </info-explanation>
+        <info-examples>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>FHIR Server URL</th>
+                    <th>Explanation</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>https://example.com/fhir/Patient?id=123</td>
+                    <td>Fetches the patient resource for a specific patient with ID 123.</td>
+                </tr>
+                </tbody>
+            </table>
+        </info-examples>
+    </app-information-dialog>
+}

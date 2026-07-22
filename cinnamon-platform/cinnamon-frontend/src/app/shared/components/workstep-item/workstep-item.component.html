@@ -13,8 +13,8 @@
     <ng-template matExpansionPanelContent>
         <ng-content></ng-content>
 
-        <app-workstep [locked]="locked" [stepIndex]="stepIndex" [valid]="!invalid" [altConfirm]="altConfirm"
-                      [altConfirmValid]="altConfirmValid" [altConfirmAll]="altConfirmAll"
+        <app-workstep [loading]="loading" [locked]="locked" [stepIndex]="stepIndex" [valid]="!invalid"
+                      [altConfirm]="altConfirm" [altConfirmValid]="altConfirmValid" [altConfirmAll]="altConfirmAll"
                       (confirm)="confirm.emit($event)" (confirmAlt)="confirmAlt.emit($event)"></app-workstep>
     </ng-template>
 

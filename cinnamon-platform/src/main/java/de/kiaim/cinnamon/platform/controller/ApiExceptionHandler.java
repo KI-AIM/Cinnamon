@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.controller;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.service.ResponseService;
@@ -85,6 +86,22 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		}
 
 		return super.handleConversionNotSupported(ex, headers, status, request);
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleHttpMessageNotReadable(org.springframework.http.converter.HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		final var messagePair = extractBestMessage(ex, "");
+		if (messagePair != null) {
+			Map<String, Set<String>> errors = new HashMap<>();
+			addFieldError(messagePair, errors);
+
+			final String errorCode = ApiException.assembleErrorCode(ApiException.VALIDATION, REQUEST_STRUCTURE_ERROR, "3");
+			return responseService.prepareErrorResponseEntity(headers, request, status, errorCode,
+			                                                  "Malformed JSON request",
+			                                                  new ErrorDetails().withValidationErrors(errors));
+		}
+
+		return super.handleHttpMessageNotReadable(ex, headers, status, request);
 	}
 
 	@Override
@@ -191,13 +208,21 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 		if (throwable.getCause() instanceof JsonMappingException jsonMappingException) {
 			final var path = jsonMappingException.getPath();
-			var field = fieldName + ".";
+			var field = fieldName;
 			for (final var segment : path) {
 				if (segment.getFieldName() != null) {
-					field += segment.getFieldName();
+					field += (field.isEmpty() ? "" : ".") + segment.getFieldName();
 				} else {
 					field += "[" + segment.getIndex() + "]";
 				}
+			}
+
+			if (jsonMappingException instanceof InvalidFormatException invalidFormatException &&
+			    invalidFormatException.getTargetType() != null &&
+			    invalidFormatException.getTargetType().isEnum()) {
+				final var originalValue = invalidFormatException.getValue();
+				final var possibleValues = Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
+				return Pair.of(field, "Invalid value '" + originalValue + "'. Possible values are: " + possibleValues);
 			}
 
 			final var message = jsonMappingException.getMessage().split("\n at")[0];

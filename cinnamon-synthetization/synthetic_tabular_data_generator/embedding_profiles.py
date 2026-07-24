@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import socket
 from typing import Any, Dict, List, Optional
+
+import requests
 
 from synthetic_tabular_data_generator.llm.client import (
     _parse_bool,
@@ -71,17 +74,7 @@ def get_embedding_profile_names() -> List[str]:
     return list(load_embedding_profiles_from_env().keys())
 
 
-def load_embedding_profile_config(algorithm_config: Dict[str, Any]) -> Optional[EmbeddingProfileConfig]:
-    algorithm_section = (
-        algorithm_config.get("synthetization_configuration", {})
-        .get("algorithm", {})
-    )
-    model_params = algorithm_section.get("model_parameter", {})
-    provider = str(model_params.get("embedding_provider", "bm25")).strip().lower()
-    if provider != "ollama":
-        return None
-
-    selected_profile_name = str(model_params.get("embedding_model", "")).strip()
+def load_embedding_profile_by_name(selected_profile_name: str) -> EmbeddingProfileConfig:
     profiles = load_embedding_profiles_from_env()
     available = ", ".join(sorted(profiles.keys())) or "none"
     if not selected_profile_name:
@@ -124,3 +117,51 @@ def load_embedding_profile_config(algorithm_config: Dict[str, Any]) -> Optional[
         max_retries=max_retries,
         verify_ssl=verify_ssl,
     )
+
+
+def load_embedding_profile_config(algorithm_config: Dict[str, Any]) -> Optional[EmbeddingProfileConfig]:
+    algorithm_section = (
+        algorithm_config.get("synthetization_configuration", {})
+        .get("algorithm", {})
+    )
+    model_params = algorithm_section.get("model_parameter", {})
+    provider = str(model_params.get("embedding_provider", "bm25")).strip().lower()
+    if provider != "ollama":
+        return None
+    return load_embedding_profile_by_name(str(model_params.get("embedding_model", "")).strip())
+
+
+def embed_ollama_texts(
+    profile: EmbeddingProfileConfig,
+    texts: List[str],
+    *,
+    truncate: bool = True,
+) -> List[List[float]]:
+    if not texts:
+        return []
+    base_url = profile.base_url
+    if "host.docker.internal" in base_url:
+        try:
+            socket.getaddrinfo("host.docker.internal", 11434)
+        except socket.gaierror:
+            base_url = base_url.replace("host.docker.internal", "localhost")
+    url = f"{base_url}{profile.endpoint_path}"
+    last_error: Optional[Exception] = None
+    for attempt_index in range(profile.max_retries):
+        try:
+            response = requests.post(
+                url,
+                json={"model": profile.model_name, "input": texts, "truncate": truncate},
+                timeout=profile.timeout_seconds,
+                verify=profile.verify_ssl,
+            )
+            response.raise_for_status()
+            embeddings = response.json().get("embeddings")
+            if not isinstance(embeddings, list) or len(embeddings) != len(texts):
+                raise ValueError("Embedding response does not contain one vector per input text.")
+            return [[float(value) for value in vector] for vector in embeddings]
+        except Exception as exc:  # noqa: BLE001
+            last_error = exc
+            if attempt_index + 1 >= profile.max_retries:
+                break
+    raise RuntimeError("Unable to retrieve embeddings from the configured Ollama embedding profile.") from last_error

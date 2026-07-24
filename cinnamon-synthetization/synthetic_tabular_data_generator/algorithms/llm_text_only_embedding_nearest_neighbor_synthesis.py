@@ -7,11 +7,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import pandas as pd
-import requests
-
 from data_processing.utils import MISSING_VALUE_STRING
 from synthetic_tabular_data_generator.embedding_profiles import (
     EmbeddingProfileConfig,
+    embed_ollama_texts,
     load_embedding_profile_config,
 )
 from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
@@ -370,37 +369,4 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
     def _embed_ollama_texts(self, texts: list[str]) -> list[DenseVector]:
         if self._embedding_profile is None:
             raise ValueError("Ollama embedding profile is not initialized.")
-        if not texts:
-            return []
-
-        url = f"{self._embedding_profile.base_url}{self._embedding_profile.endpoint_path}"
-        payload = {
-            "model": self._embedding_profile.model_name,
-            "input": texts,
-        }
-        last_error: Optional[Exception] = None
-        for attempt_index in range(self._embedding_profile.max_retries):
-            try:
-                response = requests.post(
-                    url,
-                    json=payload,
-                    timeout=self._embedding_profile.timeout_seconds,
-                    verify=self._embedding_profile.verify_ssl,
-                )
-                response.raise_for_status()
-                body = response.json()
-                embeddings = body.get("embeddings")
-                if not isinstance(embeddings, list) or not embeddings:
-                    raise ValueError("Embedding response is empty or missing the 'embeddings' field.")
-                return [
-                    [float(value) for value in embedding]
-                    for embedding in embeddings
-                    if isinstance(embedding, list)
-                ]
-            except Exception as exc:  # noqa: BLE001
-                last_error = exc
-                if attempt_index + 1 >= self._embedding_profile.max_retries:
-                    break
-        if last_error is not None:
-            raise RuntimeError("Unable to retrieve embeddings from the configured Ollama embedding profile.") from last_error
-        raise RuntimeError("Unable to retrieve embeddings from the configured Ollama embedding profile.")
+        return embed_ollama_texts(self._embedding_profile, texts)

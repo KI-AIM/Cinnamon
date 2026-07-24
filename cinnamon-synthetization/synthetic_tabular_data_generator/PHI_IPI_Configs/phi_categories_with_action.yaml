@@ -7,11 +7,17 @@ direct_identifier_categories:
   description: Names, initials, aliases, usernames, or handles of patients, relatives, household members, employers, caregivers,
     clinicians, or other persons mentioned in relation to the medical record.
   action: Redact detected values of this category by replacing the original span with [NAME].
+  description_ai: Person names, initials, aliases, usernames, or handles of patients, relatives, household members, employers,
+    caregivers, clinicians, or others linked to the record.
+  action_ai: Replace span with [NAME].
 - id: NAME_TITLE
   source: custom_extension
   description: Honorifics, salutations, professional titles, and academic or medical degrees attached to or identifying a person,
     including equivalent titles and degree abbreviations in any language, whether they occur alone or next to a name.
   action: Redact detected values of this category by replacing the original span with [NAME_TITLE].
+  description_ai: Honorifics, salutations, professional titles, and academic or medical degrees in any language, alone or with
+    a name.
+  action_ai: Replace span with [NAME_TITLE].
 - id: LOCATION
   source:
   - HIPAA_Safe_Harbor
@@ -20,11 +26,17 @@ direct_identifier_categories:
   description: Geographic or address-related information, including street addresses, house numbers, apartments, cities, counties,
     precincts, ZIP codes, countries, exact residences, and address-like descriptions.
   action: Redact detected values of this category by replacing the original span with [LOCATION].
+  description_ai: Geographic or address data, including streets, house or apartment numbers, cities, counties, precincts, ZIP
+    codes, countries, exact residences, and address-like descriptions.
+  action_ai: Replace span with [LOCATION].
 - id: FACILITY_OR_ORGANIZATION
   source: i2b2_2014_MEDDOCAN_custom_extension
   description: Names of hospitals, clinics, laboratories, departments, wards, rooms, companies, employers, schools, institutions,
     or other organizations that may identify the patient, staff, or care context.
   action: Redact detected values of this category by replacing the original span with [FACILITY_OR_ORGANIZATION].
+  description_ai: Identifying names of hospitals, clinics, labs, departments, wards, rooms, companies, employers, schools,
+    institutions, or other organizations.
+  action_ai: Replace span with [FACILITY_OR_ORGANIZATION].
 - id: DATE_AGE_TIME
   source:
   - HIPAA_Safe_Harbor
@@ -34,6 +46,9 @@ direct_identifier_categories:
     dates, death dates, appointment dates, exact ages, ages over 89, and exact clock times connected to the individual or
     care episode.
   action: Redact detected values of this category by replacing the original span with [DATE_AGE_TIME].
+  description_ai: Person-linked dates, ages, or times, including birth, admission, discharge, death, or appointment dates; exact
+    ages, ages over 89, and care-linked clock times.
+  action_ai: Replace span with [DATE_AGE_TIME].
 - id: CONTACT
   source:
   - HIPAA_Safe_Harbor
@@ -42,6 +57,8 @@ direct_identifier_categories:
   description: Contact information such as telephone numbers, fax numbers, email addresses, pager numbers, personal web URLs,
     messaging handles, and similar communication identifiers.
   action: Redact detected values of this category by replacing the original span with [CONTACT].
+  description_ai: Contact identifiers such as phone, fax, email, pager, personal URL, or messaging handle.
+  action_ai: Replace span with [CONTACT].
 - id: DIGITAL_IDENTIFIER
   source:
   - HIPAA_Safe_Harbor
@@ -50,6 +67,8 @@ direct_identifier_categories:
   description: Digital identifiers such as IP addresses, URLs, domains, user accounts, account handles, login names, device
     network identifiers, or other online identifiers.
   action: Redact detected values of this category by replacing the original span with [DIGITAL_IDENTIFIER].
+  description_ai: Online identifiers such as IPs, URLs, domains, user accounts, handles, login names, or device network IDs.
+  action_ai: Replace span with [DIGITAL_IDENTIFIER].
 - id: MEDICAL_RECORD_OR_HEALTH_ID
   source:
   - HIPAA_Safe_Harbor
@@ -58,6 +77,9 @@ direct_identifier_categories:
   description: Medical record numbers, patient IDs, encounter IDs, admission IDs, health plan beneficiary numbers, insurance
     numbers, registry IDs, study IDs, and other health-system identifiers.
   action: Redact detected values of this category by replacing the original span with [MEDICAL_RECORD_OR_HEALTH_ID].
+  description_ai: Health-system IDs such as medical record, patient, encounter, admission, beneficiary, insurance, registry,
+    or study numbers.
+  action_ai: Replace span with [MEDICAL_RECORD_OR_HEALTH_ID].
 - id: ACCOUNT_FINANCIAL_ID
   source:
   - HIPAA_Safe_Harbor
@@ -66,6 +88,8 @@ direct_identifier_categories:
   description: Account numbers, billing identifiers, payment identifiers, invoice numbers, claim numbers, financial transaction
     identifiers, or other payment-related identifiers.
   action: Redact detected values of this category by replacing the original span with [ACCOUNT_FINANCIAL_ID].
+  description_ai: Financial IDs such as account, billing, payment, invoice, claim, or transaction numbers.
+  action_ai: Replace span with [ACCOUNT_FINANCIAL_ID].
 - id: GOVERNMENT_OR_LEGAL_ID
   source:
   - HIPAA_Safe_Harbor
@@ -74,6 +98,9 @@ direct_identifier_categories:
   description: Social security numbers, national IDs, passport numbers, certificate numbers, license numbers, professional
     registration numbers, legal case numbers, or other government/legal identifiers.
   action: Redact detected values of this category by replacing the original span with [GOVERNMENT_OR_LEGAL_ID].
+  description_ai: Government or legal IDs such as SSN, national ID, passport, certificate, license, professional registration,
+    or case number.
+  action_ai: Replace span with [GOVERNMENT_OR_LEGAL_ID].
 - id: VEHICLE_OR_DEVICE_ID
   source:
   - HIPAA_Safe_Harbor
@@ -82,6 +109,8 @@ direct_identifier_categories:
   description: Vehicle identifiers, license plates, serial numbers, device identifiers, implant serial numbers, equipment
     IDs, or other machine-readable or manufacturer-linked identifiers.
   action: Redact detected values of this category by replacing the original span with [VEHICLE_OR_DEVICE_ID].
+  description_ai: Vehicle, plate, serial, device, implant, equipment, machine-readable, or manufacturer-linked IDs.
+  action_ai: Replace span with [VEHICLE_OR_DEVICE_ID].
 - id: BIOMETRIC_OR_IMAGE_IDENTIFIER
   source:
   - HIPAA_Safe_Harbor
@@ -90,11 +119,17 @@ direct_identifier_categories:
   description: Biometric identifiers, fingerprints, voiceprints, facial photographs, comparable images, image filenames containing
     identifiers, or textual references to identifiable visual/biometric material.
   action: Redact detected values of this category by replacing the original span with [BIOMETRIC_OR_IMAGE_IDENTIFIER].
+  description_ai: Biometrics or identifiable visuals, including fingerprints, voiceprints, facial photos, comparable images,
+    identifying filenames, or references to such material.
+  action_ai: Replace span with [BIOMETRIC_OR_IMAGE_IDENTIFIER].
 - id: RELATIVE_EMPLOYER_HOUSEHOLD_IDENTIFIER
   source: HIPAA_Safe_Harbor_custom_extension
   description: Direct identifiers of relatives, employers, household members, proxies, guardians, or caregivers, including
     their names, addresses, contacts, workplaces, or unique identifiers.
   action: Redact detected values of this category by replacing the original span with [RELATIVE_EMPLOYER_HOUSEHOLD_IDENTIFIER].
+  description_ai: Names, addresses, contacts, workplaces, or unique IDs of relatives, employers, household members, proxies,
+    guardians, or caregivers.
+  action_ai: Replace span with [RELATIVE_EMPLOYER_HOUSEHOLD_IDENTIFIER].
 - id: OTHER_UNIQUE_IDENTIFIER
   source:
   - HIPAA_Safe_Harbor
@@ -103,3 +138,6 @@ direct_identifier_categories:
   description: Any other unique identifying number, characteristic, code, label, file name, barcode, QR code, accession code,
     local study code, or institution-specific identifier not covered by another category.
   action: Redact detected values of this category by replacing the original span with [OTHER_UNIQUE_IDENTIFIER].
+  description_ai: Other unique identifying numbers, traits, codes, labels, filenames, barcodes, QR codes, accession or local
+    study codes, and institution-specific IDs.
+  action_ai: Replace span with [OTHER_UNIQUE_IDENTIFIER].

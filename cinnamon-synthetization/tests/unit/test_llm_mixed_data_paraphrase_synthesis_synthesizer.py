@@ -165,6 +165,11 @@ def test_mixed_indirect_identifier_rewrite_then_aligns_structured_values(monkeyp
     assert len(prompts) == 2
     assert "expert clinical de-identification rewriter" in prompts[0]
     assert "selected anonymization level: HIGH" in prompts[0]
+    assert "NAME: Person names, initials, aliases, usernames, or handles" in prompts[0]
+    assert "Action: Replace span with [NAME]." in prompts[0]
+    assert "APPEARANCE: Person or infant weight, height, body traits or changes" in prompts[0]
+    assert "Strongly abstract or plausibly replace distinctive appearance." in prompts[0]
+    assert "Redact detected values of this category" not in prompts[0]
     assert '"age"' not in prompts[0]
     assert "Statistical profiles were calculated from 1 of 1 reference rows." in prompts[1]
     assert '"note": "Der etwa 80-jährige Patient wurde entlassen."' in prompts[1]

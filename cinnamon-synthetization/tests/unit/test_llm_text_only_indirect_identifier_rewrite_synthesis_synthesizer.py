@@ -12,6 +12,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from synthetic_tabular_data_generator.algorithms.llm_text_only_indirect_identifier_rewrite_synthesis import (
     LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer,
+    _load_yaml_config,
 )
 from synthetic_tabular_data_generator.tabular_data_synthesizer import SynthesizerOperationError
 
@@ -76,6 +77,26 @@ class _DummyResponse:
         return self._payload
 
 
+def test_indirect_identifier_prompt_uses_every_ai_optimized_yaml_rule():
+    synthesizer = LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer()
+    phi_categories = _load_yaml_config("phi_categories_with_action.yaml")["direct_identifier_categories"]
+    phi_prompt = synthesizer._build_phi_category_block()
+
+    assert all(
+        category["description_ai"] in phi_prompt and category["action_ai"] in phi_prompt
+        for category in phi_categories
+    )
+
+    ipi_categories = _load_yaml_config("ipi_categories_with_action.yaml")["ipi_categories"]
+    for level in ("low", "medium", "high"):
+        synthesizer._indirect_identifier_level = level
+        ipi_prompt = synthesizer._build_ipi_category_block()
+        assert all(
+            category["description_ai"] in ipi_prompt and category["action_ai"][level] in ipi_prompt
+            for category in ipi_categories
+        )
+
+
 def test_llm_text_only_indirect_identifier_rewrite_synthesis_rewrites_with_selected_level(monkeypatch):
     _set_shared_llm_env(monkeypatch)
 
@@ -100,14 +121,16 @@ def test_llm_text_only_indirect_identifier_rewrite_synthesis_rewrites_with_selec
             assert "Preserve the clinical meaning, but reduce direct and indirect identifiability." in prompt
             assert "PHI/direct identifiers must always be removed or replaced, regardless of the selected indirect identifier level." in prompt
             assert "PHI categories and required actions (always apply these rules):" in prompt
-            assert "NAME: Names, initials, aliases, usernames, or handles" in prompt
-            assert "Action: Redact detected values of this category by replacing the original span with [NAME]." in prompt
+            assert "NAME: Person names, initials, aliases, usernames, or handles" in prompt
+            assert "Action: Replace span with [NAME]." in prompt
             assert "Indirect identifier handling rules (apply in all levels):" in prompt
             assert "Indirect identifier categories and required actions (MEDIUM):" in prompt
-            assert "APPEARANCE: Mention of a person’s (also infant’s) weight, height" in prompt
-            assert "Generalize or replace appearance details with broader non-identifying values while preserving medical relevance" in prompt
-            assert "TIME: Mentions of age or time-related information" in prompt
-            assert "Generalize or replace time information with broader but still structured intervals or phases while preserving clinical sequence." in prompt
+            assert "APPEARANCE: Person or infant weight, height, body traits or changes" in prompt
+            assert "Generalize or replace appearance with broad non-identifying, medically relevant values" in prompt
+            assert "TIME: Age or chronology such as postoperative, delivery, or life day numbers" in prompt
+            assert "Replace times with broader structured intervals or phases; preserve clinical sequence." in prompt
+            assert "Redact detected values of this category" not in prompt
+            assert "Mention of a person’s (also infant’s) weight" not in prompt
             assert "Use different wording and sentence structure where possible." in prompt
             return _DummyResponse(
                 {
@@ -214,11 +237,11 @@ def test_llm_text_only_indirect_identifier_rewrite_synthesis_uses_low_level_prom
             assert "selected anonymization level: LOW" in prompt
             assert "Preserve the clinical meaning and as much clinically relevant detail as possible." not in prompt
             assert "PHI categories and required actions (always apply these rules):" in prompt
-            assert "Action: Redact detected values of this category by replacing the original span with [NAME]." in prompt
+            assert "Action: Replace span with [NAME]." in prompt
             assert "Indirect identifier categories and required actions (LOW):" in prompt
-            assert "Keep clinically relevant appearance information." in prompt
-            assert "Keep the clinically relevant event and outcome." in prompt
-            assert "Lightly coarsen or replace exact ages, days, dates, times, and medication or laboratory timestamps" in prompt
+            assert "Keep clinically relevant appearance; generalize or replace distinctive traits or modifications." in prompt
+            assert "Keep the clinical event and outcome; generalize or replace specific context" in prompt
+            assert "Coarsen or replace exact ages, days, dates, and medication or lab times" in prompt
             assert "For LOW level, prioritize clinical fidelity and information preservation over broad generalization." in prompt
             return _DummyResponse(
                 {
@@ -276,12 +299,12 @@ def test_llm_text_only_indirect_identifier_rewrite_synthesis_uses_high_level_pro
             assert "selected anonymization level: HIGH" in prompt
             assert "Preserve the broad clinical message, but strongly reduce direct and indirect identifiability." in prompt
             assert "PHI categories and required actions (always apply these rules):" in prompt
-            assert "Action: Redact detected values of this category by replacing the original span with [NAME]." in prompt
+            assert "Action: Replace span with [NAME]." in prompt
             assert "Indirect identifier categories and required actions (HIGH):" in prompt
-            assert "Strongly abstract or replace distinctive appearance details with plausible non-identifying alternatives." in prompt
-            assert "Strongly abstract or replace distinctive event narratives with less specific but clinically coherent alternatives." in prompt
-            assert "Actively obscure rare or unique clinical combinations by replacing them with plausible broader categories" in prompt
-            assert "Strongly simplify, abstract, or replace distinctive care pathways and transfer patterns with generic care phases" in prompt
+            assert "Strongly abstract or plausibly replace distinctive appearance." in prompt
+            assert "Strongly abstract or replace distinctive narratives; keep necessary clinical consequences." in prompt
+            assert "Obscure rare combinations with plausible broader categories" in prompt
+            assert "Strongly simplify or replace distinctive pathways and transfers" in prompt
             assert "prioritize privacy over fine-grained detail" in prompt
             return _DummyResponse(
                 {

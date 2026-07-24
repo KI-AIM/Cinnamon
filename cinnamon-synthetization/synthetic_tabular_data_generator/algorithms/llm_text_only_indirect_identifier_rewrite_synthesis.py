@@ -91,8 +91,8 @@ class LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer(
         lines = [f"{title}:"]
         for entry in entries:
             category_id = str(entry.get("id", "")).strip()
-            description = str(entry.get("description", "")).strip()
-            action = str(entry.get("action", "")).strip()
+            description = str(entry.get("description_ai") or entry.get("description", "")).strip()
+            action = str(entry.get("action_ai") or entry.get("action", "")).strip()
             if not category_id or not action:
                 continue
             lines.append(f"- {category_id}: {description} Action: {action}")
@@ -118,7 +118,7 @@ class LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer(
         for entry in categories:
             if not isinstance(entry, dict):
                 continue
-            actions = entry.get("actions", {})
+            actions = entry.get("action_ai") or entry.get("actions", {})
             if not isinstance(actions, dict):
                 continue
             action = str(actions.get(self._indirect_identifier_level, "")).strip()
@@ -127,8 +127,8 @@ class LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer(
             resolved_entries.append(
                 {
                     "id": entry.get("id", ""),
-                    "description": entry.get("description", ""),
-                    "action": action,
+                    "description_ai": entry.get("description_ai") or entry.get("description", ""),
+                    "action_ai": action,
                 }
             )
 

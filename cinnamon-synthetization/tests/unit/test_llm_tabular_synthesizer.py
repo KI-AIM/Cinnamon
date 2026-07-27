@@ -150,7 +150,9 @@ def test_llm_tabular_supports_openai_compatible(monkeypatch):
         return _DummyResponse({"choices": [{"message": {"content": content}}]})
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-    sample = _initialize_synthesizer(_algorithm_config(num_samples=1)).sample()
+    sample = _initialize_synthesizer(
+        _algorithm_config(profile_rows=3, num_samples=1)
+    ).sample()
 
     assert calls["count"] == 1
     assert sample.to_dict(orient="records") == [

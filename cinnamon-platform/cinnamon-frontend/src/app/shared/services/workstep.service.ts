@@ -19,6 +19,7 @@ export class WorkstepService {
     // Current state
     private _isFinished = false;
     private numberSteps = 0;
+    private resetFollowing = false;
     private stepSubject = new BehaviorSubject<number>(0);
     private openStepSubject = new BehaviorSubject<number>(0);
 
@@ -62,11 +63,13 @@ export class WorkstepService {
      * Initializes the workstep service with the number of steps and whether it is finished or not.
      * @param step The step, used for saving the state.
      * @param numberSteps The number of steps to be completed.
+     * @param resetFollowing If the following steps should be reset after completing a step.
      * @param finished If all worksteps have been finished in the past.
-     * @param reset If the progress should be reset.
+     * @param reset If the progress should be reset on initialization.
      */
-    public init(step: Steps, numberSteps: number, finished: boolean, reset: boolean): void {
+    public init(step: Steps, numberSteps: number, resetFollowing: boolean, finished: boolean, reset: boolean): void {
         this.numberSteps = numberSteps;
+        this.resetFollowing = resetFollowing;
         this._isFinished = finished;
 
         if (step === this.stateCurrent && !reset) {
@@ -99,6 +102,8 @@ export class WorkstepService {
      * @param stepIndex
      */
     public confirmStep(stepIndex: number): void {
+        if (this.resetFollowing)
+            this._isFinished = false;
         this.stepSubject.next(stepIndex + 1);
     }
 

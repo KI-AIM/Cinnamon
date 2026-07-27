@@ -13,5 +13,5 @@ public enum DataSourceType {
 	/**
 	 * Files are fetched from a remote server.
 	 */
-	SERVER,
+	FHIR_SERVER,
 }

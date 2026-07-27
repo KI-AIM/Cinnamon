@@ -36,16 +36,16 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
 	UPLOAD: {
 		path: "/upload",
 		id: "navLinkUpload",
-		text: "Upload data",
+		text: "Data Import",
 		enum: Steps.UPLOAD,
 		dependsOn: Steps.WELCOME,
-        lockedAfter: Steps.VALIDATION,
+        lockedAfter: Steps.UPLOAD,
 		index: 1,
 	},
 	DATA_CONFIG: {
 		path: "/dataConfiguration",
 		id: "navLinkDataConfiguration",
-		text: "Data configuration",
+		text: "Data Configuration",
 		enum: Steps.DATA_CONFIG,
 		dependsOn: Steps.UPLOAD,
         lockedAfter: Steps.VALIDATION,
@@ -54,7 +54,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
 	VALIDATION: {
 		path: "/dataValidation",
 		id: "navLinkDataValidation",
-		text: "Data validation",
+		text: "Data Validation",
 		enum: Steps.VALIDATION,
 		dependsOn: Steps.DATA_CONFIG,
         lockedAfter: Steps.VALIDATION,
@@ -63,7 +63,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
 	ANONYMIZATION: {
 		path: "/anonymizationConfiguration",
 		id: "navLinkAnonymizationConfiguration",
-		text: "Anonymization configuration",
+		text: "Anonymization Configuration",
 		enum: Steps.ANONYMIZATION,
 		dependsOn: Steps.VALIDATION,
         lockedAfter: Steps.EXECUTION,
@@ -72,7 +72,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
     SYNTHETIZATION: {
         path: "/synthetizationConfiguration",
         id: "navLinkSynthetizationConfiguration",
-        text: "Synthetization configuration",
+        text: "Synthetization Configuration",
         enum: Steps.SYNTHETIZATION,
         dependsOn: Steps.ANONYMIZATION,
         lockedAfter: Steps.EXECUTION,
@@ -91,7 +91,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
     TECHNICAL_EVALUATION : {
         path: "/technicalEvaluationConfiguration",
         id: "navLinkTechnicalEvalutionConfiguration",
-        text: "Technical Evaluation configuration",
+        text: "Technical Evaluation Configuration",
         enum: Steps.TECHNICAL_EVALUATION,
         dependsOn: Steps.EXECUTION,
         lockedAfter: Steps.EVALUATION,
@@ -100,7 +100,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
     RISK_EVALUATION : {
         path: "/riskEvaluationConfiguration",
         id: "navLinkRiskEvalutionConfiguration",
-        text: "Risk Evaluation configuration",
+        text: "Risk Evaluation Configuration",
         enum: Steps.RISK_EVALUATION,
         dependsOn: Steps.TECHNICAL_EVALUATION,
         lockedAfter: Steps.EVALUATION,

@@ -9,8 +9,13 @@
     </div>
 
     <div class="cinnamon-buttons-div">
-        <button [disabled]="locked || !valid" (click)="confirmStep()" mat-raised-button color="primary">
-            Continue
+        <button [disabled]="locked || !valid || loading" (click)="confirmStep()" mat-raised-button color="primary">
+            <div class="d-flex align-items-center gap-2">
+                Continue
+                @if (loading) {
+                    <mat-spinner [diameter]="24"></mat-spinner>
+                }
+            </div>
         </button>
         <button *ngIf="altConfirm" [disabled]="locked || !altConfirmValid" (click)="altConfirmStep()" mat-raised-button
                 color="primary">

@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.configuration.project.MetricImportance;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
+import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
@@ -299,9 +300,7 @@ class ConfigurationControllerTest extends ControllerTest {
 	public void importConfigurationsDataSourceConfiguration() throws Exception {
 		String config = """
 		                dataSource:
-		                  fileType: "CSV"
-		                  csvFileConfiguration:
-		                    hasHeader: false
+		                  dataSourceType: "LOCAL"
 		                """;
 
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", config.getBytes());
@@ -322,13 +321,9 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 """));
 
 		var project = getTestProject();
-		var dataSourceConfig = project.getOriginalData().getFile().getFileConfiguration();
+		var dataSourceConfig = project.getOriginalData().getFile().getDataSourceConfiguration();
 		assertNotNull(dataSourceConfig);
-		assertEquals(FileType.CSV, dataSourceConfig.getFileType());
-		assertInstanceOf(CsvFileConfigurationEntity.class, dataSourceConfig);
-
-		var csvFileConfiguration = (CsvFileConfigurationEntity) dataSourceConfig;
-		assertEquals(false, csvFileConfiguration.getHasHeader());
+		assertEquals(DataSourceType.LOCAL, dataSourceConfig.getDataSourceType());
 	}
 
 	@Test
@@ -351,6 +346,70 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 	status: 'PARTIAL_ERROR',
 		                                 	configurationImportSummaries:  [{
 		                                 		configurationName: 'dataSource',
+		                                 		status: 'ERROR',
+		                                 		errorCode: 'PLATFORM_1_14_6',
+		                                 		errorMessage: 'Failed to deserialize the data source configuration!'
+		                                 	}]
+		                                 }
+		                                 """));
+	}
+
+	@Test
+	public void importConfigurationsFileConfiguration() throws Exception {
+		String config = """
+		                file:
+		                  fileType: "CSV"
+		                  csvFileConfiguration:
+		                    hasHeader: false
+		                """;
+
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", config.getBytes());
+
+		mockMvc.perform(multipart("/api/config/import").file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'SUCCESS',
+		                                 	configurationImportSummaries:  [
+		                                 		{configurationName: 'file', status: 'SUCCESS', errorCode: null}
+		                                 	]
+		                                 }
+		                                 """));
+
+		var project = getTestProject();
+		var fileConfig = project.getOriginalData().getFile().getFileConfiguration();
+		assertNotNull(fileConfig);
+		assertEquals(FileType.CSV, fileConfig.getFileType());
+		assertInstanceOf(CsvFileConfigurationEntity.class, fileConfig);
+
+		var csvFileConfiguration = (CsvFileConfigurationEntity) fileConfig;
+		assertEquals(false, csvFileConfiguration.getHasHeader());
+	}
+
+	@Test
+	public void importConfigurationsFileConfigurationInvalid() throws Exception {
+		String config = """
+		                file:
+		                  fileType: "CSV"
+		                """;
+
+		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", config.getBytes());
+
+		mockMvc.perform(multipart("/api/config/import").file(file))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                 	parameters: {
+		                                 		allowPartialImport: true,
+		                                 		configurationsToImport: null
+		                                 	},
+		                                 	status: 'PARTIAL_ERROR',
+		                                 	configurationImportSummaries:  [{
+		                                 		configurationName: 'file',
 		                                 		status: 'ERROR',
 		                                 		errorCode: 'PLATFORM_3_2_1',
 		                                 		validationErrors: {csvFileConfiguration: ["CSV file configuration must be set for CSV files!"]}

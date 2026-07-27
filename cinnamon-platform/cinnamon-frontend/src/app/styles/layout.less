@@ -40,21 +40,31 @@ app-navigation{
 .config-input-row {
     display: flex;
     flex-direction: row;
-    gap: 16px;
+    flex-wrap: wrap;
+    column-gap: 16px;
+    row-gap: 4px;
+    width: 100%;
+}
+
+.config-input-row-label {
     width: 100%;
 }
 
 .config-input-row-field {
-    display: block;
     flex: 1 1 auto;
-    width: 80%;
+}
+
+.config-input-row-button {
+    flex: 0 1 auto;
 }
 
 .config-input-row-info {
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
 
+.config-input-row-field:has(.mat-mdc-form-field-subscript-wrapper) + .config-input-row-info {
     .input-height;
 }
 
@@ -346,6 +356,10 @@ app-navigation{
 .stage-tree-step {
     display: flex;
     width: 100%;
+}
+
+.workstep-part:not(:last-child):not(:has(.mat-mdc-form-field)) {
+    margin-bottom: 1.5rem;
 }
 
 .workstep-expansion-panel-static > .mat-expansion-panel-header {

@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.model.configuration;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
@@ -41,10 +42,16 @@ public class ConfigurationFile {
 	public static final String PROJECT_CONFIGURATION_KEY = "project";
 
 	/**
-	 * Key for the data source configuration (see {@link FileConfiguration}).
+	 * Key for the data source configuration (see {@link DataSourceConfiguration}).
 	 * Matches the name of the field {@link #getDataSource()}.
 	 */
 	public static final String DATA_SOURCE_CONFIGURATION_KEY = "dataSource";
+
+	/**
+	 * Key for the file configuration (see {@link FileConfiguration}).
+	 * Matches the name of the field {@link #getFile()}.
+	 */
+	public static final String FILE_CONFIGURATION_KEY = "file";
 
 	/**
 	 * Key for the dataset configuration (see {@link FileConfiguration}).
@@ -71,7 +78,15 @@ public class ConfigurationFile {
 	@Schema(description = "Configuration of the data source.")
 	@Valid
 	@Nullable
-	private FileConfiguration dataSource;
+	private DataSourceConfiguration dataSource;
+
+	/**
+	 * Configuration of the file.
+	 */
+	@Schema(description = "Configuration of the file.")
+	@Valid
+	@Nullable
+	private FileConfiguration file;
 
 	/**
 	 * Definition of the attributes to be imported.

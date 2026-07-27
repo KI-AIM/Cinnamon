@@ -8,6 +8,8 @@ import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
+import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
+import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
@@ -25,19 +27,32 @@ public interface DataProcessor {
 	FileType getSupportedDataType();
 
 	/**
+	 * Checks if the given file is compatible with this processor.
+	 * Extracts metadata from the file that only depends on the file content and not the file configuration.
+	 *
+	 * @param data              The file content.
+	 * @param fileCompatibility The file compatibility to populate.
+	 */
+	void checkFileCompatibility(LobWrapperEntity data, FileCompatibilityEntity fileCompatibility);
+
+	/**
 	 * Estimates the file configuration based on the file's content.
 	 *
-	 * @param data The file content
+	 * @param data              The file content
+	 * @param fileCompatibility The file compatibility information.
 	 * @return The estimated file configuration.
-	 * @throws BadFileException    If the data format cannot be processed.
 	 * @throws InternalIOException If reading the data failed.
 	 */
-	FileConfigurationEstimation estimateFileConfiguration(InputStream data)
-			throws InternalIOException, BadFileException;
+	FileConfigurationEstimation estimateFileConfiguration(LobWrapperEntity data,
+	                                                      FileCompatibilityEntity fileCompatibility)
+			throws InternalIOException;
 
 	/**
 	 * Returns the number of columns in the given data.
-	 * @param data The raw data InputStream
+	 * This method might be called directly after the estimation.
+	 * Implementations must be able to handle the value returned by {@link #estimateFileConfiguration(LobWrapperEntity, FileCompatibilityEntity)}.
+	 *
+	 * @param data              The raw data InputStream
 	 * @param fileConfiguration Configuration describing the format of the data.
 	 * @return The number of columns in the data.
 	 * @throws InternalIOException If reading the data failed.

@@ -295,7 +295,9 @@ export class StateManagementService {
         const index = StepConfiguration[unlock].index;
 
         let target;
-        if (index <= StepConfiguration[Steps.VALIDATION].index) {
+        if (index <= StepConfiguration[Steps.UPLOAD].index) {
+            target = "original.dataset";
+        } else if (index <= StepConfiguration[Steps.VALIDATION].index) {
             target = "original";
         } else if (index <= StepConfiguration[Steps.EXECUTION].index) {
             target = "pipeline.execution";

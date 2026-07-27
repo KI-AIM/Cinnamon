@@ -1,6 +1,8 @@
 package de.kiaim.cinnamon.test.platform.service;
 
+import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
@@ -44,6 +46,7 @@ public class ExportServiceTest extends DatabaseTest {
 		projectService.updateProjectConfiguration(project, ProjectConfigurationTestHelper.generateProjectConfigurationDTO());
 
 		final var stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final var dataSourceConfiguration = FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.LOCAL);
 		final var file = ResourceHelper.loadCsvFile();
 		final var csvFileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.CSV, true);
 		final var fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
@@ -51,6 +54,7 @@ public class ExportServiceTest extends DatabaseTest {
 		final String anonymizationConfiguration = AlgorithmTestHelper.generateAlgorithmConfigurationYaml();
 
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(csvFileConfiguration.getFileType());
+		assertDoesNotThrow(() -> databaseService.storeDataSourceConfiguration(project, dataSourceConfiguration));
 		assertDoesNotThrow(() -> databaseService.storeFileConfiguration(project, fileConfiguration));
 		assertDoesNotThrow(() -> databaseService.storeFile(project, file));
 		assertDoesNotThrow(() -> databaseService.storeOriginalDataConfiguration(configuration, project));
@@ -85,6 +89,7 @@ public class ExportServiceTest extends DatabaseTest {
 		                                           List.of("pipeline.execution.anonymization.dataset",
 		                                                   "configuration.project",
 														   "configuration.dataSource",
+														   "configuration.file",
 														   "configuration.dataset",
 		                                                   "configuration.pipeline",
 		                                                   "configuration.configurations",
@@ -96,8 +101,8 @@ public class ExportServiceTest extends DatabaseTest {
 
 		List<String> expectedFiles = new ArrayList<>(
 				List.of("anonymization-dataset.csv", "configurations.yaml", "original-file-file.csv",
-				        "original-dataset.csv", "anonymization.yaml", "project.yaml", "dataSource.yaml", "dataset.yaml",
-				        "pipeline.yaml"));
+				        "original-dataset.csv", "anonymization.yaml", "project.yaml", "dataSource.yaml", "file.yaml",
+				        "dataset.yaml", "pipeline.yaml"));
 
 		try (final var zipInputStream = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
 
@@ -138,8 +143,11 @@ public class ExportServiceTest extends DatabaseTest {
 							assertEquals(ProjectConfigurationTestHelper.generateProjectConfigurationAsExport(),
 							             stringBuilder.toString(), "Unexpected project configuration!");
 					case "dataSource.yaml" ->
-							assertEquals(FileConfigurationTestHelper.generateFileConfigurationAsYaml(),
+							assertEquals(FileConfigurationTestHelper.generateDataSourceConfigurationAsYaml(),
 							             stringBuilder.toString(), "Unexpected data source configuration!");
+					case "file.yaml" ->
+							assertEquals(FileConfigurationTestHelper.generateFileConfigurationAsYaml(),
+							             stringBuilder.toString(), "Unexpected file configuration!");
 					case "dataset.yaml" ->
 							assertEquals(DataConfigurationTestHelper.generateDatasetConfigurationAsYaml(),
 							             stringBuilder.toString(), "Unexpected dataset configuration!");

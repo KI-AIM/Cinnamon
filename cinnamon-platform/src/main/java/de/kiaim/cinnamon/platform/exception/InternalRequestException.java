@@ -42,6 +42,11 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String REPORT_DATA = "7";
 
+	/**
+	 * Exception code for failed fetching of FHIR server data.
+	 */
+	public static final String FHIR_SERVER = "8";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

@@ -25,6 +25,11 @@ public class InternalMissingHandlingException extends InternalException {
 	 */
 	public static final String STEP_INPUT_ENCODING = "4";
 
+	/**
+	 * Exception code for missing data source type handling.
+	 */
+	public static final String DATA_SOURCE_TYPE = "5";
+
 	public InternalMissingHandlingException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

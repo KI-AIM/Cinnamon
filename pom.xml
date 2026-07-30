@@ -62,4 +62,22 @@
         </dependencies>
     </dependencyManagement>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <configLocation>${maven.multiModuleProjectDirectory}/checkstyle.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <violationSeverity>warning</violationSeverity>
+                    <!-- org.bihmi.jal is vendored third-party source, not ours to restyle -->
+                    <excludes>**/org.bihmi.jal/**,**/org/bihmi/jal/**</excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

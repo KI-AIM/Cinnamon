@@ -33,12 +33,12 @@ public class FrontendModelConfig {
 
     // Validate that the risk threshold value matches the type (Max or Avg)
     public void validateRiskThreshold() throws InvalidRiskThresholdException {
-        if (riskThresholdType.equals("Max")) {
+        if ("Max".equals(riskThresholdType)) {
             List<Float> allowedValues = List.of(0.05f, 0.075f, 0.1f, 0.2f, 0.5f);
             if (!allowedValues.contains(riskThresholdValue)) {
                 throw new InvalidRiskThresholdException("Invalid riskThresholdValue for 'Max'. Allowed values: " + allowedValues);
             }
-        } else if (riskThresholdType.equals("Avg")) {
+        } else if ("Avg".equals(riskThresholdType)) {
             List<Float> allowedValues = List.of(0.0005f, 0.001f, 0.005f, 0.05f, 0.075f, 0.1f, 0.2f, 0.5f);
             if (!allowedValues.contains(riskThresholdValue)) {
                 throw new InvalidRiskThresholdException("Invalid riskThresholdValue for 'Avg'. Allowed values: " + allowedValues);
@@ -58,7 +58,7 @@ public class FrontendModelConfig {
 
     // Validate the generalization setting is either Global or Local
     public void validateGeneralizationSetting() throws InvalidGeneralizationSettingException {
-        if (!generalizationSetting.equals("Global") && !generalizationSetting.equals("Local")) {
+        if (!"Global".equals(generalizationSetting) && !"Local".equals(generalizationSetting)) {
             throw new InvalidGeneralizationSettingException("Generalization setting must be either 'Global' or 'Local'.");
         }
     }

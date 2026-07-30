@@ -281,7 +281,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
             }
 
             if (dataSourceType == DataSourceType.FHIR_SERVER) {
-                const serverUrlControl = control.get('server')?.get('url')!;
+                const serverUrlControl = control.get('server')!.get('url')!;
                 const serverUrl = serverUrlControl.value as string;
 
                 const error = (serverUrl == null || serverUrl.trim().length === 0)

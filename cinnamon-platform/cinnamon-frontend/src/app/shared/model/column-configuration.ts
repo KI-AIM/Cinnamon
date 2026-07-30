@@ -23,7 +23,7 @@ export class ColumnConfiguration {
     }
 
     removeConfiguration(configuration: Configuration) {
-        var index = this.configurations.indexOf(configuration, 0);
+        const index = this.configurations.indexOf(configuration, 0);
         if (index > -1) {
             this.configurations.splice(index, 1);
         }

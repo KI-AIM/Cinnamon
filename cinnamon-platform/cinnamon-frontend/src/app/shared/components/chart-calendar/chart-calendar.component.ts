@@ -85,8 +85,8 @@ export class ChartCalendarComponent extends ChartComponent {
             synthetic: this.syntheticSeriesLabel,
         }
 
-        let zoomSeries = [];
-        let series = [];
+        const zoomSeries = [];
+        const series = [];
         let max = 0;
         this.minDate = Number.MAX_VALUE;
         this.maxDate = Number.MIN_VALUE;

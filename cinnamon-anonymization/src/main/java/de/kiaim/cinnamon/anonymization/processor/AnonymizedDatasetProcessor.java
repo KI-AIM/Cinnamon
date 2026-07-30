@@ -140,7 +140,7 @@ public class AnonymizedDatasetProcessor {
      * @return true if the value is "NULL", "*" or contains only "*", false otherwise.
      */
     private static boolean isNullOrStar(String value) {
-        return "NULL".equalsIgnoreCase(value) || value.equals("*") || value.matches("[*]+");
+        return "NULL".equalsIgnoreCase(value) || "*".equals(value) || value.matches("[*]+");
     }
 
     /**

@@ -277,7 +277,7 @@ export class StateManagementService {
     }
 
     private doRouteToStep(projectId: string, step: Steps): Observable<boolean> {
-        for (let [a, b] of Object.entries(StepConfiguration)) {
+        for (const [a, b] of Object.entries(StepConfiguration)) {
             if (a === step.toString()) {
                 return from(this.router.navigateByUrl("/project/" + projectId + b.path));
             }

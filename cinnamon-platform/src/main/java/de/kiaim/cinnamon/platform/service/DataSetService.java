@@ -103,8 +103,8 @@ public class DataSetService {
 		                                 ? defaultNullEncoding
 		                                 : loadDataRequest.getValueNotInRangeEncoding();
 
-		if (!defaultNullEncoding.equals("$null") || !missingValueEncoding.equals("$null") ||
-		    !formatErrorEncoding.equals("$null") || !valueNotInRangeEncoding.equals("$null")) {
+		if (!"$null".equals(defaultNullEncoding) || !"$null".equals(missingValueEncoding) ||
+		    !"$null".equals(formatErrorEncoding) || !"$null".equals(valueNotInRangeEncoding)) {
 
 			for (final DataTransformationErrorEntity transformationError : transformationErrors) {
 				if (!columnIndexMapping.isEmpty() && !columnIndexMapping.containsKey(transformationError.getColumnIndex())) {
@@ -319,10 +319,10 @@ public class DataSetService {
 	 */
 	@Nullable
 	private String encodeValue(final String encoding, final DataTransformationErrorEntity transformationError) {
-		if (encoding.equals("$null")) {
+		if ("$null".equals(encoding)) {
 			return null;
 		}
-		if (encoding.equals("$value")) {
+		if ("$value".equals(encoding)) {
 			return transformationError.getOriginalValue();
 		}
 		return encoding;

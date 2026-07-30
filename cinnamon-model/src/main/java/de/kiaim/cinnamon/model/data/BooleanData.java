@@ -52,9 +52,9 @@ public class BooleanData extends Data {
 		 */
 		@Override
 		public BooleanDataBuilder setValue(String value, List<Configuration> configuration) throws BooleanFormatException {
-			if (value.equalsIgnoreCase("yes") || value.equals("1") || value.equalsIgnoreCase("true")) {
+			if ("yes".equalsIgnoreCase(value) || "1".equals(value) || "true".equalsIgnoreCase(value)) {
 				this.value = true;
-			} else if (value.equalsIgnoreCase("no") || value.equalsIgnoreCase("0") || value.equalsIgnoreCase("false")) {
+			} else if ("no".equalsIgnoreCase(value) || "0".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
 				this.value = false;
 			} else {
 				throw new BooleanFormatException();

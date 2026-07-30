@@ -226,7 +226,7 @@ export class UserService {
                 return null;
             }
 
-            let hasLength = control.value.length >= passwordRequirements.minLength
+            const hasLength = control.value.length >= passwordRequirements.minLength
 
             const constraints = passwordRequirements.constraints;
             let hasLowercase = !constraints.includes('LOWERCASE');

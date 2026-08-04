@@ -216,7 +216,9 @@ def test_llm_tabular_maps_positional_column_names(monkeypatch):
         )
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-    sample = _initialize_synthesizer(_algorithm_config(num_samples=1)).sample()
+    sample = _initialize_synthesizer(
+        _algorithm_config(profile_rows=3, num_samples=1)
+    ).sample()
 
     assert sample.to_dict(orient="records") == [
         {"age": 31, "height": 171.0, "risk": True, "group": "A"}

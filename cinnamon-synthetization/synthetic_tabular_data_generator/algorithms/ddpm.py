@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import cloudpickle
 import pandas as pd
+import torch
 from synthcity.plugins import Plugins
 
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
@@ -30,6 +31,7 @@ class DdpmSynthesizer(TabularDataSynthesizer):
         training_params = config["synthetization_configuration"]["algorithm"]["model_fitting"]
 
         self._model_kwargs = {
+            "device": torch.device("cpu"),
             # training loop
             "n_iter": int(training_params.get("max_iters", 1000)),
             "lr": float(training_params.get("lr", 0.002)),

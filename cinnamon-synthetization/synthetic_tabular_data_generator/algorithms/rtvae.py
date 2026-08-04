@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import cloudpickle
 import pandas as pd
+import torch
 from synthcity.plugins import Plugins
 
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
@@ -29,6 +30,7 @@ class RtvaeSynthesizer(TabularDataSynthesizer):
         training_params = config["synthetization_configuration"]["algorithm"]["model_fitting"]
 
         self._model_kwargs = {
+            "device": torch.device("cpu"),
             "data_encoder_max_clusters": int(synth_params["data_encoder_max_clusters"]),
             "decoder_n_layers_hidden": int(synth_params["number_of_layers"]),
             "encoder_n_layers_hidden": int(synth_params["number_of_layers"]),

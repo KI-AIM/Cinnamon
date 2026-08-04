@@ -2,6 +2,8 @@ import sys
 import types
 from pathlib import Path
 
+import torch
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -75,6 +77,7 @@ def test_tvae_wrapper_initializes_expected_synthcity_plugin(monkeypatch):
         (
             "tvae",
             {
+                "device": torch.device("cpu"),
                 "n_units_embedding": 64,
                 "encoder_n_layers_hidden": 2,
                 "encoder_n_units_hidden": 128,

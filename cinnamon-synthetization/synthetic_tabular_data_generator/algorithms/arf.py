@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import cloudpickle
 import pandas as pd
+import torch
 from synthcity.plugins import Plugins
 
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
@@ -36,7 +37,7 @@ class AdversarialRandomForestsSynthesizer(TabularDataSynthesizer):
             "delta": 0,
             "early_stop": True,
             "verbose": True,
-            "device": "DEVICE",
+            "device": torch.device("cpu"),
             "random_state": 42,
             "sampling_patience": 1000,
             "workspace": Path("workspace"),

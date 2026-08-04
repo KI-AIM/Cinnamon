@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import cloudpickle
 import pandas as pd
+import torch
 
 from synthcity.plugins import Plugins
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
@@ -33,6 +34,7 @@ class TvaeSynthesizer(TabularDataSynthesizer):
         hidden_units = int(synth_params["number_of_units_in_layers"])
 
         self._model_kwargs = {
+            "device": torch.device("cpu"),
             "n_units_embedding": embedding_dim,
             "encoder_n_layers_hidden": hidden_layers,
             "encoder_n_units_hidden": hidden_units,

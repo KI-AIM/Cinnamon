@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import cloudpickle
 import pandas as pd
+import torch
 
 from synthcity.plugins import Plugins
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
@@ -32,6 +33,7 @@ class CtganSynthesizer(TabularDataSynthesizer):
         batch_size = int(training_params["batch_size"])
 
         self._model_kwargs = {
+            "device": torch.device("cpu"),
             "n_iter": int(training_params["epochs"]),
             "generator_n_layers_hidden": hidden_layers,
             "generator_n_units_hidden": hidden_units,

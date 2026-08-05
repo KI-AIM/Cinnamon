@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { TitleService } from "@core/services/title-service.service";
-import { Project } from "@shared/model/project";
+import { ProjectOverview } from "@shared/model/project";
 import { UserService } from "@shared/services/user.service";
 import { combineLatest, Observable, switchMap } from "rxjs";
 
@@ -14,8 +14,10 @@ import { combineLatest, Observable, switchMap } from "rxjs";
 })
 export class UserHomePageComponent implements OnInit {
 
+    protected readonly tableColumns = ['name', 'currentStep', 'status', 'actions'];
+
     protected pageData$: Observable<{
-        projects: Project[],
+        projects: ProjectOverview[],
     }>
 
     protected createProjectForm: FormGroup;

@@ -144,7 +144,7 @@ public class UserController {
 	@Operation(summary = "Returns all projects of the currently authenticated user.")
 	@GetMapping(value = "/-/projects",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public Set<ProjectInfo> getProjects(
+	public Set<ProjectOverview> getProjects(
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
 		return userService.getProjects(user.getUsername());

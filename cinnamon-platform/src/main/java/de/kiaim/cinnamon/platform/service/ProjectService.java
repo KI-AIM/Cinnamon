@@ -121,6 +121,12 @@ public class ProjectService {
 		return projectRepository.save(projectEntity);
 	}
 
+	/**
+	 * See {@link #getProject(UserEntity, UUID)} for details.
+	 *
+	 * @throws BadArgumentException If the project ID is not a valid UUID.
+	 * @throws BadProjectException If the project is not found, or the user does not own the project.
+	 */
 	@Transactional(readOnly = true)
 	public ProjectEntity getProject(final UserEntity user, final String projectId)
 			throws BadArgumentException, BadProjectException {
@@ -136,6 +142,14 @@ public class ProjectService {
 		return getProject(user, workflowIdAsUUID);
 	}
 
+	/**
+	 * Returns the project entity with the given ID owned by the given user.
+	 *
+	 * @param user      The user.
+	 * @param projectId The project ID.
+	 * @return The project entity.
+	 * @throws BadProjectException If the project is not found, or the user does not own the project.
+	 */
 	@Transactional(readOnly = true)
 	public ProjectEntity getProject(final UserEntity user, final UUID projectId) throws BadProjectException {
 		final Optional<ProjectEntity> project = projectRepository.findByExternalId(projectId);
@@ -148,6 +162,15 @@ public class ProjectService {
 		return project.get();
 	}
 
+	/**
+	 * Returns a DTO with the project information for the given user and project ID.
+	 *
+	 * @param user      The owner of the project.
+	 * @param projectId The project ID.
+	 * @return The project information DTO.
+	 * @throws BadArgumentException If the project ID is not a valid UUID.
+	 * @throws BadProjectException  If the project is not found, or the user does not own the project.
+	 */
 	@Transactional(readOnly = true)
 	public ProjectInfo getProjectInfo(final UserEntity user, final String projectId)
 			throws BadArgumentException, BadProjectException {
@@ -155,6 +178,12 @@ public class ProjectService {
 		return getProjectInfo(project);
 	}
 
+	/**
+	 * Returns a DTO with the project information for the given project entity.
+	 *
+	 * @param project The project entity.
+	 * @return The project information DTO.
+	 */
 	@Transactional(readOnly = true)
 	public ProjectInfo getProjectInfo(final ProjectEntity project) {
 		return new ProjectInfo(project.getExternalId().toString(), project.getProjectConfiguration().getProjectName());
@@ -190,6 +219,13 @@ public class ProjectService {
 		return projectRepository.findAllByExpirationDateBefore(expirationDate);
 	}
 
+	/**
+	 * Deletes the given project.
+	 *
+	 * @param project The project to delete.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
+	 */
 	@Transactional
 	public void deleteProject(final ProjectEntity project)
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
@@ -202,6 +238,7 @@ public class ProjectService {
 	 * If a pipeline in the project is running, the process is stopped.
 	 *
 	 * @param user The user.
+	 * @param project The project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
 	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */

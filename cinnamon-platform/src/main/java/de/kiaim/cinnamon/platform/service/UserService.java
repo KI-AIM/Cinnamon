@@ -39,26 +39,59 @@ public class UserService implements UserDetailsService {
 		this.projectService = projectService;
 	}
 
-	public UserInfo getUserInfo(final UserEntity user) throws BadUserException {
+	/**
+	 * Returns a UserInfo object for the given user.
+	 *
+	 * @param user The user entity.
+	 * @return The UserInfo object.
+	 */
+	public UserInfo getUserInfo(final UserEntity user) {
 		return new UserInfo(user.getUsername(), Set.of(user.getUserRole()));
 	}
 
+	/**
+	 * Returns the user with the given username or null if no such user exists.
+	 *
+	 * @param username The username of the user.
+	 * @return The user entity or null if not found.
+	 */
 	@Nullable
 	public UserEntity getUserByUsername(final String username) {
 		return userRepository.findByUsername(username).orElse(null);
 	}
 
+	/**
+	 * Returns the user with the given username or throws a BadUserException if no such user exists.
+	 *
+	 * @param username The username of the user.
+	 * @return The user entity.
+	 * @throws BadUserException If the user is not found.
+	 */
 	@Transactional(readOnly = true)
 	public UserEntity getUserByUsernameOrThrow(final String username) throws BadUserException {
 		return userRepository.findByUsername(username).orElseThrow(
 				() -> new BadUserException(BadUserException.NOT_FOUND, "User with username " + username + " not found"));
 	}
 
+	/**
+	 * Checks if a user with the given username exists.
+	 *
+	 * @param username The username to check.
+	 * @return True if a user with the given username exists, false otherwise.
+	 */
 	@Transactional(readOnly = true)
 	public boolean doesUserWithUsernameExist(final String username) {
 		return userRepository.existsByUsername(username);
 	}
 
+	/**
+	 * Registers a new user with the given username and password.
+	 *
+	 * @param username The username of the new user.
+	 * @param rawPassword The raw password of the new user.
+	 * @return The newly created user entity.
+	 * @throws BadUserException If a user with the given username already exists.
+	 */
 	@Transactional
 	public UserEntity register(final String username, final String rawPassword) throws BadUserException {
 		if (doesUserWithUsernameExist(username)) {
@@ -76,6 +109,16 @@ public class UserService implements UserDetailsService {
 		return userEntity;
 	}
 
+	/**
+	 * Updates a user's password after confirming their current password.
+	 *
+	 * @param username The username of the user.
+	 * @param currentPassword The user's current password.
+	 * @param rawPassword The new password.
+	 * @return The updated user entity.
+	 * @throws BadUserException If the user is not found.
+	 * @throws BadUserConfirmationException If the current password is incorrect.
+	 */
 	@Transactional
 	public UserEntity updatePassword(final String username, final String currentPassword, final String rawPassword)
 			throws BadUserException, BadUserConfirmationException {
@@ -135,6 +178,14 @@ public class UserService implements UserDetailsService {
 		confirmPassword(confirmUserRequest.getPassword(), user);
 	}
 
+	/**
+	 * Confirms if the given raw password matches the given user's password.
+	 * Throws a {@link BadUserConfirmationException} if the password doesn't match.
+	 *
+	 * @param rawPassword The raw password to check.
+	 * @param user        The user whose password is being checked.
+	 * @throws BadUserConfirmationException If the password doesn't match.
+	 */
 	private void confirmPassword(final String rawPassword, final UserEntity user) throws BadUserConfirmationException {
 		if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
 			throw new BadUserConfirmationException(BadUserConfirmationException.INVALID_PASSWORD, "Password incorrect!");
@@ -200,6 +251,19 @@ public class UserService implements UserDetailsService {
 		           .collect(Collectors.toSet());
 	}
 
+	/**
+	 * Creates a new project for the user with the given username.
+	 * If no project name is given, a default name is generated.
+	 * If no project seed is given, a random seed is generated.
+	 *
+	 * @param username    The username of the user.
+	 * @param projectName The name of the project.
+	 * @param projectSeed The seed for the project.
+	 * @return The created project.
+	 * @throws BadUserException                          If the user does not exist.
+	 * @throws InternalApplicationConfigurationException If the application configuration is invalid.
+	 * @throws InternalErrorException                    If an internal error occurs.
+	 */
 	@Transactional
 	public ProjectEntity createProject(
 			final String username,

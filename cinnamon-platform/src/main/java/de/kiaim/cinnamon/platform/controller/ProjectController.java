@@ -55,6 +55,17 @@ public class ProjectController {
 		this.userService = userService;
 	}
 
+	@Operation(summary = "Returns the project with the given ID.",
+	           description = "Returns the project with the given ID.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Returns the project with the given ID."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@GetMapping(value = "")
 	public ProjectInfo getProject(
 			@PathVariable final String projectId,
@@ -63,6 +74,22 @@ public class ProjectController {
 		return projectService.getProjectInfo(user, projectId);
 	}
 
+	@Operation(summary = "Deletes a project.",
+	           description = "Deletes a project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "The project was successfully deleted."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "The credentials do not match the authenticated user.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@DeleteMapping(value = "",
 	               consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public void deleteProject(
@@ -80,8 +107,13 @@ public class ProjectController {
 	           description = "Returns the status of the user's project.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Response contains the status.",
-			             content = @Content(schema = @Schema(implementation = StatusEntity.class))),
+			             description = "Response contains the status."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "/status",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
@@ -92,6 +124,18 @@ public class ProjectController {
 		return projectService.getProject(requestUser, projectId).getStatus();
 	}
 
+	@Operation(summary = "Sets the mode of the user's project.",
+	           description = "Sets the mode of the user's project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully set the mode."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@PostMapping(value = "/mode")
 	public void postMode(
 			@PathVariable final String projectId,
@@ -103,6 +147,18 @@ public class ProjectController {
 		projectService.setMode(project, mode);
 	}
 
+	@Operation(summary = "Updates the current step of the user's project.",
+	           description = "Updates the current step of the user's project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully updated the step."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@PostMapping(value = "/step")
 	public void postStep(
 			@PathVariable final String projectId,
@@ -121,9 +177,12 @@ public class ProjectController {
 			             description = "Successfully reset the project.",
 			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
 			@ApiResponse(responseCode = "400",
-			             description = "The given target is invalid or the project has a running process.",
+			             description = "The project ID is invalid, the given target is invalid, or the project has a running process.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "Resetting the project failed.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
@@ -147,6 +206,13 @@ public class ProjectController {
 			@ApiResponse(responseCode = "200",
 			             description = "Response contains the configurations.",
 			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "/configuration", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ProjectConfigurationDTO getProjectConfiguration(
@@ -161,8 +227,14 @@ public class ProjectController {
 	           description = "Updates the configuration of the user's project.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "The configuration has been updated.",
-			             content = @Content()),
+			             description = "The configuration has been updated."),
+			@ApiResponse(responseCode = "400",
+			             description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PutMapping(value = "/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
 	public void setProjectConfiguration(
@@ -183,9 +255,12 @@ public class ProjectController {
 			             content = @Content(schema = @Schema(implementation = Void.class),
 			                                mediaType = CustomMediaType.APPLICATION_ZIP_VALUE)),
 			@ApiResponse(responseCode = "400",
-			             description = "No data exist.",
+			             description = "The project ID is invalid, or no data exist.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The ZIP file could not be created.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
@@ -214,9 +289,12 @@ public class ProjectController {
 			             content = @Content(schema = @Schema(implementation = String.class),
 			                                mediaType = MediaType.ALL_VALUE)),
 			@ApiResponse(responseCode = "400",
-			             description = "No the job or the file does not exist.",
+			             description = "The project ID is invalid, or the job or the file does not exist.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "/resultFile", produces = {MediaType.ALL_VALUE})
 	@Transactional(readOnly = true)

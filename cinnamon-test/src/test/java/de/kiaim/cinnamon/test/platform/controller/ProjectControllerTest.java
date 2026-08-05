@@ -1,21 +1,24 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
-import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
+import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.ProjectConfigurationTestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithUserDetails("test_user")
 public class ProjectControllerTest extends ControllerTest {
+
+	@Autowired
+	ProjectRepository repository;
 
 	@BeforeEach
 	public void setUpProjectConfiguration() {
@@ -23,6 +26,63 @@ public class ProjectControllerTest extends ControllerTest {
 		           .setMetricConfiguration(ProjectConfigurationTestHelper.generateMetricConfiguration());
 		projectService.saveProject(testProject);
 	}
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ getProject ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	public void getProject() throws Exception {
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId()))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 {
+		                                   id: '%s',
+		                                   name: 'Test Project'
+		                                 }
+		                                 """.formatted(testProject.getExternalId())));
+	}
+
+	@Test
+	public void getProjectInvalidIdFormat() throws Exception {
+		mockMvc.perform(get("/api/project/INVALID_ID"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_11_3"))
+		       .andExpect(errorMessage("Invalid project ID format"));
+	}
+
+	@Test
+	public void getProjectNotFound() throws Exception {
+		mockMvc.perform(get("/api/project/00000000-0000-0000-0000-000000000000"))
+		       .andExpect(status().isNotFound())
+		       .andExpect(errorCode("PLATFORM_1_17_1"))
+		       .andExpect(errorMessage("Project with ID 00000000-0000-0000-0000-000000000000 not found"));
+	}
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ deleteProject ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	public void deleteProject() throws Exception {
+		mockMvc.perform(delete("/api/project/" + testProject.getExternalId())
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+				                .param("username", "test_user")
+				                .param("password", "changeme"))
+		       .andExpect(status().isOk());
+
+		assertFalse(repository.existsById(testProject.getId()));
+	}
+
+	@Test
+	public void deleteProjectWrongCredentials() throws Exception {
+		mockMvc.perform(delete("/api/project/" + testProject.getExternalId())
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+				                .param("username", "test_user")
+				                .param("password", "wrongpassword"))
+		       .andExpect(status().isForbidden())
+		       .andExpect(errorCode("PLATFORM_1_12_2"));
+
+		assertTrue(repository.existsById(testProject.getId()));
+	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ getStatus ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	@Test
 	public void getStatus() throws Exception {

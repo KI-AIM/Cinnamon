@@ -10,7 +10,6 @@ import de.kiaim.cinnamon.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -46,11 +45,9 @@ public class UserController {
 			@ApiResponse(responseCode = "200",
 			             description = "User credential are correct.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = UserInfo.class),
-			                                 examples = {@ExampleObject("true")}),
+			                                 schema = @Schema(implementation = UserInfo.class)),
 			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = UserInfo.class),
-			                                 examples = {@ExampleObject("true")})}),
+			                                 schema = @Schema(implementation = UserInfo.class))}),
 			@ApiResponse(responseCode = "401",
 			             description = "User is not authorized.",
 			             content = @Content),
@@ -119,8 +116,22 @@ public class UserController {
 		userService.deleteUser(userService.getUserByUsername(user.getUsername()));
 	}
 
+	@Operation(summary = "Updates the username of the currently authenticated user.",
+	           description = "Updates the username of the currently authenticated.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Returns the updated user information."),
+			@ApiResponse(responseCode = "400",
+			             description = "The new username does not meet the requirements.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "The current password is incorrect.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@PostMapping(value = "/-/update-username",
-	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE},
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public UserInfo updateUsername(
 			@RequestBody @Valid final UpdateUsernameRequest updateUsernameRequest,
 			@AuthenticationPrincipal UserEntity user
@@ -130,8 +141,22 @@ public class UserController {
 		return userService.getUserInfo(user);
 	}
 
+	@Operation(summary = "Updates the password of the currently authenticated user.",
+	           description = "Updates the password of the currently authenticated user.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Returns the updated user information."),
+			@ApiResponse(responseCode = "400",
+			             description = "The new password does not meet the requirements.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "The current password is incorrect.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@PostMapping(value = "/-/update-password",
-	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE},
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public UserInfo updatePassword(
 			@RequestBody @Valid final UpdatePasswordRequest updatePasswordRequest,
 			@AuthenticationPrincipal UserEntity user
@@ -142,6 +167,9 @@ public class UserController {
 	}
 
 	@Operation(summary = "Returns all projects of the currently authenticated user.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Returns a list of all projects."),
+	})
 	@GetMapping(value = "/-/projects",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public Set<ProjectOverview> getProjects(
@@ -151,10 +179,18 @@ public class UserController {
 	}
 
 	@Operation(summary = "Creates a new project for the currently authenticated user.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Returns the created project."),
+			@ApiResponse(responseCode = "500",
+			             description = "The project could not be created because of an invalid server configuration.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@PostMapping(value = "/-/projects",
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ProjectInfo createProject(
+			@Parameter(description = "The name of the project to be created.", required = true)
 			@RequestParam final String projectName,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {

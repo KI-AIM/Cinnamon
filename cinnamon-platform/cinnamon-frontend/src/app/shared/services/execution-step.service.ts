@@ -4,7 +4,7 @@ import { ProjectService } from "@shared/services/project.service";
 import { ExecutionStep } from "../model/execution-step";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { environments } from "../../../environments/environment";
-import { ProcessStatus } from "../../core/enums/process-status";
+import { ProcessStatus, StageStatus } from "../../core/enums/process-status";
 import { catchError, map, Observable, of, switchMap, tap } from "rxjs";
 import { plainToInstance } from "class-transformer";
 import { StatusService } from "./status.service";
@@ -127,7 +127,7 @@ export abstract class ExecutionStepService {
             if (index < stage.processes.length) {
                 status = stage.processes[index].externalProcessStatus;
             } else {
-                if (stage.status === ProcessStatus.FINISHED) {
+                if (stage.status === StageStatus.FINISHED) {
                     status = ProcessStatus.FINISHED;
                 } else {
                     status = ProcessStatus.NOT_STARTED;

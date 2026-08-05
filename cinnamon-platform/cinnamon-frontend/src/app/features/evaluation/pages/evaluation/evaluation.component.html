@@ -2,14 +2,13 @@
 
     <div *ngIf="pageData.stage as status" class="stage-head">
         <button type="submit" mat-raised-button color="primary"
-                [disabled]="status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING || pageData.locked"
+                [disabled]="status.status === StageStatus.RUNNING || pageData.locked"
                 (click)="evaluationService.start(null);">
             Start
             <mat-icon fontIcon="play_arrow"></mat-icon>
         </button>
 
-        <button type="submit" mat-raised-button color="warn"
-                [disabled]="!(status.status === ProcessStatus.SCHEDULED || status.status === ProcessStatus.RUNNING)"
+        <button type="submit" mat-raised-button color="warn" [disabled]="status.status !== StageStatus.RUNNING"
                 (click)="evaluationService.cancel()">
             Cancel
             <mat-icon fontIcon="stop"></mat-icon>
@@ -64,10 +63,9 @@
                             <span> {{ getJobName(job) }} </span>
                             <span>
                             <a *ngIf="pageData.stage != null &&
-                                      pageData.stage.status !== ProcessStatus.SCHEDULED &&
-                                      pageData.stage.status !== ProcessStatus.RUNNING &&
-                                      pageData.stage.status !== ProcessStatus.NOT_STARTED &&
-                                      (pageData.stage.status !== ProcessStatus.OUTDATED ||
+                                      pageData.stage.status !== StageStatus.RUNNING &&
+                                      pageData.stage.status !== StageStatus.NOT_STARTED &&
+                                      (pageData.stage.status !== StageStatus.OUTDATED ||
                                         (i != 0 && pageData.stage.processes[i-1].externalProcessStatus !== ProcessStatus.OUTDATED)) &&
                                       pageData.stage.processes[i].externalProcessStatus !== ProcessStatus.NOT_STARTED &&
                                       !pageData.locked;
@@ -195,7 +193,7 @@
     </div>
 
     <div class="box" *ngIf="pageData.stage as status">
-        <button type="button" mat-raised-button color="primary" [disabled]="status.status != ProcessStatus.FINISHED"
+        <button type="button" mat-raised-button color="primary" [disabled]="status.status != StageStatus.FINISHED"
                 (click)="continue()">
             Continue
         </button>

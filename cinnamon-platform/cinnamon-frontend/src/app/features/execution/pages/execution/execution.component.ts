@@ -3,7 +3,7 @@ import { MatExpansionPanel } from "@angular/material/expansion";
 import { StateManagementService } from "@core/services/state-management.service";
 import { plainToInstance } from "class-transformer";
 import { combineLatest, map, Observable, tap } from "rxjs";
-import { ProcessStatus } from "../../../../core/enums/process-status";
+import { ProcessStatus, StageStatus } from "../../../../core/enums/process-status";
 import { Steps } from "../../../../core/enums/steps";
 import { ExecutionStep } from "../../../../shared/model/execution-step";
 import { ProcessProgress } from "../../../../shared/model/process-progress";
@@ -22,6 +22,7 @@ import { ExecutionService } from "../../services/execution.service";
 })
 export class ExecutionComponent implements OnInit {
     protected readonly ProcessStatus = ProcessStatus;
+    protected readonly StageStatus = StageStatus;
 
     protected pageData$: Observable<{
         locked: boolean,
@@ -32,7 +33,7 @@ export class ExecutionComponent implements OnInit {
     @ViewChildren('statusPanel') private statusPanels: QueryList<MatExpansionPanel>;
 
     private currentJob: number | null = null;
-    private currentStatus: ProcessStatus | null = null;
+    private currentStatus: StageStatus | null = null;
 
     constructor(
         private errorHandlingService: ErrorHandlingService,
@@ -52,7 +53,7 @@ export class ExecutionComponent implements OnInit {
             stage: this.executionService.status$.pipe(
                 tap(value => {
                     // Create an error notification
-                    if (this.statusPanels && value && value.status === ProcessStatus.ERROR &&
+                    if (this.statusPanels && value && value.status === StageStatus.ERROR &&
                         this.currentStatus !== null) {
 
                         let jobIndex = null;
@@ -73,7 +74,7 @@ export class ExecutionComponent implements OnInit {
                 tap(value => {
                     // Open the status panel when the next job starts
                     if (value && this.statusPanels) {
-                        if (value.currentProcessIndex === null && value.status === ProcessStatus.FINISHED) {
+                        if (value.currentProcessIndex === null && value.status === StageStatus.FINISHED) {
                             this.statusPanels.forEach(panel => panel.close());
                         }
 

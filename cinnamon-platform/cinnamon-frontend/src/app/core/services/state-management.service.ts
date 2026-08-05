@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { NavigationEnd, Router } from "@angular/router";
-import { ProcessStatus } from "@core/enums/process-status";
+import { ProcessStatus, StageStatus } from "@core/enums/process-status";
 import { AnonymizationService } from "@features/anonymization/services/anonymization.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { FileService } from "@features/data-upload/services/file.service";
@@ -137,7 +137,7 @@ export class StateManagementService {
                              if (stage.stageName === value.currentStep.stageName) {
                                  break;
                              } else {
-                                 if (stage.status !== ProcessStatus.FINISHED) {
+                                 if (stage.status !== StageStatus.FINISHED) {
                                      reasons.push(LockedReason.PREVIOUS_STAGE_NOT_FINISHED);
                                      break;
                                  }
@@ -237,7 +237,7 @@ export class StateManagementService {
                 current.stages[stageIndex] = stage;
                 this._pipelineSubject.next(current);
 
-                if (stage.status === ProcessStatus.SCHEDULED || stage.status === ProcessStatus.RUNNING) {
+                if (stage.status === StageStatus.RUNNING) {
                     current.currentStageIndex = stageIndex;
                 }
 

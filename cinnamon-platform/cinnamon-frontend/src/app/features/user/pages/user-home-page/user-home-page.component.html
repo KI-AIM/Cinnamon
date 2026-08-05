@@ -3,68 +3,84 @@
     <div class="box">
         <h2 class="box-name">Projects</h2>
 
+        @if (pageData$ | async; as pageData) {
 
-@if (pageData$ | async; as pageData) {
-
-    <button mat-raised-button color="primary" class="mb-2" (click)="dialog.open(createProjectDialog, { width: '60%' })">
-        Create Project
-    </button>
-
-    <table mat-table [dataSource]="pageData.projects" class="mat-elevation-z8">
-
-        <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>Name</th>
-            <td mat-cell *matCellDef="let project">{{ project.name }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Actions</th>
-            <td mat-cell *matCellDef="let project" >
-                <span style="cursor: pointer" [routerLink]="['/project', project.id]">
-                    <mat-icon class="icon-enabled">open_in_new</mat-icon>
-                    <span class="ms-1">Open</span>
-                </span>
-            </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="['name', 'actions']"></tr>
-        <tr mat-row *matRowDef="let project; columns: ['name', 'actions']"></tr>
-
-        <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell text-center" style="height: 4rem;" colspan="2">
-                You have no projects yet
-            </td>
-        </tr>
-
-    </table>
-
-    <ng-template #createProjectDialog>
-        <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Create Project</h2>
-        <mat-dialog-content class="mat-typography dialog-content">
-            <div class="vertical-boxes">
-                <div class="box" [formGroup]="createProjectForm">
-
-                    <div class="config-input-row">
-                        <mat-form-field class="config-input-row-field">
-                            <mat-label>Project Name</mat-label>
-                            <input matInput formControlName="name">
-                            <mat-error>Please provide a valid project name</mat-error>
-                        </mat-form-field>
-                    </div>
-                </div>
-            </div>
-        </mat-dialog-content>
-        <mat-dialog-actions align="end">
-            <button mat-raised-button mat-dialog-close color="warn">Close</button>
-            <button mat-raised-button mat-dialog-close color="primary" [disabled]="createProjectForm.invalid"
-                    (click)="onCreateProject()">
-                Create
+            <button mat-raised-button color="primary" class="mb-2"
+                    (click)="dialog.open(createProjectDialog, { width: '60%' })">
+                Create Project
             </button>
-        </mat-dialog-actions>
-    </ng-template>
-}
 
+            <table mat-table [dataSource]="pageData.projects" class="mat-elevation-z8">
 
+                <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>Name</th>
+                    <td mat-cell *matCellDef="let project">{{ project.info.name }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="currentStep">
+                    <th mat-header-cell *matHeaderCellDef>Step</th>
+                    <td mat-cell *matCellDef="let project">{{ project.currentStep }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef>Status</th>
+                    <td mat-cell *matCellDef="let project">
+                        <div class="d-flex gap-1">
+                            @for (status of project.stageStatuses; track status) {
+                                <span class="status" [ngClass]="status">
+                                    <span>{{ status.replace("_", " ") }}</span>
+                                </span>
+                            }
+                        </div>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Actions</th>
+                    <td mat-cell *matCellDef="let project">
+                        <span style="cursor: pointer" [routerLink]="['/project', project.info.id]">
+                            <mat-icon class="icon-enabled">open_in_new</mat-icon>
+                            <span class="ms-1">Open</span>
+                        </span>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+                <tr mat-row *matRowDef="let _; columns: tableColumns"></tr>
+
+                <tr class="mat-row" *matNoDataRow>
+                    <td class="mat-cell text-center" style="height: 4rem;" colspan="2">
+                        You have no projects yet
+                    </td>
+                </tr>
+
+            </table>
+
+            <ng-template #createProjectDialog>
+                <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Create Project</h2>
+                <mat-dialog-content class="mat-typography dialog-content">
+                    <div class="vertical-boxes">
+                        <div class="box" [formGroup]="createProjectForm">
+
+                            <div class="config-input-row">
+                                <mat-form-field class="config-input-row-field">
+                                    <mat-label>Project Name</mat-label>
+                                    <input matInput formControlName="name">
+                                    <mat-error>Please provide a valid project name</mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                </mat-dialog-content>
+                <mat-dialog-actions align="end">
+                    <button mat-raised-button mat-dialog-close color="warn">Close</button>
+                    <button mat-raised-button mat-dialog-close color="primary" [disabled]="createProjectForm.invalid"
+                            (click)="onCreateProject()">
+                        Create
+                    </button>
+                </mat-dialog-actions>
+            </ng-template>
+        }
 
     </div>
 

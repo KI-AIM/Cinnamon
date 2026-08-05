@@ -3,7 +3,7 @@ import { Injectable } from "@angular/core";
 import { AbstractControl, ValidationErrors, ValidatorFn } from "@angular/forms";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService, NotificationType } from "@core/services/notification.service";
-import { Project } from "@shared/model/project";
+import { Project, ProjectOverview } from "@shared/model/project";
 import { User, UserInfo } from "@shared/model/user";
 import { PasswordRequirements } from "@shared/services/app-config.service";
 import { BehaviorSubject, from, Observable, Subject, tap } from "rxjs";
@@ -29,7 +29,7 @@ export class UserService {
     private loginSubject: Subject<void> = new Subject<void>();
     private logoutSubject: Subject<void> = new Subject<void>();
 
-    private projectListSubject: BehaviorSubject<Project[]> = new BehaviorSubject<Project[]>([]);
+    private projectListSubject: BehaviorSubject<ProjectOverview[]> = new BehaviorSubject<ProjectOverview[]>([]);
 
     constructor(
         private readonly http: HttpClient,
@@ -177,12 +177,12 @@ export class UserService {
         );
     }
 
-    public getProjectsForCurrentUser$(): Observable<Project[]> {
+    public getProjectsForCurrentUser$(): Observable<ProjectOverview[]> {
         this.refreshProjectsForCurrentUser$().subscribe();
         return this.projectListSubject.asObservable();
     }
 
-    public refreshProjectsForCurrentUser$(): Observable<Project[]> {
+    public refreshProjectsForCurrentUser$(): Observable<ProjectOverview[]> {
         return this.fetchProjectsForCurrentUser$().pipe(
             tap((projects) => {
                 this.projectListSubject.next(projects);
@@ -190,8 +190,8 @@ export class UserService {
         );
     }
 
-    private fetchProjectsForCurrentUser$(): Observable<Project[]> {
-        return this.http.get<Project[]>(this.baseURL + "/-/projects");
+    private fetchProjectsForCurrentUser$(): Observable<ProjectOverview[]> {
+        return this.http.get<ProjectOverview[]>(this.baseURL + "/-/projects");
     }
 
     public createProjectForCurrentUser(projectName: string): Observable<Project> {

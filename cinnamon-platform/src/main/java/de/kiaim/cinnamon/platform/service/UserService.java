@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
-import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
+import de.kiaim.cinnamon.platform.model.dto.ProjectOverview;
 import de.kiaim.cinnamon.platform.model.dto.UserInfo;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -186,11 +186,17 @@ public class UserService implements UserDetailsService {
 		}
 	}
 
+	/**
+	 * Returns all projects owned by the user with the given username.
+	 * @param username The username of the user.
+	 * @return A set of project overviews.
+	 * @throws BadUserException If the user does not exist.
+	 */
 	@Transactional(readOnly = true)
-	public Set<ProjectInfo> getProjects(final String username) throws BadUserException {
+	public Set<ProjectOverview> getProjects(final String username) throws BadUserException {
 		final UserEntity user = getUserByUsernameOrThrow(username);
 		return user.getProjects().stream()
-		           .map(projectService::getProjectInfo)
+		           .map(projectService::getProjectOverview)
 		           .collect(Collectors.toSet());
 	}
 

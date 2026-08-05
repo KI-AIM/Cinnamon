@@ -1,11 +1,13 @@
 package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
+import de.kiaim.cinnamon.platform.model.dto.ProjectOverview;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -155,6 +158,25 @@ public class ProjectService {
 	@Transactional(readOnly = true)
 	public ProjectInfo getProjectInfo(final ProjectEntity project) {
 		return new ProjectInfo(project.getExternalId().toString(), project.getProjectConfiguration().getProjectName());
+	}
+
+	/**
+	 * Returns an overview of the given project.
+	 *
+	 * @param project The project.
+	 * @return The project overview.
+	 */
+	@Transactional(readOnly = true)
+	public ProjectOverview getProjectOverview(final ProjectEntity project) {
+		final List<StageStatus> stageStatuses = new ArrayList<>();
+		final PipelineEntity pipeline = project.getPipelines().get(0);
+		for (final ExecutionStepEntity stage : pipeline.getStages()) {
+			stageStatuses.add(stage.getStatus());
+		}
+
+		return new ProjectOverview(getProjectInfo(project),
+		                           project.getStatus().getCurrentStep(),
+		                           stageStatuses);
 	}
 
 	/**

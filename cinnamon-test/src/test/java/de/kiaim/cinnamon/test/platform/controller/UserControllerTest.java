@@ -399,6 +399,25 @@ public class UserControllerTest extends ControllerTest {
 		return objectMapper.writeValueAsString(request);
 	}
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ getProjects ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	@WithUserDetails("test_user")
+	public void getProjects() throws Exception {
+		mockMvc.perform(get("/api/user/-/projects"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("""
+		                                 [{
+		                                   "info": {
+		                                     "id": "%s",
+		                                     "name": "Test Project"
+		                                   },
+		                                   "currentStep": "WELCOME",
+		                                   "stageStatuses": ["NOT_STARTED", "NOT_STARTED"]
+		                                 }]
+		                                 """.formatted(getTestProject().getExternalId())));
+	}
+
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ createProject ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	@Test

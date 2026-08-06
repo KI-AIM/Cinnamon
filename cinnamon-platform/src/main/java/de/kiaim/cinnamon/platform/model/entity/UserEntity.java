@@ -9,6 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -27,9 +28,17 @@ public class UserEntity implements UserDetails {
 	@Column(nullable = false)
 	private String password;
 
-	@Column(nullable = false)
+	/**
+	 * The roles of this user.
+	 */
+	@Setter(AccessLevel.NONE)
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name = "user_entity_role",
+	                 joinColumns = @JoinColumn(name = "user_id", nullable = false),
+	                 uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "user_role"}))
+	@Column(name = "user_role", nullable = false)
 	@Enumerated(EnumType.STRING)
-	private final UserRole userRole = UserRole.ROLE_USER;
+	private final Set<UserRole> userRoles = new HashSet<>();
 
 	/**
 	 * The projects owned by this user.
@@ -37,6 +46,54 @@ public class UserEntity implements UserDetails {
 	@Setter(AccessLevel.NONE)
 	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private final Set<ProjectEntity> projects = new HashSet<>();
+
+	/**
+	 * Checks if this user has the given role.
+	 *
+	 * @param role The role to check.
+	 * @return True if the user has the role, false otherwise.
+	 */
+	public boolean hasRole(final UserRole role) {
+		return userRoles.contains(role);
+	}
+
+	/**
+	 * Adds the given role to this user.
+	 * Does nothing if the user already has the role.
+	 *
+	 * @param role The role to add.
+	 */
+	public void addRole(final UserRole role) {
+		if (role == null) {
+			return;
+		}
+		userRoles.add(role);
+	}
+
+	/**
+	 * Removes the given role from this user.
+	 * Does nothing if the user does not have the role.
+	 *
+	 * @param role The role to remove.
+	 */
+	public void removeRole(final UserRole role) {
+		if (role == null) {
+			return;
+		}
+		userRoles.remove(role);
+	}
+
+	/**
+	 * Replaces all roles of this user with the given roles.
+	 *
+	 * @param roles The new roles of the user.
+	 */
+	public void setUserRoles(final Collection<UserRole> roles) {
+		userRoles.clear();
+		if (roles != null) {
+			userRoles.addAll(roles);
+		}
+	}
 
 	@Nullable
 	public ProjectEntity getProject(final UUID projectId) {
@@ -72,8 +129,9 @@ public class UserEntity implements UserDetails {
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		SimpleGrantedAuthority authority = new SimpleGrantedAuthority(userRole.name());
-		return Collections.singletonList(authority);
+		return userRoles.stream()
+				.map(role -> new SimpleGrantedAuthority(role.name()))
+				.collect(Collectors.toUnmodifiableSet());
 	}
 
 	@Override

@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.model.dto.ProjectOverview;
 import de.kiaim.cinnamon.platform.model.dto.UserInfo;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
+import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ public class UserService implements UserDetailsService {
 	 * @return The UserInfo object.
 	 */
 	public UserInfo getUserInfo(final UserEntity user) {
-		return new UserInfo(user.getUsername(), Set.of(user.getUserRole()));
+		return new UserInfo(user.getUsername(), Set.copyOf(user.getUserRoles()));
 	}
 
 	/**
@@ -102,6 +103,7 @@ public class UserService implements UserDetailsService {
 		final UserEntity userEntity = new UserEntity();
 		userEntity.setUsername(username);
 		userEntity.setPassword(passwordEncoder.encode(rawPassword));
+		userEntity.addRole(UserRole.ROLE_USER);
 
 		userRepository.save(userEntity);
 		log.debug("Created new user with username '{}'", username);

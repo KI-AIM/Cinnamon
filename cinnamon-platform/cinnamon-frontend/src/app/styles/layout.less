@@ -173,7 +173,8 @@ app-navigation{
     border-radius: 0.3rem;
     color: @color-text;
     padding: 1rem;
-    box-shadow: @shadow-box
+    box-shadow: @shadow-box;
+    min-width: fit-content;
 }
 
 .box-name {
@@ -202,6 +203,10 @@ app-navigation{
 .box-header-danger {
     background-color: rgba(@color-failure-background, 0.4);
     color: @color-failure-text;
+}
+
+.box-header-title {
+    font-size: 1.5rem;
 }
 
 .box-header-icon {

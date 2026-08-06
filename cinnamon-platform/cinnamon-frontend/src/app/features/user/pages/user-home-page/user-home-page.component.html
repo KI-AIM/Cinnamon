@@ -1,7 +1,9 @@
 <div class="vertical-boxes">
 
     <div class="box">
-        <h2 class="box-name">Projects</h2>
+        <div class="box-header box-header-expanded">
+            <span class="box-header-title">Your Projects</span>
+        </div>
 
         @if (pageData$ | async; as pageData) {
 
@@ -38,7 +40,7 @@
                 <ng-container matColumnDef="actions">
                     <th mat-header-cell *matHeaderCellDef>Actions</th>
                     <td mat-cell *matCellDef="let project">
-                        <span style="cursor: pointer" [routerLink]="['/project', project.info.id]">
+                        <span style="cursor: pointer; white-space: nowrap;" [routerLink]="['/project', project.info.id]">
                             <mat-icon class="icon-enabled">open_in_new</mat-icon>
                             <span class="ms-1">Open</span>
                         </span>

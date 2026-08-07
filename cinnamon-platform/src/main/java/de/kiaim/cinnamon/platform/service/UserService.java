@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,6 +49,18 @@ public class UserService implements UserDetailsService {
 	 */
 	public UserInfo getUserInfo(final UserEntity user) {
 		return new UserInfo(user.getUsername(), Set.copyOf(user.getUserRoles()));
+	}
+
+	/**
+	 * Returns a set of UserInfo objects for all users in the system.
+	 *
+	 * @return A set of UserInfo objects.
+	 */
+	@Transactional(readOnly = true)
+	public Set<UserInfo> getAllUserInfos() {
+		final Set<UserInfo> userInfos = new HashSet<>();
+		this.userRepository.findAll().forEach(user -> userInfos.add(getUserInfo(user)));
+		return userInfos;
 	}
 
 	/**
@@ -100,7 +113,7 @@ public class UserService implements UserDetailsService {
 	}
 
 	/**
-	 * Registers a new user with the given username, password and roles.
+	 * Registers a new user with the given username, password, and roles.
 	 *
 	 * @param username The username of the new user.
 	 * @param rawPassword The raw password of the new user.
@@ -177,6 +190,54 @@ public class UserService implements UserDetailsService {
 		user.setUsername(newUsername);
 
 		log.debug("Updated username from '{}' to '{}'", username, newUsername);
+
+		return user;
+	}
+
+	/**
+	 * Adds the given roles to the user with the given username.
+	 *
+	 * @param username The username of the user.
+	 * @param newRoles The new roles to be added.
+	 * @return The updated user entity.
+	 * @throws BadUserException If the user is not found.
+	 */
+	@Transactional
+	public UserEntity addRoles(final String username, final Set<UserRole> newRoles) throws BadUserException {
+		final UserEntity user = getUserByUsernameOrThrow(username);
+
+		newRoles.forEach(user::addRole);
+
+		log.debug("Added roles for user with username '{}' to {}", username, user.getUserRoles());
+
+		return user;
+	}
+
+	/**
+	 * Removes the given roles from the user with the given username.
+	 *
+	 * @param username The username of the user.
+	 * @param rolesToRemove The roles to be removed.
+	 * @return The updated user entity.
+	 * @throws BadAppStateException If the last admin role is being removed from the system.
+	 * @throws BadUserException If the user is not found.
+	 */
+	@Transactional
+	public UserEntity removeRoles(final String username, final Set<UserRole> rolesToRemove)
+			throws BadAppStateException, BadUserException {
+		final UserEntity user = getUserByUsernameOrThrow(username);
+
+		// Check if there is at least one other user with the role ROLE_ADMIN
+		// to prevent removing the last admin role from the system
+		if (rolesToRemove.contains(UserRole.ROLE_ADMIN)
+		    && !userRepository.existsByUsernameNotAndUserRolesContains(username, UserRole.ROLE_ADMIN)) {
+			throw new BadAppStateException(BadAppStateException.REMOVING_LAST_ADMIN,
+			                               "Cannot remove the last admin role from the system");
+		}
+
+		rolesToRemove.forEach(user::removeRole);
+
+		log.debug("Removed roles for user with username '{}' to {}", username, user.getUserRoles());
 
 		return user;
 	}

@@ -32,7 +32,7 @@ const routes: Routes = [
 
     {path: 'login', component: LoginComponent},
     {path: 'register', component: RegisterComponent},
-    // {path: 'admin', canActivate: [AuthGuard], component: AdminPageComponent},
+    {path: 'admin', canActivate: [AuthGuard], component: AdminPageComponent},
 
     {
         path: 'user/-',

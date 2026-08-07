@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.exception;
 
 /**
- * Exceptions for when the state of the application does not allow a certain action.
+ * Exceptions for when the state of the project does not allow a certain action.
  */
 public class BadStateException extends BadRequestException {
 

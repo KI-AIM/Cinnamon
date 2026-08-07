@@ -5,6 +5,8 @@ import { MatCheckbox } from "@angular/material/checkbox";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatIcon } from "@angular/material/icon";
 import { MatInputModule } from "@angular/material/input";
+import { MatPaginator } from "@angular/material/paginator";
+import { MatSort, MatSortModule } from "@angular/material/sort";
 import {
     MatCell,
     MatCellDef,
@@ -40,6 +42,8 @@ import { AdminPageComponent } from './components/admin-page/admin-page.component
         MatCell,
         MatHeaderCellDef,
         MatIconButton,
+        MatSortModule,
+        MatPaginator,
     ]
 })
 export class AdministrationModule { }

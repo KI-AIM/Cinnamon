@@ -54,6 +54,8 @@ public class SecurityConfig {
 				            .requestMatchers(antMatcher("/actuator/**")).hasRole("MONITORING")
 				            .requestMatchers(antMatcher("/api/workflow"),
 				                             antMatcher("/api/workflow/**")).hasRole("API")
+				            .requestMatchers(antMatcher("/api/admin"),
+				                             antMatcher("/api/admin/**")).hasRole("ADMIN")
 				            .requestMatchers(antMatcher("/api/**")).hasRole("USER")
 				            .requestMatchers(antMatcher("/**")).permitAll()
 				            .anyRequest().authenticated())

@@ -99,6 +99,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String APP_STATE = "18";
 
+	/**
+	 * Error class code for {@link BadMailSettingsException}.
+	 */
+	public static final String MAIL_SETTINGS = "19";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

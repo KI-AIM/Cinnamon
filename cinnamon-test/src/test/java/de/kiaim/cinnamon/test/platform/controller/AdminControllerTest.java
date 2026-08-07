@@ -1,18 +1,26 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetup;
 import de.kiaim.cinnamon.platform.exception.BadUserException;
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
+import de.kiaim.cinnamon.platform.model.dto.TestMailRequest;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import jakarta.mail.internet.MimeMessage;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.TestSocketUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,9 +39,24 @@ public class AdminControllerTest extends ControllerTest {
 	@Autowired
 	private UserService userService;
 
+	private GreenMail greenMail;
+	private int greenMailPort;
+
 	@BeforeEach
 	public void createAdminUser() throws BadUserException {
 		userService.register(ADMIN_USER, ADMIN_PASSWORD, Set.of(UserRole.ROLE_ADMIN));
+	}
+
+	@BeforeEach
+	public void setUpGreenMail() {
+		greenMailPort = TestSocketUtils.findAvailableTcpPort();
+		greenMail = new GreenMail(new ServerSetup(greenMailPort, null, ServerSetup.PROTOCOL_SMTP));
+		greenMail.start();
+	}
+
+	@AfterEach
+	public void tearDownGreenMail() {
+		greenMail.stop();
 	}
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GET /api/admin/settings/mail ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -170,13 +193,98 @@ public class AdminControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("$.mailHost").value("mail2.example.com"));
 	}
 
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ POST /api/admin/settings/mail/test ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	public void testMailSettingsUnauthorized() throws Exception {
+		mockMvc.perform(post("/api/admin/settings/mail/test")
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+		       .andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	public void testMailSettingsForbiddenWithoutAdminRole() throws Exception {
+		mockMvc.perform(post("/api/admin/settings/mail/test")
+				                .with(httpBasic(getTestUser().getUsername(), "changeme"))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+		       .andExpect(status().isForbidden());
+	}
+
+	@Test
+	public void testMailSettingsNotConfigured() throws Exception {
+		mockMvc.perform(post("/api/admin/settings/mail/test")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+		       .andExpect(status().isNotFound())
+		       .andExpect(errorCode("PLATFORM_1_19_1"));
+	}
+
+	@Test
+	public void testMailSettingsWithBlankAddress() throws Exception {
+		mockMvc.perform(post("/api/admin/settings/mail/test")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(createTestMailRequest(" "))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("mailAddress", "Mail address must not be blank.",
+		                                  "Mail address must be a valid email address."));
+	}
+
+	@Test
+	public void testMailSettingsWithInvalidAddress() throws Exception {
+		mockMvc.perform(post("/api/admin/settings/mail/test")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(createTestMailRequest("not-an-email"))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("mailAddress", "Mail address must be a valid email address."));
+	}
+
+	@Test
+	public void testMailSettingsSendsMail() throws Exception {
+		setMailSettings(createGreenMailRequest());
+
+		mockMvc.perform(post("/api/admin/settings/mail/test")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+		       .andExpect(status().isOk());
+
+		assertTrue(greenMail.waitForIncomingEmail(5_000, 1));
+		final MimeMessage[] messages = greenMail.getReceivedMessages();
+		assertEquals(1, messages.length);
+		assertEquals("Cinnamon test mail", messages[0].getSubject());
+		assertEquals("no-reply@example.com", messages[0].getFrom()[0].toString());
+		assertEquals("recipient@example.com", messages[0].getAllRecipients()[0].toString());
+	}
+
+	@Test
+	public void testMailSettingsFailsWhenServerUnreachable() throws Exception {
+		setMailSettings(createGreenMailRequest());
+		greenMail.stop();
+
+		mockMvc.perform(post("/api/admin/settings/mail/test")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+		       .andExpect(status().isInternalServerError())
+		       .andExpect(errorCode("PLATFORM_2_9_1"));
+	}
+
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	private void setMailSettings(final String host) throws Exception {
+		setMailSettings(createRequest(host));
+	}
+
+	private void setMailSettings(final EMailSettingsDTO request) throws Exception {
 		mockMvc.perform(put("/api/admin/settings/mail")
 				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                .content(objectMapper.writeValueAsString(createRequest(host))))
+				                .content(objectMapper.writeValueAsString(request)))
 		       .andExpect(status().isOk());
 	}
 
@@ -189,6 +297,23 @@ public class AdminControllerTest extends ControllerTest {
 		request.setMailUsername("mailer");
 		request.setMailPassword("changeme");
 		request.setMailSender("no-reply@example.com");
+		return request;
+	}
+
+	/**
+	 * Settings pointing at the embedded GreenMail test server, used to actually verify mails are sent.
+	 */
+	private EMailSettingsDTO createGreenMailRequest() {
+		final EMailSettingsDTO request = createRequest("localhost");
+		request.setMailPort(greenMailPort);
+		request.setMailTLS(false);
+		request.setMailSMTPAuth(false);
+		return request;
+	}
+
+	private TestMailRequest createTestMailRequest(final String mailAddress) {
+		final TestMailRequest request = new TestMailRequest();
+		request.setMailAddress(mailAddress);
 		return request;
 	}
 

@@ -49,6 +49,11 @@ public abstract class InternalException extends ApiException {
 	 */
 	public static final String OTHER = "8";
 
+	/**
+	 * Exception class code for exceptions from {@link InternalMailException}.
+	 */
+	public static final String MAIL = "9";
+
 	public InternalException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

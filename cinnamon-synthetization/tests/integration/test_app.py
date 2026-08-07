@@ -112,12 +112,182 @@ def _algorithm_config() -> dict:
     }
 
 
+def test_get_study_parameter_default_reads_values_from_study_yaml():
+    app_module.load_study_config.cache_clear()
+
+    assert app_module.get_study_parameter_default("sampler") == "tpe"
+    assert app_module.get_study_parameter_default("pruner") == "median"
+
+
+def test_run_synthesizer_stage_uses_global_timeout_countdown_for_hyperparameter_tuning(monkeypatch, tmp_path):
+    class FakeSynth:
+        def __init__(self):
+            self._progress_callback = None
+
+        def set_progress_callback(self, callback):
+            self._progress_callback = callback
+
+        def initialize_anonymization_configuration(self, _config):
+            return None
+
+        def initialize_attribute_configuration(self, _config):
+            return None
+
+        def initialize_dataset(self, _dataset):
+            return None
+
+        def initialize_synthesizer(self):
+            return None
+
+        def fit(self):
+            if self._progress_callback is not None:
+                self._progress_callback("fitting", "7")
+            print("Estimated remaining time: 7 seconds")
+            return 1.0
+
+        def sample(self):
+            return app_module.pd.DataFrame([{"age": 42}])
+
+        def get_model(self):
+            return b"fake-model"
+
+    fake_optuna_module = types.ModuleType("hyperparameter_tuning.optuna_tuning")
+    fake_optuna_module.DEFAULT_ARTIFACT_DIR = str(tmp_path / "artifacts")
+
+    status_path = tmp_path / "outputs" / "status" / "hpt-status.yaml"
+    initialize_status_file(str(status_path), session_key="hpt-status", synthesizer_name="fake_synth")
+
+    def fake_optimize(**kwargs):
+        kwargs["fit_metric_fn"](kwargs["algorithm_config_base"])
+        with status_path.open("r", encoding="utf-8") as handle:
+            status = yaml.safe_load(handle)
+        steps = {step["step"]: step for step in status["status"]}
+        assert steps["fitting"]["remaining_time"] == "300"
+        assert status["components"]["structured_synthesis"]["fitting_remaining_time"] == "300"
+        return types.SimpleNamespace(best_algorithm_config=kwargs["algorithm_config_base"])
+
+    fake_optuna_module.optimize = fake_optimize
+
+    monkeypatch.setitem(sys.modules, "hyperparameter_tuning.optuna_tuning", fake_optuna_module)
+    monkeypatch.setattr(app_module, "synthesizer_classes", {"fake_synth": {"class": FakeSynth}})
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_tuning_metadata",
+        {"fake_synth": {"supported": True, "direction": "minimize"}},
+    )
+    monkeypatch.setattr(app_module, "post_process_dataframe", lambda samples, *_args, **_kwargs: samples)
+    monkeypatch.setattr(app_module.time, "time", lambda: 1_000.0)
+
+    samples, model, stage_init_duration, fit_duration, sample_duration = app_module.run_synthesizer_stage(
+        stage_label="STRUCTURED_SYNTHESIS",
+        synthesizer_name="fake_synth",
+        stage_attribute_config=_structured_attribute_config(),
+        stage_algorithm_config={
+            "synthetization_configuration": {
+                "algorithm": {
+                    "sampling": {"num_samples": 1},
+                    "hyperparameter_tuning": {
+                        "enabled": True,
+                        "timeout_minutes": 5,
+                        "n_trials": 1,
+                    },
+                }
+            }
+        },
+        input_data=app_module.pd.DataFrame([{"age": 1}]),
+        file_path_status=str(status_path),
+        status_component_name="structured_synthesis",
+    )
+
+    assert samples.to_dict(orient="records") == [{"age": 42}]
+    assert model == b"fake-model"
+    assert stage_init_duration == 0.0
+    assert fit_duration == 0.0
+    assert sample_duration == 0.0
+
+
+def test_run_synthesizer_stage_uses_study_yaml_defaults_for_sampler_and_pruner(monkeypatch, tmp_path):
+    class FakeSynth:
+        def set_progress_callback(self, _callback):
+            return None
+
+        def initialize_anonymization_configuration(self, _config):
+            return None
+
+        def initialize_attribute_configuration(self, _config):
+            return None
+
+        def initialize_dataset(self, _dataset):
+            return None
+
+        def initialize_synthesizer(self):
+            return None
+
+        def fit(self):
+            return 1.0
+
+        def sample(self):
+            return app_module.pd.DataFrame([{"age": 42}])
+
+        def get_model(self):
+            return b"fake-model"
+
+    fake_optuna_module = types.ModuleType("hyperparameter_tuning.optuna_tuning")
+    fake_optuna_module.DEFAULT_ARTIFACT_DIR = str(tmp_path / "artifacts")
+
+    status_path = tmp_path / "outputs" / "status" / "default-study-values.yaml"
+    initialize_status_file(str(status_path), session_key="default-study-values", synthesizer_name="fake_synth")
+
+    app_module.load_study_config.cache_clear()
+
+    def fake_optimize(**kwargs):
+        assert kwargs["sampler"] == app_module.get_study_parameter_default("sampler")
+        assert kwargs["pruner"] == app_module.get_study_parameter_default("pruner")
+        return types.SimpleNamespace(best_algorithm_config=kwargs["algorithm_config_base"])
+
+    fake_optuna_module.optimize = fake_optimize
+
+    monkeypatch.setitem(sys.modules, "hyperparameter_tuning.optuna_tuning", fake_optuna_module)
+    monkeypatch.setattr(app_module, "synthesizer_classes", {"fake_synth": {"class": FakeSynth}})
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_tuning_metadata",
+        {"fake_synth": {"supported": True, "direction": "minimize"}},
+    )
+    monkeypatch.setattr(app_module, "post_process_dataframe", lambda samples, *_args, **_kwargs: samples)
+    monkeypatch.setattr(app_module.time, "time", lambda: 1_000.0)
+
+    samples, model, *_durations = app_module.run_synthesizer_stage(
+        stage_label="STRUCTURED_SYNTHESIS",
+        synthesizer_name="fake_synth",
+        stage_attribute_config=_structured_attribute_config(),
+        stage_algorithm_config={
+            "synthetization_configuration": {
+                "algorithm": {
+                    "sampling": {"num_samples": 1},
+                    "hyperparameter_tuning": {
+                        "enabled": True,
+                        "timeout_minutes": 5,
+                        "n_trials": 1,
+                    },
+                }
+            }
+        },
+        input_data=app_module.pd.DataFrame([{"age": 1}]),
+        file_path_status=str(status_path),
+        status_component_name="structured_synthesis",
+    )
+
+    assert samples.to_dict(orient="records") == [{"age": 42}]
+    assert model == b"fake-model"
+
+
 def test_start_synthetization_process_returns_400_when_session_key_is_missing():
     app_module.tasks.clear()
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={},
         content_type="multipart/form-data",
     )
@@ -132,7 +302,7 @@ def test_start_synthetization_process_returns_400_when_callback_is_missing():
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={"session_key": "session-without-callback"},
         content_type="multipart/form-data",
     )
@@ -146,13 +316,12 @@ def test_start_synthetization_process_returns_400_when_callback_is_missing():
 
 def test_start_synthetization_process_allows_missing_original_data_for_text_synthesis(monkeypatch):
     app_module.tasks.clear()
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_tabular")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "text_only")
     monkeypatch.setattr(app_module.PROCESS_CONTEXT, "Process", StartedProcess)
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/llm_text_only_paraphrase_synthesis",
         data={
             "session_key": "session-without-original-data",
             "callback": "http://callback.local/test",
@@ -179,8 +348,7 @@ def test_start_synthetization_process_allows_missing_original_data_for_text_synt
 
 def test_start_synthetization_process_allows_missing_original_data_for_structured_synthesis(monkeypatch):
     app_module.tasks.clear()
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (True, False))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "structured_only")
     client = app_module.app.test_client()
 
     response = client.post(
@@ -212,7 +380,7 @@ def test_start_synthetization_process_returns_400_for_invalid_attribute_config_y
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={
             "session_key": "invalid-attribute-config",
             "callback": "http://callback.local/test",
@@ -238,7 +406,7 @@ def test_start_synthetization_process_returns_400_for_invalid_algorithm_config_s
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={
             "session_key": "invalid-algorithm-config",
             "callback": "http://callback.local/test",
@@ -264,7 +432,7 @@ def test_start_synthetization_process_returns_400_for_invalid_data_csv():
     client = app_module.app.test_client()
 
     response = client.post(
-        "/start_synthetization_process/llm_tabular",
+        "/start_synthetization_process/ctgan",
         data={
             "session_key": "invalid-data-csv",
             "callback": "http://callback.local/test",
@@ -343,7 +511,7 @@ def test_cancel_synthetization_process_cleans_up_task_and_marks_status_cancelled
     session_key = "cancel-success-session"
     status_path = _status_file_path(session_key)
     _delete_status_file(session_key)
-    initialize_status_file(str(status_path), session_key, "llm_tabular")
+    initialize_status_file(str(status_path), session_key, "ctgan")
 
     process = CancelableProcess(pid=9876, alive=True)
     app_module.tasks[session_key] = process
@@ -382,7 +550,7 @@ def test_get_status_prunes_finished_tasks():
     session_key = "finished-task-session"
     status_path = _status_file_path(session_key)
     _delete_status_file(session_key)
-    initialize_status_file(str(status_path), session_key, "llm_tabular")
+    initialize_status_file(str(status_path), session_key, "ctgan")
     app_module.tasks[session_key] = FinishedProcess(pid=2468)
     client = app_module.app.test_client()
 
@@ -416,8 +584,7 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
             "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "text_only")
     monkeypatch.setattr(
         app_module,
         "load_text_synthesis_defaults",
@@ -452,6 +619,120 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
     _delete_status_file(session_key)
 
 
+def test_synthesize_data_runs_mixed_llm_without_structured_synthesis(monkeypatch):
+    captured_calls = []
+
+    class DummyResponse:
+        status_code = 200
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    def fake_run_synthesizer_stage(**kwargs):
+        captured_calls.append(kwargs)
+        return kwargs["input_data"].copy(), b"model", 0.1, 0.2, 0.3
+
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_classes",
+        {
+            "llm_mixed": {"class": object},
+        },
+    )
+    monkeypatch.setattr(
+        app_module,
+        "get_data_modality",
+        lambda _name: "mixed",
+    )
+    monkeypatch.setattr(
+        app_module,
+        "load_text_synthesis_defaults",
+        lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
+    )
+    monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
+
+    data = app_module.pd.DataFrame([{"age": 80, "note": "83-year-old patient"}])
+    session_key = "direct-mixed-synthesis"
+    status_path = _status_file_path(session_key)
+    _delete_status_file(session_key)
+    initialize_status_file(str(status_path), session_key, "llm_mixed")
+
+    result = app_module.synthesize_data(
+        "llm_mixed",
+        str(status_path),
+        _text_attribute_config(),
+        _algorithm_config(),
+        data,
+        None,
+        "http://callback.local/test",
+        session_key,
+    )
+
+    assert result["status_code"] == 200
+    assert len(captured_calls) == 1
+    assert captured_calls[0]["stage_label"] == "MIXED_SYNTHESIS"
+    assert captured_calls[0]["replace_text_with_pending"] is False
+    assert captured_calls[0]["input_data"].equals(data)
+    assert captured_calls[0]["reference_data"].equals(data)
+
+    _delete_status_file(session_key)
+
+
+def test_synthesize_data_marks_llm_component_before_text_stage_starts(monkeypatch):
+    class DummyResponse:
+        status_code = 200
+        text = "ok"
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    def fake_run_synthesizer_stage(**kwargs):
+        with status_path.open("r", encoding="utf-8") as handle:
+            status = yaml.safe_load(handle)
+        assert status["components"]["llm_synthesis"]["synthesizer_name"] == "llm_text_synth"
+        return kwargs["input_data"].copy(), b"model", 0.1, 0.2, 0.3
+
+    monkeypatch.setattr(
+        app_module,
+        "synthesizer_classes",
+        {
+            "llm_text_synth": {"class": object},
+        },
+    )
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "text_only")
+    monkeypatch.setattr(
+        app_module,
+        "load_text_synthesis_defaults",
+        lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
+    )
+    monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
+
+    data = app_module.pd.DataFrame([{"age": 50, "note": "input note"}])
+    session_key = "text-component-visible-early"
+    status_path = _status_file_path(session_key)
+    _delete_status_file(session_key)
+    initialize_status_file(str(status_path), session_key, "llm_text_synth")
+
+    result = app_module.synthesize_data(
+        "llm_text_synth",
+        str(status_path),
+        _text_attribute_config(),
+        _algorithm_config(),
+        data,
+        None,
+        "http://callback.local/test",
+        session_key,
+    )
+
+    assert result["status_code"] == 200
+
+    _delete_status_file(session_key)
+
+
 def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(monkeypatch):
     captured_calls = []
 
@@ -474,8 +755,7 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
             "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda _name: (False, True))
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "text_only")
     monkeypatch.setattr(
         app_module,
         "load_text_synthesis_defaults",
@@ -503,14 +783,13 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
 
     assert result["status_code"] == 200
     assert len(captured_calls) == 1
-    expected_input_data = app_module.create_text_synthesis_input(data, _text_attribute_config())
-    assert captured_calls[0]["input_data"].equals(expected_input_data)
+    assert captured_calls[0]["input_data"].equals(data)
     assert captured_calls[0]["reference_data"].equals(data)
 
     _delete_status_file(session_key)
 
 
-def test_synthesize_data_uses_original_data_for_two_stage_text_reference(monkeypatch):
+def test_synthesize_data_rejects_structured_synthesizer_for_text_columns(monkeypatch):
     captured_calls = []
 
     class DummyResponse:
@@ -523,31 +802,16 @@ def test_synthesize_data_uses_original_data_for_two_stage_text_reference(monkeyp
 
     def fake_run_synthesizer_stage(**kwargs):
         captured_calls.append(kwargs)
-        input_data = kwargs["input_data"].copy()
-        if kwargs["stage_label"] == "STRUCTURED_SYNTHESIS":
-            return input_data, b"structured-model", 0.1, 0.2, 0.3
-        return input_data, b"text-model", 0.1, 0.2, 0.3
-
-    capability_map = {
-        "ctgan": (True, False),
-        "llm_text_synth": (False, True),
-    }
+        return kwargs["input_data"].copy(), b"model", 0.1, 0.2, 0.3
 
     monkeypatch.setattr(
         app_module,
         "synthesizer_classes",
         {
             "ctgan": {"class": object},
-            "llm_text_synth": {"class": object},
         },
     )
-    monkeypatch.setattr(app_module, "get_text_synthesizer_name", lambda: "llm_text_synth")
-    monkeypatch.setattr(app_module, "get_processing_capabilities", lambda name: capability_map[name])
-    monkeypatch.setattr(
-        app_module,
-        "load_text_synthesis_defaults",
-        lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
-    )
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "structured_only")
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
     monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
@@ -569,13 +833,8 @@ def test_synthesize_data_uses_original_data_for_two_stage_text_reference(monkeyp
         session_key,
     )
 
-    assert result["status_code"] == 200
-    assert len(captured_calls) == 2
-    assert captured_calls[0]["stage_label"] == "STRUCTURED_SYNTHESIS"
-    assert captured_calls[0]["reference_data"] is None
-    assert captured_calls[1]["stage_label"] == "TEXT_SYNTHESIS"
-    assert captured_calls[1]["reference_data"].equals(original_data)
-    assert list(captured_calls[1]["input_data"].columns) == ["age", "note"]
+    assert result["status_code"] == 500
+    assert captured_calls == []
 
     _delete_status_file(session_key)
 
@@ -602,15 +861,15 @@ def test_get_algorithms_includes_processing_capabilities(monkeypatch):
     assert response.status_code == 200
     payload = response.get_data(as_text=True)
     assert "processing_capabilities:" in payload
-    assert "supports_structured_data: true" in payload
-    assert "supports_free_text_data: false" in payload
+    assert "data_modality: structured_only" in payload
+    assert "generation_scope" not in payload
 
 
 def test_get_synthesizer_config_normalizes_llm_profile_into_model_parameter(monkeypatch):
     monkeypatch.setattr(app_module, "get_llm_profile_names", lambda: ["profile-a", "profile-b"])
 
     client = app_module.app.test_client()
-    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml")
+    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_paraphrase_synthesis.yaml")
 
     assert response.status_code == 200
 
@@ -621,14 +880,15 @@ def test_get_synthesizer_config_normalizes_llm_profile_into_model_parameter(monk
     llm_profile_parameters = configurations["llm_profile"]["parameters"]
     assert len(llm_profile_parameters) == 1
     assert llm_profile_parameters[0]["values"] == ["profile-a", "profile-b"]
-    assert llm_profile_parameters[0]["default_value"] == "profile-a"
+    assert llm_profile_parameters[0]["default_value"] == ""
+    assert llm_profile_parameters[0]["mandatory"] is True
 
 
 def test_get_synthesizer_config_omits_llm_profile_when_no_profiles_exist(monkeypatch):
     monkeypatch.setattr(app_module, "get_llm_profile_names", lambda: [])
 
     client = app_module.app.test_client()
-    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml")
+    response = client.get("/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_paraphrase_synthesis.yaml")
 
     assert response.status_code == 200
 
@@ -700,3 +960,30 @@ def test_post_callback_request_disables_proxy_lookup(monkeypatch):
     assert captured["url"] == "http://localhost:8080/callback"
     assert captured["kwargs"]["data"] == {"session_key": "session-1"}
     assert captured["kwargs"]["timeout"] == 12.5
+
+
+def test_build_text_synthesis_algorithm_config_preserves_num_samples_for_direct_text_only_synthesizer(monkeypatch):
+    monkeypatch.setattr(
+        app_module,
+        "load_text_synthesis_defaults",
+        lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
+    )
+
+    config = app_module.build_text_synthesis_algorithm_config(
+        {
+            "synthetization_configuration": {
+                "algorithm": {
+                    "sampling": {
+                        "num_samples": 2,
+                        "temperature": 0.8,
+                    },
+                }
+            }
+        },
+        "llm_text_only_embedding_nearest_neighbor_synthesis",
+        57,
+    )
+
+    algorithm = config["synthetization_configuration"]["algorithm"]
+    assert algorithm["sampling"]["num_samples"] == 2
+    assert algorithm["sampling"]["temperature"] == 0.8

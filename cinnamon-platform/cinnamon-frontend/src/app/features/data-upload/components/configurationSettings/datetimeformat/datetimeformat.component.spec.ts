@@ -13,7 +13,6 @@ describe("DatetimeformatComponent", () => {
 
 		fixture = TestBed.createComponent(DatetimeformatComponent);
 		component = fixture.componentInstance;
-		fixture.detectChanges();
 	});
 
 	it("should create", () => {

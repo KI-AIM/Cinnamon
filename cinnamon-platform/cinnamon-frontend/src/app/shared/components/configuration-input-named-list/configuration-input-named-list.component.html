@@ -1,0 +1,55 @@
+<div class="d-flex flex-column w-100" [formGroup]="parentForm">
+    <div class="d-flex w-100 justify-content-start align-content-center button-row">
+        <a class="configuration-link"
+           [disabled]="disabled"
+           (click)="addValue()"
+           mat-raised-button color="primary"
+           title="Add attribute">
+            <span>Add attribute</span>
+        </a>
+        <a class="configuration-link ms-2"
+           [disabled]="disabled || !hasValues()"
+           (click)="removeAllValues()"
+           mat-raised-button color="warn"
+           title="Remove all attributes">
+            <span>Remove all attributes</span>
+        </a>
+        <a *ngIf="canSuggestValues()"
+           class="configuration-link ms-2"
+           [disabled]="disabled || suggesting"
+           (click)="suggestValues()"
+           mat-raised-button color="accent"
+           title="Suggest attributes from example texts">
+            <span>{{ suggesting ? 'Suggesting...' : 'Suggest attributes' }}</span>
+        </a>
+    </div>
+
+    <div class="mt-4" [formArrayName]="configurationInputDefinition.name">
+        <div *ngFor="let control of formArray.controls; index as i" [formGroupName]="i" class="value-row">
+            <mat-form-field class="name-field">
+                <mat-label>Attribute name</mat-label>
+                <textarea formControlName="name" rows="2" matInput></textarea>
+                <mat-error *ngIf="formArray.at(i).get('name')?.hasError('required')">
+                    Attribute name must not be empty
+                </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="description-field">
+                <mat-label>Description</mat-label>
+                <textarea formControlName="description" rows="2" matInput></textarea>
+            </mat-form-field>
+
+            <div class="remove-button">
+                <button mat-raised-button color="primary" (click)="removeValue(i)">Remove</button>
+            </div>
+        </div>
+
+        <div *ngIf="!hasValues()" class="empty-state">
+            No attributes configured.
+        </div>
+
+        <mat-error *ngIf="formArray.hasError('required')">
+            At least one attribute must be configured
+        </mat-error>
+    </div>
+</div>

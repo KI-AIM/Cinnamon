@@ -1,16 +1,14 @@
-/* tslint:disable:no-unused-variable */
-
-import { TestBed, async, inject } from '@angular/core/testing';
+import { FormBuilder } from '@angular/forms';
 import { AnonymizationAttributeConfigurationService } from './anonymization-attribute-configuration.service';
 
 describe('Service: AnonymizationAttributeConfiguration', () => {
+  let service: AnonymizationAttributeConfigurationService;
+
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [AnonymizationAttributeConfigurationService]
-    });
+    service = new AnonymizationAttributeConfigurationService(new FormBuilder());
   });
 
-  it('should ...', inject([AnonymizationAttributeConfigurationService], (service: AnonymizationAttributeConfigurationService) => {
+  it('should create', () => {
     expect(service).toBeTruthy();
-  }));
+  });
 });

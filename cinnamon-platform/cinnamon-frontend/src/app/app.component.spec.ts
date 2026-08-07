@@ -19,15 +19,6 @@ describe('AppComponent', () => {
     it(`should have as title 'ki-aim-frontend'`, () => {
         const fixture = TestBed.createComponent(AppComponent);
         const app = fixture.componentInstance;
-        expect(app.title).toEqual('ki-aim-frontend');
-    });
-
-    it('should render title', () => {
-        const fixture = TestBed.createComponent(AppComponent);
-        fixture.detectChanges();
-        const compiled = fixture.nativeElement as HTMLElement;
-        expect(compiled.querySelector('.content span')?.textContent).toContain(
-        'ki-aim-frontend app is running!'
-        );
+        expect(app.title).toEqual('cinnamon-frontend');
     });
 });

@@ -13,7 +13,6 @@ describe("StringpatternComponent", () => {
 
 		fixture = TestBed.createComponent(StringpatternComponent);
 		component = fixture.componentInstance;
-		fixture.detectChanges();
 	});
 
 	it("should create", () => {

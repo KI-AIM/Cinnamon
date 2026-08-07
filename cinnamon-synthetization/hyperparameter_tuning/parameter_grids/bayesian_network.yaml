@@ -1,0 +1,5 @@
+model_parameter:
+  encoder_max_clusters: [5, 10, 20]
+  encoder_noise_scale: [0.0, 0.01, 0.05]
+model_fitting:
+  struct_learning_n_iter: [50, 100, 300]

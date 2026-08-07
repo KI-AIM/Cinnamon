@@ -148,7 +148,7 @@ def test_update_component_status_updates_only_target_component(tmp_path):
     update_component_status(
         str(status_path),
         "llm_synthesis",
-        synthesizer_name="llm_nearest_neighbor_few_shot_text_synthesis",
+        synthesizer_name="llm_mixed_data_paraphrase_synthesis",
         duration=3.5,
         initialization_duration=0.5,
         fitting_duration=1.0,
@@ -162,7 +162,7 @@ def test_update_component_status_updates_only_target_component(tmp_path):
     structured_component = _get_component(data, "structured_synthesis")
 
     assert llm_component == {
-        "synthesizer_name": "llm_nearest_neighbor_few_shot_text_synthesis",
+        "synthesizer_name": "llm_mixed_data_paraphrase_synthesis",
         "duration": "3.5",
         "initialization_duration": "0.5",
         "fitting_duration": "1.0",
@@ -230,6 +230,26 @@ def test_intercept_stdout_updates_component_remaining_time_when_configured(monke
     assert _get_step(data, "sampling")["remaining_time"] == "7"
     assert _get_component(data, "llm_synthesis")["remaining_time"] == "7"
     assert _get_component(data, "llm_synthesis")["sampling_remaining_time"] == "7"
+
+
+def test_intercept_stdout_applies_remaining_time_transform(monkeypatch, tmp_path):
+    status_path = tmp_path / "outputs" / "status" / "run_transform.yaml"
+    initialize_status_file(str(status_path), session_key="run_transform", synthesizer_name="ctgan")
+
+    fake_terminal = io.StringIO()
+    monkeypatch.setattr(sys, "stdout", fake_terminal)
+    interceptor = InterceptStdOut(
+        str(status_path),
+        "fitting",
+        component_name="structured_synthesis",
+        remaining_time_transform=lambda _remaining_time: "300",
+    )
+
+    interceptor.write("Estimated remaining time: 7 seconds")
+
+    data = _read_status(status_path)
+    assert _get_step(data, "fitting")["remaining_time"] == "300"
+    assert _get_component(data, "structured_synthesis")["fitting_remaining_time"] == "300"
 
 
 def test_intercept_stdout_updates_remaining_time_from_tqdm_output(monkeypatch, tmp_path):

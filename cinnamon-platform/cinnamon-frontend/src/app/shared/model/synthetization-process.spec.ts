@@ -1,7 +1,7 @@
-import { SynthetizatonProcess } from './synthetizaton-process';
+import { SynthetizationProcess } from './synthetization-process';
 
-describe('SynthetizatonProcess', () => {
+describe('SynthetizationProcess', () => {
   it('should create an instance', () => {
-    expect(new SynthetizatonProcess()).toBeTruthy();
+    expect(new SynthetizationProcess()).toBeTruthy();
   });
 });

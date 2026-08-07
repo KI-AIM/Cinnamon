@@ -13,7 +13,6 @@ describe("DataTableComponent", () => {
 
 		fixture = TestBed.createComponent(DataTableComponent);
 		component = fixture.componentInstance;
-		fixture.detectChanges();
 	});
 
 	it("should create", () => {

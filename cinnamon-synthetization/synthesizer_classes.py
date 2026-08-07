@@ -2,13 +2,25 @@ from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomFor
 from synthetic_tabular_data_generator.algorithms.bayesian_network import BayesianNetworkSynthesizer
 from synthetic_tabular_data_generator.algorithms.ctgan import CtganSynthesizer
 from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
-from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_few_shot_text_synthesis import (
-    LlmNearestNeighborFewShotTextSynthesisSynthesizer,
-)
-from synthetic_tabular_data_generator.algorithms.llm_nearest_neighbor_knowledge_grounded_text_synthesis import (
-    LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
-)
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_mixed_data_embedding_nearest_neighbor_synthesis import (
+    LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_mixed_data_indirect_identifier_rewrite_synthesis import (
+    LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synthesis import (
+    LlmMixedDataParaphraseSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthesis import (
+    LlmTextOnlyParaphraseSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_text_only_embedding_nearest_neighbor_synthesis import (
+    LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
+)
+from synthetic_tabular_data_generator.algorithms.llm_text_only_indirect_identifier_rewrite_synthesis import (
+    LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer,
+)
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
 
@@ -45,7 +57,7 @@ synthesizer_classes = {
         'description': 'Adversarial Random Forests (ARF) are a specialized type of generative model designed to create realistic synthetic tabular data, mimicking the statistical properties of original datasets. Leveraging an ensemble of decision trees trained within an adversarial framework, ARF learns fine-grained relationships in your data and generates new rows through iterative refinement, enabling the creation of synthetic datasets that preserve privacy while retaining key analytical insights. ARF works well for capturing complex, non-linear interactions with modest tuning effort and serves as a robust baseline for benchmarking synthetic data quality.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/arf.yaml'
     },
-       'ddpm': {
+    'ddpm': {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': DdpmSynthesizer,
@@ -65,24 +77,67 @@ synthesizer_classes = {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': LlmTabularSynthesizer,
-        'display_name': 'LLM Dataset Generator',
-        'description': 'The LLM Dataset Generator is a configurable language-model-based synthesizer designed to create fully synthetic tabular datasets from source data using Ollama or OpenAI-compatible APIs. Leveraging the reasoning and pattern-completion capabilities of large language models, it can generate new rows that follow the structure, semantics, and value patterns of the original dataset. This approach is particularly useful when domain-specific context, textual meaning, or flexible generation rules are important. It also allows synthetic data generation to be guided through prompts and configuration settings rather than relying only on statistical model training.',
+        'display_name': 'LLM Structured Tabular Synthesis',
+        'description': 'Generate structured-only synthetic tabular rows with an LLM from statistical column profiles calculated on a configurable sample of the input dataset.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     },
-    'llm_nearest_neighbor_few_shot_text_synthesis': {
+    'llm_mixed_data_embedding_nearest_neighbor_synthesis': {
         'version': '0.1',
         'type': 'cross-sectional',
-        'class': LlmNearestNeighborFewShotTextSynthesisSynthesizer,
-        'display_name': 'LLM Nearest-neighbor Few-shot Text Synthesis',
-        'description': 'LLM Nearest-neighbor Few-shot Text Synthesis is a language-model-based synthesizer designed to generate realistic text fields for synthetic tabular rows while using original data as semantic context. Leveraging large language models, it creates text values that align with the surrounding structured columns and can correct inconsistent structured values when necessary. This approach is especially useful for datasets that combine tabular attributes with free-text descriptions, comments, reports, or notes. It helps maintain semantic coherence between generated text and structured data, improving the usability of synthetic datasets for downstream analysis or testing. The structured data is not created by this model',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_few_shot_text_synthesis.yaml'
+        'class': LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
+        'display_name': 'LLM Mixed-data Embedding Nearest-neighbor Synthesis',
+        'description': 'Generate TEXT from weighted free-text and structured nearest neighbors, then align structured values with the generated text using statistical profiles.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_embedding_nearest_neighbor_synthesis.yaml'
     },
-    'llm_nearest_neighbor_knowledge_grounded_text_synthesis': {
+    'llm_mixed_data_indirect_identifier_rewrite_synthesis': {
         'version': '0.1',
         'type': 'cross-sectional',
-        'class': LlmNearestNeighborKnowledgeGroundedTextSynthesisSynthesizer,
-        'display_name': 'LLM Knowledge-grounded Text Synthesis',
-        'description': 'Generate synthetic medical free-text fields using an LLM with dynamically selected similar original examples. Knowledge-base grounding is not implemented yet and is currently exposed only as NOT_IMPLEMENTED.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_nearest_neighbor_knowledge_grounded_text_synthesis.yaml'
+        'class': LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
+        'display_name': 'LLM Mixed-data Indirect Identifier Rewrite Synthesis',
+        'description': 'Rewrite one TEXT column to reduce direct and indirect identifiability, then align structured values with the rewritten text using statistical column profiles.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_indirect_identifier_rewrite_synthesis.yaml'
+    },
+    'llm_mixed_data_paraphrase_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmMixedDataParaphraseSynthesisSynthesizer,
+        'display_name': 'LLM Mixed-data Paraphrase Synthesis',
+        'description': 'Paraphrase one TEXT column and then align the structured values with the rewritten text in a second LLM call using statistical column profiles.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_paraphrase_synthesis.yaml'
+    },
+    'llm_text_only_paraphrase_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTextOnlyParaphraseSynthesisSynthesizer,
+        'display_name': 'LLM Text-only Paraphrase Synthesis',
+        'description': 'Rewrite a single TEXT input column with an LLM while preserving the original information content. This synthesizer expects exactly one free-text column and rephrases each non-missing value without changing meaning.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_paraphrase_synthesis.yaml'
+    },
+    'llm_text_only_embedding_nearest_neighbor_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
+        'display_name': 'LLM Text-only Nearest-neighbor Synthesis',
+        'description': 'Generate a new single TEXT column for fictional but plausible patients by retrieving similar reference texts and using them as in-context examples. The initial implementation supports BM25-style sparse nearest-neighbor retrieval and Ollama-based embedding retrieval for exactly one free-text column.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_embedding_nearest_neighbor_synthesis.yaml'
+    },
+    'llm_text_only_indirect_identifier_rewrite_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer,
+        'display_name': 'LLM Text-only Indirect Identifier Rewrite Synthesis',
+        'description': 'Rewrite a single TEXT input column with an LLM while preserving medically relevant content and generalizing direct or indirect identifiers. This synthesizer expects exactly one free-text column and produces exactly one rewritten output row per input row.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_indirect_identifier_rewrite_synthesis.yaml'
     }
+}
+
+# Keep hyperparameter-tuning metadata separate so the public synthesizer registry
+# remains compatible with `main`.
+synthesizer_tuning_metadata = {
+    'ctgan': {'supported': True, 'direction': 'minimize'},
+    'tvae': {'supported': True, 'direction': 'minimize'},
+    'bayesian_network': {'supported': True, 'direction': 'maximize'},
+    'arf': {'supported': True, 'direction': 'minimize'},
+    'ddpm': {'supported': True, 'direction': 'minimize'},
+    'rtvae': {'supported': True, 'direction': 'minimize'},
 }

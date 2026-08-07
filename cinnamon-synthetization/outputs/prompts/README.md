@@ -83,7 +83,6 @@ data: [file]
 ## Unterstützte LLM-Synthesizer
 
 - `llm_tabular` - LLM Dataset Generator
-- `llm_nearest_neighbor_few_shot_text_synthesis` - LLM Nearest-neighbor Few-shot Text Synthesis
 - `llm_nearest_neighbor_knowledge_grounded_text_synthesis` - LLM Knowledge-grounded Text Synthesis
 
 ## Konfiguration

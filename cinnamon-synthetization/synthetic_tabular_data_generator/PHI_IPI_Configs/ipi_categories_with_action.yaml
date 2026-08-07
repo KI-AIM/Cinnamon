@@ -1,0 +1,173 @@
+ipi_categories:
+- id: APPEARANCE
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: Mention of a person’s (also infant’s) weight, height or a description of a person’s body or body modifications, e.g., a scar under the eye, very tall, very short, gained/lost weight over a specific period of time, tattoos, piercings, etc.
+  description_ai: Person or infant weight, height, body traits or changes, scars, unusual stature, timed weight change, tattoos,
+    piercings, or other body modifications.
+  actions:
+    low: Keep clinically relevant appearance information. Lightly generalize or replace only unusually distinctive features or body modifications; remove only if the feature is clearly identifying and cannot be safely abstracted.
+    medium: Generalize or replace appearance details with broader non-identifying values while preserving medical relevance, such as approximate body habitus or general weight change.
+    high: Strongly abstract or replace distinctive appearance details with plausible non-identifying alternatives. Remove only clearly identifying features that cannot be safely abstracted.
+  action_ai:
+    low: Keep clinically relevant appearance; generalize or replace distinctive traits or modifications. Remove only identifying
+      details not safely abstractable.
+    medium: Generalize or replace appearance with broad non-identifying, medically relevant values such as habitus or general
+      weight change.
+    high: Strongly abstract or plausibly replace distinctive appearance. Remove only identifying details not safely abstractable.
+- id: CIRCUMSTANCES
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: Any mention or description of an event (accident, storm, wildfire, etc.) that caused, e.g., a person’s injury or happened in the clinical center such as patient being aggressive, rejecting help or medicine, leaving AMA (including discussions about the decision with persons outside the family) or injuring hospital staff. Additionally, details about how the person was brought into the hospital or mentions of statements, requests or complaints expressed by the person.
+  description_ai: Injury-causing or care-setting events; unusual behavior, refused care or medicine, AMA departure or outside-family
+    discussions, staff injury, hospital transport, and patient statements, requests, or complaints.
+  actions:
+    low: Keep the clinically relevant event and outcome. Lightly generalize or replace specific contextual details, unusual behavior, transport details, or quoted statements; remove only clearly identifying details that cannot be safely abstracted.
+    medium: Rewrite the event context into a generic clinical description. Preserve injury, symptom, or care consequence, but generalize or replace cause, setting, sequence, and involved parties.
+    high: Strongly abstract or replace distinctive event narratives with less specific but clinically coherent alternatives. Keep the clinically necessary consequence and remove only details that are clearly identifying and not safely replaceable.
+  action_ai:
+    low: Keep the clinical event and outcome; generalize or replace specific context, behavior, transport, or quotes. Remove only
+      identifying details not safely abstractable.
+    medium: Use generic clinical context; keep injury, symptom, or care consequence while generalizing cause, setting, sequence,
+      and parties.
+    high: Strongly abstract or replace distinctive narratives; keep necessary clinical consequences. Remove only identifying
+      details not safely replaceable.
+- id: SEC
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: Any mention of specific information about the person’s employment (e.g., is a retired police officer) or criminal history, health insurance (e.g., has no health insurance or has a legal guard) or social status such as homelessness or living in subsidized housing.
+  description_ai: Specific employment, criminal history, insurance or legal-guardian status, homelessness, subsidized housing,
+    or other socioeconomic status.
+  actions:
+    low: Keep socioeconomic information only when clinically relevant. Generalize or replace specific employment, legal, insurance, housing, or social-status details; remove only clearly identifying details that cannot be safely abstracted.
+    medium: Convert socioeconomic information into broad clinical or social-risk categories, such as occupational exposure, unstable housing, limited support, or insurance barrier. Prefer replacement/generalization over removal.
+    high: Strongly abstract or replace socioeconomic and legal details with broad non-identifying risk factors when clinically needed. Remove only clearly identifying details that cannot be safely abstracted.
+  action_ai:
+    low: Keep only clinically relevant socioeconomic data; generalize or replace specific job, legal, insurance, housing, or
+      status details. Remove only identifying details not safely abstractable.
+    medium: Replace with broad clinical or social risks such as occupational exposure, unstable housing, limited support, or
+      insurance barriers; avoid removal.
+    high: Strongly abstract or replace with broad non-identifying risks when clinically needed. Remove only identifying details
+      not safely abstractable.
+- id: FAMILY
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: All mentions of detailed family-related information about the person such as being adopted, having a twin sibling or having had an in vitro fertilization pregnancy. Furthermore, specific descriptions of the family’s medical history (e.g., parent died at age 40) or involvement (e.g., patient’s daughter serves as her health care proxy).
+  description_ai: Detailed family circumstances such as adoption, twins, or IVF pregnancy; specific family medical history,
+    ages, involvement, relationships, or proxy roles.
+  actions:
+    low: Keep clinically relevant family history. Lightly generalize or replace distinctive family circumstances, exact ages, roles, proxy details, or rare family configurations; remove only clearly identifying details that cannot be safely abstracted.
+    medium: Generalize family information to broad relationship groups and approximate risk patterns, avoiding exact identifying family narratives. Prefer replacement/generalization over removal and preserve age/date/number formats when present.
+    high: Strongly abstract or replace detailed family narratives and rare family configurations with broad hereditary or familial risk information when medically necessary. Remove only clearly identifying details that cannot be safely abstracted.
+  action_ai:
+    low: Keep relevant family history; generalize or replace distinctive circumstances, exact ages, roles, proxy details, or
+      rare configurations. Remove only identifying details not safely abstractable.
+    medium: Use broad relationships and approximate risks, not identifying narratives; prefer replacement and preserve present
+      age, date, and number formats.
+    high: Replace detailed or rare family narratives with broad hereditary or familial risks when medically needed. Remove only
+      identifying details not safely abstractable.
+- id: FCLT_PERSONNEL
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: All mentions of hospital names, hospital units, labs, departments, facilities, consulting services/teams, floor and rooms, medical branches, outside doctors.
+  description_ai: Hospital, unit, lab, department, facility, service, team, floor, room, medical branch, or external doctor
+    references.
+  actions:
+    low: Replace concrete facility, unit, room, laboratory, department, team, and clinician names with functional generic terms where possible. Remove only clearly identifying local details that cannot be safely replaced.
+    medium: Generalize care locations and personnel to broad service types, such as hospital, specialist service, external provider, or laboratory, without local structure. Prefer replacement/generalization over removal.
+    high: Strongly abstract or replace institution-specific and personnel-specific references with minimal generic care-setting information needed for clinical coherence. Remove only clearly identifying references that cannot be safely abstracted.
+  action_ai:
+    low: Replace named facilities, units, rooms, labs, departments, teams, and clinicians with functional generic terms. Remove
+      only identifying local details not safely replaceable.
+    medium: Use broad care or personnel types such as hospital, specialist service, external provider, or lab; omit local structure
+      and prefer replacement.
+    high: Replace institution- or personnel-specific references with minimal generic care context. Remove only identifying
+      references not safely abstractable.
+- id: TIME
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: Mentions of age or time-related information, e.g. postoperative day number 2, day of delivery number 13, day of life 6, exact mentions of times when lab values were taken, or exact times about when medications should be taken. Do not consider times related to the medical condition itself, e.g., stopped breathing for 30 secs.
+  description_ai: Age or chronology such as postoperative, delivery, or life day numbers and exact lab or medication times;
+    exclude condition durations such as 30-second apnea.
+  actions:
+    low: Lightly coarsen or replace exact ages, days, dates, times, and medication or laboratory timestamps while preserving clinically important order and intervals.
+    medium: Generalize or replace time information with broader but still structured intervals or phases while preserving clinical sequence.
+    high: Strongly generalize or replace exact chronology while preserving the minimum temporal order needed to understand the clinical course. Remove only clearly identifying time details that cannot be safely abstracted.
+  action_ai:
+    low: Coarsen or replace exact ages, days, dates, and medication or lab times; preserve important order and intervals.
+    medium: Replace times with broader structured intervals or phases; preserve clinical sequence.
+    high: Strongly generalize or replace chronology; keep only the order needed for the clinical course. Remove only identifying
+      times not safely abstractable.
+- id: LFSTL
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: 'Hobbies and Lifestyle: such as sports or playing an instrument. Lifestyle: e.g. information about the patient’s diet or private lifestyle.'
+  description_ai: Hobbies and lifestyle, including sports, instruments, diet, and private habits.
+  actions:
+    low: Keep lifestyle details only when clinically relevant. Lightly generalize or replace distinctive hobbies, sports, instruments, diet, or private habits; remove only clearly identifying details that cannot be safely abstracted.
+    medium: Translate lifestyle information into broad clinical categories, such as physical activity, dietary pattern, substance exposure, or private lifestyle factor. Prefer replacement/generalization over removal.
+    high: Strongly abstract or replace lifestyle details with broad medically necessary exposure or behavior categories. Remove only clearly identifying lifestyle details that cannot be safely abstracted.
+  action_ai:
+    low: Keep only clinically relevant lifestyle; generalize or replace distinctive hobbies, sports, instruments, diet, or habits.
+      Remove only identifying details not safely abstractable.
+    medium: Replace with broad clinical categories such as activity, diet, substance exposure, or private lifestyle factor;
+      avoid removal.
+    high: Replace with broad medically necessary exposure or behavior categories. Remove only identifying lifestyle details
+      not safely abstractable.
+- id: DETAILS
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: 'All mentions of PHIs that were not detected and de-identified automatically or an abstract/indirect description of a PHI, for instance regarding address (e.g., lives in a halfway house or lives in prison). Any information not related to PHIs such as weight or medical units are not part of this category and should be annotated as described in the other categories above. For consistency, the following are the PHIs to consider for this category: Name, email addresses, geographic details, dates directly related to the individual, telephone, fax numbers, social security numbers, medical record numbers, health plan beneficiary numbers, account numbers, certificate and license numbers, vehicle and device identifiers, biometric identifiers and facial photograph, URL, IP addresses.'
+  description_ai: Residual direct PHI or indirect PHI descriptions, including names, email, geography or address-like context,
+    person-linked dates, phone, fax, SSN, medical record, beneficiary, account, certificate, license, vehicle, device, biometric,
+    facial-image, URL, or IP data. Excludes non-PHI such as weight or medical units.
+  actions:
+    low: Replace residual direct PHI or indirect PHI descriptions with appropriate neutral placeholders or generalized equivalents. Remove only when the PHI is clearly identifying and cannot be safely replaced.
+    medium: Strongly generalize or replace residual PHI and PHI-adjacent descriptions, such as address-like, institution-like, date-like, identifier-like, or contact-like information. Remove only clearly identifying details that cannot be safely replaced.
+    high: Strictly replace residual PHI and PHI-adjacent context with neutral placeholders, generalized values, or plausible non-identifying alternatives. Remove only clearly identifying information that cannot be safely abstracted or replaced.
+  action_ai:
+    low: Replace residual direct or indirect PHI with neutral placeholders or generalized equivalents. Remove only identifying
+      PHI not safely replaceable.
+    medium: Strongly generalize or replace residual address-, institution-, date-, identifier-, or contact-like PHI. Remove only
+      identifying details not safely replaceable.
+    high: Strictly replace residual PHI and adjacent context with placeholders, generalized values, or plausible non-identifying
+      alternatives. Remove only identifying data not safely abstractable or replaceable.
+- id: OTHER
+  source: Beyond De-Identification A Structured Approach for Defining and Detecting Indirect Identifiers in Medical Texts (2025)
+  description: Other kinds of non-medical information that may be too sensitive to keep in the data e.g. languages, ethnicity (e.g., Caucasian, AAF etc.) and sexual orientation.
+  description_ai: Sensitive non-medical information such as language, ethnicity, sexual orientation, or similar personal
+    descriptors.
+  actions:
+    low: Keep sensitive non-medical information only when clearly necessary for clinical interpretation. Generalize or replace specific language, ethnicity, sexuality, or other sensitive descriptors; remove only clearly identifying details that cannot be safely abstracted.
+    medium: Use only broad clinically relevant categories and avoid specific sensitive personal descriptors. Prefer replacement/generalization over removal.
+    high: Strongly abstract or replace sensitive non-medical information with non-identifying clinical implications when essential. Remove only clearly identifying details that cannot be safely abstracted.
+  action_ai:
+    low: Keep only if clinically necessary; generalize or replace specific language, ethnicity, sexuality, or other sensitive
+      descriptors. Remove only identifying details not safely abstractable.
+    medium: Use broad clinically relevant categories, avoid specific sensitive descriptors, and prefer replacement over removal.
+    high: When essential, replace with non-identifying clinical implications. Remove only identifying details not safely
+      abstractable.
+- id: CLINICAL_RARITY
+  source: custom_extension
+  description: Rare or unusually distinctive clinical facts, or combinations of clinical facts, such as rare diagnoses, rare events, operation sequences, timelines, therapies, complications, or outcomes that may identify a case.
+  description_ai: Rare or distinctive diagnoses, events, procedure sequences, timelines, therapies, complications, outcomes,
+    or identifying combinations of clinical facts.
+  actions:
+    low: Preserve rare clinical facts when central to the case, but lightly generalize or replace unusually identifying combinations of diagnosis, procedure, therapy, complication, timeline, or outcome. Remove only clearly identifying details that cannot be safely abstracted.
+    medium: Generalize or replace rare diagnoses, procedures, timelines, therapies, complications, and outcomes with broader clinically meaningful categories while preserving the main clinical meaning. Remove only clearly identifying details that cannot be safely abstracted.
+    high: Actively obscure rare or unique clinical combinations by replacing them with plausible broader categories, less distinctive alternatives, or strongly generalized values while maintaining clinical coherence. Remove only clearly identifying details that cannot be safely abstracted.
+  action_ai:
+    low: Keep central rare facts; generalize or replace identifying combinations of diagnosis, procedure, therapy, complication,
+      timeline, or outcome. Remove only details not safely abstractable.
+    medium: Replace rare facts with broader clinically meaningful categories while preserving main meaning. Remove only identifying
+      details not safely abstractable.
+    high: Obscure rare combinations with plausible broader categories, less distinctive alternatives, or strong generalization;
+      preserve coherence. Remove only identifying details not safely abstractable.
+- id: CARE_PATHWAY
+  source: custom_extension
+  description: Distinctive care pathways or transfer patterns, including specific referrals, specialty clinics, tumor boards, registry links, rehabilitation chains, follow-up structures, or institution-specific workflows.
+  description_ai: Distinctive referrals, specialty clinics, tumor boards, registry links, transfer or rehabilitation chains,
+    follow-up structures, and institution-specific workflows.
+  actions:
+    low: Keep the clinically relevant care pathway, but generalize or replace specific institutions, named services, referral chains, registry links, and unusually distinctive transfer details. Remove only clearly identifying details that cannot be safely abstracted.
+    medium: Abstract or replace care pathways with generic steps, such as referral, specialist assessment, tumor board review, treatment, rehabilitation, or follow-up. Remove only clearly identifying details that cannot be safely abstracted.
+    high: Strongly simplify, abstract, or replace distinctive care pathways and transfer patterns with generic care phases necessary to understand the clinical course. Remove only clearly identifying details that cannot be safely abstracted.
+  action_ai:
+    low: Keep the clinical pathway; generalize or replace institutions, named services, referral chains, registry links, and
+      distinctive transfers. Remove only identifying details not safely abstractable.
+    medium: Replace pathways with generic referral, specialist assessment, review, treatment, rehabilitation, or follow-up
+      steps. Remove only identifying details not safely abstractable.
+    high: Strongly simplify or replace distinctive pathways and transfers with only the generic phases needed for clinical
+      understanding. Remove only identifying details not safely abstractable.

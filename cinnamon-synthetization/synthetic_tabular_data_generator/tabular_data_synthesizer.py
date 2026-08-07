@@ -101,10 +101,11 @@ class TabularDataSynthesizer(ABC):
         self._fit_completed = False
 
     @error_handler("fitting")
-    def fit(self) -> None:
+    def fit(self) -> Optional[float]:
         self._require_initialized_for_fit()
-        self._fit()
+        result = self._fit()
         self._fit_completed = True
+        return result
 
     @error_handler("sampling")
     def sample(self) -> pd.DataFrame:
@@ -161,7 +162,7 @@ class TabularDataSynthesizer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _fit(self) -> None:
+    def _fit(self) -> Optional[float]:
         raise NotImplementedError
 
     @abstractmethod

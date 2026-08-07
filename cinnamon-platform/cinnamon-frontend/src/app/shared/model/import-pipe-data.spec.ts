@@ -1,7 +1,13 @@
-import { ImportPipeData } from './import-pipe-data';
+import {
+  ConfigurationImportParameters,
+  ConfigurationImportSummary,
+  ConfigurationImportSummaryPart,
+} from './import-pipe-data';
 
-describe('ImportPipeData', () => {
+describe('import-pipe-data', () => {
   it('should create an instance', () => {
-    expect(new ImportPipeData()).toBeTruthy();
+    expect(new ConfigurationImportParameters()).toBeTruthy();
+    expect(new ConfigurationImportSummaryPart()).toBeTruthy();
+    expect(new ConfigurationImportSummary()).toBeTruthy();
   });
 });

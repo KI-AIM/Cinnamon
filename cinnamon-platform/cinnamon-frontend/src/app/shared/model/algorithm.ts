@@ -7,34 +7,42 @@ export class Algorithm {
     version: string
     URL: string
     processing_capabilities?: {
-        supports_structured_data?: boolean
-        supports_free_text_data?: boolean
+        data_modality?: "structured_only" | "text_only" | "mixed"
     }
+}
+
+function getDataModality(algorithm: Algorithm): "structured_only" | "text_only" | "mixed" {
+    const modality = algorithm.processing_capabilities?.data_modality;
+    if (modality != null) {
+        return modality;
+    }
+
+    if (algorithm.name.includes("text_only")) {
+        return "text_only";
+    }
+    if (algorithm.name.includes("mixed_data")) {
+        return "mixed";
+    }
+
+    return "structured_only";
 }
 
 export function supportsStructuredData(algorithm: Algorithm): boolean {
-    const supportsStructured = algorithm.processing_capabilities?.supports_structured_data;
-    if (supportsStructured === undefined) {
-        return !algorithm.name.includes("text");
-    }
-    return supportsStructured;
+    return getDataModality(algorithm) !== "text_only";
 }
 
 export function supportsFreeTextData(algorithm: Algorithm): boolean {
-    const supportsFreeText = algorithm.processing_capabilities?.supports_free_text_data;
-    if (supportsFreeText === undefined) {
-        return algorithm.name.includes("text");
-    }
-    return supportsFreeText;
+    return getDataModality(algorithm) !== "structured_only";
 }
 
 export function isTextOnlySynthesizer(algorithm: Algorithm): boolean {
-    const supportsStructured = algorithm.processing_capabilities?.supports_structured_data;
-    const supportsFreeText = algorithm.processing_capabilities?.supports_free_text_data;
+    return getDataModality(algorithm) === "text_only";
+}
 
-    if (supportsStructured !== undefined || supportsFreeText !== undefined) {
-        return supportsStructured === false && supportsFreeText === true;
-    }
+export function isStructuredOnlySynthesizer(algorithm: Algorithm): boolean {
+    return getDataModality(algorithm) === "structured_only";
+}
 
-    return algorithm.name.includes("text");
+export function isMixedDataSynthesizer(algorithm: Algorithm): boolean {
+    return getDataModality(algorithm) === "mixed";
 }

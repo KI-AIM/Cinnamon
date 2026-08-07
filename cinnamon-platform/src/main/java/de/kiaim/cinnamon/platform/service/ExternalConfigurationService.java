@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class ExternalConfigurationService {
-
 	private final ObjectMapper yamlMapper;
 	private final WebClient yamlWebClient;
 

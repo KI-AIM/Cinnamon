@@ -21,3 +21,4 @@ fastcore==1.7.29
 fastai==2.7.19
 pgmpy==0.1.26
 pytest==8.3.3
+optuna>=3.5

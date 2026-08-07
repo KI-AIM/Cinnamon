@@ -108,6 +108,7 @@
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "polyfills": [
+              "reflect-metadata",
               "zone.js",
               "zone.js/testing"
             ],

@@ -1,0 +1,122 @@
+name: llm_mixed_data_embedding_nearest_neighbor_synthesis
+version: "0.1"
+type: cross-sectional
+display_name: LLM Mixed-data Embedding Nearest-neighbor Synthesis
+description: Generate TEXT from weighted free-text and structured nearest neighbors, then align structured values with the generated text using statistical profiles.
+URL: /start_synthetization_process/llm_mixed_data_embedding_nearest_neighbor_synthesis
+processing_capabilities:
+  data_modality: mixed
+configurations:
+  llm_profile:
+    display_name: LLM Profile
+    description: Select which configured LLM instance should be used.
+    parameters:
+      - name: llm_profile
+        type: string
+        label: LLM Profile
+        description: Select the configured LLM profile.
+        default_value: ""
+        values: []
+        mandatory: true
+  model_parameter:
+    display_name: Retrieval and Profile Parameters
+    description: Configure text embeddings, mixed-data similarity weighting, nearest neighbors, and structured profiles.
+    parameters:
+      - name: profile_rows
+        type: integer
+        label: Profile Rows
+        description: Number of reference rows used for structured profiles. Values above the available dataset size are capped automatically.
+        default_value: $dataset.original.numberRows
+        min_value: 1
+        max_value: 1000000
+      - name: few_shot_examples
+        type: integer
+        label: Nearest Neighbors
+        description: Number of nearest-neighbor reference texts included in the text-generation prompt.
+        default_value: 3
+        min_value: 0
+        max_value: 20
+      - name: embedding_provider
+        type: string
+        label: Embedding Provider
+        description: Encode free text with sparse BM25 or an Ollama embedding profile.
+        default_value: bm25
+        values:
+          - bm25
+          - ollama
+      - name: embedding_model
+        type: string
+        label: Embedding Profile
+        description: Select the configured Ollama embedding profile. Ignored for BM25.
+        default_value: ""
+        values: []
+        mandatory: false
+      - name: similarity_function
+        type: string
+        label: Text Similarity Function
+        description: Use sparse_cosine or sparse_dot with BM25; use cosine, dot, angular, euclidean, or manhattan with Ollama.
+        default_value: sparse_cosine
+        values:
+          - sparse_cosine
+          - sparse_dot
+          - cosine
+          - dot
+          - angular
+          - euclidean
+          - manhattan
+      - name: text_similarity_weight
+        type: float
+        label: Free-text Similarity Weight
+        description: Relative contribution of embedding-based free-text similarity to the combined nearest-neighbor score.
+        default_value: 0.7
+        min_value: 0.0
+        max_value: 1.0
+      - name: structured_similarity_weight
+        type: float
+        label: Structured Similarity Weight
+        description: Relative contribution of datatype-aware structured similarity to the combined nearest-neighbor score.
+        default_value: 0.3
+        min_value: 0.0
+        max_value: 1.0
+      - name: exclude_self_match
+        type: boolean
+        label: Exclude Identical Source Text
+        description: Exclude reference rows whose TEXT is identical to the sampled source row.
+        default_value: true
+  model_fitting:
+    display_name: Prompt Configuration
+    description: Configure optional domain context for text generation and structured consistency correction.
+    parameters:
+      - name: user_prompt_domain_context
+        type: string
+        multiline: true
+        rows: 5
+        label: Domain Context
+        description: Optional domain context used in both LLM phases.
+        default_value: ""
+        mandatory: false
+  sampling:
+    display_name: Sampling
+    description: Configure the number of generated mixed rows and LLM decoding behavior.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Number of Samples
+        description: Number of rows to generate. Source rows are sampled with replacement when this exceeds the input row count.
+        default_value: $dataset.original.numberRows
+        min_value: 1
+        max_value: 1000000
+      - name: temperature
+        type: float
+        label: Temperature
+        description: Controls randomness of token sampling.
+        default_value: 0.8
+        min_value: 0.0
+        max_value: 2.0
+      - name: top_p
+        type: float
+        label: Top-p
+        description: Controls nucleus sampling by limiting candidate tokens to a probability mass.
+        default_value: 0.95
+        min_value: 0.0
+        max_value: 1.0

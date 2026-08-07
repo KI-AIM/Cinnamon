@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import cloudpickle
 import pandas as pd
+import torch
 from synthcity.plugins import Plugins
 
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
@@ -29,6 +30,7 @@ class RtvaeSynthesizer(TabularDataSynthesizer):
         training_params = config["synthetization_configuration"]["algorithm"]["model_fitting"]
 
         self._model_kwargs = {
+            "device": torch.device("cpu"),
             "data_encoder_max_clusters": int(synth_params["data_encoder_max_clusters"]),
             "decoder_n_layers_hidden": int(synth_params["number_of_layers"]),
             "encoder_n_layers_hidden": int(synth_params["number_of_layers"]),
@@ -60,9 +62,53 @@ class RtvaeSynthesizer(TabularDataSynthesizer):
         """Create the synthcity plugin instance."""
         self.synthesizer = Plugins().get("rtvae", **self._model_kwargs)
 
-    def _fit(self) -> None:
-        """Fit the synthesizer to the dataset."""
-        self.synthesizer.fit(self.dataset)
+    def _fit(self) -> Optional[float]:
+        """
+        Core logic for fitting the synthesizer.
+
+        synthcity's RTVAE plugin does not expose its training loss. We capture
+        the VAE objective (reconstruction + KL) computed during fitting by
+        briefly wrapping ``VAE._loss_function`` and return the last value as the
+        final training loss — lower is better (Optuna direction ``minimize``).
+        Trials run sequentially, so the temporary wrapper (restored in
+        ``finally``) is safe. Metric extraction never breaks the normal
+        synthesis path: any failure returns ``None``.
+        """
+        captured: List[float] = []
+
+        # Best-effort instrumentation: wrap the VAE loss to record its values.
+        # A failure to install the hook must not prevent fitting.
+        vae_cls = None
+        original_loss_fn = None
+        try:
+            from synthcity.plugins.core.models.vae import VAE
+            vae_cls = VAE
+            original_loss_fn = VAE._loss_function
+
+            def _capturing_loss_fn(vae_self, *args, **kwargs):
+                loss = original_loss_fn(vae_self, *args, **kwargs)
+                try:
+                    captured.append(float(loss.item()))
+                except Exception:
+                    pass
+                return loss
+
+            VAE._loss_function = _capturing_loss_fn
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[rtvae] could not install loss capture: {exc}")
+            vae_cls = None
+
+        # Fit exactly once. Genuine fit errors propagate to the error handler.
+        try:
+            self.synthesizer.fit(self.dataset)
+        finally:
+            if vae_cls is not None and original_loss_fn is not None:
+                vae_cls._loss_function = original_loss_fn
+
+        if captured:
+            return captured[-1]
+        print("[rtvae] no training loss captured; no fit metric available.")
+        return None
 
     def _sample(self) -> pd.DataFrame:
         """Generate synthetic samples."""

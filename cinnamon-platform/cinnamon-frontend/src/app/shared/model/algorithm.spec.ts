@@ -1,5 +1,7 @@
 import {
   Algorithm,
+  isMixedDataSynthesizer,
+  isStructuredOnlySynthesizer,
   isTextOnlySynthesizer,
   supportsFreeTextData,
   supportsStructuredData,
@@ -14,21 +16,46 @@ describe('Algorithm', () => {
     const algorithm = new Algorithm();
     algorithm.name = 'ctgan';
     algorithm.processing_capabilities = {
-      supports_structured_data: true,
-      supports_free_text_data: false,
+      data_modality: 'structured_only',
     };
 
     expect(supportsStructuredData(algorithm)).toBeTrue();
     expect(supportsFreeTextData(algorithm)).toBeFalse();
     expect(isTextOnlySynthesizer(algorithm)).toBeFalse();
+    expect(isStructuredOnlySynthesizer(algorithm)).toBeTrue();
   });
 
   it('should fall back to legacy name-based detection if capabilities are missing', () => {
     const algorithm = new Algorithm();
-    algorithm.name = 'llm_text_synthesis';
+    algorithm.name = 'llm_mixed_data_paraphrase_synthesis';
+
+    expect(supportsStructuredData(algorithm)).toBeTrue();
+    expect(supportsFreeTextData(algorithm)).toBeTrue();
+    expect(isTextOnlySynthesizer(algorithm)).toBeFalse();
+    expect(isMixedDataSynthesizer(algorithm)).toBeTrue();
+  });
+
+  it('should detect text-only synthesizers from metadata', () => {
+    const algorithm = new Algorithm();
+    algorithm.name = 'llm_text_only_paraphrase_synthesis';
+    algorithm.processing_capabilities = {
+      data_modality: 'text_only',
+    };
 
     expect(supportsStructuredData(algorithm)).toBeFalse();
     expect(supportsFreeTextData(algorithm)).toBeTrue();
     expect(isTextOnlySynthesizer(algorithm)).toBeTrue();
+  });
+
+  it('should recognize a mixed-generation synthesizer as supporting both data kinds', () => {
+    const algorithm = new Algorithm();
+    algorithm.name = 'llm_mixed_data_paraphrase_synthesis';
+    algorithm.processing_capabilities = {
+      data_modality: 'mixed',
+    };
+
+    expect(supportsStructuredData(algorithm)).toBeTrue();
+    expect(supportsFreeTextData(algorithm)).toBeTrue();
+    expect(isMixedDataSynthesizer(algorithm)).toBeTrue();
   });
 });

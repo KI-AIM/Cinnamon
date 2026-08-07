@@ -16,7 +16,7 @@ public class AlgorithmTestHelper {
 	public static AvailableAlgorithms generateAvailableAlgorithms() {
 		var expected = new AvailableAlgorithms();
 		expected.setAlgorithms(List.of(
-				new Algorithm("algorithmA", "Algorithm A", "This is algorithm A", "tabular", "1.0.1", "/algorithmA")));
+				new Algorithm("algorithmA", "Algorithm A", "This is algorithm A", "tabular", "1.0.1", null, "/algorithmA")));
 		return expected;
 	}
 
@@ -85,7 +85,7 @@ public class AlgorithmTestHelper {
 
 	public static AvailableAlgorithms generateAvailableAlgorithms2() {
 		return new AvailableAlgorithms(List.of(
-				new Algorithm("ctgan", "", "", "", "", "/algorithm/ctgan")
+				new Algorithm("ctgan", "", "", "", "", null, "/algorithm/ctgan")
 		));
 	}
 

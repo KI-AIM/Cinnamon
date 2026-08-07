@@ -1,8 +1,9 @@
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import cloudpickle
 import pandas as pd
+import torch
 
 from synthcity.plugins import Plugins
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
@@ -32,6 +33,7 @@ class CtganSynthesizer(TabularDataSynthesizer):
         batch_size = int(training_params["batch_size"])
 
         self._model_kwargs = {
+            "device": torch.device("cpu"),
             "n_iter": int(training_params["epochs"]),
             "generator_n_layers_hidden": hidden_layers,
             "generator_n_units_hidden": hidden_units,
@@ -59,9 +61,55 @@ class CtganSynthesizer(TabularDataSynthesizer):
         """Create the synthcity plugin instance."""
         self.synthesizer = Plugins().get("ctgan", **self._model_kwargs)
 
-    def _fit(self) -> None:
-        """Fit the synthesizer to the dataset."""
-        self.synthesizer.fit(self.dataset)
+    def _fit(self) -> Optional[float]:
+        """Fit the synthesizer and return the final-epoch generator loss.
+
+        synthcity's CTGAN plugin does not expose a ``loss_history``. Its GAN core
+        computes per-epoch losses in ``GAN._train_epoch`` (returning
+        ``(g_loss, d_loss)``). We briefly wrap that method to record the
+        generator loss each epoch and return the last value — lower is better
+        (Optuna direction ``minimize``). GAN losses are adversarial/non-stationary,
+        so this is a weak quality signal, but it mirrors the "final-epoch training
+        loss" objective used by the other synthesizers. Trials run sequentially,
+        so the temporary wrapper (restored in ``finally``) is safe. Metric
+        extraction never breaks the normal synthesis path: any failure returns
+        ``None``.
+        """
+        captured: List[float] = []
+
+        # Best-effort instrumentation: wrap the GAN epoch loop to record the
+        # generator loss. A failure to install the hook must not prevent fitting.
+        gan_cls = None
+        original_train_epoch = None
+        try:
+            from synthcity.plugins.core.models.gan import GAN
+            gan_cls = GAN
+            original_train_epoch = GAN._train_epoch
+
+            def _capturing_train_epoch(gan_self, *args, **kwargs):
+                g_loss, d_loss = original_train_epoch(gan_self, *args, **kwargs)
+                try:
+                    captured.append(float(g_loss))
+                except Exception:
+                    pass
+                return g_loss, d_loss
+
+            GAN._train_epoch = _capturing_train_epoch
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[ctgan] could not install loss capture: {exc}")
+            gan_cls = None
+
+        # Fit exactly once. Genuine fit errors propagate to the error handler.
+        try:
+            self.synthesizer.fit(self.dataset)
+        finally:
+            if gan_cls is not None and original_train_epoch is not None:
+                gan_cls._train_epoch = original_train_epoch
+
+        if captured:
+            return captured[-1]
+        print("[ctgan] no training loss captured; no fit metric available.")
+        return None
 
     def _sample(self) -> pd.DataFrame:
         """Generate synthetic samples."""

@@ -22,3 +22,19 @@ export class DataConfigurationEstimation {
 export function hasTextColumns(dataConfiguration: DataConfiguration): boolean {
     return dataConfiguration.configurations.some(configuration => configuration.type === DataType.TEXT);
 }
+
+export function hasStructuredColumns(dataConfiguration: DataConfiguration): boolean {
+    return dataConfiguration.configurations.some(configuration => configuration.type !== DataType.TEXT);
+}
+
+export function isTextOnlyDataConfiguration(dataConfiguration: DataConfiguration): boolean {
+    return hasTextColumns(dataConfiguration) && !hasStructuredColumns(dataConfiguration);
+}
+
+export function isStructuredOnlyDataConfiguration(dataConfiguration: DataConfiguration): boolean {
+    return hasStructuredColumns(dataConfiguration) && !hasTextColumns(dataConfiguration);
+}
+
+export function isMixedDataConfiguration(dataConfiguration: DataConfiguration): boolean {
+    return hasStructuredColumns(dataConfiguration) && hasTextColumns(dataConfiguration);
+}

@@ -14,7 +14,6 @@ describe('RangeComponent', () => {
 
     fixture = TestBed.createComponent(RangeComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

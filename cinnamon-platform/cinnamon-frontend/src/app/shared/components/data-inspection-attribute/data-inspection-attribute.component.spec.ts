@@ -14,7 +14,6 @@ describe('DataInspectionAttributeComponent', () => {
 
     fixture = TestBed.createComponent(DataInspectionAttributeComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

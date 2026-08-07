@@ -14,7 +14,6 @@ describe('ConfigurationInputAttributeListComponent', () => {
 
     fixture = TestBed.createComponent(ConfigurationInputAttributeListComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

@@ -14,7 +14,6 @@ describe('MetricConfigurationComponent', () => {
 
     fixture = TestBed.createComponent(MetricConfigurationComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

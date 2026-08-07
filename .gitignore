@@ -12,6 +12,7 @@ scripts/resources/
 cinnamon-synthetization/outputs/
 cinnamon-synthetization/workspace/
 start-local-macos.sh
+restart-platform-synthetization-macos.sh
 
 ### STS ###
 .apt_generated

@@ -14,7 +14,6 @@ describe('ChartDensityComponent', () => {
 
     fixture = TestBed.createComponent(ChartDensityComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

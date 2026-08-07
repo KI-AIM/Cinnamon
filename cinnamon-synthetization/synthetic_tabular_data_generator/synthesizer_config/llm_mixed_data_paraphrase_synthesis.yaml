@@ -1,0 +1,68 @@
+name: llm_mixed_data_paraphrase_synthesis
+version: "0.1"
+type: cross-sectional
+display_name: LLM Mixed-data Paraphrase Synthesis
+description: Paraphrase one TEXT column and then align the structured values with the rewritten text in a second LLM call using statistical column profiles.
+URL: /start_synthetization_process/llm_mixed_data_paraphrase_synthesis
+processing_capabilities:
+  data_modality: mixed
+configurations:
+  llm_profile:
+    display_name: LLM Profile
+    description: Select which configured LLM instance should be used.
+    parameters:
+      - name: llm_profile
+        type: string
+        label: LLM Profile
+        description: Select the configured LLM profile.
+        default_value: ""
+        values: []
+        mandatory: true
+  model_parameter:
+    display_name: Statistical Profile Parameters
+    description: Configure how many reference rows are sampled to calculate the structured column profiles.
+    parameters:
+      - name: profile_rows
+        type: integer
+        label: Profile Rows
+        description: Number of rows used for profile calculation. Values above the available dataset size are capped automatically.
+        default_value: $dataset.original.numberRows
+        min_value: 1
+        max_value: 1000000
+  model_fitting:
+    display_name: Prompt Configuration
+    description: Configure optional domain context for paraphrasing and structured consistency correction.
+    parameters:
+      - name: user_prompt_domain_context
+        type: string
+        multiline: true
+        rows: 5
+        label: Domain Context
+        description: Optional domain context used in both LLM steps.
+        default_value: ""
+        mandatory: false
+  sampling:
+    display_name: Sampling
+    description: Configure how many input rows are processed and how deterministic the LLM output should be.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Number of Samples
+        description: Number of input rows to process. Cannot exceed the number of provided rows.
+        default_value: $dataset.original.numberRows
+        min_value: 1
+        max_value: $dataset.original.numberRows
+      - name: temperature
+        type: float
+        label: Temperature
+        description: Controls randomness of token sampling. Lower values are more deterministic.
+        default_value: 0.2
+        min_value: 0.0
+        max_value: 2.0
+      - name: top_p
+        type: float
+        label: Top-p
+        description: Controls nucleus sampling by limiting candidate tokens to a probability mass.
+        default_value: 0.9
+        min_value: 0.0
+        max_value: 1.0

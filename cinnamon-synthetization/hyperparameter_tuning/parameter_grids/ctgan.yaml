@@ -1,0 +1,17 @@
+model_parameter:
+  embedding_dim:
+    - 64
+    - 128
+  generator_dim:
+    - [128, 128]
+  discriminator_dim:
+    - [128, 128]
+model_fitting:
+  batch_size:
+    - 128
+  epochs:
+    - 50
+    - 100
+    - 150
+    - 200
+    - 300

@@ -41,213 +41,6 @@ def _knowledge_block(chunks: Optional[Sequence[str]], source_type: str) -> str:
     )
 
 
-def build_non_text_repair_prompt_prefix(
-    *,
-    column_order: Sequence[str],
-    text_columns: Sequence[str],
-    profile_lines: Sequence[str],
-    missing_value_string: str,
-    domain_context: str = "",
-) -> str:
-    text_columns_text = ", ".join(text_columns)
-    profile_block = "\n".join(profile_lines)
-
-    return (
-        "You repair the non-TEXT fields of a synthetic table row.\n"
-        f"{_domain_context_block(domain_context)}"
-        "Important:\n"
-        "- You are not reconstructing an original record.\n"
-        "- You are creating a new synthetic record in the same content category.\n"
-        "Reference usage:\n"
-        "- The current synthetic row defines the starting constraints of the new synthetic record.\n"
-        "- The most similar reference row is the strongest reference for repairing contradictions.\n"
-        "- Additional neighboring rows are weaker references for plausible structured combinations.\n"
-        "Row repair rules:\n"
-        "- Keep non-TEXT values unchanged unless they are clearly implausible in combination.\n"
-        "- If the structured row is obviously inconsistent, determine the most coherent values for the structured attributes from:\n"
-        "  1. the most similar reference row,\n"
-        "  2. the remaining structured fields.\n"
-        "- Then minimally correct the contradictory non-TEXT fields so that they fit the coherent record.\n"
-        f"- TEXT columns ({text_columns_text}) are not generated in this step and should stay unchanged.\n"
-        "- Return the repaired row as final JSON output for this step.\n"
-        "Output rules:\n"
-        "- Return ONLY valid JSON.\n"
-        "- Use exactly this shape: {\"row\": { ... }}\n"
-        f"- Include all columns exactly in this list: {list(column_order)}\n"
-        f"- For missing strings/text use '{missing_value_string}'\n"
-        "- BOOLEAN values must be true/false.\n"
-        "- DATE values must use the same human-readable date format shown in the examples.\n"
-        "\n"
-        "Column profiles derived from original data:\n"
-        f"{profile_block}\n"
-    )
-
-
-def build_non_text_repair_prompt_from_prefix(
-    prompt_prefix: str,
-    *,
-    base_row: Dict[str, Any],
-    reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    reference_heading: str = "NEIGHBORING REFERENCE ROWS",
-    primary_reference_row: Optional[Dict[str, Any]] = None,
-    primary_reference_heading: str = "MOST SIMILAR REFERENCE ROW",
-    knowledge_chunks: Optional[Sequence[str]] = None,
-    knowledge_source_type: str = "none",
-) -> str:
-    primary_reference_block = ""
-    if primary_reference_row:
-        primary_reference_block = _single_row_block(primary_reference_row, primary_reference_heading)
-
-    reference_block = _reference_examples_block(reference_examples, reference_heading)
-    knowledge_block = _knowledge_block(knowledge_chunks, knowledge_source_type)
-
-    return (
-        f"{prompt_prefix}"
-        f"{primary_reference_block}"
-        f"{reference_block}"
-        f"{knowledge_block}"
-        f"{_single_row_block(base_row, 'SYNTHETIC EXAMPLE')}"
-    )
-
-
-def build_non_text_repair_prompt(
-    *,
-    column_order: Sequence[str],
-    text_columns: Sequence[str],
-    profile_lines: Sequence[str],
-    base_row: Dict[str, Any],
-    missing_value_string: str,
-    domain_context: str = "",
-    reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    reference_heading: str = "NEIGHBORING REFERENCE ROWS",
-    primary_reference_row: Optional[Dict[str, Any]] = None,
-    primary_reference_heading: str = "MOST SIMILAR REFERENCE ROW",
-    knowledge_chunks: Optional[Sequence[str]] = None,
-    knowledge_source_type: str = "none",
-) -> str:
-    prompt_prefix = build_non_text_repair_prompt_prefix(
-        column_order=column_order,
-        text_columns=text_columns,
-        profile_lines=profile_lines,
-        missing_value_string=missing_value_string,
-        domain_context=domain_context,
-    )
-    return build_non_text_repair_prompt_from_prefix(
-        prompt_prefix,
-        base_row=base_row,
-        reference_examples=reference_examples,
-        reference_heading=reference_heading,
-        primary_reference_row=primary_reference_row,
-        primary_reference_heading=primary_reference_heading,
-        knowledge_chunks=knowledge_chunks,
-        knowledge_source_type=knowledge_source_type,
-    )
-
-
-def build_text_enrichment_prompt_prefix(
-    *,
-    column_order: Sequence[str],
-    text_columns: Sequence[str],
-    missing_value_string: str,
-    domain_context: str = "",
-) -> str:
-    text_columns_text = ", ".join(text_columns)
-
-    return (
-        "You generate TEXT values for a repaired synthetic table row.\n"
-        f"{_domain_context_block(domain_context)}"
-        "Important:\n"
-        "- The non-TEXT fields are already repaired for this row.\n"
-        "- Do not modify any non-TEXT field in this step.\n"
-        "- You are not reconstructing an original record.\n"
-        "- You are creating a new synthetic record in the same content category.\n"
-        "Reference usage:\n"
-        "- The repaired synthetic row defines the fixed constraints for the generated TEXT.\n"
-        "- The most similar neighboring text is the strongest semantic reference.\n"
-        "- Additional neighboring texts are weaker references for structure, style, and variation.\n"
-        "- The closest reference text is not the target. It is only inspiration.\n"
-        "- You can orient yourself to the references, but do not copy sentences, exact values, exact sequences, placeholder names, or complete section content.\n"
-        "- Do not mix specific facts from multiple neighboring texts into one record.\n"
-        "Text generation rules:\n"
-        f"- Generate realistic values for TEXT columns: {text_columns_text}\n"
-        "- Determine the dominant content category of the repaired row using all non-TEXT fields, especially keywords.\n"
-        "- The generated TEXT must match this dominant content category.\n"
-        "- Use an appropriate length. Do not imitate the reference length.\n"
-        "- Vary concrete details when they are not fixed by the repaired row.\n"
-        "- Avoid contradictions between the repaired non-TEXT fields and the generated TEXT.\n"
-        "Safety rules:\n"
-        "- Do not generate direct identifiers.\n"
-        "- Do not use exact dates from the texts unless they are explicitly provided in the repaired row.\n"
-        "Output rules:\n"
-        "- Return ONLY valid JSON.\n"
-        "- Use exactly this shape: {\"row\": { ... }}\n"
-        f"- Include all columns exactly in this list: {list(column_order)}\n"
-        f"- For missing strings/text use '{missing_value_string}'\n"
-        "- BOOLEAN values must be true/false.\n"
-        "- DATE values must use the same human-readable date format shown in the examples.\n"
-        "\n"
-    )
-
-
-def build_text_enrichment_prompt_from_prefix(
-    prompt_prefix: str,
-    *,
-    base_row: Dict[str, Any],
-    reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    reference_heading: str = "NEIGHBORING EXAMPLES",
-    primary_reference_row: Optional[Dict[str, Any]] = None,
-    primary_reference_heading: str = "MOST SIMILAR EXAMPLE",
-    knowledge_chunks: Optional[Sequence[str]] = None,
-    knowledge_source_type: str = "none",
-) -> str:
-    primary_reference_block = ""
-    if primary_reference_row:
-        primary_reference_block = _single_row_block(primary_reference_row, primary_reference_heading)
-
-    reference_block = _reference_examples_block(reference_examples, reference_heading)
-    knowledge_block = _knowledge_block(knowledge_chunks, knowledge_source_type)
-
-    return (
-        f"{prompt_prefix}"
-        f"{primary_reference_block}"
-        f"{reference_block}"
-        f"{knowledge_block}"
-        f"{_single_row_block(base_row, 'SYNTHETIC EXAMPLE')}"
-    )
-
-
-def build_text_enrichment_prompt(
-    *,
-    column_order: Sequence[str],
-    text_columns: Sequence[str],
-    base_row: Dict[str, Any],
-    missing_value_string: str,
-    domain_context: str = "",
-    reference_examples: Optional[Sequence[Dict[str, Any]]] = None,
-    reference_heading: str = "NEIGHBORING EXAMPLES",
-    primary_reference_row: Optional[Dict[str, Any]] = None,
-    primary_reference_heading: str = "MOST SIMILAR EXAMPLE",
-    knowledge_chunks: Optional[Sequence[str]] = None,
-    knowledge_source_type: str = "none",
-) -> str:
-    prompt_prefix = build_text_enrichment_prompt_prefix(
-        column_order=column_order,
-        text_columns=text_columns,
-        missing_value_string=missing_value_string,
-        domain_context=domain_context,
-    )
-    return build_text_enrichment_prompt_from_prefix(
-        prompt_prefix,
-        base_row=base_row,
-        reference_examples=reference_examples,
-        reference_heading=reference_heading,
-        primary_reference_row=primary_reference_row,
-        primary_reference_heading=primary_reference_heading,
-        knowledge_chunks=knowledge_chunks,
-        knowledge_source_type=knowledge_source_type,
-    )
-
-
 def build_tabular_non_text_generation_prompt_prefix(
     *,
     ordered_columns: Sequence[str],
@@ -265,8 +58,10 @@ def build_tabular_non_text_generation_prompt_prefix(
         "You generate non-TEXT fields for synthetic tabular rows.\n"
         f"{_domain_context_block(domain_context)}"
         "Important:\n"
-        "- You are not reconstructing original records.\n"
-        "- You are creating new synthetic records in the same content category.\n"
+        "- Do not reconstruct an original record.\n"
+        "- You are creating a new synthetic record in the same content category.\n"
+        "- Reference rows are examples, not ground truth.\n"
+        "- Column profiles describe plausibility, not strict rules.\n"
         "Task:\n"
         "- Generate only the non-TEXT fields first.\n"
         "- TEXT fields must not be generated in this step.\n"
@@ -277,8 +72,15 @@ def build_tabular_non_text_generation_prompt_prefix(
         "- You can use them as inspiration and orientation, but do not copy exact combinations of details.\n"
         "Consistency rules:\n"
         f"- Generate coherent values for these non-TEXT columns: {list(non_text_columns)}\n"
+        "- Check for numerical contradictions.\n"
+        "- Check for impossible or illogical date/order relations.\n"
+        "- Check for boolean inconsistencies.\n"
+        "- Check for other implausible combinations of structured values.\n"
         "- Determine the dominant content category of the row from the non-TEXT fields, especially keywords.\n"
         "- The generated non-TEXT values must be internally coherent.\n"
+        "- If one chosen value implies constraints on other fields, satisfy those constraints consistently.\n"
+        "- Avoid derived, temporal, categorical, or semantic contradictions.\n"
+        "- Keep unusual but plausible combinations possible.\n"
         "Output rules:\n"
         "- Return ONLY valid JSON with this exact shape:\n"
         f"{shape_text}\n"
@@ -331,6 +133,7 @@ def build_tabular_text_completion_prompt_prefix(
         "Important:\n"
         "- The non-TEXT fields are already fixed for this row.\n"
         "- Do not modify any non-TEXT field in this step.\n"
+        "- Treat the structured fields as ground truth for this row.\n"
         "- You are not reconstructing an original record.\n"
         "- You are creating a new synthetic record in the same content category.\n"
         "Reference usage:\n"
@@ -341,6 +144,8 @@ def build_tabular_text_completion_prompt_prefix(
         f"- Generate realistic values for TEXT columns: {', '.join(text_columns)}\n"
         "- Determine the dominant content category of the row from the non-TEXT fields, especially keywords.\n"
         "- Every generated TEXT field must match this dominant content category.\n"
+        "- If a structured value is the kind of fact that is typically mentioned explicitly in texts of this kind, the generated TEXT must use that same value.\n"
+        "- If such a fact is normally verbalized, do not omit it and do not replace it with a conflicting value.\n"
         "- Use an appropriate length. Do not imitate the reference length.\n"
         "- Avoid contradictions between the structured row and the generated TEXT.\n"
         "Output rules:\n"
@@ -390,16 +195,29 @@ def build_tabular_generation_prompt_prefix(
         "- Phase 1: Determine or repair the non-TEXT fields.\n"
         "- Phase 2: Generate the TEXT fields from the repaired row.\n"
         "- Return only the final rows JSON.\n"
+        "Phase 1 rules:\n"
+        "- Do not reconstruct an original record.\n"
+        "- Keep values unchanged unless they are clearly inconsistent.\n"
+        "- Reference rows are examples, not ground truth.\n"
+        "- Column profiles describe plausibility, not strict rules.\n"
+        "- Make the smallest number of changes necessary.\n"
         "Reference usage:\n"
         "- Column schema and profiles define the allowed structure, value types, value ranges, and typical distributions.\n"
         "- Reference examples are supporting examples for structure, style, realistic combinations, and level of detail.\n"
         "- You can use them as inspiration and orientation, but do not copy sentences, exact values, exact sequences, placeholder names, complete section content, or characteristic combinations of details.\n"
         "Row repair rules:\n"
         "- Each generated row must be internally coherent across structured and TEXT columns.\n"
+        "- Check for numerical contradictions.\n"
+        "- Check for impossible or illogical date/order relations.\n"
+        "- Check for boolean inconsistencies.\n"
+        "- Check for other implausible combinations of structured values.\n"
         "- Before generating any TEXT field, determine the dominant content category of the row from the non-TEXT fields, especially keywords.\n"
-        "- If a row is obviously inconsistent, determine the most coherent structured values from the strongest reference signals and the remaining structured fields first.\n"
-        "- If you generate TEXT for a domain, all non-TEXT fields that contradict this domain must be corrected in the JSON output.\n"
-        "- Then minimally correct the contradictory non-TEXT fields before generating TEXT.\n"
+        "- Fix clearly derived or calculated fields when they are inconsistent.\n"
+        "- Fix impossible temporal relations.\n"
+        "- Fix categorical or semantic contradictions.\n"
+        "- Avoid changing identity-like fields unless clearly necessary.\n"
+        "- Keep unusual but plausible values unchanged.\n"
+        "- If you generate TEXT for a domain, minimally correct only the contradictory non-TEXT fields needed to support a coherent final row.\n"
         "Text generation rules:\n"
         "- Every generated TEXT field must match the dominant content category.\n"
         "- Use an appropriate length. Do not imitate the reference length.\n"
@@ -472,3 +290,4 @@ def build_tabular_generation_prompt(
         num_rows=num_rows,
         few_shot_examples=few_shot_examples,
     )
+

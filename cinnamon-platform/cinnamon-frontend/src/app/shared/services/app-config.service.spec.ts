@@ -1,13 +1,14 @@
-import { TestBed } from '@angular/core/testing';
-
+import { HttpClient } from '@angular/common/http';
 import { AppConfigService } from './app-config.service';
 
 describe('AppConfigService', () => {
   let service: AppConfigService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(AppConfigService);
+    service = new AppConfigService(
+      {} as HttpClient,
+      { addError: jasmine.createSpy('addError') } as any,
+    );
   });
 
   it('should be created', () => {

@@ -5,10 +5,11 @@ export class ConfigurationInputDefinition {
     type: ConfigurationInputType
     label: string
     description: string
-    default_value: string | number | number[]
+    default_value: string | number | number[] | boolean | Array<{name: string, description: string}>
     mandatory: boolean = true
     multiline?: boolean
     rows?: number
+    ui_hidden?: boolean
     invert: string | null
     min_value: number | null
     max_value: number | null

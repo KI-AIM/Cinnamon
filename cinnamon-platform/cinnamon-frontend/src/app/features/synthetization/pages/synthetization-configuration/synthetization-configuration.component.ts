@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Steps } from "@core/enums/steps";
+import { ProjectService } from "@shared/services/project.service";
 import { AlgorithmService, ConfigurationInfo } from "../../../../shared/services/algorithm.service";
 import { SynthetizationService } from "../../services/synthetization.service";
-import { Observable, Subject, takeUntil } from "rxjs";
+import { Observable, Subject, switchMap, takeUntil } from "rxjs";
 import {
     AdditionalConfig,
     ConfigurationAdditionalConfigs
@@ -56,6 +57,7 @@ export class SynthetizationConfigurationComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
 
     constructor(
+        private readonly projectService: ProjectService,
         private readonly synthService: SynthetizationService,
         private readonly textSynthesisConfigurationService: TextSynthesisConfigurationService,
     ) {
@@ -84,22 +86,23 @@ export class SynthetizationConfigurationComponent implements OnInit, OnDestroy {
         );
         this.additionalConfigs = new ConfigurationAdditionalConfigs(configs);
 
-        this.synthService.loadStudyDefinition()
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((def: AlgorithmDefinition) => {
-                this.studyDefinition = def;
-                this.htFormGroup = this.buildHtFormGroup(def);
-                this.htFormGroup.valueChanges
-                    .pipe(takeUntil(this.destroy$))
-                    .subscribe(() => this.pushHtConfig());
-                // Apply a config that arrived before the form existed, else push
-                // the form defaults.
-                if (this.pendingHtConfig) {
-                    this.applyLoadedHtConfig(this.pendingHtConfig);
-                } else {
-                    this.pushHtConfig();
-                }
-            });
+        this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap((projectId) => this.synthService.loadStudyDefinition(projectId)),
+            takeUntil(this.destroy$),
+        ).subscribe((def: AlgorithmDefinition) => {
+            this.studyDefinition = def;
+            this.htFormGroup = this.buildHtFormGroup(def);
+            this.htFormGroup.valueChanges
+                .pipe(takeUntil(this.destroy$))
+                .subscribe(() => this.pushHtConfig());
+            // Apply a config that arrived before the form existed, else push
+            // the form defaults.
+            if (this.pendingHtConfig) {
+                this.applyLoadedHtConfig(this.pendingHtConfig);
+            } else {
+                this.pushHtConfig();
+            }
+        });
 
         // Hydrate the toggle + form when a configuration is uploaded/loaded.
         this.synthService.hyperparameterConfigLoaded$

@@ -87,6 +87,7 @@ public class UserService implements UserDetailsService {
 
 	/**
 	 * Registers a new user with the given username and password.
+	 * The user gets the role {@link UserRole#ROLE_USER}.
 	 *
 	 * @param username The username of the new user.
 	 * @param rawPassword The raw password of the new user.
@@ -95,6 +96,21 @@ public class UserService implements UserDetailsService {
 	 */
 	@Transactional
 	public UserEntity register(final String username, final String rawPassword) throws BadUserException {
+		return register(username, rawPassword, Set.of(UserRole.ROLE_USER));
+	}
+
+	/**
+	 * Registers a new user with the given username, password and roles.
+	 *
+	 * @param username The username of the new user.
+	 * @param rawPassword The raw password of the new user.
+	 * @param roles The roles of the new user.
+	 * @return The newly created user entity.
+	 * @throws BadUserException If a user with the given username already exists.
+	 */
+	@Transactional
+	public UserEntity register(final String username, final String rawPassword, final Set<UserRole> roles)
+			throws BadUserException {
 		if (doesUserWithUsernameExist(username)) {
 			throw new BadUserException(BadUserException.ALREADY_EXISTS,
 			                           "User with username " + username + " already exists");
@@ -103,10 +119,10 @@ public class UserService implements UserDetailsService {
 		final UserEntity userEntity = new UserEntity();
 		userEntity.setUsername(username);
 		userEntity.setPassword(passwordEncoder.encode(rawPassword));
-		userEntity.addRole(UserRole.ROLE_USER);
+		userEntity.setUserRoles(roles);
 
 		userRepository.save(userEntity);
-		log.debug("Created new user with username '{}'", username);
+		log.debug("Created new user with username '{}' and roles {}", username, roles);
 
 		return userEntity;
 	}
@@ -225,17 +241,25 @@ public class UserService implements UserDetailsService {
 	}
 
 	/**
-	 * Deletes all users.
+	 * Deletes all users whose roles are all contained in the given set of roles.
+	 * Users with at least one role that is not contained in the given set are kept.
+	 * Consequently, no user is deleted if the given set is empty.
 	 *
+	 * @param roles The roles that are allowed to be deleted.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
 	 * @throws InternalInvalidStateException       If a running process has no server instance assigned.
 	 */
 	@Transactional
-	public void deleteAllUsers()
+	public void deleteUsersWithRoles(final Set<UserRole> roles)
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
-		final var users = userRepository.findAll();
-		for (final var user : users) {
-			deleteUser(user);
+		if (roles.isEmpty()) {
+			return;
+		}
+
+		for (final var user : userRepository.findAll()) {
+			if (!user.getUserRoles().isEmpty() && roles.containsAll(user.getUserRoles())) {
+				deleteUser(user);
+			}
 		}
 	}
 

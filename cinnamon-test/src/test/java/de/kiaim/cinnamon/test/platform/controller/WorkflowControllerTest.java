@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.cinnamon.platform.model.dto.WorkflowInformation;
 import de.kiaim.cinnamon.platform.model.entity.DataProcessingEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.StepOutputEncoding;
+import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.service.ExternalConfigurationService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 
 import java.util.ArrayList;
@@ -32,7 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithMockWebServer
-@WithUserDetails("test_user")
+@WithUserDetails(value = "test_user", setupBefore = TestExecutionEvent.TEST_EXECUTION)
 public class WorkflowControllerTest extends ControllerTest {
 
 	private MockWebServer mockBackEnd;
@@ -43,6 +45,8 @@ public class WorkflowControllerTest extends ControllerTest {
 
 	@BeforeEach
 	public void setup() {
+		getTestUser().addRole(UserRole.ROLE_API);
+
 		externalConfigurationService.setCachedAvailableAlgorithms("anonymization",
 		                                                          AlgorithmTestHelper.generateAvailableAlgorithms());
 		externalConfigurationService.setCachedAlgorithmDefinition("anonymization", "/algorithmA",

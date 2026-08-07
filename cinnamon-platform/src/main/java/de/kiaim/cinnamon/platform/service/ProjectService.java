@@ -1,20 +1,28 @@
 package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
+import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
+import de.kiaim.cinnamon.platform.model.dto.ProjectOverview;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.model.mapper.ProjectConfigurationMapper;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
-import de.kiaim.cinnamon.platform.repository.UserRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Service class for managing projects.
@@ -23,10 +31,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Log4j2
 public class ProjectService {
 
+	public static final int GEN_EXTERNAL_ID_MAX_RETRIES = 10;
+
 	private final CinnamonConfiguration cinnamonConfiguration;
 
 	private final ProjectRepository projectRepository;
-	private final UserRepository userRepository;
 
 	private final ProjectConfigurationMapper projectConfigurationMapper;
 
@@ -37,7 +46,6 @@ public class ProjectService {
 	public ProjectService(
 			final CinnamonConfiguration cinnamonConfiguration,
 			final ProjectRepository projectRepository,
-			final UserRepository userRepository,
 			final ProjectConfigurationMapper projectConfigurationMapper,
 			final DatabaseService databaseService,
 			final ProcessService processService,
@@ -45,61 +53,10 @@ public class ProjectService {
 	) {
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.projectRepository = projectRepository;
-		this.userRepository = userRepository;
 		this.projectConfigurationMapper = projectConfigurationMapper;
 		this.databaseService = databaseService;
 		this.processService = processService;
 		this.stepService = stepService;
-	}
-
-	/**
-	 * Checks if the given user has a project.
-	 *
-	 * @param user The user to check.
-	 * @return If the user ha a project.
-	 */
-	public boolean hasProject(final UserEntity user) {
-		final UserEntity user2 = userRepository.findById(user.getEmail()).get();
-		return user2.getProject() != null;
-	}
-
-	/**
-	 * Creates and returns a new project for the given user if they do not have one.
-	 * Otherwise, returns the existing project.
-	 * Creates a random seed.
-	 *
-	 * @param user The user.
-	 * @return The projects of the user.
-	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
-	 */
-	@Transactional
-	public ProjectEntity createProject(final UserEntity user) throws InternalApplicationConfigurationException {
-		return createProject(user, System.currentTimeMillis());
-	}
-
-	/**
-	 * Creates and returns a new project for the given user if they do not have one.
-	 * Otherwise, returns the existing project.
-	 *
-	 * @param user        The user.
-	 * @param projectSeed The seed used for the project.
-	 * @return The projects of the user.
-	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
-	 */
-	@Transactional
-	public ProjectEntity createProject(final UserEntity user,
-	                                   final long projectSeed) throws InternalApplicationConfigurationException {
-		if (hasProject(user)) {
-			return user.getProject();
-		}
-
-		final ProjectEntity project = createProject(projectSeed);
-		user.setProject(project);
-		// TODO change if projects are decoupled form users
-		project.getProjectConfiguration().setProjectName(user.getEmail());
-
-		log.debug("Created project for user '{}'", user.getEmail());
-		return userRepository.save(user).getProject();
 	}
 
 	/**
@@ -108,9 +65,13 @@ public class ProjectService {
 	 * @param projectSeed The seed used for the projects.
 	 * @return The project.
 	 * @throws InternalApplicationConfigurationException If a referenced step is not configured.
+	 * @throws InternalErrorException                    If the project could not be created.
 	 */
-	public ProjectEntity createProject(final long projectSeed) throws InternalApplicationConfigurationException {
+	public ProjectEntity createProject(final long projectSeed, final String projectName)
+			throws InternalApplicationConfigurationException, InternalErrorException {
 		final ProjectEntity project = new ProjectEntity(projectSeed);
+		project.setExternalId(generateUUID());
+		project.getProjectConfiguration().setProjectName(projectName);
 
 		final PipelineEntity pipeline = new PipelineEntity();
 		project.addPipeline(pipeline);
@@ -161,21 +122,115 @@ public class ProjectService {
 	}
 
 	/**
-	 * Returns the project of the user.
-	 * Creates a new project, if the user does not have one.
-	 * TODO: Add projectId parameter if multiple projects are supported
+	 * See {@link #getProject(UserEntity, UUID)} for details.
 	 *
-	 * @param user The user of the project.
-	 * @return The project.
+	 * @throws BadArgumentException If the project ID is not a valid UUID.
+	 * @throws BadProjectException If the project is not found, or the user does not own the project.
 	 */
-	@Transactional
-	public ProjectEntity getProject(final UserEntity user) {
-		if (!hasProject(user)) {
-			throw new RuntimeException("No project");
+	@Transactional(readOnly = true)
+	public ProjectEntity getProject(final UserEntity user, final String projectId)
+			throws BadArgumentException, BadProjectException {
+		UUID workflowIdAsUUID;
+
+		try {
+			workflowIdAsUUID = UUID.fromString(projectId);
+		} catch (final IllegalArgumentException e) {
+			throw new BadArgumentException(BadArgumentException.INVALID_PROJECT_ID, "Invalid project ID format");
 		}
 
-		final UserEntity user2 = userRepository.findById(user.getEmail()).get();
-		return user2.getProject();
+
+		return getProject(user, workflowIdAsUUID);
+	}
+
+	/**
+	 * Returns the project entity with the given ID owned by the given user.
+	 *
+	 * @param user      The user.
+	 * @param projectId The project ID.
+	 * @return The project entity.
+	 * @throws BadProjectException If the project is not found, or the user does not own the project.
+	 */
+	@Transactional(readOnly = true)
+	public ProjectEntity getProject(final UserEntity user, final UUID projectId) throws BadProjectException {
+		final Optional<ProjectEntity> project = projectRepository.findByExternalId(projectId);
+		if (project.isEmpty() || project.get().getUser() == null ||
+		    !project.get().getUser().getUsername().equals(user.getUsername())) {
+			throw new BadProjectException(BadProjectException.NOT_FOUND,
+			                               "Project with ID " + projectId + " not found");
+		}
+
+		return project.get();
+	}
+
+	/**
+	 * Returns a DTO with the project information for the given user and project ID.
+	 *
+	 * @param user      The owner of the project.
+	 * @param projectId The project ID.
+	 * @return The project information DTO.
+	 * @throws BadArgumentException If the project ID is not a valid UUID.
+	 * @throws BadProjectException  If the project is not found, or the user does not own the project.
+	 */
+	@Transactional(readOnly = true)
+	public ProjectInfo getProjectInfo(final UserEntity user, final String projectId)
+			throws BadArgumentException, BadProjectException {
+		final ProjectEntity project = getProject(user, projectId);
+		return getProjectInfo(project);
+	}
+
+	/**
+	 * Returns a DTO with the project information for the given project entity.
+	 *
+	 * @param project The project entity.
+	 * @return The project information DTO.
+	 */
+	@Transactional(readOnly = true)
+	public ProjectInfo getProjectInfo(final ProjectEntity project) {
+		return new ProjectInfo(project.getExternalId().toString(), project.getProjectConfiguration().getProjectName());
+	}
+
+	/**
+	 * Returns an overview of the given project.
+	 *
+	 * @param project The project.
+	 * @return The project overview.
+	 */
+	@Transactional(readOnly = true)
+	public ProjectOverview getProjectOverview(final ProjectEntity project) {
+		final List<StageStatus> stageStatuses = new ArrayList<>();
+		final PipelineEntity pipeline = project.getPipelines().get(0);
+		for (final ExecutionStepEntity stage : pipeline.getStages()) {
+			stageStatuses.add(stage.getStatus());
+		}
+
+		return new ProjectOverview(getProjectInfo(project),
+		                           project.getStatus().getCurrentStep(),
+		                           stageStatuses);
+	}
+
+	/**
+	 * Returns all workflows that have expired.
+	 *
+	 * @return List of expired workflows.
+	 */
+	@Transactional(readOnly = true)
+	public List<ProjectEntity> getExpiredProjects() {
+		final Timestamp expirationDate = new Timestamp(System.currentTimeMillis());
+		return projectRepository.findAllByExpirationDateBefore(expirationDate);
+	}
+
+	/**
+	 * Deletes the given project.
+	 *
+	 * @param project The project to delete.
+	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
+	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
+	 */
+	@Transactional
+	public void deleteProject(final ProjectEntity project)
+			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+		final UserEntity user = project.getUser();
+		deleteProject(user, project);
 	}
 
 	/**
@@ -183,18 +238,16 @@ public class ProjectService {
 	 * If a pipeline in the project is running, the process is stopped.
 	 *
 	 * @param user The user.
+	 * @param project The project.
 	 * @throws InternalDataSetPersistenceException If the data set could not be deleted due to an internal error.
 	 * @throws InternalInvalidStateException       If the running process has no server instance assigned.
 	 */
 	@Transactional
-	public void deleteProject(final UserEntity user)
+	public void deleteProject(final UserEntity user, final ProjectEntity project)
 			throws InternalDataSetPersistenceException, InternalInvalidStateException {
-		if (hasProject(user)) {
-			final ProjectEntity p = getProject(user);
-			resetEntireProject(p);
-			user.setProject(null);
-			log.debug("Deleted project for user '{}'", user.getEmail());
-		}
+		resetEntireProject(project);
+		user.removeProject(project);
+		log.debug("Deleted project for user '{}'", user.getUsername());
 	}
 
 	/**
@@ -259,7 +312,7 @@ public class ProjectService {
 	@Transactional
 	public void setMode(final ProjectEntity project, final Mode mode) {
 		project.getStatus().setMode(mode);
-		userRepository.save(project.getUser());
+		projectRepository.save(project);
 	}
 
 	/**
@@ -309,4 +362,26 @@ public class ProjectService {
 		processService.deletePipeline(project);
 		databaseService.deleteOriginalData(project);
 	}
+
+	/**
+	 * Generates a unique workflow ID.
+	 *
+	 * @return The generated workflow ID.
+	 * @throws InternalErrorException If the ID could not be generated after 10 retries.
+	 */
+	private UUID generateUUID() throws InternalErrorException {
+		UUID uuid;
+		for (int i = 0; i < GEN_EXTERNAL_ID_MAX_RETRIES; i++) {
+			uuid = UUID.randomUUID();
+
+			if (projectRepository.countByExternalId(uuid) == 0) {
+				return uuid;
+			}
+		}
+
+		throw new InternalErrorException(InternalErrorException.GEN_EXTERNAL_ID_MAX_RETRIES,
+		                                 "Failed to generate a unique workflow ID after " +
+		                                 GEN_EXTERNAL_ID_MAX_RETRIES+ " retries! Please try again later.");
+	}
+
 }

@@ -90,7 +90,7 @@ public abstract class BadRequestException extends ApiException {
 	public static final String USER = "16";
 
 	/**
-	 * Error class code for {@link BadWorkflowException}.
+	 * Error class code for {@link BadProjectException}.
 	 */
 	public static final String WORKFLOW = "17";
 

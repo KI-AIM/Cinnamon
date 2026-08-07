@@ -37,6 +37,12 @@ app-navigation{
     flex-wrap: nowrap !important;
 }
 
+.config-input-divider {
+    border-bottom: 1px solid @color-gray-border;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
 .config-input-row {
     display: flex;
     flex-direction: row;
@@ -167,7 +173,7 @@ app-navigation{
     border-radius: 0.3rem;
     color: @color-text;
     padding: 1rem;
-    box-shadow: rgba(100, 100, 111, 0.2) 0 1px 5px 0;
+    box-shadow: @shadow-box;
 }
 
 .box-name {
@@ -176,6 +182,34 @@ app-navigation{
     font-weight: bold;
     padding-bottom: 0.4rem;
     margin-bottom: 0.25rem;
+}
+
+.box-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: @color-gray-background;
+    border-radius: 0.3rem 0.3rem 0 0;
+    margin: -1rem -1rem 1rem -1rem;
+    padding: 0.75rem 1rem;
+    font-weight: bold;
+}
+
+.box-header-expanded {
+    height: var(--mat-expansion-header-expanded-state-height);
+}
+
+.box-header-danger {
+    background-color: rgba(@color-failure-background, 0.4);
+    color: @color-failure-text;
+}
+
+.box-header-title {
+    font-size: 1.5rem;
+}
+
+.box-header-icon {
+    display: flex;
 }
 
 .vertical-boxes {
@@ -375,7 +409,7 @@ app-navigation{
 }
 
 .workstep-expansion-panel {
-    box-shadow: rgba(100, 100, 111, 0.2) 0 1px 5px 0 !important;
+    box-shadow: @shadow-box !important;
 }
 
 .workstep-expansion-panel {

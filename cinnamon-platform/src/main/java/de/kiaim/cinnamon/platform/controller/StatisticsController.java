@@ -18,10 +18,7 @@ import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Controller for statistics.
@@ -30,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author Daniel Preciado-Marquez
  */
 @RestController
-@RequestMapping("/api/statistics")
+@RequestMapping("/api/project/{projectId}/statistics")
 @Tag(name = "/api/statistics", description = "API for managing statistics.")
 public class StatisticsController {
 
@@ -55,15 +52,15 @@ public class StatisticsController {
 	})
 	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
 	public StatisticsResponse getStatistics(
+			@PathVariable final String projectId,
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@Schema(allowableValues = {"cancel"},
 			        description = "If the value is 'cancel', the process calculating the statistics will be cancelled.")
 			@RequestParam(name = "action", required = false) final String action,
 			@AuthenticationPrincipal final UserEntity requestUser
-	)
-			throws InternalIOException, InternalDataSetPersistenceException, InternalRequestException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException, BadDataSetIdException, BadStepNameException, InternalApplicationConfigurationException, BadConfigurationNameException, BadAlgorithmException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity projectEntity =  projectService.getProject(user);
+	) throws ApiException {
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
 		if ("cancel".equals(action)) {
 			return statisticsService.cancelStatistics(projectEntity, dataSetSource);

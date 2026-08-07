@@ -1,10 +1,8 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
-import de.kiaim.cinnamon.platform.model.validation.EmailAvailable;
-import de.kiaim.cinnamon.platform.model.validation.PasswordMatches;
+import de.kiaim.cinnamon.platform.model.validation.Username;
 import de.kiaim.cinnamon.platform.model.validation.PasswordRequirements;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,13 +11,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-@PasswordMatches
-public class RegisterRequest {
+public class RegisterRequest implements MatchingPasswords {
 
-	@Schema(description = "Email address of the user.", example = "mail@example.de")
-	@NotBlank
-	@EmailAvailable
-	private String email;
+	@Schema(description = "Username of the user.", example = "john_doe")
+	@Username
+	private String username;
 
 	@Schema(description = "Password of the user.", example = "changeme")
 	@PasswordRequirements

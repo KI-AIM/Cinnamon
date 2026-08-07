@@ -12,7 +12,7 @@ export class InfoCardComponent {
      * Defines the color of the card.
      * Allowed values are: card-success, card-warn, card-failure
      */
-    @Input() typeClass: string;
+    @Input({required: true}) typeClass!: 'card-success' | 'card-warn' | 'card-failure' | string;
 
     @Output() public onClose: EventEmitter<void> = new EventEmitter();
 

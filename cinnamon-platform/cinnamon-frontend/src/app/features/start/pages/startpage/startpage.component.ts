@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { TitleService } from 'src/app/core/services/title-service.service';
+import { StateManagementService } from "@core/services/state-management.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { Mode } from 'src/app/core/enums/mode';
 import { Steps } from 'src/app/core/enums/steps';
 import { StatusService } from "../../../../shared/services/status.service";
 import { Observable, of, switchMap } from "rxjs";
-import { Router } from "@angular/router";
 import { Status } from "../../../../shared/model/status";
 
 @Component({
@@ -21,11 +21,10 @@ export class StartpageComponent implements OnInit {
     protected status$: Observable<Status>
 
     constructor(
-        private readonly router: Router,
+        private readonly errorHandlingService: ErrorHandlingService,
+        private readonly stateManagementService: StateManagementService,
         public statusService: StatusService,
-        private titleService: TitleService,
     ) {
-        this.titleService.setPageTitle("Welcome!");
     }
 
     ngOnInit(): void {
@@ -43,19 +42,14 @@ export class StartpageComponent implements OnInit {
         this.statusService.setMode(mode).pipe(
             switchMap(() => {
                 if (!isCompleted) {
-                    return this.statusService.updateNextStep(Steps.UPLOAD);
+                    return this.stateManagementService.setAndRouteToStep(Steps.UPLOAD);
                 } else {
                     return of(null);
                 }
             }),
         ).subscribe({
-            next: () => {
-                if (!isCompleted) {
-                    this.router.navigateByUrl('/upload');
-                }
-            },
             error: (err) => {
-                console.log(err)
+                this.errorHandlingService.addError(err);
             }
         });
     }

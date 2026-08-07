@@ -25,7 +25,7 @@ public class UserServiceTest extends ContextRequiredTest {
 		var passwordEncoded = passwordEncoder.encode(password);
 
 		var user = new UserEntity();
-		user.setEmail(email);
+		user.setUsername(email);
 		user.setPassword(passwordEncoded);
 
 		assertDoesNotThrow(() -> userService.confirmUser(request, user));
@@ -41,7 +41,7 @@ public class UserServiceTest extends ContextRequiredTest {
 		var passwordEncoded = passwordEncoder.encode(password);
 
 		var user = new UserEntity();
-		user.setEmail(email);
+		user.setUsername(email);
 		user.setPassword(passwordEncoded);
 
 		var e = assertThrows(BadUserConfirmationException.class, () -> userService.confirmUser(request, user));
@@ -58,11 +58,21 @@ public class UserServiceTest extends ContextRequiredTest {
 		var passwordEncoded = passwordEncoder.encode(password);
 
 		var user = new UserEntity();
-		user.setEmail(email);
+		user.setUsername(email);
 		user.setPassword(passwordEncoded);
 
 		var e = assertThrows(BadUserConfirmationException.class, () -> userService.confirmUser(request, user));
 		assertEquals("PLATFORM_1_12_2", e.getErrorCode());
+	}
+
+	@Test
+	public void createProject() {
+		var user = assertDoesNotThrow(() -> userService.register("email", "password"));
+
+		var project = assertDoesNotThrow(() -> userService.createProject(user, null, null));
+
+		assertEquals(1, user.getProjects().size(), "Unexpected number of created projects!");
+		assertEquals("Project 1", project.getProjectConfiguration().getProjectName());
 	}
 
 }

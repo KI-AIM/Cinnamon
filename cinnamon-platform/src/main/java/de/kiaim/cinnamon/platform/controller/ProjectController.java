@@ -6,7 +6,9 @@ import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.configuration.project.ProjectConfigurationDTO;
+import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
+import de.kiaim.cinnamon.platform.model.dto.ProjectInfo;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.StatusEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -34,7 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
-@RequestMapping("/api/project")
+@RequestMapping("/api/project/{projectId}")
 @Tag(name = "/api/project", description = "API for managing projects.")
 public class ProjectController {
 
@@ -53,48 +55,118 @@ public class ProjectController {
 		this.userService = userService;
 	}
 
-	@Operation(summary = "Creates a projects with the given mode.",
-	           description = "Creates a projects with the given mode.")
+	@Operation(summary = "Returns the project with the given ID.",
+	           description = "Returns the project with the given ID.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Returns the project with the given ID."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
+	@GetMapping(value = "")
+	public ProjectInfo getProject(
+			@PathVariable final String projectId,
+			@AuthenticationPrincipal final UserEntity user
+	) throws ApiException {
+		return projectService.getProjectInfo(user, projectId);
+	}
+
+	@Operation(summary = "Deletes a project.",
+	           description = "Deletes a project.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Response contains the status.",
-			             content = @Content(schema = @Schema(implementation = StatusEntity.class))),
+			             description = "The project was successfully deleted."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "403",
+			             description = "The credentials do not match the authenticated user.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
-	@PostMapping(value = "",
-	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public StatusEntity createProject(
-			@Parameter(description = "Mode of the project.", required = true)
-			@RequestParam() final Mode mode,
-			@AuthenticationPrincipal final UserEntity user
-	) {
-		final ProjectEntity project = projectService.getProject(user);
-		projectService.setMode(project, mode);
-		return project.getStatus();
+	@DeleteMapping(value = "",
+	               consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public void deleteProject(
+			@PathVariable final String projectId,
+			@ParameterObject @Valid final ConfirmUserRequest confirmUserRequest,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByUsernameOrThrow(requestUser.getUsername());
+		userService.confirmUser(confirmUserRequest, user);
+		final ProjectEntity project = projectService.getProject(user, projectId);
+		projectService.deleteProject(user, project);
 	}
 
 	@Operation(summary = "Returns the status of the user's project.",
 	           description = "Returns the status of the user's project.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "Response contains the status.",
-			             content = @Content(schema = @Schema(implementation = StatusEntity.class))),
+			             description = "Response contains the status."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "/status",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public StatusEntity getProjectStatus(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
-		return projectService.getProject(requestUser).getStatus();
+	) throws ApiException {
+		return projectService.getProject(requestUser, projectId).getStatus();
 	}
 
+	@Operation(summary = "Sets the mode of the user's project.",
+	           description = "Sets the mode of the user's project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully set the mode."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
+	@PostMapping(value = "/mode")
+	public void postMode(
+			@PathVariable final String projectId,
+			@RequestParam(required = true) final Mode mode,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
+		projectService.setMode(project, mode);
+	}
+
+	@Operation(summary = "Updates the current step of the user's project.",
+	           description = "Updates the current step of the user's project.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully updated the step."),
+			@ApiResponse(responseCode = "400", description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
 	@PostMapping(value = "/step")
 	public void postStep(
+			@PathVariable final String projectId,
 			@RequestParam(required = true) final Step step,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+	) throws ApiException {
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.updateCurrentStep(project, step);
 	}
 
@@ -105,9 +177,12 @@ public class ProjectController {
 			             description = "Successfully reset the project.",
 			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
 			@ApiResponse(responseCode = "400",
-			             description = "The given target is invalid or the project has a running process.",
+			             description = "The project ID is invalid, the given target is invalid, or the project has a running process.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "Resetting the project failed.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
@@ -115,13 +190,13 @@ public class ProjectController {
 	})
 	@DeleteMapping(value = "/reset")
 	public void resetProject(
+			@PathVariable final String projectId,
 			@Parameter(description = "Target identifier to reset. If missing or empty, the entire project is reset.")
 			@RequestParam(required = false) final String target,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadArgumentException, BadStateException, BadStepNameException, InternalDataSetPersistenceException,
-			         InternalInvalidStateException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+	) throws ApiException {
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		projectService.resetProject(project, target);
 	}
 
@@ -131,12 +206,20 @@ public class ProjectController {
 			@ApiResponse(responseCode = "200",
 			             description = "Response contains the configurations.",
 			             content = @Content(schema = @Schema(implementation = ProjectConfigurationDTO.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "/configuration", produces = {MediaType.APPLICATION_JSON_VALUE})
 	public ProjectConfigurationDTO getProjectConfiguration(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
-		final var project = projectService.getProject(requestUser);
+	) throws ApiException {
+		final var project = projectService.getProject(requestUser, projectId);
 		return projectService.exportProjectConfiguration(project);
 	}
 
@@ -144,15 +227,22 @@ public class ProjectController {
 	           description = "Updates the configuration of the user's project.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-			             description = "The configuration has been updated.",
-			             content = @Content()),
+			             description = "The configuration has been updated."),
+			@ApiResponse(responseCode = "400",
+			             description = "The given project ID is invalid.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@PutMapping(value = "/configuration", consumes = {MediaType.APPLICATION_JSON_VALUE})
 	public void setProjectConfiguration(
+			@PathVariable final String projectId,
 			@RequestBody @Valid final ProjectConfigurationDTO projectConfigurationDTO,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) {
-		final var project = projectService.getProject(requestUser);
+	) throws ApiException {
+		final var project = projectService.getProject(requestUser, projectId);
 		projectService.updateProjectConfiguration(project, projectConfigurationDTO);
 	}
 
@@ -165,9 +255,12 @@ public class ProjectController {
 			             content = @Content(schema = @Schema(implementation = Void.class),
 			                                mediaType = CustomMediaType.APPLICATION_ZIP_VALUE)),
 			@ApiResponse(responseCode = "400",
-			             description = "No data exist.",
+			             description = "The project ID is invalid, or no data exist.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 			@ApiResponse(responseCode = "500",
 			             description = "The ZIP file could not be created.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
@@ -176,13 +269,14 @@ public class ProjectController {
 	@GetMapping(value = "/zip",
 	            produces = {CustomMediaType.APPLICATION_ZIP_VALUE})
 	public ResponseEntity<StreamingResponseBody> getZip(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser,
 			@ParameterObject final ProjectExportParameter projectExportParameter,
 			final HttpServletResponse response
-	) throws BadConfigurationNameException, BadStateException, BadStepNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		return exportService.createZipFile(project, response, projectExportParameter);
 	}
@@ -195,21 +289,25 @@ public class ProjectController {
 			             content = @Content(schema = @Schema(implementation = String.class),
 			                                mediaType = MediaType.ALL_VALUE)),
 			@ApiResponse(responseCode = "400",
-			             description = "No the job or the file does not exist.",
+			             description = "The project ID is invalid, or the job or the file does not exist.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "404", description = "The project with the given ID does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
 	})
 	@GetMapping(value = "/resultFile", produces = {MediaType.ALL_VALUE})
 	@Transactional(readOnly = true)
 	public ResponseEntity<Object> getResultFile(
+			@PathVariable final String projectId,
 			@RequestParam final String executionStepName,
 			@RequestParam final String processStepName,
 			@RequestParam final String name,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws BadQueryException, BadStepNameException {
+	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Stage stage = stepService.getStageConfiguration(executionStepName);
 		final Job job = stepService.getStepConfiguration(processStepName);

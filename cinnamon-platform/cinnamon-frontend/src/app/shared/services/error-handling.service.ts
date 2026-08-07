@@ -52,7 +52,7 @@ export class ErrorHandlingService {
         }
 
         const notification = new AppNotification(errorMessage, "failure");
-        notification.project = this.userService.getUser().email || null;
+        notification.project = this.userService.getUser().userInfo.username || null;
         this.notificationService.addNotification(notification);
     }
 

@@ -59,12 +59,13 @@ export class DataInspectionComponent implements OnInit, OnDestroy {
                 switchMap(() => {
                     return timer(0, 2000).pipe(
                         takeUntil(this.cancelSubject),
-                        switchMap(() => this.statisticsService.fetchStatistics(this.sourceDataset!)),
+                        switchMap(() => this.statisticsService.getStatistics(this.sourceDataset!)),
                         distinctUntilKeyChanged('status'),
                         tap(value => this.statisticsSubject.next(value)),
                         filter(data => data.status !== ProcessStatus.RUNNING && data.status !== ProcessStatus.SCHEDULED),
                         take(1),
-                        catchError(() => {
+                        catchError((e) => {
+                            console.error(e);
                             this.errorHandlingService.addError("Failed to calculate statistics!");
                             this.statisticsSubject.next(new StatisticsResponse(ProcessStatus.ERROR));
                             return of(new StatisticsResponse(ProcessStatus.ERROR));

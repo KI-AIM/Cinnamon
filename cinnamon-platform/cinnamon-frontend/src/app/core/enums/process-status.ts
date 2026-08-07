@@ -9,3 +9,12 @@ export enum ProcessStatus {
     SKIPPED = "SKIPPED",
     OUTDATED = "OUTDATED",
 }
+
+export enum StageStatus {
+    ERROR = "ERROR",
+    NOT_STARTED = "NOT_STARTED",
+    RUNNING = "RUNNING",
+    CANCELED = "CANCELED",
+    FINISHED = "FINISHED",
+    OUTDATED = "OUTDATED",
+}

@@ -30,6 +30,6 @@ export class TechnicalEvaluationConfigurationComponent implements OnInit {
     }
 
     public ngOnInit(): void {
-        this.configurationInfo$ = this.technicalEvaluationService.fetchInfo();
+        this.configurationInfo$ = this.technicalEvaluationService.getInfo();
     }
 }

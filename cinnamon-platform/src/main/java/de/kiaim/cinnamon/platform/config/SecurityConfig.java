@@ -43,7 +43,7 @@ public class SecurityConfig {
 		            .authorizeHttpRequests(authz -> authz
 				            .requestMatchers(antMatcher("/api/doc"),
 				                             // TODO Implement proper security
-				                             antMatcher("/api/process/**/callback"),
+				                             antMatcher("/api/project/**/process/**/callback"),
 				                             antMatcher("/api/swagger-ui/**"),
 				                             antMatcher("/actuator/**"),
 				                             antMatcher("/api/user/register")).permitAll()

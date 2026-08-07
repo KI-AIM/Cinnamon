@@ -7,17 +7,17 @@
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
-            "skipTests": true,
-            "standalone": false,
-            "style": "less"
+          "skipTests": true,
+          "standalone": false,
+          "style": "less"
         },
         "@schematics/angular:directive": {
           "skipTests": true,
           "standalone": false
         },
         "@schematics/angular:pipe": {
-            "skipTests": true,
-            "standalone": false
+          "skipTests": true,
+          "standalone": false
         }
       },
       "root": "",
@@ -131,11 +131,23 @@
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
             ]
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
+          }
         }
       }
     }
   },
   "cli": {
-    "analytics": false
+    "analytics": false,
+    "schematicCollections": [
+      "angular-eslint"
+    ]
   }
 }

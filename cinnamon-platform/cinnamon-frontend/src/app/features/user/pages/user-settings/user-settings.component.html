@@ -1,0 +1,161 @@
+<main class="settings-page">
+
+    <div class="vertical-boxes">
+
+        <div class="box">
+            <div class="box-header box-header-expanded" id="security-heading">
+                <span class="box-header-icon icon-enabled"><mat-icon>shield</mat-icon></span>
+                <span class="box-header-title">Account &amp; security</span>
+            </div>
+
+            <div class="settings-divided">
+
+                <div class="setting-row">
+                    <div>
+                        <div class="settings-label">Username</div>
+                        <div class="settings-info">Update the name you use to sign in.</div>
+                    </div>
+                    <button mat-raised-button color="primary"
+                            (click)="openChangeUsernameDialog(changeUsernameDialog)">
+                        Change username
+                    </button>
+                </div>
+
+                <div class="setting-row">
+                    <div>
+                        <div class="settings-label">Password</div>
+                        <div class="settings-info">Choose a strong, unique password for your account.</div>
+                    </div>
+                    <button mat-raised-button color="primary"
+                            (click)="openChangePasswordDialog(changePasswordDialog)">
+                        Change password
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <div class="box-header box-header-expanded box-header-danger">
+                <span class="box-header-icon"><mat-icon>warning</mat-icon></span>
+                <span class="box-header-title">Danger zone</span>
+            </div>
+
+            <div class="settings-divided">
+
+                <div class="setting-row">
+                    <div>
+                        <div class="settings-label">Delete account</div>
+                        <div class="settings-info">Permanently delete your account and all of your projects.</div>
+                    </div>
+                    <button mat-raised-button color="warn"
+                            (click)="openDeleteAccountDialog(deleteAccountDialog)">
+                        Delete account
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<ng-template #changeUsernameDialog>
+    <h2 mat-dialog-title>Change username</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+
+        <div class="box">
+            <p class="settings-dialog-description">Enter a new username and confirm the change with your current password.</p>
+
+            <div class="config-input-row">
+                <div class="config-input-row-label">
+                    Choose a new username
+                </div>
+                <mat-form-field class="config-input-row-field">
+                    <mat-label>New username</mat-label>
+                    <input type="text" matInput autocomplete="username"
+                           [formControl]="changeUsernameNewUsernameControl">
+                </mat-form-field>
+            </div>
+
+            <app-password-input label="Current password" heading="Enter your current password"
+                                [control]="changeUsernameCurrentPasswordControl">
+            </app-password-input>
+        </div>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
+        <button mat-raised-button color="primary" type="button" [disabled]="!updateUsernameForm.valid"
+                (click)="changeUsername()">Change username</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<ng-template #changePasswordDialog>
+    <h2 mat-dialog-title>Change password</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+
+        <div class="box">
+            <p class="settings-dialog-description">Use a strong password that you do not use for another account.</p>
+            @if (appConfig$ | async; as appConfig) {
+                <app-password-input label="Current password" heading="Enter your current password"
+                                    [control]="currentPasswordControl">
+                </app-password-input>
+                <div class="new-password-fields">
+                    <app-password-input label="New password" heading="Choose a new password"
+                                        [passwordRequirements]="appConfig.passwordRequirements"
+                                        autocomplete="new-password" [control]="newPasswordControl">
+                    </app-password-input>
+                    <app-password-input label="Confirm new password" autocomplete="new-password"
+                                        [control]="newPasswordRepeatedControl">
+                    </app-password-input>
+                </div>
+            }
+        </div>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
+        <button mat-raised-button color="primary" type="button" [disabled]="!updatePasswordForm.valid"
+                (click)="changePassword()">Change password</button>
+    </mat-dialog-actions>
+</ng-template>
+
+<ng-template #deleteAccountDialog>
+    <h2 mat-dialog-title>Delete account?</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+
+        <app-info-card typeClass="card-warn">
+            <p><strong>This action is permanent.</strong> Your account and all of your projects will be deleted.</p>
+        </app-info-card>
+
+        <div class="box">
+            <p class="settings-dialog-description">To confirm, enter your username <strong>{{ username }}</strong> and
+                password.</p>
+
+            <div class="config-input-row">
+                <mat-form-field class="config-input-row-field">
+                    <mat-label>Username</mat-label>
+                    <input type="text" matInput autocomplete="username" [formControl]="confirmDeletionUsernameControl">
+                </mat-form-field>
+            </div>
+
+            <app-password-input label="Password" [control]="confirmDeletionPasswordControl">
+            </app-password-input>
+
+            @if (deletionError != null) {
+                <div class="error-text" role="alert">{{ deletionError }}</div>
+            }
+
+        </div>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
+        <button mat-raised-button color="warn" type="button"
+                [disabled]="confirmDeletionUsernameControl.value === '' || confirmDeletionPasswordControl.value === ''"
+                (click)="deleteAccount(confirmDeletionUsernameControl.value, confirmDeletionPasswordControl.value)">
+            Delete account
+        </button>
+    </mat-dialog-actions>
+</ng-template>

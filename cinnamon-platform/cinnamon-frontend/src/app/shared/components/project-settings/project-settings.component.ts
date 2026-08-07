@@ -1,11 +1,13 @@
 import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
+import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { TechnicalEvaluationService } from "@features/technical-evaluation/services/technical-evaluation.service";
 import { AlgorithmDefinition } from "@shared/model/algorithm-definition";
 import { MetricImportanceDefinition, MetricSettings, ProjectSettings } from "@shared/model/project-settings";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
+import { ProjectService } from "@shared/services/project.service";
 import {
     catchError,
     debounceTime,
@@ -56,6 +58,8 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly formBuilder: FormBuilder,
         private readonly matDialog: MatDialog,
+        private readonly notificationService: NotificationService,
+        private readonly projectService: ProjectService,
         private readonly projectSettingsService: ProjectConfigurationService,
         private readonly technicalEvaluationService: TechnicalEvaluationService,
         private readonly userService: UserService,
@@ -143,7 +147,11 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected get projectName(): string {
-        return this.userService.getUser().email;
+        return this.projectService.project?.name || '';
+    }
+
+    protected get username(): string {
+        return this.userService.getUser().userInfo.username;
     }
 
     /**
@@ -169,17 +177,21 @@ export class ProjectSettingsComponent implements OnInit, OnDestroy {
      * Displays a message if an error happens.
      *
      * @param projectName The name of the project for conformation.
+     * @param username The username for confirmation.
      * @param password The password for confirmation.
      * @protected
      */
-    protected deleteProject(projectName: string, password: string): void {
+    protected deleteProject(projectName: string, username: string, password: string): void {
         this.deletionError = null;
-        this.userService.delete(projectName, password).subscribe({
+        this.projectService.deleteProject(username, password).pipe(
+            switchMap(() => this.userService.routeToUser$()),
+        ).subscribe({
             next: () => {
-                this.userService.logout('delete');
                 this.close();
+                this.notificationService.addNotification(new AppNotification("Project deleted successfully.", 'success'));
             },
             error: e => {
+                console.log(e);
                 this.deletionError = e.error.errorMessage;
             }
         });

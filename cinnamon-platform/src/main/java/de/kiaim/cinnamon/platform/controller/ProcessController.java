@@ -38,10 +38,9 @@ import java.util.UUID;
 
 /**
  * Controller for managing external processes.
- * TODO add /project/{id}
  */
 @RestController()
-@RequestMapping("/api/process")
+@RequestMapping("/api/project/{projectId}/process")
 @Tag(name = "/api/process", description = "API for managing processes.")
 public class ProcessController {
 
@@ -76,10 +75,11 @@ public class ProcessController {
 	})
 	@GetMapping(value = "", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public PipelineInformation getPipeline(
+			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
-	) throws InternalInvalidStateException {
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+	) throws ApiException {
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 		final PipelineEntity pipeline = processService.getPipeline(project);
 		return pipelineMapper.toDto(pipeline);
 	}
@@ -103,13 +103,14 @@ public class ProcessController {
 	             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ResponseEntity<Void> configureProcess(
+			@PathVariable final String projectId,
 			@Parameter(description = "Step of which the process should be configured.")
 			@ParameterObject @Valid final ConfigureProcessRequest requestData,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Job job = stepService.getStepConfiguration(requestData.getJobName());
 
@@ -138,6 +139,7 @@ public class ProcessController {
 				 consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation startProcess(
+			@PathVariable final String projectId,
 			@Parameter(description = "The stage to start.")
 			@PathVariable final String stageName,
 			@Parameter(description = "The job to start. If missing, the first job of the stage is started.")
@@ -145,8 +147,8 @@ public class ProcessController {
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Stage stage = stepService.getStageConfiguration(stageName);
 		Job job = null;
@@ -178,13 +180,14 @@ public class ProcessController {
 	             consumes = {MediaType.ALL_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public ExecutionStepInformation cancelProcess(
+			@PathVariable final String projectId,
 			@Parameter(description = "Step of which the process should be canceled.")
 			@PathVariable final String stageName,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		// Load user from the database because lazy loaded fields cannot be read from the injected user
-		final UserEntity user = userService.getUserByEmail(requestUser.getEmail());
-		final ProjectEntity project = projectService.getProject(user);
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
 		final Stage stage = stepService.getStageConfiguration(stageName);
 

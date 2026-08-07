@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
+import { ProjectService } from "@shared/services/project.service";
 import {
     concatMap,
     endWith,
     filter,
     from,
     ignoreElements,
-    map,
+    map, mergeMap,
     Observable,
     ReplaySubject,
     switchMap,
@@ -27,7 +28,6 @@ import { Algorithm } from "../model/algorithm";
     providedIn: 'root'
 })
 export class ConfigurationService {
-    private baseUrl: string = environments.apiUrl + "/api/config";
     private registeredConfigurations: Array<ConfigurationRegisterData>;
 
     private configurationCache: Record<string, {
@@ -43,6 +43,7 @@ export class ConfigurationService {
 
     constructor(
         private httpClient: HttpClient,
+        private projectService: ProjectService,
     ) {
         this.registeredConfigurations = [];
     }
@@ -160,14 +161,10 @@ export class ConfigurationService {
      * @param configurationName Identifier of the configuration to load.
      * @returns Observable containing the configuration as a string.
      */
-    public loadConfig(configurationName: String): Observable<string> {
-        return this.httpClient.get<string>(this.baseUrl + "?name=" + configurationName, {responseType: 'text' as 'json'})
-            .pipe(
-                map(value => {
-                    // Plain text has to be parsed to YAML string
-                    return parse(value)
-                }),
-            );
+    public loadConfig(configurationName: string): Observable<string> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchConfig(projectId, configurationName)),
+        );
     }
 
     /**
@@ -175,12 +172,59 @@ export class ConfigurationService {
      * @param configuration Configuration to store in form of a string.
      * @returns Observable returning containing the ID of the dataset.
      */
-    public storeConfig(configuration: String): Observable<void> {
-        const formData = new FormData();
-        formData.append("configuration", configuration.toString());
-        return this.httpClient.post<void>(environments.apiUrl + "/api/config", formData);
+    public storeConfig(configuration: string): Observable<void> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.postConfig(projectId, configuration)),
+        );
+    }
+    /**
+     * Configures all jobs defined to be configured.
+     * @private
+     */
+    public configureJobs(jobs: Record<string, boolean>): Observable<void> {
+        return from(Object.entries(jobs)).pipe(
+            mergeMap(process => {
+                return this.projectService.projectIdRequiredOnce$.pipe(
+                    switchMap(projectId => this.postConfigure(projectId, !process[1], process[0])),
+                );
+            }),
+        );
     }
 
+    /**
+     * Configures the job.
+     * @param projectId The id of the project to configure.
+     * @param skip If the job should be skipped.
+     * @param jobName The name of the job to configure.
+     * @private
+     */
+    private postConfigure(projectId: string, skip: boolean, jobName: string): Observable<void> {
+        const formData = new FormData();
+        if (skip) {
+            formData.append("skip", 'true');
+        }
+        formData.append("jobName", jobName);
+        return this.httpClient.post<void>(`${environments.apiUrl}/api/project/${projectId}/process/configure`, formData);
+    }
+
+    private baseUrl(projectId: string): string {
+        return `${environments.apiUrl}/api/project/${projectId}/config`
+    }
+
+    private fetchConfig(projectId: string, configurationName: string): Observable<string> {
+        return this.httpClient.get<string>(this.baseUrl(projectId) + "?name=" + configurationName, {responseType: 'text' as 'json'}).pipe(
+            map(value => {
+                // Plain text has to be parsed to YAML string
+                return parse(value)
+            }),
+        );
+    }
+
+    private postConfig(projectId: string, configuration: string): Observable<void> {
+        const formData = new FormData();
+        formData.append("configuration", configuration.toString());
+        return this.httpClient.post<void>(this.baseUrl(projectId), formData);
+    }
 
     /**
      * Uploads the configurations that are contained in the file and included in the given array.

@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup } from "@angular/forms";
 import { Steps } from "@core/enums/steps";
-import { TitleService } from "@core/services/title-service.service";
 import {
     AnonymizationAttributeConfigurationService
 } from "@features/anonymization/services/anonymization-attribute-configuration.service";
@@ -42,13 +41,11 @@ export class AnonymizationConfigurationComponent implements OnInit {
     constructor(
         private readonly anonymizationService: AnonymizationService,
         private readonly anonymizationAttributeConfigurationService: AnonymizationAttributeConfigurationService,
-        private titleService: TitleService,
     ) {
-        this.titleService.setPageTitle("Anonymization");
     }
 
     public ngOnInit(): void {
-        this.configurationInfo$ = this.anonymizationService.fetchInfo();
+        this.configurationInfo$ = this.anonymizationService.getInfo();
 
         const configs = new Array(
             new AdditionalConfig(

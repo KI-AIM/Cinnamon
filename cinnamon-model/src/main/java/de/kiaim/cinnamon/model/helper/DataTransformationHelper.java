@@ -80,9 +80,9 @@ public class DataTransformationHelper {
      */
     public boolean isValueEmpty(String value) {
         return value.isEmpty() ||
-                value.equals("N/A") ||
-                value.equals("NaN") ||
-                value.equals("null");
+                "N/A".equals(value) ||
+                "NaN".equals(value) ||
+                "null".equals(value);
     }
 
     /**

@@ -2,10 +2,7 @@ package de.kiaim.cinnamon.platform.model.entity;
 
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,8 +17,12 @@ import java.util.*;
 @AllArgsConstructor
 public class UserEntity implements UserDetails {
 
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
-	private String email;
+	private Long id;
+
+	@Column(nullable = false, unique = true)
+	private String username;
 
 	@Column(nullable = false)
 	private String password;
@@ -30,69 +31,38 @@ public class UserEntity implements UserDetails {
 	@Enumerated(EnumType.STRING)
 	private final UserRole userRole = UserRole.ROLE_USER;
 
+	/**
+	 * The projects owned by this user.
+	 */
+	@Setter(AccessLevel.NONE)
+	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	private final Set<ProjectEntity> projects = new HashSet<>();
+
 	@Nullable
-	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	@JoinColumn(name = "project_id", referencedColumnName = "id")
-	private ProjectEntity project = null;
-
-	/**
-	 * The workflows owned by this user.
-	 */
-	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-	private Set<WorkflowEntity> workflows = new HashSet<>();
-
-	/**
-	 * Links the given project with this user.
-	 * @param newProject The project to link.
-	 */
-	public void setProject(@Nullable final ProjectEntity newProject) {
-		final ProjectEntity oldProject = this.project;
-		this.project = newProject;
-		if (oldProject != null && oldProject.getUser() == this) {
-			oldProject.setUser(null);
-		}
-		if (newProject != null && newProject.getUser() != this) {
-			newProject.setUser(this);
-		}
+	public ProjectEntity getProject(final UUID projectId) {
+		return projects.stream()
+				.filter(project -> project.getExternalId().equals(projectId))
+				.findFirst()
+				.orElse(null);
 	}
 
-	public WorkflowEntity getWorkflow(final UUID workflowId) {
-		for (final WorkflowEntity workflow : workflows) {
-			if (workflow.getWorkflowId().equals(workflowId)) {
-				return workflow;
-			}
-		}
-		return null;
-	}
-
-	public void setWorkflows(final Set<WorkflowEntity> newWorkflows) {
-		for (final WorkflowEntity workflow : new HashSet<>(workflows)) {
-			removeWorkflow(workflow);
-		}
-		if (newWorkflows != null) {
-			for (final WorkflowEntity workflow : newWorkflows) {
-				addWorkflow(workflow);
-			}
-		}
-	}
-
-	public void addWorkflow(final WorkflowEntity workflow) {
-		if (workflow == null || workflows.contains(workflow)) {
+	public void addProject(final ProjectEntity project) {
+		if (project == null || projects.contains(project)) {
 			return;
 		}
-		workflows.add(workflow);
-		if (workflow.getUser() != this) {
-			workflow.setUser(this);
+		projects.add(project);
+		if (project.getUser() != this) {
+			project.setUser(this);
 		}
 	}
 
-	public void removeWorkflow(final WorkflowEntity workflow) {
-		if (workflow == null || !workflows.contains(workflow)) {
+	public void removeProject(final ProjectEntity project) {
+		if (project == null || !projects.contains(project)) {
 			return;
 		}
-		workflows.remove(workflow);
-		if (workflow.getUser() == this) {
-			workflow.setUser(null);
+		projects.remove(project);
+		if (project.getUser() == this) {
+			project.setUser(null);
 		}
 	}
 
@@ -113,7 +83,7 @@ public class UserEntity implements UserDetails {
 
 	@Override
 	public String getUsername() {
-		return email;
+		return username;
 	}
 
 	@Override

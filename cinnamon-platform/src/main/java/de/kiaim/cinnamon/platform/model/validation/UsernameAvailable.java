@@ -5,13 +5,13 @@ import jakarta.validation.Payload;
 
 import java.lang.annotation.*;
 
-@Target({ElementType.FIELD})
+@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = EmailAvailableValidator.class)
+@Constraint(validatedBy = UsernameAvailableValidator.class)
 @Documented
-public @interface EmailAvailable {
+public @interface UsernameAvailable {
 
-	String message() default "Project name is not available!";
+	String message() default "Username is not available!";
 
 	Class<?>[] groups() default {};
 

@@ -1,0 +1,47 @@
+@import "../../../../styles/layout.less";
+
+.settings-page {
+    width: min(100%, 840px);
+    margin: 0 auto;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    button { flex: 0 0 auto; }
+}
+
+.settings-divided {
+    .setting-row {
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+    .setting-row:not(:last-child) {
+        border-bottom: 1px solid @color-gray-border;
+    }
+
+    .setting-row:first-child {
+        // Subtract the padding of the box header
+        padding-top: calc(20px - 1rem);
+    }
+
+    .setting-row:last-child {
+        // Subtract the padding of the box
+        padding-bottom: calc(20px - 1rem);
+    }
+}
+
+.settings-dialog-description { margin-bottom: 20px; line-height: 1.5; }
+.new-password-fields { margin-top: 8px; }
+
+.error-text {
+    color: var(--mat-form-field-error-text-color);
+}
+
+@media (max-width: @phone-breakpoint) {
+    .setting-row { align-items: stretch; flex-direction: column; }
+    .setting-row button { width: 100%; }
+}

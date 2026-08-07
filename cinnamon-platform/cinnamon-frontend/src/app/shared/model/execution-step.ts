@@ -1,13 +1,13 @@
-import { ProcessStatus } from "../../core/enums/process-status";
-import { ExternalProcess } from "./external-process";
+import { StageStatus } from "@core/enums/process-status";
 import { Type } from "class-transformer";
+import { ExternalProcess } from "./external-process";
 
 export class ExecutionStep {
     currentProcessIndex: number;
     @Type(() => ExternalProcess)
     processes: ExternalProcess[];
     stageName: string;
-    status: ProcessStatus;
+    status: StageStatus;
 }
 
 /**

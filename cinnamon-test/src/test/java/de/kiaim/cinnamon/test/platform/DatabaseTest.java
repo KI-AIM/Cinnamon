@@ -1,9 +1,6 @@
 package de.kiaim.cinnamon.test.platform;
 
-import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
-import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
-import de.kiaim.cinnamon.platform.exception.InternalDataSetPersistenceException;
-import de.kiaim.cinnamon.platform.exception.InternalInvalidStateException;
+import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -28,6 +25,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -64,9 +62,10 @@ public class DatabaseTest extends ContextRequiredTest {
 
 	protected UserEntity testUser;
 	protected ProjectEntity testProject;
+	private UUID testProjectId;
 
 	protected UserEntity getTestUser() {
-		Optional<UserEntity> userOptional = userRepository.findById("test_user");
+		Optional<UserEntity> userOptional = userRepository.findByUsername("test_user");
 		if (userOptional.isEmpty()) {
 			fail("Set up failed. Could not find 'test_user'!");
 		}
@@ -74,7 +73,12 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected ProjectEntity getTestProject() {
-		return projectService.getProject(getTestUser());
+		try {
+			return projectService.getProject(getTestUser(), testProjectId);
+		} catch (ApiException e) {
+			fail(e);
+		}
+		return null;
 	}
 
 	@BeforeEach
@@ -91,8 +95,9 @@ public class DatabaseTest extends ContextRequiredTest {
 
 			this.testUser = getTestUser();
 			try {
-				this.testProject = projectService.createProject(testUser, PROJECT_SEED);
-			} catch (InternalApplicationConfigurationException e) {
+				this.testProject = userService.createProject(testUser, "Test Project", PROJECT_SEED);
+				this.testProjectId = testProject.getExternalId();
+			} catch (ApiException e) {
 				fail(e);
 			}
 		});
@@ -109,8 +114,7 @@ public class DatabaseTest extends ContextRequiredTest {
 	}
 
 	protected void storeConfiguration(final String config) {
-		final UserEntity updatedUser = getTestUser();
-		final ProjectEntity project = projectService.getProject(updatedUser);
+		final ProjectEntity project = getTestProject();
 
 		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, config, project),
 		                   "The configuration could not be stored!");

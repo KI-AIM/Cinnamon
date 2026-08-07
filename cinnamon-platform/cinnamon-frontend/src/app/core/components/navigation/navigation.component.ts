@@ -1,13 +1,16 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
-import { ProjectExportComponent } from "@shared/components/project-export/project-export.component";
-import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
-import { Mode } from '../../enums/mode';
-import { StepConfiguration, Steps } from '../../enums/steps';
 import { KeyValue } from '@angular/common';
-import { UserService } from 'src/app/shared/services/user.service';
-import { StatusService } from "../../../shared/services/status.service";
-import { HttpClient } from "@angular/common/http";
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
+import { NavigationService } from "@core/services/navigation.service";
+import { StateManagementService } from "@core/services/state-management.service";
+import { ProjectExportComponent } from "@shared/components/project-export/project-export.component";
+import { NavigationKey } from "@shared/model/navigation";
+import { StatusService } from "@shared/services/status.service";
+import { combineLatest, Observable } from "rxjs";
+import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
+import { UserService } from 'src/app/shared/services/user.service';
+import { Mode } from '../../enums/mode';
+import { StepConfiguration, StepDefinition, Steps } from '../../enums/steps';
 
 @Component({
     selector: 'app-navigation',
@@ -16,7 +19,9 @@ import { MatDialog } from "@angular/material/dialog";
     standalone: false
 })
 
-export class NavigationComponent {
+export class NavigationComponent implements OnInit{
+    protected readonly NavigationKey = NavigationKey;
+
     Mode = Mode;
     Steps = Steps;
     StepConfiguration = StepConfiguration;
@@ -24,12 +29,25 @@ export class NavigationComponent {
     @ViewChild(ProjectExportComponent) private projectExport: ProjectExportComponent;
     @ViewChild(ProjectSettingsComponent) private projectSettings: ProjectSettingsComponent;
 
+    protected pageData$: Observable<{
+        navigationKey: NavigationKey,
+        openStep: StepDefinition | null,
+    }>;
+
     constructor(
         private readonly dialog: MatDialog,
-        private readonly http: HttpClient,
+        private readonly navigationService: NavigationService,
+        protected readonly stateManagementService: StateManagementService,
         protected statusService: StatusService,
         public userService: UserService,
     ) { }
+
+    public ngOnInit(): void {
+        this.pageData$ = combineLatest({
+            navigationKey: this.navigationService.navigationKey$,
+            openStep: this.stateManagementService.currentStep$,
+        });
+    }
 
     indexOrderAsc = (akv: KeyValue<string, any>, bkv: KeyValue<string, any>): number => {
         const a = akv.value.index;
@@ -39,7 +57,11 @@ export class NavigationComponent {
     };
 
     onLogout() {
-        this.userService.logout("close");
+        this.userService.routeToUser$().subscribe();
+    }
+
+    protected routeToStep(step: Steps): void {
+        this.stateManagementService.routeToStep(step).subscribe({});
     }
 
     /**
@@ -63,5 +85,4 @@ export class NavigationComponent {
             width: '60%'
         });
     }
-
 }

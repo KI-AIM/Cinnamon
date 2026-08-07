@@ -90,7 +90,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void getPipelineNotStarted() throws Exception {
-		mockMvc.perform(get("/api/process"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/process"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("currentStageIndex").isEmpty());
 	}
@@ -102,7 +102,7 @@ public class ProcessControllerTest extends ControllerTest {
 		start();
 
 		enqueueAnonStatusResponse();
-		mockMvc.perform(get("/api/process"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/process"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("currentStageIndex").value(0))
 		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()));
@@ -118,20 +118,20 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void configure() throws Exception {
-		mockMvc.perform(post("/api/config")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/config")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
-		mockMvc.perform(post("/api/config")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/config")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/configure")
 				                .param("jobName", SYNTH_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -139,7 +139,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void configureSkipWithoutConfiguration() throws Exception {
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .param("skip", "true")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -153,11 +153,11 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void configureSkipWithConfiguration() throws Exception {
-		mockMvc.perform(post("/api/config")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/config")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .param("skip", "true")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -171,7 +171,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void configureMissingConfiguration() throws Exception {
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/configure")
 				                .param("jobName", ANON_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isBadRequest())
@@ -208,7 +208,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 
-		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/" + firstStage.getStageName() + "/start"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
 		       .andExpect(jsonPath("currentProcessIndex").value(0))
@@ -248,7 +248,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		assertNotNull(process.getUuid());
 		String id = process.getUuid().toString();
-		final String callbackUrl = "http://" + callbackHost + ":8080/api/process/" + id + "/callback";
+		final String callbackUrl = "http://" + callbackHost + ":8080/api/project/" + testProject.getExternalId() + "/process/" + id + "/callback";
 
 		// Test request content
 		for (final DiskFileItem fileItem : fileItems) {
@@ -276,7 +276,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		// Get status
 		enqueueAnonStatusResponse();
-		mockMvc.perform(get("/api/process"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/process"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("currentStageIndex").value(0))
 		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()))
@@ -320,7 +320,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .code(200)
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
-		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/process/" + id + "/callback")
 				                .file(anonymizationResult)
 				                .file(resultAdditional)
 		       )
@@ -362,7 +362,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		enqueueSynthStatus();
 
-		mockMvc.perform(get("/api/process"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/process"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("currentStageIndex").value(0))
 		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()))
@@ -394,7 +394,7 @@ public class ProcessControllerTest extends ControllerTest {
 		final MockMultipartFile resultAdditional = new MockMultipartFile("additional_data", "additional.txt",
 		                                                                 MediaType.TEXT_PLAIN_VALUE,
 		                                                                 "synth-info".getBytes());
-		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/process/" + id + "/callback")
 				                .file(resultData)
 				                .file(resultAdditional))
 		       .andExpect(status().isOk());
@@ -410,7 +410,7 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void getStatus3() throws Exception {
-		mockMvc.perform(get("/api/process"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/process"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("currentStageIndex").value(nullValue()))
 		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.FINISHED.name()))
@@ -429,7 +429,7 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void getResultFile() throws Exception {
-		mockMvc.perform(get("/api/project/resultFile")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/resultFile")
 		                                      .param("executionStepName", "execution")
 		                                      .param("processStepName", "anonymization")
 		                                      .param("name", "additional.txt"))
@@ -438,7 +438,7 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void getResultZip() throws Exception {
-		var result = mockMvc.perform(get("/api/project/zip")
+		var result = mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/zip")
 				                             .param("bundleConfigurations", "false")
 				                             .param("resources", "configuration.anonymization")
 				                             .param("resources", "configuration.configurations")
@@ -452,7 +452,7 @@ public class ProcessControllerTest extends ControllerTest {
 		                    .andExpect(status().isOk())
 		                    .andExpect(header().exists("Content-Disposition"))
 		                    .andExpect(header().string("Content-Disposition", Matchers.matchesPattern(
-				                    "attachment; filename=\"test_user_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}_Cinnamon\\.zip\"")))
+				                    "attachment; filename=\"Test Project_\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}_Cinnamon\\.zip\"")))
 		                    .andExpect(content().contentType("application/zip"))
 		                    .andReturn();
 
@@ -571,7 +571,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
 		       .andExpect(jsonPath("currentProcessIndex").value(1))
@@ -603,12 +603,12 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(post("/api/process/execution/start"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/execution/start"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
 		       .andExpect(jsonPath("currentProcessIndex").value(0));
 
-		mockMvc.perform(multipart("/api/process/execution/cancel")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/process/execution/cancel")
 				                .param("jobName", SYNTH_JOB))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.CANCELED.name()))
@@ -635,38 +635,38 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(post("/api/process/execution/start")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/execution/start")
 				                .with(httpBasic("test_user", "password")))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
 
 		// Start second
-		final var user = userService.save("test_user_3", "changeme");
-		var project = projectService.createProject(user);
-		postData(false, "test_user_3");
-		mockMvc.perform(post("/api/config")
+		final var user = userService.register("test_user_3", "changeme");
+		var project = userService.createProject(user, null, null);
+		postData(false, "test_user_3", project.getExternalId());
+		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/config")
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/process/configure")
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("jobName", ANON_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
-		mockMvc.perform(post("/api/config")
+		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/config")
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/process/configure")
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("jobName", SYNTH_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
-		mockMvc.perform(post("/api/process/execution/start")
+		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/process/execution/start")
 				                .with(httpBasic("test_user_3", "changeme")))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
@@ -683,13 +683,13 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .code(200)
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
-		mockMvc.perform(multipart("/api/process/execution/cancel")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/process/execution/cancel")
 				                .with(httpBasic("test_user", "password"))
 				                .param("jobName", SYNTH_JOB))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.CANCELED.name()));
 
-		project = projectService.getProject(user);
+		project = projectService.getProject(user, project.getExternalId());
 		var process = project.getPipelines().get(0).getStageByIndex(0).getProcess(0);
 
 		// Check if the second process is running
@@ -713,7 +713,7 @@ public class ProcessControllerTest extends ControllerTest {
 		final MockMultipartFile resultData = new MockMultipartFile("error", "exception_message.txt",
 		                                                           MediaType.APPLICATION_JSON_VALUE,
 		                                                           errorJson.getBytes());
-		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/process/" + id + "/callback")
 				                .file(resultData))
 				                .andExpect(status().isOk());
 		var recordedRequest = mockBackEnd.takeRequest();
@@ -740,7 +740,7 @@ public class ProcessControllerTest extends ControllerTest {
 		ErrorDetails errorDetails = new ErrorDetails("config", null, null, null);
 		ErrorRequest errorRequest = new ErrorRequest("about:blank", "TEST_123", "Process failed", errorDetails);
 
-		mockMvc.perform(post("/api/process/" + id + "/callback")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/" + id + "/callback")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(jsonMapper.writeValueAsString(errorRequest)))
 		       .andExpect(status().isOk());
@@ -749,7 +749,7 @@ public class ProcessControllerTest extends ControllerTest {
 	@Test
 	public void startNoData() throws Exception {
 		configure();
-		mockMvc.perform(post("/api/process/execution/start"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/execution/start"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
 				       "The project '" + testProject.getId() + "' does not contain an original data set!"));
@@ -757,7 +757,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	@Test
 	public void startNoConfiguration() throws Exception {
-		mockMvc.perform(post("/api/process/execution/start"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/execution/start"))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
 				       "No configuration for step 'anonymization' found!"));
@@ -777,7 +777,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(post("/api/process/execution/start"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/execution/start"))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
 				       "Failed to start the process! Got status of '404 NOT_FOUND'. Got message: 'Not found'. Got error: 'Nicht gefunden, but in German'."));
@@ -788,14 +788,14 @@ public class ProcessControllerTest extends ControllerTest {
 		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 		final Job secondJob = firstStage.getJobList().get(1);
 
-		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_1_8_6"));
 	}
 
 	@Test
 	public void cancelNotStarted() throws Exception {
-		mockMvc.perform(post("/api/process/execution/cancel"))
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/execution/cancel"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.NOT_STARTED.name()));
 	}
@@ -806,7 +806,7 @@ public class ProcessControllerTest extends ControllerTest {
 		final MockMultipartFile result = new MockMultipartFile("synthetic_data", "result.csv",
 		                                                       MediaType.TEXT_PLAIN_VALUE,
 		                                                       "result".getBytes());
-		mockMvc.perform(multipart("/api/process/" + id + "/callback")
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/process/" + id + "/callback")
 				                .file(result))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("No process with the given ID '" + id + "' exists!"));
@@ -826,7 +826,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                    .body(jsonMapper.writeValueAsString(response))
 				                    .build());
 
-		mockMvc.perform(post("/api/process/execution/start")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/execution/start")
 				                .with(httpBasic("test_user", "password")))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));

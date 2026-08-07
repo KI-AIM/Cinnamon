@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ProjectService } from "@shared/services/project.service";
 import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
@@ -39,8 +40,9 @@ export class SynthetizationService extends AlgorithmService {
     constructor(
         private readonly httpClient: HttpClient,
         configurationService: ConfigurationService,
+        projectService: ProjectService,
     ) {
-        super(httpClient, configurationService);
+        super(httpClient, configurationService, projectService);
     }
 
     public override getConfigurationName(): string {
@@ -60,9 +62,10 @@ export class SynthetizationService extends AlgorithmService {
      * Fetches the Optuna study definition (`study.yaml`) as an
      * {@link AlgorithmDefinition} using the same pipeline as per-algorithm
      * configs.
+     * @param projectId The project ID for fetching the definition from the external server.
      */
-    public loadStudyDefinition(): Observable<AlgorithmDefinition> {
-        return this.fetchAlgorithmDefinition(SynthetizationService.STUDY_DEFINITION_PATH).pipe(
+    public loadStudyDefinition(projectId: string): Observable<AlgorithmDefinition> {
+        return this.fetchAlgorithmDefinition(projectId, SynthetizationService.STUDY_DEFINITION_PATH).pipe(
             map((value: string) => plainToInstance(AlgorithmDefinition, parse(value))),
         );
     }

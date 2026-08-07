@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
+import { ProjectService } from "@shared/services/project.service";
 import { DataConfiguration } from '../model/data-configuration';
 import { HttpClient } from '@angular/common/http';
-import { filter, map, Observable, ReplaySubject, take } from 'rxjs';
+import { filter, map, Observable, ReplaySubject, switchMap, take } from 'rxjs';
 import { plainToInstance } from 'class-transformer';
 import { ConfigurationService } from './configuration.service';
 import { ConfigurationRegisterData } from '../model/configuration-register-data';
@@ -13,7 +14,6 @@ import { ErrorHandlingService } from './error-handling.service';
     providedIn: 'root',
 })
 export class DataConfigurationService {
-    private readonly baseUrl: string = environments.apiUrl + "/api/data/configuration";
     public readonly CONFIGURATION_NAME = "configurations";
 
     private readonly _dataConfiguration$: Observable<DataConfiguration>;
@@ -28,6 +28,7 @@ export class DataConfigurationService {
         private httpClient: HttpClient,
         private configurationService: ConfigurationService,
         private readonly errorHandlingService: ErrorHandlingService,
+        private readonly projectService: ProjectService,
     ) {
         this.dataConfigurationSubject = new ReplaySubject(1);
         this._dataConfiguration$ = this.dataConfigurationSubject.asObservable();
@@ -79,10 +80,20 @@ export class DataConfigurationService {
     }
 
     public downloadDataConfigurationAsJson(): Observable<DataConfiguration> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.getDataConfiguration(projectId)),
+        );
+    }
+
+    private baseUrl(projectId: string): string {
+        return `${environments.apiUrl}/api/project/${projectId}/data/configuration`;
+    }
+
+    private getDataConfiguration(projectId: string): Observable<DataConfiguration> {
         const params = {
             selector: "ORIGINAL",
         }
-        return this.httpClient.get<DataConfiguration>(this.baseUrl + "?format=json", {params: params}).pipe(
+        return this.httpClient.get<DataConfiguration>(this.baseUrl(projectId) + "?format=json", {params: params}).pipe(
             map(value => plainToInstance(DataConfiguration, value)),
         );
     }

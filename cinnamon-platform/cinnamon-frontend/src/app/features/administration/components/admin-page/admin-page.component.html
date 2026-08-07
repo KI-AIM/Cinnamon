@@ -1,164 +1,143 @@
 <div class="vertical-boxes">
 
 
-    <div class="box">
+    <!--    <div class="box">-->
 
-        <div class="box-name">
-            Password requirements
+    <!--        <div class="box-name">-->
+    <!--            Password requirements-->
+    <!--        </div>-->
+
+    <!--        <div class="config-input-row">-->
+    <!--            <div class="config-input-row-label">-->
+    <!--                Minimum password length-->
+    <!--            </div>-->
+    <!--            <mat-form-field class="config-input-row-field">-->
+    <!--                <mat-label>Minimum Length</mat-label>-->
+    <!--                <input matInput type="number" min="0" required/>-->
+    <!--            </mat-form-field>-->
+    <!--            <div class="config-input-row-info">-->
+    <!--                <mat-icon class="icon-enabled">info</mat-icon>-->
+    <!--            </div>-->
+    <!--        </div>-->
+
+    <!--        <div class="config-input-row">-->
+    <!--            <div class="config-input-row-label">-->
+    <!--                Characters required in password-->
+    <!--            </div>-->
+
+    <!--            <div class="config-input-row-field">-->
+    <!--                <mat-checkbox color="primary">-->
+    <!--                    Uppercase (A-Z)-->
+    <!--                </mat-checkbox>-->
+    <!--                <mat-checkbox color="primary">-->
+    <!--                    Lowercase (a-z)-->
+    <!--                </mat-checkbox>-->
+    <!--                <mat-checkbox color="primary">-->
+    <!--                    Digit (0-9)-->
+    <!--                </mat-checkbox>-->
+    <!--                <mat-checkbox color="primary">-->
+    <!--                    Special Character (all other characters)-->
+    <!--                </mat-checkbox>-->
+    <!--            </div>-->
+    <!--            <div class="config-input-row-info">-->
+    <!--                <mat-icon class="icon-enabled">info</mat-icon>-->
+    <!--            </div>-->
+    <!--        </div>-->
+    <!--    </div>-->
+
+    <div class="box">
+        <div class="box-header box-header-expanded">
+            <span class="box-header-icon icon-enabled"><mat-icon>group</mat-icon></span>
+            <span class="box-header-title">Users</span>
         </div>
 
-        <div class="config-input-row">
-            <div class="config-input-row-label">
-                Minimum password length
-            </div>
-            <mat-form-field class="config-input-row-field">
-                <mat-label>Minimum Length</mat-label>
-                <input matInput type="number" min="0" required/>
+        @if (pageData$ | async; as pageData) {
+
+            <mat-form-field class="w-100 hide-mat-error-gap">
+                <mat-label>Search Users</mat-label>
+                <input #usernameFilter matInput (keyup)="applyFilterEvent($event)" placeholder="Search by username">
+                @if (usernameFilter.value) {
+                    <mat-icon matSuffix (click)="usernameFilter.value=''; applyFilterValue('')">close</mat-icon>
+                }
             </mat-form-field>
-            <div class="config-input-row-info">
-                <mat-icon class="icon-enabled">info</mat-icon>
-            </div>
-        </div>
 
-        <div class="config-input-row">
-            <div class="config-input-row-label">
-                Characters required in password
-            </div>
+            <table mat-table matSort matSortActive="username" matSortDirection="asc" [dataSource]="dataSource"
+                   class="user-table">
 
-            <div class="config-input-row-field">
-                <mat-checkbox color="primary">
-                    Uppercase (A-Z)
-                </mat-checkbox>
-                <mat-checkbox color="primary">
-                    Lowercase (a-z)
-                </mat-checkbox>
-                <mat-checkbox color="primary">
-                    Digit (0-9)
-                </mat-checkbox>
-                <mat-checkbox color="primary">
-                    Special Character (all other characters)
-                </mat-checkbox>
-            </div>
-            <div class="config-input-row-info">
-                <mat-icon class="icon-enabled">info</mat-icon>
-            </div>
-        </div>
-    </div>
+                <!-- Real columns -->
+                <ng-container matColumnDef="username">
+                    <th mat-header-cell mat-sort-header *matHeaderCellDef>User</th>
+                    <td mat-cell *matCellDef="let row">
+                        <span>{{ row.username }}</span>
+                        @if (row.username === pageData.currentUser) {
+                            <span class="current-user"> (You)</span>
+                        }
+                    </td>
+                </ng-container>
 
-    <div class="box">
-        <div class="box-name">Users</div>
+                <ng-container matColumnDef="roleUser">
+                    <th mat-header-cell *matHeaderCellDef>UI</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox color="primary" [checked]="row.roles.includes(UserRole.ROLE_USER)"
+                                      (change)="onRoleChange(row.username, UserRole.ROLE_USER, $event.source)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
 
-<!--        <table mat-table [dataSource]="dataSource">-->
-<!--            <ng-container matColumnDef="username">-->
-<!--                <th mat-header-cell *matHeaderCellDef>User</th>-->
-<!--                <td mat-cell *matCellDef="let row">{{ row.username }}</td>-->
-<!--            </ng-container>-->
+                <ng-container matColumnDef="roleApi">
+                    <th mat-header-cell *matHeaderCellDef>API</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox color="primary" [checked]="row.roles.includes(UserRole.ROLE_API)"
+                                      (change)="onRoleChange(row.username, UserRole.ROLE_API, $event.source)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
 
-<!--            <ng-container matColumnDef="roles">-->
-<!--                <th mat-header-cell *matHeaderCellDef>Roles</th>-->
-<!--                <td mat-cell *matCellDef="let row">-->
-<!--                    <mat-checkbox color="primary" [value]="row.roles.includes('admin')"></mat-checkbox>-->
-<!--                    <mat-checkbox color="primary" [value]="row.roles.includes('user')"></mat-checkbox>-->
-<!--                    <mat-checkbox color="primary" [value]="row.roles.includes('api')">API</mat-checkbox>-->
-<!--                </td>-->
-<!--            </ng-container>-->
+                <ng-container matColumnDef="roleAdmin">
+                    <th mat-header-cell *matHeaderCellDef>Admin</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox color="primary" [checked]="row.roles.includes(UserRole.ROLE_ADMIN)"
+                                      (change)="onRoleChange(row.username, UserRole.ROLE_ADMIN, $event.source)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
 
-<!--            <ng-container matColumnDef="status">-->
-<!--                <th mat-header-cell *matHeaderCellDef>Status</th>-->
-<!--                <td mat-cell *matCellDef="let row">{{ row.status }}</td>-->
-<!--            </ng-container>-->
+                <ng-container matColumnDef="roleMonitoring">
+                    <th mat-header-cell *matHeaderCellDef>Monitoring</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox color="primary" [checked]="row.roles.includes(UserRole.ROLE_MONITORING)"
+                                      (change)="onRoleChange(row.username, UserRole.ROLE_MONITORING, $event.source)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
 
-<!--            <tr mat-header-row *matHeaderRowDef="['username', 'roles', 'status']"></tr>-->
-<!--            <tr mat-row *matRowDef="let row; columns: ['username', 'roles', 'status'];"></tr>-->
-<!--        </table>-->
+                <!--            <ng-container matColumnDef="status">-->
+                <!--                <th mat-header-cell *matHeaderCellDef>Status</th>-->
+                <!--                <td mat-cell *matCellDef="let row">{{ row.status }}</td>-->
+                <!--            </ng-container>-->
 
-        <table mat-table [dataSource]="dataSource" class="user-table">
+                <!--            <ng-container matColumnDef="actions">-->
+                <!--                <th mat-header-cell *matHeaderCellDef>Actions</th>-->
+                <!--                <td mat-cell *matCellDef="let _" class="d-flex flex-row">-->
+                <!--                    <button mat-icon-button color="primary" size="small">-->
+                <!--                        <mat-icon>edit</mat-icon>-->
+                <!--                    </button>-->
+                <!--                    <button mat-icon-button color="warn" size="small">-->
+                <!--                        <mat-icon>delete</mat-icon>-->
+                <!--                    </button>-->
+                <!--                </td>-->
+                <!--            </ng-container>-->
 
-            <!-- Group header: empty cell above username -->
-            <ng-container matColumnDef="userGroup">
-                <th mat-header-cell *matHeaderCellDef colspan="1">User</th>
-            </ng-container>
+                <!-- Second header row: actual columns -->
+                <tr mat-header-row *matHeaderRowDef="userTableColumns"></tr>
 
-            <!-- Group header: Roles spans 3 role columns -->
-            <ng-container matColumnDef="rolesGroup">
-                <th mat-header-cell *matHeaderCellDef colspan="3" class="column-group">
-                    Roles
-                </th>
-            </ng-container>
+                <!-- Data rows -->
+                <tr mat-row *matRowDef="let _; columns: userTableColumns;"></tr>
 
-            <!-- Group header: empty/status cell -->
-            <ng-container matColumnDef="statusGroup">
-                <th mat-header-cell *matHeaderCellDef colspan="1">Status</th>
-            </ng-container>
+            </table>
 
-            <ng-container matColumnDef="actionGroup">
-                <th mat-header-cell *matHeaderCellDef colspan="1">Actions</th>
-            </ng-container>
-
-            <!-- Real columns -->
-            <ng-container matColumnDef="username">
-                <th mat-header-cell *matHeaderCellDef>User</th>
-                <td mat-cell *matCellDef="let row">{{ row.username }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="roleAdmin">
-                <th mat-header-cell *matHeaderCellDef>Admin</th>
-                <td mat-cell *matCellDef="let row">
-                    <mat-checkbox
-                        color="primary"
-                        [checked]="row.roles.includes('admin')">
-                    </mat-checkbox>
-                </td>
-            </ng-container>
-
-            <ng-container matColumnDef="roleUser">
-                <th mat-header-cell *matHeaderCellDef>User</th>
-                <td mat-cell *matCellDef="let row">
-                    <mat-checkbox
-                        color="primary"
-                        [checked]="row.roles.includes('user')">
-                    </mat-checkbox>
-                </td>
-            </ng-container>
-
-            <ng-container matColumnDef="roleApi">
-                <th mat-header-cell *matHeaderCellDef>Api</th>
-                <td mat-cell *matCellDef="let row">
-                    <mat-checkbox
-                        color="primary"
-                        [checked]="row.roles.includes('api')">
-                    </mat-checkbox>
-                </td>
-            </ng-container>
-
-            <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>Status</th>
-                <td mat-cell *matCellDef="let row">{{ row.status }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef>Actions</th>
-                <td mat-cell *matCellDef="let row" class="d-flex flex-row">
-                    <button mat-icon-button color="primary" size="small">
-                        <mat-icon>edit</mat-icon>
-                    </button>
-                    <button mat-icon-button color="warn" size="small">
-                        <mat-icon>delete</mat-icon>
-                    </button>
-                </td>
-            </ng-container>
-
-            <!-- First header row: grouped headers -->
-            <tr mat-header-row *matHeaderRowDef="['userGroup', 'rolesGroup', 'statusGroup', 'actionGroup']"></tr>
-
-            <!-- Second header row: actual columns -->
-            <tr mat-header-row *matHeaderRowDef="['username', 'roleAdmin', 'roleUser', 'roleApi', 'status', 'actions']"></tr>
-
-            <!-- Data rows -->
-            <tr mat-row *matRowDef="let row; columns: ['username', 'roleAdmin', 'roleUser', 'roleApi', 'status', 'actions'];"></tr>
-
-        </table>
-
+            <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+        }
 
     </div>
 

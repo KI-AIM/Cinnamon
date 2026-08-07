@@ -42,7 +42,7 @@ public class AdminAccountInitializerTest extends ContextRequiredTest {
 
 		final var admin = userService.getUserByUsername(ADMIN_USERNAME);
 		assertNotNull(admin, "The initial administrator has not been created!");
-		assertEquals(Set.of(UserRole.ROLE_USER, UserRole.ROLE_ADMIN), admin.getUserRoles(), "Unexpected roles!");
+		assertEquals(Set.of(UserRole.values()), admin.getUserRoles(), "Unexpected roles!");
 		assertNotEquals(VALID_PASSWORD, admin.getPassword(), "Password should not be stored as clear text!");
 	}
 

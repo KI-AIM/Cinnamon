@@ -55,9 +55,16 @@ export class LoginComponent implements OnInit {
         this.userService.login(loginData).pipe(
             switchMap(() => this.userService.routeToUser$())
         ).subscribe({
-            error: () => {
+            error: (error) => {
+                let message = "Something went wrong during login. Please try again";
+                if (error.status === 401) {
+                    message = "Account name or password wrong";
+                } else if (error.status === 403) {
+                    message = "Your account has not the permissions to login";
+                }
+
                 this.notificationService.addNotification(
-                    new AppNotification("Account name or password wrong", 'failure')
+                    new AppNotification(message, 'failure')
                 );
             },
         });

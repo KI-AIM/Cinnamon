@@ -94,6 +94,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String WORKFLOW = "17";
 
+	/**
+	 * Error class code for {@link BadAppStateException}.
+	 */
+	public static final String APP_STATE = "18";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

@@ -56,7 +56,7 @@ public class AdminAccountInitializer implements ApplicationRunner {
 
 		validatePassword(username, admin.getPassword());
 
-		userService.register(username, admin.getPassword(), Set.of(UserRole.ROLE_USER, UserRole.ROLE_ADMIN));
+		userService.register(username, admin.getPassword(), Set.of(UserRole.values()));
 		log.info("Created initial administrator '{}'.", username);
 	}
 

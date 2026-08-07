@@ -13,5 +13,7 @@ export class UserInfo {
 
 export enum UserRole {
     ROLE_ADMIN = "ROLE_ADMIN",
+    ROLE_API = "ROLE_API",
+    ROLE_MONITORING = "ROLE_MONITORING",
     ROLE_USER = "ROLE_USER",
 }

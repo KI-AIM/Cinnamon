@@ -21,5 +21,10 @@ public enum UserRole {
 	 * Role granting access to the administration features.
 	 */
 	ROLE_ADMIN,
+
+	/**
+	 * Role granting access to the actuator endpoints and health details.
+	 */
+	ROLE_MONITORING,
 	;
 }

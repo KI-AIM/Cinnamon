@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.platform.exception.BadMailSettingsException;
+import de.kiaim.cinnamon.platform.exception.InternalMailException;
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
 import de.kiaim.cinnamon.platform.model.entity.admin.EmailSettingsEntity;
 import de.kiaim.cinnamon.platform.model.mapper.MailSettingsMapper;
@@ -17,14 +18,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AppSettingsService {
 
+	private static final String TEST_MAIL_SUBJECT = "Cinnamon test mail";
+	private static final String TEST_MAIL_BODY =
+			"This is a test mail sent by Cinnamon to verify the configured mail settings.";
+
 	private final EmailSettingsRepository emailSettingsRepository;
 	private final MailSettingsMapper mailSettingsMapper;
+	private final MailService mailService;
 
 	@Autowired
 	public AppSettingsService(final EmailSettingsRepository emailSettingsRepository,
-	                          final MailSettingsMapper mailSettingsMapper) {
+	                          final MailSettingsMapper mailSettingsMapper, final MailService mailService) {
 		this.emailSettingsRepository = emailSettingsRepository;
 		this.mailSettingsMapper = mailSettingsMapper;
+		this.mailService = mailService;
 	}
 
 	/**
@@ -35,11 +42,7 @@ public class AppSettingsService {
 	 */
 	@Transactional(readOnly = true)
 	public EMailSettingsDTO getMailSettings() throws BadMailSettingsException {
-		final EmailSettingsEntity settings = emailSettingsRepository.findFirstByOrderByIdAsc()
-		                                                            .orElseThrow(() -> new BadMailSettingsException(
-				                                                            BadMailSettingsException.NOT_FOUND,
-				                                                            "Mail settings have not been configured yet!"));
-		return mailSettingsMapper.toDto(settings);
+		return mailSettingsMapper.toDto(getConfiguredMailSettings());
 	}
 
 	/**
@@ -57,6 +60,31 @@ public class AppSettingsService {
 		mailSettingsMapper.updateEntity(settings, eMailSettingsDTO);
 
 		return mailSettingsMapper.toDto(emailSettingsRepository.save(settings));
+	}
+
+	/**
+	 * Sends a test mail to the given address using the configured mail settings.
+	 *
+	 * @param mailAddress The address the test mail is sent to.
+	 * @throws BadMailSettingsException If the mail settings have not been configured yet.
+	 * @throws InternalMailException    If sending the test mail failed.
+	 */
+	@Transactional(readOnly = true)
+	public void sendTestMail(final String mailAddress) throws BadMailSettingsException, InternalMailException {
+		final EmailSettingsEntity settings = getConfiguredMailSettings();
+		mailService.sendMail(settings, mailAddress, TEST_MAIL_SUBJECT, TEST_MAIL_BODY);
+	}
+
+	/**
+	 * Returns the configured mail settings entity.
+	 *
+	 * @return The mail settings.
+	 * @throws BadMailSettingsException If the mail settings have not been configured yet.
+	 */
+	private EmailSettingsEntity getConfiguredMailSettings() throws BadMailSettingsException {
+		return emailSettingsRepository.findFirstByOrderByIdAsc()
+		                              .orElseThrow(() -> new BadMailSettingsException(BadMailSettingsException.NOT_FOUND,
+		                                                                              "Mail settings have not been configured yet!"));
 	}
 
 }

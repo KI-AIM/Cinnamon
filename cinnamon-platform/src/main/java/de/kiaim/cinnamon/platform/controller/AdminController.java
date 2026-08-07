@@ -4,6 +4,7 @@ package de.kiaim.cinnamon.platform.controller;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.dto.AdminUserRoleChangeRequest;
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
+import de.kiaim.cinnamon.platform.model.dto.TestMailRequest;
 import de.kiaim.cinnamon.platform.model.dto.UserInfo;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.AppSettingsService;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
@@ -106,6 +108,29 @@ public class AdminController {
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public EMailSettingsDTO setMailSettings(@RequestBody @Valid final EMailSettingsDTO request) {
 		return appSettingsService.setMailSettings(request);
+	}
+
+	@Operation(summary = "Sends a test mail to verify the mail settings.",
+	           description = "Sends a test mail to the given address using the configured mail settings.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "The test mail has been sent."),
+			@ApiResponse(responseCode = "400",
+			             description = "Invalid request. The request body is missing or invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = TestMailRequest.class))}),
+			@ApiResponse(responseCode = "404", description = "The mail settings have not been configured yet.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = TestMailRequest.class))}),
+			@ApiResponse(responseCode = "500", description = "Sending the test mail failed.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = TestMailRequest.class))}),
+	})
+	@PostMapping(value = "/settings/mail/test",
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public ResponseEntity<Void> testMailSettings(@RequestBody @Valid final TestMailRequest request)
+			throws ApiException {
+		appSettingsService.sendTestMail(request.getMailAddress());
+		return ResponseEntity.ok().build();
 	}
 
 }

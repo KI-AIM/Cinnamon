@@ -45,8 +45,13 @@ public class SecurityConfig {
 				                             // TODO Implement proper security
 				                             antMatcher("/api/project/**/process/**/callback"),
 				                             antMatcher("/api/swagger-ui/**"),
-				                             antMatcher("/actuator/**"),
+				                             // Left open so infrastructure health checks do not need credentials;
+				                             // the health details themselves are only shown to authenticated
+				                             // ROLE_MONITORING users, see management.endpoint.health.* below.
+				                             antMatcher("/actuator/health"),
+				                             antMatcher("/actuator/health/**"),
 				                             antMatcher("/api/user/register")).permitAll()
+				            .requestMatchers(antMatcher("/actuator/**")).hasRole("MONITORING")
 				            .requestMatchers(antMatcher("/api/**")).hasRole("USER")
 				            .requestMatchers(antMatcher("/**")).permitAll()
 				            .anyRequest().authenticated())

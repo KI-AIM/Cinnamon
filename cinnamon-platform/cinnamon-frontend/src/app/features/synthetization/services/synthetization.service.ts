@@ -62,9 +62,10 @@ export class SynthetizationService extends AlgorithmService {
      * Fetches the Optuna study definition (`study.yaml`) as an
      * {@link AlgorithmDefinition} using the same pipeline as per-algorithm
      * configs.
+     * @param projectId The project ID for fetching the definition from the external server.
      */
-    public loadStudyDefinition(): Observable<AlgorithmDefinition> {
-        return this.fetchAlgorithmDefinition(SynthetizationService.STUDY_DEFINITION_PATH).pipe(
+    public loadStudyDefinition(projectId: string): Observable<AlgorithmDefinition> {
+        return this.fetchAlgorithmDefinition(projectId, SynthetizationService.STUDY_DEFINITION_PATH).pipe(
             map((value: string) => plainToInstance(AlgorithmDefinition, parse(value))),
         );
     }

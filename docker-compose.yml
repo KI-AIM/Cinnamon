@@ -38,6 +38,10 @@ services:
             SPRING.SERVLET.MULTIPART.MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
             CINNAMON_MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
 
+            # Initial administrator, created on startup if the user does not exist yet
+            CINNAMON_ADMIN_USERNAME: ${CINNAMON_ADMIN_USERNAME:-}
+            CINNAMON_ADMIN_PASSWORD: ${CINNAMON_ADMIN_PASSWORD:-}
+
             # Datasource has to match with the configuration of the cinnamon-db container
             SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD}
             SPRING_DATASOURCE_URL: jdbc:postgresql://cinnamon-db:5432/${PG_DATABASE}

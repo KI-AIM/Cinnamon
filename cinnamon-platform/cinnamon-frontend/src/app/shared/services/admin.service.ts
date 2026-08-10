@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
-import { EmailSettings } from "@shared/model/admin-settings";
+import { EmailSettings, EmailTemplate, EmailTemplateList } from "@shared/model/admin-settings";
 import { UserInfo, UserRole } from "@shared/model/user";
 import { catchError, Observable, of, throwError } from "rxjs";
 import { environments } from "src/environments/environment";
@@ -77,6 +77,44 @@ export class AdminService {
         return this.http.post<void>(this.baseUrl() + "/settings/mail/test", {
             mailAddress: mailAddress,
         });
+    }
+
+    /**
+     * Fetches all mail templates together with the languages that can be configured for them.
+     */
+    public getEmailTemplates(): Observable<EmailTemplateList> {
+        return this.http.get<EmailTemplateList>(this.baseUrl() + "/settings/mail/templates");
+    }
+
+    /**
+     * Creates a new mail template.
+     *
+     * @param template The template to create.
+     * @return The created template.
+     */
+    public createEmailTemplate(template: EmailTemplate): Observable<EmailTemplate> {
+        return this.http.post<EmailTemplate>(this.baseUrl() + "/settings/mail/templates", template);
+    }
+
+    /**
+     * Updates the mail template with the given ID.
+     * The template contains the complete content, so languages that are not part of it are removed.
+     *
+     * @param id The ID of the template to update.
+     * @param template The new values of the template.
+     * @return The updated template.
+     */
+    public updateEmailTemplate(id: number, template: EmailTemplate): Observable<EmailTemplate> {
+        return this.http.put<EmailTemplate>(this.baseUrl() + "/settings/mail/templates/" + id, template);
+    }
+
+    /**
+     * Deletes the mail template with the given ID.
+     *
+     * @param id The ID of the template to delete.
+     */
+    public deleteEmailTemplate(id: number): Observable<void> {
+        return this.http.delete<void>(this.baseUrl() + "/settings/mail/templates/" + id);
     }
 
     private baseUrl(): string {

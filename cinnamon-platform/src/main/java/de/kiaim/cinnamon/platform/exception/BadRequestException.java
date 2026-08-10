@@ -104,6 +104,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String MAIL_SETTINGS = "19";
 
+	/**
+	 * Error class code for {@link BadEmailTemplateException}.
+	 */
+	public static final String EMAIL_TEMPLATE = "20";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

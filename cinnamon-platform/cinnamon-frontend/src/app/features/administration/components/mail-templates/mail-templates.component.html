@@ -1,0 +1,162 @@
+<div class="box-header box-header-expanded">
+    <span class="box-header-icon icon-enabled"><mat-icon>drafts</mat-icon></span>
+    <span class="box-header-title">Mail Templates</span>
+</div>
+
+@if (loading) {
+
+    <div class="mail-templates-loading">
+        <mat-spinner [diameter]="32"></mat-spinner>
+    </div>
+
+} @else {
+
+    <div class="config-input-row workstep-part">
+        <div class="config-input-row-label">
+            Select the template you want to edit or create a new one.
+        </div>
+
+        <mat-form-field class="config-input-row-field hide-mat-error-gap">
+            <mat-label>Template</mat-label>
+            <mat-select [value]="selectedTemplateId" (selectionChange)="selectTemplate($event.value)">
+                @for (template of templates; track template.id) {
+                    <mat-option [value]="template.id" [disabled]="selectedTemplateId === template.id">
+                        {{ template.name }}
+                    </mat-option>
+                }
+                @if (templates.length === 0) {
+                    <mat-option [value]="null" disabled>No templates available</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+
+        <div class="config-input-row-button input-height">
+            <button mat-raised-button color="primary" type="button" [disabled]="creatingTemplate"
+                    (click)="addTemplate()">
+                New template
+            </button>
+        </div>
+    </div>
+
+    @if (selectedTemplateId == null) {
+        <div class="workstep-part">
+            <div class="mail-templates-none-selected">No template selected.</div>
+        </div>
+    } @else {
+
+        @if (form.dirty || selectedTemplateId === -1) {
+            <div class="settings-warn">Unsaved changes are lost when another template is selected.</div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="saveTemplate()" class="workstep-part">
+
+            <div>
+                <div class="settings-label settings-label-required">Name</div>
+                <mat-form-field class="w-100">
+                    <input matInput type="text" formControlName="name" placeholder="Registration confirmation">
+                    <mat-error>The name must not be blank.</mat-error>
+                    <mat-hint>The name identifies the template and must be unique.</mat-hint>
+                </mat-form-field>
+            </div>
+
+            <!-- One tab per language the template is configured for. -->
+            <div class="mail-templates-tabs workstep-part"
+                 [class.mail-templates-tabs-add-language]="availableLanguages.length > 0">
+
+                <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start"
+                               [(selectedIndex)]="selectedTabIndex">
+                    @if (addedLanguages.length === 0) {
+                        <mat-tab label="No languages" disabled>
+                        </mat-tab>
+                    }
+                    @for (language of addedLanguages; track language.name) {
+                        <mat-tab [label]="language.displayName">
+                            <div class="mail-templates-tab-content" [formGroup]="languageGroup(language.name)">
+
+                                <div>
+                                    <div class="settings-label settings-label-required">Subject</div>
+                                    <mat-form-field class="w-100">
+                                        <input matInput type="text" formControlName="subject"
+                                               placeholder="Welcome to Cinnamon">
+                                        <mat-error>The subject must not be blank.</mat-error>
+                                    </mat-form-field>
+                                </div>
+
+                                <div>
+                                    <div class="settings-label settings-label-required">Body</div>
+                                    <mat-form-field class="w-100">
+                                        <textarea matInput rows="10" formControlName="body"
+                                                  placeholder="Content of the email"></textarea>
+                                        <mat-error>The body must not be blank.</mat-error>
+                                    </mat-form-field>
+                                </div>
+
+                                <div class="mail-templates-language-actions mb-2">
+                                    <button mat-raised-button color="warn" type="button"
+                                            (click)="removeLanguage(language.name)">
+                                        Remove {{ language.displayName }}
+                                    </button>
+                                </div>
+
+                            </div>
+                        </mat-tab>
+                    }
+                </mat-tab-group>
+
+                <!-- Sits at the right end of the tab labels. The languages are delivered by the backend, so the
+                     selection grows with every added language. -->
+                <div class="mail-templates-add-language">
+                    <mat-form-field class="flat-mat-form-field mail-templates-add-language-field"
+                                    subscriptSizing="dynamic">
+                        <mat-select placeholder="Add language" [disabled]="availableLanguages.length === 0"
+                                    [formControl]="addLanguageControl" (selectionChange)="addLanguage($event.value)">
+                            @for (language of availableLanguages; track language.name) {
+                                <mat-option [value]="language.name">{{ language.displayName }}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+
+            </div>
+
+            @if (form.hasError('noLanguageConfigured')) {
+                <div class="cinnamon-error workstep-part">
+                    The template must be configured for at least one language.
+                </div>
+            }
+
+            <div class="mail-templates-actions">
+                @if (!creatingTemplate) {
+                    <button mat-raised-button color="warn" type="button"
+                            (click)="openDeleteTemplateDialog(deleteTemplateDialog)">
+                        Delete template
+                    </button>
+                }
+                <button mat-raised-button color="primary" type="submit"
+                        [disabled]="!form.valid || form.pristine || saving">
+                    {{ creatingTemplate ? 'Create template' : 'Save template' }}
+                </button>
+            </div>
+
+        </form>
+    }
+
+}
+
+<ng-template #deleteTemplateDialog>
+    <h2 mat-dialog-title>Delete template?</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+
+        <app-info-card typeClass="card-warn">
+            <strong>This action is permanent.</strong> The template <strong>{{ selectedTemplateName }}</strong>
+            and its content in all languages will be deleted.
+        </app-info-card>
+
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary">Cancel</button>
+        <button mat-raised-button color="warn" type="button" (click)="deleteTemplate()">
+            Delete template
+        </button>
+    </mat-dialog-actions>
+</ng-template>

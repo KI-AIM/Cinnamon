@@ -6,13 +6,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ProjectService } from "@shared/services/project.service";
 import { Algorithm } from './app/shared/model/algorithm';
 import { AlgorithmService, ReadConfigResult } from './app/shared/services/algorithm.service';
 import { ConfigurationService } from './app/shared/services/configuration.service';
 
 class TestAlgorithmService extends AlgorithmService {
-  constructor(http: HttpClient, configurationService: ConfigurationService) {
-    super(http, configurationService);
+  constructor(http: HttpClient, configurationService: ConfigurationService, projectService: ProjectService) {
+    super(http, configurationService, projectService);
   }
 
   override getConfigurationName(): string {
@@ -41,9 +42,10 @@ beforeEach(() => {
       provideHttpClientTesting(),
       {
         provide: AlgorithmService,
-        useFactory: () => new TestAlgorithmService(
-          {} as HttpClient,
-          new ConfigurationService({} as HttpClient),
+          useFactory: () => new TestAlgorithmService(
+              {} as HttpClient,
+              new ConfigurationService({} as HttpClient, new ProjectService({} as HttpClient)),
+              new ProjectService({} as HttpClient)
         ),
       },
     ],

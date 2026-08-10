@@ -1,3 +1,6 @@
+cinnamon.admin.username=admin
+cinnamon.admin.password=changeme
+
 cinnamon.external-server.anonymization-server.callback-host=host.docker.internal
 cinnamon.external-server.synthetization-server.callback-host=host.docker.internal
 cinnamon.external-server.technical-evaluation-server.callback-host=host.docker.internal

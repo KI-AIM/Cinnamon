@@ -1,0 +1,66 @@
+@import 'src/app/styles/colors';
+
+:host {
+    display: block;
+}
+
+.mail-templates-loading {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.mail-templates-none-selected {
+    color: @color-secondary;
+    font-style: italic;
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.mail-templates-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    column-gap: 0.5rem;
+}
+
+.mail-templates-tabs {
+    position: relative;
+}
+
+// Places the select for adding a language at the right end of the tab labels.
+.mail-templates-add-language {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    // Height of the row containing the tab labels, so that the select is centered next to them.
+    height: 48px;
+}
+
+.mail-templates-add-language-field {
+    width: 200px;
+}
+
+// Reserves the space of the select so that the tab labels never run underneath it.
+// The padding is set on the header instead of the labels so that it does not count towards the scrolled width,
+// which would show the pagination of the tab header.
+:host ::ng-deep .mail-templates-tabs-add-language .mat-mdc-tab-header {
+    padding-right: 216px;
+}
+
+// Separates the content of a language from the tab header above it.
+.mail-templates-tab-content {
+    padding-top: 1rem;
+}
+
+.mail-templates-language-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 1rem;
+}

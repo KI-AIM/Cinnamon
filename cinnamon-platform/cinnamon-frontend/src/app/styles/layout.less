@@ -61,6 +61,8 @@ app-navigation{
 }
 
 .config-input-row-button {
+    display: flex;
+    align-items: center;
     flex: 0 1 auto;
 }
 
@@ -228,6 +230,7 @@ app-navigation{
 }
 
 .settings-label {
+    display: inline-flex; // Prevents spaces between label and required asterisk
     font-size: 0.8rem;
     font-weight: bold;
 }
@@ -236,7 +239,6 @@ app-navigation{
     content: "*";
     font-size: 0.8rem;
     font-weight: normal;
-    margin-left: -0.2rem;
 }
 
 .settings-label:has(+ .mat-form-field-invalid)  {
@@ -397,7 +399,7 @@ app-navigation{
     width: 100%;
 }
 
-.workstep-part:not(:last-child):not(:has(.mat-mdc-form-field)) {
+.workstep-part:not(:last-child):not(:has(.mat-mdc-form-field):not(:has(.hide-mat-error-gap))) {
     margin-bottom: 1.5rem;
 }
 

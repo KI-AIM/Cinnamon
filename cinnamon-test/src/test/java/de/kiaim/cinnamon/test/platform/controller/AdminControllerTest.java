@@ -158,6 +158,37 @@ public class AdminControllerTest extends ControllerTest {
 	}
 
 	@Test
+	public void setMailSettingsWithBlankUsernameAndSmtpAuth() throws Exception {
+		final EMailSettingsDTO request = createRequest("mail.example.com");
+		request.setMailUsername(" ");
+
+		mockMvc.perform(put("/api/admin/settings/mail")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("mailUsername",
+		                                  "Username must not be blank if SMTP authentication is enabled."));
+	}
+
+	@Test
+	public void setMailSettingsWithoutCredentialsAndWithoutSmtpAuth() throws Exception {
+		final EMailSettingsDTO request = createRequest("mail.example.com");
+		request.setMailSMTPAuth(false);
+		request.setMailUsername(null);
+		request.setMailPassword(null);
+
+		mockMvc.perform(put("/api/admin/settings/mail")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.mailSMTPAuth").value(false))
+		       .andExpect(jsonPath("$.mailUsername").doesNotExist())
+		       .andExpect(jsonPath("$.mailPasswordSet").value(false));
+	}
+
+	@Test
 	public void setMailSettingsCreatesSettings() throws Exception {
 		mockMvc.perform(put("/api/admin/settings/mail")
 				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))

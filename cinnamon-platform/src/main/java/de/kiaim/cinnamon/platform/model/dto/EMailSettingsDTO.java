@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
+import de.kiaim.cinnamon.platform.model.validation.SmtpAuthCredentials;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
@@ -15,6 +16,7 @@ import lombok.Setter;
  * @author Daniel Preciado-Marquez
  */
 @Schema(description = "The mail settings of the application.")
+@SmtpAuthCredentials
 @Getter @Setter
 public class EMailSettingsDTO {
 
@@ -33,12 +35,13 @@ public class EMailSettingsDTO {
 	@Schema(description = "Whether SMTP authentication is enabled.")
 	private boolean mailSMTPAuth;
 
-	@Schema(description = "Username of the application mailer.", example = "mailer")
-	@NotBlank(message = "Username must not be blank.")
+	@Schema(description = "Username of the application mailer. Only required if SMTP authentication is enabled.",
+	        example = "mailer")
 	private String mailUsername;
 
 	@Schema(description = "Password of the application mailer. Only used when setting the mail settings; "
-	                      + "never part of a response.", example = "changeme")
+	                      + "never part of a response. Only used if SMTP authentication is enabled.",
+	        example = "changeme")
 	private String mailPassword;
 
 	@Schema(description = "Whether a password has been configured for the application mailer. Only part of "

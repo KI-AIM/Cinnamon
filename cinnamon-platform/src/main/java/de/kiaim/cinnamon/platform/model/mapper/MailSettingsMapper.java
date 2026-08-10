@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.model.mapper;
 
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
 import de.kiaim.cinnamon.platform.model.entity.admin.EmailSettingsEntity;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -26,9 +27,22 @@ public interface MailSettingsMapper {
 
 	/**
 	 * Updates the given entity with the values of the DTO.
+	 * The password is handled separately by {@link #updatePassword(EmailSettingsEntity, EMailSettingsDTO)}.
 	 */
 	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "mailPassword", ignore = true)
 	void updateEntity(@MappingTarget EmailSettingsEntity entity, EMailSettingsDTO dto);
+
+	/**
+	 * Sets the password of the entity if the DTO contains a new one.
+	 * Since the password is never part of a response, a missing password means that the stored one should be kept.
+	 */
+	@AfterMapping
+	default void updatePassword(@MappingTarget final EmailSettingsEntity entity, final EMailSettingsDTO dto) {
+		if (dto.getMailPassword() != null && !dto.getMailPassword().isBlank()) {
+			entity.setMailPassword(dto.getMailPassword());
+		}
+	}
 
 	@Named("isPasswordSet")
 	default boolean isPasswordSet(final String password) {

@@ -75,6 +75,19 @@ public class AppSettingsServiceTest extends ContextRequiredTest {
 	}
 
 	@Test
+	public void setMailSettingsKeepsExistingPassword() {
+		appSettingsService.setMailSettings(createRequest("mail.example.com"));
+
+		final EMailSettingsDTO request = createRequest("mail2.example.com");
+		request.setMailPassword(null);
+		final EMailSettingsDTO updated = appSettingsService.setMailSettings(request);
+
+		assertEquals("mail2.example.com", updated.getMailHost());
+		assertTrue(updated.isMailPasswordSet(), "The stored password should be kept if none is given!");
+		assertEquals("changeme", emailSettingsRepository.findFirstByOrderByIdAsc().orElseThrow().getMailPassword());
+	}
+
+	@Test
 	public void setMailSettingsOverwritesExistingSettings() {
 		appSettingsService.setMailSettings(createRequest("mail.example.com"));
 		final EMailSettingsDTO second = appSettingsService.setMailSettings(createRequest("mail2.example.com"));

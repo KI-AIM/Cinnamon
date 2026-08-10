@@ -41,8 +41,9 @@ public class EmailSettingsEntity {
 
 	/**
 	 * Username of the application mailer.
+	 * Only required if SMTP authentication is enabled.
 	 */
-	@Column(nullable = false)
+	@Column
 	private String mailUsername;
 
 	/**

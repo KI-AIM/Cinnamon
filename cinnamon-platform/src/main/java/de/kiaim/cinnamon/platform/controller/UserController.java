@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
+import de.kiaim.cinnamon.platform.service.UserInvitationService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,11 +32,17 @@ import java.util.Set;
 public class UserController {
 
 	private final UserService userService;
+	private final UserInvitationService userInvitationService;
 	private final ProjectService projectService;
 
 	@Autowired
-	public UserController(final UserService userService, ProjectService projectService) {
+	public UserController(
+			final UserService userService,
+			final UserInvitationService userInvitationService,
+			final ProjectService projectService
+	) {
 		this.userService = userService;
+		this.userInvitationService = userInvitationService;
 		this.projectService = projectService;
 	}
 
@@ -66,9 +73,11 @@ public class UserController {
 			             content = @Content),
 			@ApiResponse(responseCode = "400",
 			             description = "Invalid request. Username is not available or passwords do not match.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class)),
-			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "409",
+			             description = "Users cannot register because invitations are required.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
 			                                 schema = @Schema(implementation = ErrorResponse.class))}),
 	})
 	@PostMapping(value = "/register",
@@ -79,9 +88,26 @@ public class UserController {
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE),
 			           schema = @Schema(implementation = RegisterRequest.class))
 			final @RequestBody @Valid RegisterRequest registerRequest
-	) throws BadUserException {
-		userService.register(registerRequest.getUsername(), registerRequest.getPassword());
+	) throws BadAppStateException, BadUserException {
+		userService.register(registerRequest.getUsername(), registerRequest.getPassword(), registerRequest.getEmail());
 		return new ResponseEntity<>(HttpStatus.OK);
+	}
+
+	@GetMapping(value = "/accept-invitation/{token}",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public RegisterRequest getAcceptInvitation(
+			@PathVariable("token") final String token
+	) throws ApiException {
+		return userInvitationService.getInvitationByToken(token);
+	}
+
+	@PostMapping(value = "/accept-invitation/{token}",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
+	public void postAcceptInvitation(
+			@PathVariable("token") final String token,
+			@RequestBody @Valid final RegisterRequest registerRequest
+	) throws ApiException {
+		userInvitationService.acceptInvitation(token, registerRequest);
 	}
 
 	@Operation(summary="Deletes the currently authenticated user.",

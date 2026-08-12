@@ -108,7 +108,22 @@ public class EmailTemplateService {
 	 */
 	@Transactional
 	public void deleteEmailTemplate(final Long id) throws BadEmailTemplateException {
-		emailTemplateRepository.delete(getEmailTemplateEntity(id));
+		var entity = getEmailTemplateEntity(id);
+
+		// Remove the template from all invitations that use it
+		// so that the invitations can still be sent with their custom subject and body.
+		for (var item : entity.getItems()) {
+			if (!item.getUsages().isEmpty()) {
+				for (var invitation : item.getUsages()) {
+					// TODO are these getting saved?
+					invitation.setEmailCustomSubject(item.getSubject());
+					invitation.setEmailCustomBody(item.getBody());
+					invitation.setEmailTemplateItem(null);
+				}
+			}
+		}
+
+		emailTemplateRepository.delete(entity);
 	}
 
 	/**

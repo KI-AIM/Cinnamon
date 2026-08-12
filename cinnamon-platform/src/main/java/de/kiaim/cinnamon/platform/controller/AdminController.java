@@ -2,15 +2,13 @@ package de.kiaim.cinnamon.platform.controller;
 
 
 import de.kiaim.cinnamon.platform.exception.ApiException;
-import de.kiaim.cinnamon.platform.model.dto.AdminUserRoleChangeRequest;
-import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
-import de.kiaim.cinnamon.platform.model.dto.EmailTemplateDTO;
-import de.kiaim.cinnamon.platform.model.dto.EmailTemplateListDTO;
-import de.kiaim.cinnamon.platform.model.dto.TestMailRequest;
-import de.kiaim.cinnamon.platform.model.dto.UserInfo;
+import de.kiaim.cinnamon.platform.exception.BadUserException;
+import de.kiaim.cinnamon.platform.exception.BadUserInvitationException;
+import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.AppSettingsService;
 import de.kiaim.cinnamon.platform.service.EmailTemplateService;
+import de.kiaim.cinnamon.platform.service.UserInvitationService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
@@ -36,12 +35,16 @@ import java.util.Set;
 public class AdminController {
 
 	private final UserService userService;
+	private final UserInvitationService userInvitationService;
 	private final AppSettingsService appSettingsService;
 	private final EmailTemplateService emailTemplateService;
 
-	public AdminController(final UserService userService, final AppSettingsService appSettingsService,
+	public AdminController(final UserService userService,
+	                       final UserInvitationService userInvitationService,
+	                       final AppSettingsService appSettingsService,
 	                       final EmailTemplateService emailTemplateService) {
 		this.userService = userService;
+		this.userInvitationService = userInvitationService;
 		this.appSettingsService = appSettingsService;
 		this.emailTemplateService = emailTemplateService;
 	}
@@ -82,6 +85,46 @@ public class AdminController {
 
 		return userService.getUserInfo(updatedUser);
 	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Invitations ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@GetMapping(value = "/invitations")
+	public Set<UserInvitationInfo> getAllInvitations() {
+		return userInvitationService.getAllInvitations();
+	}
+
+	@PostMapping(value = "/invitations")
+	public UserInvitationInfo createInvitation(
+			@RequestBody @Valid final UserInvitationRequest request,
+			@AuthenticationPrincipal final UserEntity currentUser
+	) throws ApiException {
+		return userInvitationService.createInvitation(request, currentUser.getUsername());
+	}
+
+	@GetMapping(value = "/invitations/{id}")
+	public UserInvitationInfo getInvitation(@PathVariable("id") final Long invitationId) throws ApiException {
+		return userInvitationService.getInvitationById(invitationId);
+	}
+
+	@PutMapping(value = "/invitations/{id}")
+	public UserInvitationInfo updateInvitation(
+			@PathVariable("id") final Long invitationId,
+			@RequestBody @Valid final UserInvitationRequest request
+	) throws ApiException {
+		return userInvitationService.updateInvitation(invitationId, request);
+	}
+
+	@PostMapping(value = "/invitations/{id}/send")
+	public UserInvitationInfo sendInvitation(@PathVariable("id") final Long invitationId) throws ApiException {
+		return userInvitationService.sendInvitation(invitationId);
+	}
+
+	@PostMapping(value = "/invitations/{id}/revoke")
+	public UserInvitationInfo revokeInvitation(@PathVariable("id") final Long invitationId) throws ApiException {
+		return userInvitationService.revokeInvitation(invitationId);
+	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ MailSettings ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	@Operation(summary = "Returns the mail settings of the application.",
 	           description = "Returns the configured mail settings of the application. The configured password is "

@@ -109,6 +109,11 @@ public abstract class BadRequestException extends ApiException {
 	 */
 	public static final String EMAIL_TEMPLATE = "20";
 
+	/**
+	 * Error class code for {@link BadUserInvitationException}.
+	 */
+	public static final String USER_INVITATION = "21";
+
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

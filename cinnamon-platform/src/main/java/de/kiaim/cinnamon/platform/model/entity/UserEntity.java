@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
+import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.lang.Nullable;
@@ -18,15 +19,34 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class UserEntity implements UserDetails {
 
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	@Id
+	@Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Long id;
 
+	/**
+	 * Status of the account.
+	 */
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private UserInvitationStatus status;
+
+	/**
+	 * Username of the user for authentication and identification.
+	 */
 	@Column(nullable = false, unique = true)
 	private String username;
 
+	/**
+	 * Password of the user.
+	 */
 	@Column(nullable = false)
 	private String password;
+
+	/**
+	 * Mail address of the user.
+	 * Null if the user did not provide an email address.
+	 */
+	@Nullable
+	private String email;
 
 	/**
 	 * The roles of this user.
@@ -39,6 +59,22 @@ public class UserEntity implements UserDetails {
 	@Column(name = "user_role", nullable = false)
 	@Enumerated(EnumType.STRING)
 	private final Set<UserRole> userRoles = new HashSet<>();
+
+	/**
+	 * The invitation associated with this user.
+	 * Can be null if the user was created without an invitation (e.g., by an admin, or by registering themselves).
+	 */
+	@OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Nullable
+	private UserInvitationEntity invitation;
+
+	/**
+	 * The invitations sent by this user.
+	 * Mapped by {@link UserInvitationEntity#getInvitedBy()}.
+	 */
+	@Setter(AccessLevel.NONE)
+	@OneToMany(mappedBy = "invitedBy", fetch = FetchType.LAZY, cascade = {})
+	private final Set<UserInvitationEntity> invitations = new HashSet<>();
 
 	/**
 	 * The projects owned by this user.

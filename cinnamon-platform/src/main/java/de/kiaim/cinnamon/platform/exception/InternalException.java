@@ -54,6 +54,11 @@ public abstract class InternalException extends ApiException {
 	 */
 	public static final String MAIL = "9";
 
+	/**
+	 * Exception class code for exceptions from {@link InternalUserInvitationException}.
+	 */
+    public static final String USER_INVITATION = "10";
+
 	public InternalException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

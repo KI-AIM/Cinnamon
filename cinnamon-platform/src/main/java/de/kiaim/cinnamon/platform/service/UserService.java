@@ -10,6 +10,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,6 +28,8 @@ import java.util.stream.Collectors;
 @Log4j2
 public class UserService implements UserDetailsService {
 
+	private final boolean isInvitationRequired;
+
 	private final UserRepository userRepository;
 
 	private final PasswordEncoder passwordEncoder;
@@ -34,8 +37,13 @@ public class UserService implements UserDetailsService {
 	private final ProjectService projectService;
 
 	@Autowired
-	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-	                   final ProjectService projectService) {
+	public UserService(
+			@Value("${cinnamon.users.invitation.is-required}") boolean isInvitationRequired,
+			UserRepository userRepository,
+			PasswordEncoder passwordEncoder,
+			final ProjectService projectService
+	) {
+		this.isInvitationRequired = isInvitationRequired;
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.projectService = projectService;
@@ -99,30 +107,55 @@ public class UserService implements UserDetailsService {
 	}
 
 	/**
-	 * Registers a new user with the given username and password.
+	 * Registers a new user with the given username, password, and email.
 	 * The user gets the role {@link UserRole#ROLE_USER}.
 	 *
-	 * @param username The username of the new user.
+	 * @param username    The username of the new user.
 	 * @param rawPassword The raw password of the new user.
+	 * @param email       (Optional) The email of the new user.
 	 * @return The newly created user entity.
-	 * @throws BadUserException If a user with the given username already exists.
+	 * @throws BadAppStateException If the registration requires an invitation.
+	 * @throws BadUserException     If a user with the given username already exists.
 	 */
 	@Transactional
-	public UserEntity register(final String username, final String rawPassword) throws BadUserException {
-		return register(username, rawPassword, Set.of(UserRole.ROLE_USER));
+	public UserEntity register(final String username, final String rawPassword, @Nullable final String email)
+			throws BadAppStateException, BadUserException {
+		if (isInvitationRequired) {
+			throw new BadAppStateException(BadAppStateException.REGISTRATION_REQUIRES_INVITATION,
+			                               "Registration requires an invitation");
+		}
+
+		return register(username, rawPassword, Set.of(UserRole.ROLE_USER), email);
 	}
 
 	/**
 	 * Registers a new user with the given username, password, and roles.
 	 *
-	 * @param username The username of the new user.
+	 * @param username    The username of the new user.
 	 * @param rawPassword The raw password of the new user.
-	 * @param roles The roles of the new user.
+	 * @param roles       The roles of the new user.
 	 * @return The newly created user entity.
 	 * @throws BadUserException If a user with the given username already exists.
 	 */
 	@Transactional
 	public UserEntity register(final String username, final String rawPassword, final Set<UserRole> roles)
+			throws BadUserException {
+		return register(username, rawPassword, roles, null);
+	}
+
+	/**
+	 * Registers a new user with the given username, email, password, and roles.
+	 *
+	 * @param username    The username of the new user.
+	 * @param rawPassword The raw password of the new user.
+	 * @param roles       The roles of the new user.
+	 * @param email       (Optional) The email of the new user.
+	 * @return The newly created user entity.
+	 * @throws BadUserException If a user with the given username already exists.
+	 */
+	@Transactional
+	public UserEntity register(final String username, final String rawPassword,
+	                           final Set<UserRole> roles, @Nullable final String email)
 			throws BadUserException {
 		if (doesUserWithUsernameExist(username)) {
 			throw new BadUserException(BadUserException.ALREADY_EXISTS,
@@ -131,6 +164,7 @@ public class UserService implements UserDetailsService {
 
 		final UserEntity userEntity = new UserEntity();
 		userEntity.setUsername(username);
+		userEntity.setEmail(email);
 		userEntity.setPassword(passwordEncoder.encode(rawPassword));
 		userEntity.setUserRoles(roles);
 

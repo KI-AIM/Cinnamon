@@ -42,7 +42,7 @@ public class AppSettingsService {
 	 */
 	@Transactional(readOnly = true)
 	public EMailSettingsDTO getMailSettings() throws BadMailSettingsException {
-		return mailSettingsMapper.toDto(getConfiguredMailSettings());
+		return mailSettingsMapper.toDto(mailService.getConfiguredMailSettings());
 	}
 
 	/**
@@ -71,20 +71,7 @@ public class AppSettingsService {
 	 */
 	@Transactional(readOnly = true)
 	public void sendTestMail(final String mailAddress) throws BadMailSettingsException, InternalMailException {
-		final EmailSettingsEntity settings = getConfiguredMailSettings();
-		mailService.sendMail(settings, mailAddress, TEST_MAIL_SUBJECT, TEST_MAIL_BODY);
-	}
-
-	/**
-	 * Returns the configured mail settings entity.
-	 *
-	 * @return The mail settings.
-	 * @throws BadMailSettingsException If the mail settings have not been configured yet.
-	 */
-	private EmailSettingsEntity getConfiguredMailSettings() throws BadMailSettingsException {
-		return emailSettingsRepository.findFirstByOrderByIdAsc()
-		                              .orElseThrow(() -> new BadMailSettingsException(BadMailSettingsException.NOT_FOUND,
-		                                                                              "Mail settings have not been configured yet!"));
+		mailService.sendMail(mailAddress, TEST_MAIL_SUBJECT, TEST_MAIL_BODY);
 	}
 
 }

@@ -40,9 +40,9 @@ configurations:
         type: integer
         label: Number of Samples
         description: Must match the number of rows in the provided dataset because each input row is rewritten exactly once.
-        default_value: $dataset.original.numberRows
+        default_value: ${original.dataset.numberRows}
         min_value: 1
-        max_value: $dataset.original.numberRows
+        max_value: ${original.dataset.numberRows}
       - name: temperature
         type: float
         label: Temperature

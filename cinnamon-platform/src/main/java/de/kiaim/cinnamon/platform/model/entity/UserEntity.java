@@ -23,13 +23,6 @@ public class UserEntity implements UserDetails {
 	private Long id;
 
 	/**
-	 * Status of the account.
-	 */
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private UserInvitationStatus status;
-
-	/**
 	 * Username of the user for authentication and identification.
 	 */
 	@Column(nullable = false, unique = true)
@@ -64,7 +57,7 @@ public class UserEntity implements UserDetails {
 	 * The invitation associated with this user.
 	 * Can be null if the user was created without an invitation (e.g., by an admin, or by registering themselves).
 	 */
-	@OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToOne(mappedBy = "acceptedBy", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Nullable
 	private UserInvitationEntity invitation;
 

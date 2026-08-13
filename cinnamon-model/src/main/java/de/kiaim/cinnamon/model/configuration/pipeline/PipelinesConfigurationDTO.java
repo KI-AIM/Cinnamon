@@ -1,5 +1,8 @@
 package de.kiaim.cinnamon.model.configuration.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -19,7 +22,7 @@ import java.util.List;
 @Schema(description = "Configuration for multiple pipelines.")
 @NoArgsConstructor
 @Getter @Setter
-public class PipelinesConfigurationDTO {
+public class PipelinesConfigurationDTO implements ConfigurationDTO {
 
 	/**
 	 * List of pipelines to be configured.
@@ -28,5 +31,14 @@ public class PipelinesConfigurationDTO {
 	@Schema(description = "List of pipelines to be configured.")
 	@NotNull @Size(min = 1, message = "At least one pipeline must be provided") @Valid
 	private final List<PipelineConfigurationDTO> pipelines = new ArrayList<>();
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@JsonIgnore
+	@Override
+	public String getKey() {
+		return ConfigurationFile.PIPELINE_CONFIGURATION_KEY;
+	}
 
 }

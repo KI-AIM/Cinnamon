@@ -35,7 +35,7 @@ public class WorkflowApiSecurityTest extends ControllerTest {
 
 	@BeforeEach
 	public void createApiUser() throws BadUserException {
-		userService.register(API_USER, API_PASSWORD, Set.of(UserRole.ROLE_API));
+		userService.register(API_USER, API_PASSWORD, Set.of(UserRole.ROLE_API), null);
 	}
 
 	@Test

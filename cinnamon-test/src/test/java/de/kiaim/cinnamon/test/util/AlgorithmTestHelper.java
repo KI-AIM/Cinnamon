@@ -60,7 +60,7 @@ public class AlgorithmTestHelper {
 		               description: Select the threshold value based on the risk type. # AP : should we provide an example ?
 		               default_value: 0.1
 		               min_value: 0.0
-		               max_value: $dataset.original.numberHoldOutRows
+		               max_value: ${original.dataset.numberHoldOutRows}
 		       """;
 	}
 

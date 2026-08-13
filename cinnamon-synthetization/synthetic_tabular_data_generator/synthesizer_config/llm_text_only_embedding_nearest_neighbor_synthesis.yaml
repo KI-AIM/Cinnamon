@@ -77,7 +77,7 @@ configurations:
         type: integer
         label: Number of Samples
         description: Number of synthetic text rows to generate. Source rows may be sampled repeatedly when more rows are requested than are available in the input dataset.
-        default_value: $dataset.original.numberRows
+        default_value: ${original.dataset.numberRows}
         min_value: 1
         max_value: 1000000
       - name: temperature

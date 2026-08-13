@@ -53,7 +53,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(jsonMapper.writeValueAsString(
-						                new RegisterRequest(username, password, password))))
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isOk());
 
 		assertTrue(userService.doesUserWithUsernameExist(username), "User has not been created!");
@@ -68,8 +68,8 @@ public class UserControllerTest extends ControllerTest {
 
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                .content(
-						                jsonMapper.writeValueAsString(new RegisterRequest(username, password, password))))
+				                .content(jsonMapper.writeValueAsString(
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("username", "Username is not available!"));
 	}
@@ -82,7 +82,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(username, password, "wrong_" + password))))
+						                new RegisterRequest(username, null, password, "wrong_" + password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("passwordRepeated", "Passwords do not match!"));
 	}
@@ -136,7 +136,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(username, password, password))))
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must not be blank!"));
 	}
@@ -149,7 +149,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(username, password, password))))
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must be at least 12 characters long!"));
 	}
@@ -162,7 +162,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(username, password, password))))
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one lowercase character!"));
 	}
@@ -175,7 +175,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(username, password, password))))
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one uppercase character!"));
 	}
@@ -188,7 +188,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(username, password, password))))
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one digit!"));
 	}
@@ -201,7 +201,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(username, password, password))))
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must contain at least one special character!"));
 	}
@@ -214,7 +214,7 @@ public class UserControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/user/register")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .content(objectMapper.writeValueAsString(
-						                new RegisterRequest(username, password, password))))
+						                new RegisterRequest(username, null, password, password))))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(validationError("password", "Password must be at least 12 characters long!",
 		                                  "Password must contain at least one uppercase character!"));

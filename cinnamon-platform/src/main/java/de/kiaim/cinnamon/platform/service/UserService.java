@@ -109,6 +109,7 @@ public class UserService implements UserDetailsService {
 	/**
 	 * Registers a new user with the given username, password, and email.
 	 * The user gets the role {@link UserRole#ROLE_USER}.
+	 * Checks if registration requires an invitation and throws a BadAppStateException if it does.
 	 *
 	 * @param username    The username of the new user.
 	 * @param rawPassword The raw password of the new user.
@@ -129,22 +130,8 @@ public class UserService implements UserDetailsService {
 	}
 
 	/**
-	 * Registers a new user with the given username, password, and roles.
-	 *
-	 * @param username    The username of the new user.
-	 * @param rawPassword The raw password of the new user.
-	 * @param roles       The roles of the new user.
-	 * @return The newly created user entity.
-	 * @throws BadUserException If a user with the given username already exists.
-	 */
-	@Transactional
-	public UserEntity register(final String username, final String rawPassword, final Set<UserRole> roles)
-			throws BadUserException {
-		return register(username, rawPassword, roles, null);
-	}
-
-	/**
 	 * Registers a new user with the given username, email, password, and roles.
+	 * Bypasses the check for invitation requirement, so this method should only be used by admins or for testing purposes.
 	 *
 	 * @param username    The username of the new user.
 	 * @param rawPassword The raw password of the new user.

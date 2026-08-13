@@ -1,11 +1,8 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
-import de.kiaim.cinnamon.platform.model.entity.admin.EmailTemplateItemEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
 import lombok.Data;
 import org.springframework.lang.Nullable;
 
@@ -48,7 +45,7 @@ public class UserInvitationInfo {
 	                      "Null if the invitation was sent with a custom subject and body, or the template was deleted. " +
 	                      "If null, the custom subject and body will be used for sending the invitation email.")
 	@Nullable
-	private Long emailTemplateItem;
+	private Long emailTemplateItemId;
 
 	/**
 	 * The custom subject of the invitation email.

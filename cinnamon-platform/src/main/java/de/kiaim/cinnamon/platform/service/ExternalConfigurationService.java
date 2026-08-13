@@ -18,7 +18,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,9 +30,9 @@ public class ExternalConfigurationService {
 	private final ObjectMapper yamlMapper;
 	private final WebClient yamlWebClient;
 
-	private final DatabaseService databaseService;
 	private final ExternalServerInstanceService externalServerInstanceService;
 	private final HttpService httpService;
+	private final ResourceSelectorService resourceSelectorService;
 	private final StepService stepService;
 
 	private final Map<String, AvailableAlgorithms> cachedAvailableAlgorithms = new ConcurrentHashMap<>();
@@ -41,14 +40,15 @@ public class ExternalConfigurationService {
 
 	public ExternalConfigurationService(final SerializationConfig serializationConfig,
 	                                    @Qualifier("multiFormatWebClient") final WebClient yamlWebClient,
-	                                    final DatabaseService databaseService,
 	                                    final ExternalServerInstanceService externalServerInstanceService,
-	                                    final HttpService httpService, final StepService stepService) {
+	                                    final HttpService httpService,
+	                                    final ResourceSelectorService resourceSelectorService,
+	                                    final StepService stepService) {
 		this.yamlMapper = serializationConfig.yamlMapper();
 		this.yamlWebClient = yamlWebClient;
-		this.databaseService = databaseService;
 		this.externalServerInstanceService = externalServerInstanceService;
 		this.httpService = httpService;
+		this.resourceSelectorService = resourceSelectorService;
 		this.stepService = stepService;
 	}
 
@@ -205,7 +205,7 @@ public class ExternalConfigurationService {
 	 */
 	public AlgorithmDefinition fetchAlgorithmDefinition(final ProjectEntity project, final String configurationName,
 	                                                    final String definitionPath)
-			throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalRequestException {
+			throws BadConfigurationNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalRequestException, BadStepNameException, BadStateException, InternalIOException {
 		final AlgorithmDefinition algorithmDefinition = fetchAlgorithmDefinition(configurationName, definitionPath);
 		injectParameters(project, algorithmDefinition);
 		return algorithmDefinition;
@@ -322,7 +322,7 @@ public class ExternalConfigurationService {
 	 * @throws InternalDataSetPersistenceException If retrieving parameters from the database failed.
 	 */
 	private void injectParameters(final ProjectEntity project, final AlgorithmDefinition algorithmDefinition)
-			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+			throws InternalDataSetPersistenceException, InternalInvalidStateException, BadStepNameException, BadStateException, InternalIOException, BadConfigurationNameException {
 		for (final var entry : algorithmDefinition.getConfigurationGroupDefinition().entrySet()) {
 			injectParameters(project, entry.getValue());
 		}
@@ -332,7 +332,7 @@ public class ExternalConfigurationService {
 	 * See {@link #injectParameters(ProjectEntity, AlgorithmDefinition)}.
 	 */
 	private void injectParameters(final ProjectEntity project, final JsonNode objectNode)
-			throws InternalDataSetPersistenceException, InternalInvalidStateException {
+			throws InternalDataSetPersistenceException, InternalInvalidStateException, BadStepNameException, BadStateException, InternalIOException, BadConfigurationNameException {
 		if (!objectNode.isObject()) {
 			return;
 		}
@@ -352,26 +352,10 @@ public class ExternalConfigurationService {
 			}
 
 			if (entry.getValue().isTextual()) {
-
 				final var stringValue = entry.getValue().asText();
-
-				// Inject parameters for the original data set
-				if (project.getOriginalData().getDataSet() != null) {
-					if (Objects.equals(stringValue, "$dataset.original.numberHoldOutRows") ||
-					    Objects.equals(stringValue, "$dataset.original.numberRows")) {
-						final DataSetInfo info;
-						try {
-							info = databaseService.getInfo(project.getOriginalData().getDataSet());
-						} catch (final BadStateException e) {
-							throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_DATA_STET,
-							                                        "Failed to get dataset info!", e);
-						}
-						final int value = Objects.equals(stringValue, "$dataset.original.numberRows")
-						                  ? info.getNumberRows()
-						                  : info.getNumberHoldOutRows();
-						entry.setValue(yamlMapper.getNodeFactory().numberNode(value));
-					}
-				}
+				final var resolvedValue = resourceSelectorService.getValueFromSelector(stringValue, project);
+				final JsonNode newValue = yamlMapper.valueToTree(resolvedValue);
+				entry.setValue(newValue);
 			}
 		}
 	}

@@ -1,5 +1,8 @@
 package de.kiaim.cinnamon.model.configuration.project;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +20,7 @@ import org.springframework.lang.Nullable;
 @Schema(description = "Configurations for the project.")
 @Getter @Setter
 @EqualsAndHashCode
-public class ProjectConfigurationDTO {
+public class ProjectConfigurationDTO implements ConfigurationDTO {
 
 	/**
 	 * Name of the dataset.
@@ -54,4 +57,13 @@ public class ProjectConfigurationDTO {
 	@NotNull(message = "The metric configuration must be present!")
 	@Valid
 	private MetricConfiguration metricConfiguration = new MetricConfiguration();
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@JsonIgnore
+	@Override
+	public String getKey() {
+		return ConfigurationFile.PROJECT_CONFIGURATION_KEY;
+	}
 }

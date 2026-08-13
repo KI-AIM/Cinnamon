@@ -44,7 +44,7 @@ public class AdminControllerTest extends ControllerTest {
 
 	@BeforeEach
 	public void createAdminUser() throws BadUserException {
-		userService.register(ADMIN_USER, ADMIN_PASSWORD, Set.of(UserRole.ROLE_ADMIN));
+		userService.register(ADMIN_USER, ADMIN_PASSWORD, Set.of(UserRole.ROLE_ADMIN), null);
 	}
 
 	@BeforeEach

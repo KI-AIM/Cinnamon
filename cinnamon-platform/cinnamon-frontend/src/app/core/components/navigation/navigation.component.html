@@ -11,11 +11,9 @@
         @switch (pageData.navigationKey) {
             @case(NavigationKey.ADMIN) {
                 <ul class="nav flex-column justify-content-start">
-                    <li class="nav-item">
-<!--                        <a class="nav-link" routerLink="/admin">Security</a>-->
-<!--                        <a class="nav-link" routerLink="/admin">Models</a>-->
-<!--                        <a class="nav-link" routerLink="/admin">External Modules</a>-->
-<!--                        <a class="nav-link" routerLink="/admin">Settings</a>-->
+                    <li *ngFor="let page of AdminPageConfiguration | keyvalue: indexOrderAsc" class="nav-item">
+                        <a class="nav-link" [id]="page.value.id" [routerLink]="page.value.path"
+                           routerLinkActive="active">{{ page.value.text }}</a>
                     </li>
                 </ul>
             }

@@ -108,8 +108,8 @@
                 <div class="mail-templates-add-language">
                     <mat-form-field class="flat-mat-form-field mail-templates-add-language-field"
                                     subscriptSizing="dynamic">
-                        <mat-select placeholder="Add language" [disabled]="availableLanguages.length === 0"
-                                    [formControl]="addLanguageControl" (selectionChange)="addLanguage($event.value)">
+                        <mat-select placeholder="Add language" [formControl]="addLanguageControl"
+                                    (selectionChange)="addLanguage($event.value)">
                             @for (language of availableLanguages; track language.name) {
                                 <mat-option [value]="language.name">{{ language.displayName }}</mat-option>
                             }

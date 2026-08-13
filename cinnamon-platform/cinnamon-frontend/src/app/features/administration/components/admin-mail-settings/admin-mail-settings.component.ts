@@ -1,38 +1,32 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from "@angular/forms";
-import { MatCheckbox } from "@angular/material/checkbox";
-import { MatPaginator } from "@angular/material/paginator";
-import { MatSort } from "@angular/material/sort";
-import { MatTableDataSource } from "@angular/material/table";
-import { NavigationService } from "@core/services/navigation.service";
-import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { TitleService } from "@core/services/title-service.service";
+import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { EmailSettings } from "@shared/model/admin-settings";
-import { NavigationKey } from "@shared/model/navigation";
-import { UserInfo, UserRole } from "@shared/model/user";
 import { AdminService } from "@shared/services/admin.service";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { UserService } from "@shared/services/user.service";
-import { combineLatest, Observable, of, tap } from "rxjs";
+import { map, Observable, tap } from "rxjs";
 
+/**
+ * Administration page for configuring the mail settings of the application.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Component({
-  selector: 'app-admin-page',
-  standalone: false,
-  templateUrl: './admin-page.component.html',
-  styleUrl: './admin-page.component.less'
+    selector: 'app-admin-mail-settings',
+    standalone: false,
+    templateUrl: './admin-mail-settings.component.html',
+    styleUrl: './admin-mail-settings.component.less'
 })
-export class AdminPageComponent implements OnInit {
+export class AdminMailSettingsComponent implements OnInit {
 
-    protected readonly userTableColumns = ['username', 'roleUser', 'roleApi', 'roleAdmin', 'roleMonitoring'];
-    protected readonly UserRole = UserRole;
-
-    protected pageData$: Observable<{
-        currentUser: string,
-        users: UserInfo[],
-        mailSettings: EmailSettings | null,
-    }>;
-
-    protected dataSource = new MatTableDataSource();
+    /**
+     * Wraps the loaded mail settings so the page can be shown once loading finished even if no settings have been
+     * configured yet, in which case {@link AdminService#getMailSettings} emits null. The loaded values are applied
+     * to {@link mailSettingsForm} directly.
+     */
+    protected pageData$: Observable<{ mailSettings: EmailSettings | null }>;
 
     /**
      * Form containing the mail settings of the application.
@@ -58,27 +52,15 @@ export class AdminPageComponent implements OnInit {
     protected savingMailSettings: boolean = false;
     protected sendingTestMail: boolean = false;
 
-    @ViewChild(MatSort)
-    protected set sort(sort: MatSort) {
-        this.dataSource.sort = sort;
-    }
-
-    @ViewChild(MatPaginator)
-    protected set paginator(paginator: MatPaginator) {
-        this.dataSource.paginator = paginator;
-    }
-
     constructor(
         private readonly adminService: AdminService,
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly formBuilder: FormBuilder,
-        private readonly navigationService: NavigationService,
         private readonly notificationService: NotificationService,
         private readonly titleService: TitleService,
         private readonly userService: UserService,
     ) {
-        this.navigationService.setNavigationKey(NavigationKey.ADMIN);
-        this.titleService.setPageTitle("Administration - Security");
+        this.titleService.setPageTitle("Administration - Mail Settings");
     }
 
     public ngOnInit(): void {
@@ -103,47 +85,15 @@ export class AdminPageComponent implements OnInit {
             validators: [Validators.required, Validators.email],
         });
 
-        this.pageData$ = combineLatest({
-            currentUser: of(this.getCurrentUser()),
-            users: this.adminService.getAllUsers(),
-            mailSettings: this.adminService.getMailSettings(),
-        }).pipe(
-            tap(data => {
-                this.dataSource.data = data.users;
-                this.applyMailSettings(data.mailSettings);
-            }),
+        this.pageData$ = this.adminService.getMailSettings().pipe(
+            tap(mailSettings => this.applyMailSettings(mailSettings)),
+            map(mailSettings => ({mailSettings})),
         );
-    }
-
-    protected onRoleChange(username: string, role: UserRole, source: MatCheckbox): void {
-        const isChecked = source.checked;
-
-        this.adminService.updateUserRoles(username, [role], isChecked ? "ADD" : "REMOVE").subscribe({
-            error: (error) => {
-                this.errorHandlingService.addError(error, "Failed to update user role");
-                source.checked = !isChecked;
-            }
-        });
-    }
-
-    protected applyFilterEvent(event: Event): void {
-        const filterValue = (event.target as HTMLInputElement).value;
-        this.applyFilterValue(filterValue);
-    }
-
-    protected applyFilterValue(filterValue: string): void {
-        this.dataSource.filter = filterValue.trim().toLowerCase();
-
-        if (this.dataSource.paginator) {
-            this.dataSource.paginator.firstPage();
-        }
     }
 
     protected getCurrentUser(): string {
         return this.userService.getUser().userInfo.username;
     }
-
-    //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ mailSettings ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     /**
      * If SMTP authentication is enabled and the credentials are therefore required.

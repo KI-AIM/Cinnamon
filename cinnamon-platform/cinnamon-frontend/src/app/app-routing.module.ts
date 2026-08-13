@@ -2,7 +2,9 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NotFoundComponent } from "@core/components/not-found/not-found.component";
 import { projectAccessGuard } from "@core/guards/project-access.guard";
-import { AdminPageComponent } from "@features/administration/components/admin-page/admin-page.component";
+import { AdminMailSettingsComponent } from "@features/administration/components/admin-mail-settings/admin-mail-settings.component";
+import { AdminShellComponent } from "@features/administration/components/admin-shell/admin-shell.component";
+import { AdminUsersComponent } from "@features/administration/components/admin-users/admin-users.component";
 import { ProjectShellComponent } from "@features/project/components/project-shell/project-shell.component";
 import { UserHomePageComponent } from "@features/user/pages/user-home-page/user-home-page.component";
 import { UserSettingsComponent } from "@features/user/pages/user-settings/user-settings.component";
@@ -33,7 +35,16 @@ const routes: Routes = [
 
     {path: 'login', component: LoginComponent},
     {path: 'register', component: RegisterComponent},
-    {path: 'admin', canActivate: [AuthGuard, AdminGuard], component: AdminPageComponent},
+    {
+        path: 'admin',
+        canActivate: [AuthGuard, AdminGuard],
+        component: AdminShellComponent,
+        children: [
+            {path: '', redirectTo: 'users', pathMatch: 'full'},
+            {path: 'users', component: AdminUsersComponent},
+            {path: 'mail', component: AdminMailSettingsComponent},
+        ],
+    },
 
     {
         path: 'user/-',

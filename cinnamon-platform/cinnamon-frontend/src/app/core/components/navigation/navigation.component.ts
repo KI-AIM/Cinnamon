@@ -9,6 +9,7 @@ import { StatusService } from "@shared/services/status.service";
 import { combineLatest, Observable } from "rxjs";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
 import { UserService } from 'src/app/shared/services/user.service';
+import { AdminPageConfiguration } from '../../enums/admin-pages';
 import { Mode } from '../../enums/mode';
 import { StepConfiguration, StepDefinition, Steps } from '../../enums/steps';
 
@@ -25,6 +26,7 @@ export class NavigationComponent implements OnInit{
     Mode = Mode;
     Steps = Steps;
     StepConfiguration = StepConfiguration;
+    AdminPageConfiguration = AdminPageConfiguration;
 
     @ViewChild(ProjectExportComponent) private projectExport: ProjectExportComponent;
     @ViewChild(ProjectSettingsComponent) private projectSettings: ProjectSettingsComponent;

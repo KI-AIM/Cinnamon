@@ -76,6 +76,7 @@ export class MailTemplatesComponent implements OnInit {
         this.addLanguageControl = this.formBuilder.control(null);
         this.buildForm();
         this.loadTemplates(null);
+        this.updateLanguageEnabled();
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ template ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -249,6 +250,8 @@ export class MailTemplatesComponent implements OnInit {
         this.selectedTabIndex = this.addedLanguages.findIndex(added => added.name === language);
 
         this.addLanguageControl.setValue(null);
+
+        this.updateLanguageEnabled();
     }
 
     /**
@@ -268,6 +271,16 @@ export class MailTemplatesComponent implements OnInit {
 
         // Keeps the selection inside the remaining tabs.
         this.selectedTabIndex = Math.max(0, Math.min(this.selectedTabIndex, this.addedLanguages.length - 1));
+
+        this.updateLanguageEnabled();
+    }
+
+    protected updateLanguageEnabled(): void {
+        if (this.availableLanguages.length === 0) {
+            this.addLanguageControl.disable();
+        } else {
+            this.addLanguageControl.enable();
+        }
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ internal ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

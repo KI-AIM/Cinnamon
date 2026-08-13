@@ -22,15 +22,20 @@ import {
     MatRowDef,
     MatTable
 } from "@angular/material/table";
+import { RouterModule } from "@angular/router";
 import { SharedModule } from "@shared/shared.module";
-import { AdminPageComponent } from './components/admin-page/admin-page.component';
+import { AdminMailSettingsComponent } from './components/admin-mail-settings/admin-mail-settings.component';
+import { AdminShellComponent } from './components/admin-shell/admin-shell.component';
+import { AdminUsersComponent } from './components/admin-users/admin-users.component';
 import { MailTemplatesComponent } from './components/mail-templates/mail-templates.component';
 
 
 
 @NgModule({
   declarations: [
-    AdminPageComponent,
+    AdminShellComponent,
+    AdminUsersComponent,
+    AdminMailSettingsComponent,
     MailTemplatesComponent
   ],
     imports: [
@@ -58,6 +63,7 @@ import { MailTemplatesComponent } from './components/mail-templates/mail-templat
         MatPaginator,
         MatProgressSpinner,
         ReactiveFormsModule,
+        RouterModule,
         SharedModule,
     ]
 })

@@ -16,6 +16,11 @@ public class InternalMailException extends InternalException {
 	 */
 	public static final String MISSING_BODY = "2";
 
+	/**
+	 * Exception code for a failed replacement of placeholder in the mail body.
+	 */
+	public static final String BODY_PLACEHOLDER_REPLACEMENT = "3";
+
 	public InternalMailException(final String missingBody, final String message) {
 		super(missingBody, message);
 	}

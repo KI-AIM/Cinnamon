@@ -57,9 +57,46 @@ public class ResourceSelectorService {
 			selector = selector.substring(0, separatorIndex);
 		}
 
-		final Object selectedResource = selectResource(selector, project);
+		final Object selectedResource = selectResource(selector, project, null, null);
 
 		return selectedResource != null ? selectedResource : defaultValue;
+	}
+
+	public String replaceSelectorsInString(final String input, @Nullable final ProjectEntity project,
+	                                       @Nullable final UserInvitationEntity invitation,
+	                                       @Nullable final String invitationToken)
+			throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException, BadStepNameException, InternalDataSetPersistenceException {
+		StringBuilder result = new StringBuilder();
+		int lastIndex = 0;
+
+		while (true) {
+			int startIndex = input.indexOf("${", lastIndex);
+			if (startIndex == -1) {
+				result.append(input.substring(lastIndex));
+				break;
+			}
+
+			int endIndex = input.indexOf("}", startIndex);
+			if (endIndex == -1) {
+				result.append(input.substring(lastIndex));
+				break;
+			}
+
+			result.append(input.substring(lastIndex, startIndex));
+
+			String selector = input.substring(startIndex + 2, endIndex);
+			Object selectedResource = selectResource(selector, project, invitation, invitationToken);
+
+			if (selectedResource != null) {
+				result.append(selectedResource.toString());
+			} else {
+				result.append("${").append(selector).append("}");
+			}
+
+			lastIndex = endIndex + 1;
+		}
+
+		return result.toString();
 	}
 
 	/**
@@ -77,14 +114,16 @@ public class ResourceSelectorService {
 	 * @param selector The selector string used to identify the resource.
 	 * @param project  Project entity used to resolve the selector.
 	 * @return The selected resource, or null if not found.
-	 * @throws BadConfigurationNameException If the configuration name is invalid.
-	 * @throws BadStateException             If the application state is invalid.
-	 * @throws InternalIOException           A serialization error occurs.
-	 * @throws InternalInvalidStateException If the project state is invalid.
-	 * @throws BadStepNameException          If the step name is invalid.
+	 * @throws BadConfigurationNameException       If the configuration name is invalid.
+	 * @throws BadStateException                   If the application state is invalid.
+	 * @throws InternalIOException                 A serialization error occurs.
+	 * @throws InternalInvalidStateException       If the project state is invalid.
+	 * @throws BadStepNameException                If the step name is invalid.
+	 * @throws InternalDataSetPersistenceException If there is an error accessing the dataset.
 	 */
 	@Nullable
-	public Object selectResource(final String selector, @Nullable final ProjectEntity project)
+	public Object selectResource(final String selector, @Nullable final ProjectEntity project,
+	                             @Nullable final UserInvitationEntity invitation, @Nullable final String invitationToken)
 			throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException, BadStepNameException, InternalDataSetPersistenceException {
 		final String[] parts = selector.split("\\.");
 
@@ -92,6 +131,7 @@ public class ResourceSelectorService {
 			case "configuration" -> handleConfigurationSelector(parts, 1, project);
 			case "original" -> handleOriginalSelector(parts, 1, project);
 			case "pipeline" -> handlePipelineSelector(parts, 1, project);
+			case "invitation" -> handleInvitation(parts, 1, invitation, invitationToken);
 			default -> null;
 		};
 	}
@@ -189,5 +229,22 @@ public class ResourceSelectorService {
 		return statistics;
 	}
 
+	private Object handleInvitation(final String[] parts, final int nextPart,
+	                                @Nullable final UserInvitationEntity invitation,
+	                                @Nullable final String invitationToken) {
+		if (invitation == null) {
+			return null;
+		}
+
+		if (parts.length <= nextPart) {
+			return invitation;
+		}
+
+		return switch (parts[nextPart]) {
+			case "expiresAt" -> invitation.getExpiresAt();
+			case "token" -> invitationToken;
+			default -> null;
+		};
+	}
 
 }

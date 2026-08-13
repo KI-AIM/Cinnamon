@@ -202,7 +202,7 @@ public class ExportService {
 
 			final List<ConfigurationDTO> configurationDTOs = new ArrayList<>();
 			for (final String resourceSelector : resources) {
-				Object resource = resourceSelectorService.selectResource(resourceSelector, project);
+				Object resource = resourceSelectorService.selectResource(resourceSelector, project, null, null);
 
 				if (resource instanceof ConfigurationDTO) {
 					configurationDTOs.add((ConfigurationDTO) resource);

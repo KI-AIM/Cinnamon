@@ -43,6 +43,7 @@ public class UserInvitationService {
 	private final UserInvitationMapper mapper;
 
 	private final MailService mailService;
+	private final ResourceSelectorService resourceSelectorService;
 	private final UserService userService;
 
 	public UserInvitationService(
@@ -51,6 +52,7 @@ public class UserInvitationService {
 			final UserInvitationRepository repository,
 			final UserInvitationMapper mapper,
 			final MailService mailService,
+			final ResourceSelectorService resourceSelectorService,
 			final UserService userService
 	) {
 		this.expirationDuration = expirationDuration;
@@ -58,6 +60,7 @@ public class UserInvitationService {
 		this.repository = repository;
 		this.mapper = mapper;
 		this.mailService = mailService;
+		this.resourceSelectorService = resourceSelectorService;
 		this.userService = userService;
 	}
 
@@ -219,7 +222,12 @@ public class UserInvitationService {
 			throw new InternalMailException(InternalMailException.MISSING_BODY, "Email body is null for invitation email");
 		}
 
-		body = MessageFormat.format(body, token);
+		try {
+			body = resourceSelectorService.replaceSelectorsInString(body, null, invitation, token);
+		} catch (ApiException e) {
+			throw new InternalMailException(InternalMailException.BODY_PLACEHOLDER_REPLACEMENT,
+			                                "Failed to replace placeholder in email body", e);
+		}
 
 		mailService.sendMail(invitation.getEmail(), subject, body);
 	}

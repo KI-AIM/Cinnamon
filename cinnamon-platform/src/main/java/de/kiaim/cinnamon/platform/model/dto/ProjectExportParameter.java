@@ -37,7 +37,7 @@ public class ProjectExportParameter {
 	 * <br>
 	 * Each entry must have one of the following forms:
 	 * <ul>
-	 *     <li>configuration.['project' | 'dataSource' | 'configurations' | 'dataset' | 'pipeline' | external-configuration]</li>
+	 *     <li>configuration.['project' | 'dataSource' | 'file' | 'configurations' | 'dataset' | 'pipeline' | external-configuration]</li>
 	 *     <li>pipeline.[stage].[job].['dataset' | 'statistics' | 'other']</li>
 	 *     <li>original.['file' | 'dataset' | 'statistics']</li>
 	 * </ul>

@@ -19,7 +19,7 @@ public class EmailContentValidator implements ConstraintValidator<EmailContent, 
 			return true; // Consider null as valid, use @NotNull for null check
 		}
 
-		if (value.getEmailTemplateItem() != null) {
+		if (value.getEmailTemplateItemId() != null) {
 			return true;
 		}
 

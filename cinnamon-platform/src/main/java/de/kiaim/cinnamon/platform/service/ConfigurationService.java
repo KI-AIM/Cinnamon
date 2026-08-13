@@ -3,8 +3,10 @@ package de.kiaim.cinnamon.platform.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
+import de.kiaim.cinnamon.model.configuration.ExternalConfigurationWrapper;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
@@ -235,11 +237,12 @@ public class ConfigurationService {
 	 * The returned type is one of the following:
 	 * <ul>
 	 *     <li>{@link ProjectConfigurationDTO}</li>
+	 *     <li>{@link DataSourceConfiguration}</li>
 	 *     <li>{@link FileConfiguration}</li>
 	 *     <li>{@link DataConfiguration}</li>
 	 *     <li>{@link DatasetConfiguration}</li>
 	 *     <li>{@link PipelinesConfigurationDTO}</li>
-	 *     <li>{@code Map.Entry<String, ConfigurationPart>}</li>
+	 *     <li>{@link ExternalConfigurationWrapper}</li>
 	 * </ul>
 	 *
 	 * @param configurationName The name of the configuration.
@@ -250,7 +253,7 @@ public class ConfigurationService {
 	 * @throws InternalIOException           If the DataConfiguration could not be deserialized from the stored JSON.
 	 * @throws InternalInvalidStateException If the configuration is not valid.
 	 */
-	public Object loadConfiguration(
+	public ConfigurationDTO loadConfiguration(
 			final String configurationName,
 			final ProjectEntity project
 	) throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException {
@@ -276,12 +279,7 @@ public class ConfigurationService {
 			default -> {
 				final var s = databaseService.exportConfiguration(configurationName, project);
 				try {
-					final var a = yamlMapper.readValue(s, ConfigurationFile.class);
-					return a.getParts().entrySet().stream().filter(e -> e.getKey().equals(configurationName))
-					        .findFirst()
-					        .orElseThrow(() -> new InternalInvalidStateException(
-							        InternalInvalidStateException.INVALID_CONFIGURATION,
-							        "Configuration key not found: " + configurationName));
+					return yamlMapper.readValue(s, ExternalConfigurationWrapper.class);
 				} catch (final JsonProcessingException e) {
 					throw new InternalInvalidStateException(InternalInvalidStateException.INVALID_CONFIGURATION,
 					                                        "Failed to deserialize configuration from database!",

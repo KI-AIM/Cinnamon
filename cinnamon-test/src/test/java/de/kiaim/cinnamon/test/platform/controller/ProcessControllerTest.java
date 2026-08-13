@@ -136,7 +136,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 			       .andExpect(status().isOk());
 
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/configure")
 				                .param("jobName", TEXT_ANON_JOB)
 				                .param("skip", "true")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
@@ -664,31 +664,31 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
 
 		// Start second
-		final var user = userService.register("test_user_3", "changeme");
+		final var user = getTestUser();
 		var project = userService.createProject(user, null, null);
-		postData(false, "test_user_3", project.getExternalId());
+		postData(false, user.getUsername(), project.getExternalId());
 		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/config")
-				                .with(httpBasic("test_user_3", "changeme"))
+				                .with(httpBasic(user.getUsername(), "changeme"))
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/process/configure")
-				                .with(httpBasic("test_user_3", "changeme"))
+				                .with(httpBasic(user.getUsername(), "changeme"))
 				                .param("jobName", ANON_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
 		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/config")
-				                .with(httpBasic("test_user_3", "changeme"))
+				                .with(httpBasic(user.getUsername(), "changeme"))
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfiguration2())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/process/configure")
-				                .with(httpBasic("test_user_3", "changeme"))
+				                .with(httpBasic(user.getUsername(), "changeme"))
 				                .param("jobName", SYNTH_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 			       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/process/configure")
 				                .with(httpBasic(user.getUsername(), "changeme"))
 				                .param("jobName", TEXT_ANON_JOB)
 				                .param("skip", "true")
@@ -696,7 +696,7 @@ public class ProcessControllerTest extends ControllerTest {
 			       .andExpect(status().isOk());
 
 		mockMvc.perform(post("/api/project/" + project.getExternalId() + "/process/execution/start")
-				                .with(httpBasic("test_user_3", "changeme")))
+				                .with(httpBasic(user.getUsername(), "changeme")))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
 		       .andExpect(jsonPath(processPath(ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.SCHEDULED.name()));

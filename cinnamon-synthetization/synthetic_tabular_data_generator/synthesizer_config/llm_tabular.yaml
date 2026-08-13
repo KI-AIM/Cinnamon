@@ -26,7 +26,7 @@ configurations:
         type: integer
         label: Profile Rows
         description: Number of input rows used for profile calculation. Values above the available dataset size are automatically capped at the dataset size.
-        default_value: $dataset.original.numberRows
+        default_value: ${original.dataset.numberRows}
         min_value: 1
         max_value: 1000000
   model_fitting:
@@ -49,7 +49,7 @@ configurations:
         type: integer
         label: Number of Samples
         description: Number of structured synthetic rows to generate.
-        default_value: $dataset.original.numberRows
+        default_value: ${original.dataset.numberRows}
         min_value: 1
         max_value: 1000000
       - name: temperature

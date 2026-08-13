@@ -18,6 +18,9 @@ import org.mapstruct.MappingTarget;
         uses = {EmailTemplateItemRepository.class})
 public interface UserInvitationMapper {
 
+	@Mapping(target = "emailTemplateItemId", source = "emailTemplateItem.id")
+	@Mapping(target = "invitedBy", source = "invitedBy.username")
+	@Mapping(target = "acceptedBy", source = "acceptedBy.username")
 	UserInvitationInfo toInfo(UserInvitationEntity entity);
 
 	@Mapping(target = "lastSentAt", ignore = true) @Mapping(target = "tokenHash", ignore = true)

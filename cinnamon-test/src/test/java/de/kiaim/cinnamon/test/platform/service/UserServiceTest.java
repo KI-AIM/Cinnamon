@@ -72,7 +72,7 @@ public class UserServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void createProject() {
-		var user = assertDoesNotThrow(() -> userService.register("email", "password"));
+		var user = assertDoesNotThrow(() -> userService.register("email", "password", null));
 
 		var project = assertDoesNotThrow(() -> userService.createProject(user, null, null));
 
@@ -82,7 +82,7 @@ public class UserServiceTest extends ContextRequiredTest {
 
 	@Test
 	public void registerWithDefaultRole() {
-		var user = assertDoesNotThrow(() -> userService.register("default_role_user", "password"));
+		var user = assertDoesNotThrow(() -> userService.register("default_role_user", "password", null));
 
 		assertEquals(Set.of(UserRole.ROLE_USER), user.getUserRoles(), "Unexpected roles!");
 	}
@@ -91,7 +91,7 @@ public class UserServiceTest extends ContextRequiredTest {
 	public void registerWithMultipleRoles() {
 		final var roles = Set.of(UserRole.ROLE_USER, UserRole.ROLE_ADMIN);
 
-		var user = assertDoesNotThrow(() -> userService.register("multi_role_user", "password", roles));
+		var user = assertDoesNotThrow(() -> userService.register("multi_role_user", "password", roles, null));
 
 		assertEquals(roles, user.getUserRoles(), "Unexpected roles!");
 		assertEquals(roles.stream().map(UserRole::name).collect(Collectors.toSet()),
@@ -102,10 +102,10 @@ public class UserServiceTest extends ContextRequiredTest {
 	@Test
 	public void deleteUsersWithRoles() {
 		var deletable = assertDoesNotThrow(
-				() -> userService.register("api_user", "password", Set.of(UserRole.ROLE_API)));
+				() -> userService.register("api_user", "password", Set.of(UserRole.ROLE_API), null));
 		var protectedUser = assertDoesNotThrow(
 				() -> userService.register("api_admin_user", "password",
-				                           Set.of(UserRole.ROLE_API, UserRole.ROLE_ADMIN)));
+				                           Set.of(UserRole.ROLE_API, UserRole.ROLE_ADMIN), null));
 
 		assertDoesNotThrow(() -> userService.deleteUsersWithRoles(Set.of(UserRole.ROLE_API)));
 
@@ -122,7 +122,7 @@ public class UserServiceTest extends ContextRequiredTest {
 	@Test
 	public void deleteUsersWithRolesEmpty() {
 		var user = assertDoesNotThrow(
-				() -> userService.register("kept_api_user", "password", Set.of(UserRole.ROLE_API)));
+				() -> userService.register("kept_api_user", "password", Set.of(UserRole.ROLE_API), null));
 
 		assertDoesNotThrow(() -> userService.deleteUsersWithRoles(Set.of()));
 

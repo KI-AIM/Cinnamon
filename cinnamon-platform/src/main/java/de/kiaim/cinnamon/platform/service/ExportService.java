@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.*;
@@ -40,23 +41,20 @@ public class ExportService {
 
 	private final ObjectMapper yamlMapper;
 
-	private final ConfigurationService configurationService;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
-	private final StepService stepService;
+	private final ResourceSelectorService resourceSelectorService;
 
 	public ExportService(
 			final ObjectMapper yamlMapper,
-			final ConfigurationService configurationService,
 			final DatabaseService databaseService,
 			final DataProcessorService dataProcessorService,
-			final StepService stepService
+			final ResourceSelectorService resourceSelectorService
 	) {
 		this.yamlMapper = yamlMapper;
-		this.configurationService = configurationService;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
-		this.stepService = stepService;
+		this.resourceSelectorService = resourceSelectorService;
 	}
 
 	/**
@@ -202,19 +200,36 @@ public class ExportService {
 				resources = getAvailableExportResources(project);
 			}
 
-			final List<String> configurationNames = new ArrayList<>();
-			for (final String resource : resources) {
-				final String[] parts = resource.split("\\.");
+			final List<ConfigurationDTO> configurationDTOs = new ArrayList<>();
+			for (final String resourceSelector : resources) {
+				Object resource = resourceSelectorService.selectResource(resourceSelector, project);
 
-				switch (parts[0]) {
-					case "configuration" -> configurationNames.add(parts[1]);
-					case "original" -> handleOriginalSelector(project, projectExportParameter, zipOut, parts);
-					case "pipeline" -> handlePipelineSelector(project, projectExportParameter, zipOut, parts, zipEntryCounter);
+				if (resource instanceof ConfigurationDTO) {
+					configurationDTOs.add((ConfigurationDTO) resource);
+				} else if (resource instanceof DataSetEntity dataSetEntity) {
+					handleDatasetSelector(projectExportParameter, zipOut, dataSetEntity);
+				} else if (resource instanceof FileEntity fileEntity) {
+					handleFileSelector(zipOut, fileEntity);
+				} else if (resource instanceof ExternalProcessEntity externalProcess) {
+					if (externalProcess instanceof DataProcessingEntity dataProcessing) {
+						final String name = dataProcessing.getJob().getName() + "-";
+						for (final var entry : dataProcessing.getResultFiles().entrySet()) {
+							handleLob(zipOut, zipEntryCounter, entry.getValue(), name + entry.getKey());
+						}
+					}
+				} else if (resource instanceof BackgroundProcessEntity statisticsProcess) {
+					if (statisticsProcess.getOwner() instanceof DataSetEntity dataSetEntity) {
+						if (dataSetEntity.getStatistics() != null) {
+							final String name = getDataSetFileName(dataSetEntity);
+							handleLob(zipOut, zipEntryCounter, dataSetEntity.getStatistics(),
+							          name + "-statistics.yaml");
+						}
+					}
 				}
 			}
 
-			if (!configurationNames.isEmpty()) {
-				addConfigurationsToZip(project, projectExportParameter, zipOut, configurationNames);
+			if (!configurationDTOs.isEmpty()) {
+				addConfigurationsToZip(projectExportParameter, zipOut, configurationDTOs);
 			}
 
 			zipOut.finish();
@@ -224,118 +239,16 @@ public class ExportService {
 	}
 
 	/**
-	 * Adds resources from the original dataset to the ZIP file.
-	 *
-	 * @param project                The project to export.
-	 * @param projectExportParameter The parameter specifying what should be exported.
-	 * @param zipOut                 The ZIP output stream.
-	 * @param parts                  The parts of the resource name.
-	 * @throws InternalDataSetPersistenceException If the dataset could not be exported due to an internal error.
-	 * @throws InternalIOException                 If the dataset could not be serialized.
-	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
-	 * @throws IOException                         If adding a resource to the ZIP file failed.
-	 */
-	private void handleOriginalSelector(
-			final ProjectEntity project,
-			final ProjectExportParameter projectExportParameter,
-			final ZipOutputStream zipOut,
-			final String[] parts
-	) throws InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException, IOException {
-		final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
-		if (dataSetEntity != null) {
-			switch (parts[1]) {
-				case "file" -> handleFileSelector(zipOut, project.getOriginalData().getFile(), "original");
-				case "dataset" -> handleDatasetSelector(projectExportParameter, zipOut, dataSetEntity, "original");
-				case "statistics" -> handleStatisticsSelector(zipOut, dataSetEntity.getStatistics(), "original");
-			}
-		}
-	}
-
-	/**
-	 * Adds resources from the pipeline to the ZIP file.
-	 *
-	 * @param project                The project to export.
-	 * @param projectExportParameter The parameter specifying what should be exported.
-	 * @param zipOut                 The ZIP output stream.
-	 * @param parts                  The parts of the resource name.
-	 * @param zipEntryCounter        Counter for ZIP entry names.
-	 * @throws BadStepNameException                If the step name defined in the parts is invalid.
-	 * @throws InternalDataSetPersistenceException If the dataset could not be exported due to an internal error.
-	 * @throws InternalInvalidStateException       If the project state is invalid for export.
-	 * @throws InternalIOException                 If the dataset could not be serialized.
-	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
-	 * @throws IOException                         If adding a resource to the ZIP file failed.
-	 */
-	private void handlePipelineSelector(
-			final ProjectEntity project,
-			final ProjectExportParameter projectExportParameter,
-			final ZipOutputStream zipOut,
-			final String[] parts,
-			final Map<String, Integer> zipEntryCounter
-	) throws BadStepNameException, InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException, InternalMissingHandlingException, IOException {
-		final PipelineEntity pipeline = project.getPipelines().get(0);
-		final Stage stage = stepService.getStageConfiguration(parts[1]);
-		final ExecutionStepEntity executionStep = pipeline.getStageByStep(stage);
-
-		if (executionStep == null) {
-			throw new InternalInvalidStateException(InternalInvalidStateException.MISSING_STAGE,
-			                                        "Execution step not found for stage: " + stage.getStageName());
-		}
-
-		final Job job = stepService.getStepConfiguration(parts[2]);
-		final ExternalProcessEntity externalProcess = executionStep.getProcess(job).orElseThrow(
-				() -> new InternalInvalidStateException(InternalInvalidStateException.MISSING_PROCESS_ENTITY,
-				                                        "External process not found for job: " + job.getName()));
-
-		if (externalProcess instanceof DataProcessingEntity dataProcessing) {
-			if (dataProcessing.getDataSet() != null) {
-				final String name = dataProcessing.getDataSet().getProcessed().stream().map(Job::getName)
-				                                  .collect(Collectors.joining("-"));
-
-				switch (parts[3]) {
-					case "dataset" ->
-							handleDatasetSelector(projectExportParameter, zipOut, dataProcessing.getDataSet(), name);
-					case "statistics" ->
-							handleStatisticsSelector(zipOut, dataProcessing.getDataSet().getStatisticsProcess()
-							                                               .getResultFiles()
-							                                               .getOrDefault("metrics.json", null),
-							                         name);
-				}
-			}
-		}
-
-		if (parts[3].equals("other")) {
-			for (final var entry : externalProcess.getResultFiles().entrySet()) {
-				String entryKey = job.getName() + "-" + entry.getKey();
-				if (zipEntryCounter.containsKey(entryKey)) {
-					var count = zipEntryCounter.get(entryKey);
-					entryKey = entryKey.substring(0, entryKey.lastIndexOf('.')) + "_" + count +
-					           entryKey.substring(entryKey.lastIndexOf('.'));
-					zipEntryCounter.put(entryKey, count + 1);
-				} else {
-					zipEntryCounter.put(entryKey, 1);
-				}
-
-				final ZipEntry additionalFileEntry = new ZipEntry(entryKey);
-				zipOut.putNextEntry(additionalFileEntry);
-				zipOut.write(entry.getValue().getLob());
-				zipOut.closeEntry();
-			}
-		}
-	}
-
-	/**
 	 * Adds the given FileEntity to the ZIP file.
 	 *
 	 * @param zipOut     The ZIP output stream.
 	 * @param fileEntity The FileEntity to add.
-	 * @param name       The name of the source step.
 	 * @throws IOException If adding a resource to the ZIP file failed.
 	 */
-	private void handleFileSelector(final ZipOutputStream zipOut, final FileEntity fileEntity, final String name)
+	private void handleFileSelector(final ZipOutputStream zipOut, final FileEntity fileEntity)
 			throws IOException {
 		if (fileEntity != null && fileEntity.getFile() != null) {
-			final ZipEntry fileEntry = new ZipEntry(name + "-file-" + fileEntity.getName());
+			final ZipEntry fileEntry = new ZipEntry("original-file-" + fileEntity.getName());
 			zipOut.putNextEntry(fileEntry);
 			zipOut.write(fileEntity.getFile().getLob());
 			zipOut.closeEntry();
@@ -348,7 +261,6 @@ public class ExportService {
 	 * @param projectExportParameter The parameter specifying what should be exported.
 	 * @param zipOut                 The ZIP output stream.
 	 * @param dataSetEntity          The dataset to add.
-	 * @param name                   The name of the dataset.
 	 * @throws InternalDataSetPersistenceException If the dataset could not be exported due to an internal error.
 	 * @throws InternalIOException                 If the dataset could not be serialized.
 	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
@@ -357,34 +269,35 @@ public class ExportService {
 	private void handleDatasetSelector(
 			final ProjectExportParameter projectExportParameter,
 			final ZipOutputStream zipOut,
-			final DataSetEntity dataSetEntity,
-			final String name
+			final DataSetEntity dataSetEntity
 	) throws InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException, IOException {
-		if (dataSetEntity.isStoredData()) {
-			final DataSet dataSet = databaseService.exportDataSet(dataSetEntity,
-			                                                      HoldOutSelector.ALL);
-			addDatasetToZip(zipOut, dataSet, projectExportParameter.getDatasetFileType(), name + "-dataset");
-		}
+		if (!dataSetEntity.isStoredData())
+			return;
+
+		final String name = getDataSetFileName(dataSetEntity);
+		final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, HoldOutSelector.ALL);
+		addDatasetToZip(zipOut, dataSet, projectExportParameter.getDatasetFileType(), name + "-dataset");
 	}
 
-	/**
-	 * Adds the given LOB resource to the ZIP file.
-	 *
-	 * @param zipOut The ZIP output stream.
-	 * @param name   The name of the source step.
-	 * @throws IOException If adding a resource to the ZIP file failed.
-	 */
-	private void handleStatisticsSelector(
+	private void handleLob(
 			final ZipOutputStream zipOut,
-			final LobWrapperEntity statistics,
-			final String name
+			final Map<String, Integer> zipEntryCounter,
+			final LobWrapperEntity lobWrapper,
+			String name
 	) throws IOException {
-		if (statistics != null) {
-			final ZipEntry statisticsEntry = new ZipEntry(name + "-statistics.yaml");
-			zipOut.putNextEntry(statisticsEntry);
-			zipOut.write(statistics.getLob());
-			zipOut.closeEntry();
+		if (zipEntryCounter.containsKey(name)) {
+			var count = zipEntryCounter.get(name);
+			name = name.substring(0, name.lastIndexOf('.')) + "_" + count +
+			           name.substring(name.lastIndexOf('.'));
+			zipEntryCounter.put(name, count + 1);
+		} else {
+			zipEntryCounter.put(name, 1);
 		}
+
+		final ZipEntry additionalFileEntry = new ZipEntry(name);
+		zipOut.putNextEntry(additionalFileEntry);
+		zipOut.write(lobWrapper.getLob());
+		zipOut.closeEntry();
 	}
 
 	/**
@@ -415,28 +328,21 @@ public class ExportService {
 	/**
 	 * Adds the configurations with the given names to the ZIP file.
 	 *
-	 * @param project                The project to export the configurations for.
 	 * @param projectExportParameter The parameter specifying what should be exported.
 	 * @param zipOut                 The ZIP output stream.
-	 * @param configurationNames     The names of the configurations to add.
-	 * @throws BadConfigurationNameException If a configuration name is invalid.
-	 * @throws BadStateException             If the project state is invalid for export.
-	 * @throws InternalIOException           If the configuration could not be serialized.
-	 * @throws InternalInvalidStateException If the configuration is not valid.
-	 * @throws IOException                   If adding a configuration to the ZIP file failed.
+	 * @throws IOException If adding a configuration to the ZIP file failed.
 	 */
 	private void addConfigurationsToZip(
-			final ProjectEntity project,
 			final ProjectExportParameter projectExportParameter,
 			final ZipOutputStream zipOut,
-			final List<String> configurationNames
-	) throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException, IOException {
+			final List<ConfigurationDTO> configurationDTOs
+	) throws IOException {
 
 		if (projectExportParameter.isBundleConfigurations()) {
 			final StringBuilder bundledConfigurations = new StringBuilder();
 
-			for (final String configName : configurationNames) {
-				final String configurationString = getConfigurationString(project, configName);
+			for (final ConfigurationDTO config : configurationDTOs) {
+				final String configurationString = getConfigurationString(config);
 				bundledConfigurations.append(configurationString);
 			}
 
@@ -447,44 +353,42 @@ public class ExportService {
 
 		} else {
 			// Add configurations
-			for (final String configName : configurationNames) {
-				final String config = getConfigurationString(project, configName);
+			for (final ConfigurationDTO config : configurationDTOs) {
+				final String configString = getConfigurationString(config);
 
-				final ZipEntry configZipEntry = new ZipEntry(configName + ".yaml");
+				final ZipEntry configZipEntry = new ZipEntry(config.getKey() + ".yaml");
 				zipOut.putNextEntry(configZipEntry);
-				zipOut.write(config.getBytes());
+				zipOut.write(configString.getBytes());
 				zipOut.closeEntry();
 			}
 		}
 	}
 
 	/**
-	 * Gets the configuration string for the given configuration name.
-	 * Wraps the configuration in a parent if it is not a configuration for external modules.
+	 * Gets the configuration string for the given configuration.
+	 * Wraps the configuration in a parent if it does not include the key already.
 	 *
-	 * @param project The project to export the configuration for.
-	 * @param configName The name of the configuration to export.
+	 * @param config The configuration to export.
 	 * @return The configuration string.
 	 * @throws JsonProcessingException If the configuration could not be serialized.
-	 * @throws BadConfigurationNameException If the project does not have a configuration with the given name.
-	 * @throws BadStateException             If the data configuration does not exist.
-	 * @throws InternalIOException           If the DataConfiguration could not be deserialized from the stored JSON.
-	 * @throws InternalInvalidStateException If the configuration is not valid.
 	 */
-	private String getConfigurationString(
-			final ProjectEntity project,
-			final String configName
-	) throws JsonProcessingException, BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException {
-		Object config = configurationService.loadConfiguration(configName, project);
-		if (!stepService.isExternalConfiguration(configName) &&
-		    !configName.equals(ConfigurationFile.DATA_CONFIGURATION_KEY)) {
+	private String getConfigurationString(final ConfigurationDTO config)
+			throws JsonProcessingException {
+		if (!config.includesKey()) {
 			// Wrap the configuration in a parent
 			final Map<String, Object> parentMap = new HashMap<>();
-			parentMap.put(configName, config);
-			config = parentMap;
+			parentMap.put(config.getKey(), config);
+			return yamlMapper.writeValueAsString(parentMap);
 		}
 
 		return yamlMapper.writeValueAsString(config);
+	}
+
+	private String getDataSetFileName(final DataSetEntity dataSetEntity) {
+		return !dataSetEntity.getProcessed().isEmpty()
+		       ? dataSetEntity.getProcessed().stream().map(Job::getName)
+		                      .collect(Collectors.joining("-"))
+		       : "original";
 	}
 
 }

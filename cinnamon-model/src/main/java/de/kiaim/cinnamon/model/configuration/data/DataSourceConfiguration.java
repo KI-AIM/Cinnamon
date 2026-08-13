@@ -1,7 +1,10 @@
 package de.kiaim.cinnamon.model.configuration.data;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.model.validation.DataSourceConfigured;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,7 +26,7 @@ import org.jspecify.annotations.Nullable;
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DataSourceConfiguration {
+public class DataSourceConfiguration implements ConfigurationDTO {
 
 	/**
 	 * Type of the data source.
@@ -38,4 +41,13 @@ public class DataSourceConfiguration {
 	@Schema(description = "Configuration for the server where the file is located.")
 	@Nullable
 	private DataSourceServerConfiguration server;
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@JsonIgnore
+	@Override
+	public String getKey() {
+		return ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY;
+	}
 }

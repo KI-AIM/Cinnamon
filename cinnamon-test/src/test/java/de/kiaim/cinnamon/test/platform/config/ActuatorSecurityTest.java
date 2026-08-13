@@ -35,7 +35,7 @@ public class ActuatorSecurityTest extends ControllerTest {
 
 	@BeforeEach
 	public void createMonitoringUser() throws BadUserException {
-		userService.register(MONITORING_USER, MONITORING_PASSWORD, Set.of(UserRole.ROLE_MONITORING));
+		userService.register(MONITORING_USER, MONITORING_PASSWORD, Set.of(UserRole.ROLE_MONITORING), null);
 	}
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ /actuator/health ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

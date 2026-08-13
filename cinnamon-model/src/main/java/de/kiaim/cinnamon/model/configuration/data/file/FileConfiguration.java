@@ -1,6 +1,9 @@
 package de.kiaim.cinnamon.model.configuration.data.file;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
+import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.validation.FileConfigurationSet;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +19,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class FileConfiguration {
+public class FileConfiguration implements ConfigurationDTO {
 
 	@Schema(description = "Type of the file.", example = "CSV")
 	@NotNull(message = "File type must be present")
@@ -34,4 +37,13 @@ public class FileConfiguration {
 	 */
 	@Schema(description = "Configuration specific for FHIR bundles.")
 	private FhirFileConfiguration fhirFileConfiguration;
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@JsonIgnore
+	@Override
+	public String getKey() {
+		return ConfigurationFile.FILE_CONFIGURATION_KEY;
+	}
 }

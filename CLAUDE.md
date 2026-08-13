@@ -25,6 +25,7 @@ Root `pom.xml` only declares `cinnamon-model`, `cinnamon-platform`, `cinnamon-an
   `mvn install:install-file -Dfile=cinnamon-anonymization/src/main/resources/lib/libarx-3.9.1.jar ...` (see `.github/workflows/run-tests.yml` for exact coordinates).
 - Backend dev mode: copy `cinnamon-platform/src/main/resources/application-dev.properties.example` → `application-dev.properties`, then run with `-Dspring.profiles.active=dev`.
 - Frontend standalone: `cd cinnamon-platform/cinnamon-frontend && ng serve --open` (or `npm start`).
+- **Node is not on `PATH`**: there's no global `node`/`npm`. `frontend-maven-plugin` provisions a local Node/npm into `cinnamon-frontend/node/` (binaries: `node`, `npm`, `npx`) the first time the Maven build runs. For any `npm`/`ng`/`npx` command in `cinnamon-frontend`, prepend that dir to `PATH`, e.g. `cd cinnamon-platform/cinnamon-frontend && PATH="$PWD/node:$PATH" npm run lint`. If `cinnamon-frontend/node/` doesn't exist yet, run `./mvnw -pl cinnamon-platform -am generate-resources` (or a full build) once to provision it, or install Node yourself.
 
 ## Testing
 

@@ -49,6 +49,7 @@ services:
 
             # Hosts
             CINNAMON.EXTERNAL-HOST.anonymization-host.URL: http://cinnamon-anonymization
+            CINNAMON.EXTERNAL-HOST.text-anonymization-host.URL: http://cinnamon-text-anonymization
             CINNAMON.EXTERNAL-HOST.synthetization-host.URL: http://cinnamon-synthetization
             CINNAMON.EXTERNAL-HOST.technical-evaluation-host.URL: http://cinnamon-evaluation
             CINNAMON.EXTERNAL-HOST.risk-assessment-host.URL: http://cinnamon-risk-assessment
@@ -57,6 +58,10 @@ services:
             CINNAMON.EXTERNAL-SERVER.anonymization-server.CALLBACK-HOST: cinnamon-platform
             CINNAMON.EXTERNAL-SERVER.anonymization-server.INSTANCE-HOST-PORT: 8080
             CINNAMON.EXTERNAL-SERVER.anonymization-server.INSTANCES.0.HOST-NAME: anonymization-host
+            # Text anonymization
+            CINNAMON.EXTERNAL-SERVER.text-anonymization-server.CALLBACK-HOST: cinnamon-platform
+            CINNAMON.EXTERNAL-SERVER.text-anonymization-server.INSTANCE-HOST-PORT: 5060
+            CINNAMON.EXTERNAL-SERVER.text-anonymization-server.INSTANCES.0.HOST-NAME: text-anonymization-host
             # Synthetization
             CINNAMON.EXTERNAL-SERVER.synthetization-server.CALLBACK-HOST: cinnamon-platform
             CINNAMON.EXTERNAL-SERVER.synthetization-server.INSTANCES.0.HOST-NAME: synthetization-host
@@ -127,3 +132,25 @@ services:
             SPRING.SERVLET.MULTIPART.MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
 #        volumes:
 #            - ~/.m2:/root/.m2
+    cinnamon-text-anonymization:
+        image: ghcr.io/ki-aim/cinnamon-text-anonymization:latest
+        container_name: cinnamon-text-anonymization
+        restart: unless-stopped
+        ports:
+            - "127.0.0.1:5060:5060"
+        networks:
+            - anonymization-network
+        volumes:
+            - ${TEXT_ANONYMIZATION_MODEL_HOST_PATH}:/app/models:${TEXT_ANONYMIZATION_MODEL_MOUNT_MODE}
+        secrets:
+            - hf_token
+        environment:
+            HF_TOKEN_FILE: /run/secrets/hf_token
+            TEXT_ANONYMIZATION_MODEL_CACHE: /app/models
+            TEXT_ANONYMIZATION_XLM_LOCAL_PATH: /app/models/xlm-grascco
+            TEXT_ANONYMIZATION_GELECTRA_LOCAL_PATH: /app/models/gelectra-grascco
+            TEXT_ANONYMIZATION_XLM_HF_REPOSITORY: ${TEXT_ANONYMIZATION_XLM_HF_REPOSITORY}
+            TEXT_ANONYMIZATION_GELECTRA_HF_REPOSITORY: ${TEXT_ANONYMIZATION_GELECTRA_HF_REPOSITORY}
+secrets:
+    hf_token:
+        file: ${HF_TOKEN_FILE}

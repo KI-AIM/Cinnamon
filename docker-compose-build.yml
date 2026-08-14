@@ -26,6 +26,11 @@ services:
         build:
             context: ./
             dockerfile: ./cinnamon-anonymization/Dockerfile
+    cinnamon-text-anonymization:
+        image: ghcr.io/ki-aim/cinnamon-text-anonymization:latest
+        build:
+            context: ./cinnamon-text-anonymization
+            dockerfile: Dockerfile
 
 secrets:
   mvn_settings:

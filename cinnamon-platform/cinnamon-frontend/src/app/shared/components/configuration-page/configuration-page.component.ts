@@ -50,6 +50,7 @@ export class ConfigurationPageComponent implements OnInit {
         technical_evaluation: "Technical Evaluation",
         risk_evaluation: "Risk Evaluation of the synthesized dataset",
         risk_evaluation_o: "Privacy Score Calculation of the original dataset",
+        text_anonymization: "Text Anonymization",
     };
     private readonly baseUrl: string = environments.apiUrl + "/api/process";
 

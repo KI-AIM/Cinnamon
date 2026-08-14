@@ -11,6 +11,7 @@ export type ConfigurationObjectType =
     | boolean
     | ConfigurationObject
     | ConfigurationObject[]
+    | string[]
     | null;
 
 /**

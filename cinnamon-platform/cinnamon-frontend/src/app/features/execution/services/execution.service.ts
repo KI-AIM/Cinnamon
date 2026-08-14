@@ -30,6 +30,7 @@ export class ExecutionService extends ExecutionStepService {
      */
     public getJobName(job: string): string {
         const jobNames: Record<string, string> = {
+            'text_anonymization': 'Text Anonymization',
             'anonymization': 'Anonymization',
             'synthetization': 'Synthetization',
         };

@@ -180,7 +180,7 @@
                                     <ng-template matExpansionPanelContent>
                                         <div>
                                             <div *ngIf="pageData.stage && pageData.stage.processes[i].externalProcessStatus === ProcessStatus.FINISHED; else anonNoData">
-                                                <app-data-table [sourceProcess]="getJobName(process)"></app-data-table>
+                                                <app-data-table [sourceProcess]="process"></app-data-table>
                                             </div>
                                             <ng-template #anonNoData>
                                                 <div>

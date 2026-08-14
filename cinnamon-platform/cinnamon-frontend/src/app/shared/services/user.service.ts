@@ -96,12 +96,13 @@ export class UserService {
     }
 
 
-    register(request: {
+    public register(request: {
         username: string;
         password: string;
         passwordRepeated: string;
-    }): Observable<any> {
-        return this.http.post(this.baseURL + "/register", request);
+    }, invitationToken: string | null = null): Observable<any> {
+        const uri = invitationToken != null ? "/register?token=" + invitationToken : "/register";
+        return this.http.post(this.baseURL + uri, request);
     }
 
     /**

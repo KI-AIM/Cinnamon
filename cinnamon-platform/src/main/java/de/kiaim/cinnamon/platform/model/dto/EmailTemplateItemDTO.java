@@ -16,6 +16,12 @@ import lombok.Setter;
 @Getter @Setter
 public class EmailTemplateItemDTO {
 
+	@Schema(description = "The ID of the email template item. Only part of a response, ignored when creating or "
+	                      + "updating a template.",
+	        example = "1",
+	        accessMode = Schema.AccessMode.READ_ONLY)
+	private Long id;
+
 	@Schema(description = "The language of the content.", example = "ENGLISH")
 	@NotNull(message = "Language must not be null.")
 	private SupportedLanguage language;

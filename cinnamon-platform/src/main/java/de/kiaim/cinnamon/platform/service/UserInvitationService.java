@@ -9,6 +9,7 @@ import de.kiaim.cinnamon.platform.model.entity.UserInvitationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import de.kiaim.cinnamon.platform.model.mapper.UserInvitationMapper;
 import de.kiaim.cinnamon.platform.repository.UserInvitationRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.keygen.BytesKeyGenerator;
 import org.springframework.security.crypto.keygen.KeyGenerators;
@@ -21,11 +22,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
-import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Service for managing user invitations.
@@ -74,13 +75,10 @@ public class UserInvitationService {
 	}
 
 	@Transactional(readOnly = true)
-	public UserInvitationInfo getInvitationById(final Long invitationId) throws BadUserInvitationException {
-		final var optional = repository.findById(invitationId);
-		if (optional.isEmpty()) {
-			throw new BadUserInvitationException(BadUserInvitationException.ID_NOT_FOUND,
-			                                     "User invitation not found");
-		}
-		return mapper.toInfo(optional.get());
+	public UserInvitationInfo getInvitationById(final String externalId)
+			throws BadArgumentException, BadUserInvitationException {
+		final UserInvitationEntity invitation = getByExternalId(externalId);
+		return mapper.toInfo(invitation);
 	}
 
 	@Transactional
@@ -89,6 +87,8 @@ public class UserInvitationService {
 		final UserInvitationEntity entity = new UserInvitationEntity();
 
 		var invitedByUser = userService.getUserByUsernameOrThrow(invitedBy);
+		entity.setStatus(UserInvitationStatus.NOT_SENT);
+		entity.setExternalId(UUID.randomUUID());
 		entity.setInvitedBy(invitedByUser);
 		entity.setCreatedAt(new Timestamp(System.currentTimeMillis()));
 
@@ -99,16 +99,9 @@ public class UserInvitationService {
 	}
 
 	@Transactional
-	public UserInvitationInfo updateInvitation(final Long id, final UserInvitationRequest request)
-			throws BadUserInvitationException {
-		final UserInvitationEntity entity;
-		final var optional = repository.findById(id);
-		if (optional.isEmpty()) {
-			throw new BadUserInvitationException(BadUserInvitationException.ID_NOT_FOUND,
-			                                     "User invitation not found");
-		}
-
-		entity = optional.get();
+	public UserInvitationInfo updateInvitation(final String externalId, final UserInvitationRequest request)
+			throws BadArgumentException, BadUserInvitationException {
+		final UserInvitationEntity entity = getByExternalId(externalId);
 
 		if (entity.getStatus() == UserInvitationStatus.ACCEPTED) {
 			throw new BadUserInvitationException(BadUserInvitationException.ALREADY_ACCEPTED,
@@ -129,16 +122,10 @@ public class UserInvitationService {
 	}
 
 	@Transactional
-	public UserInvitationInfo sendInvitation(final Long invitationId)
-			throws BadUserInvitationException, BadMailSettingsException, InternalMailException,
+	public UserInvitationInfo sendInvitation(final String externalId, final HttpServletRequest request)
+			throws BadArgumentException, BadUserInvitationException, BadMailSettingsException, InternalMailException,
 					       InternalUserInvitationException {
-		final var optional = repository.findById(invitationId);
-		if (optional.isEmpty()) {
-			throw new BadUserInvitationException(BadUserInvitationException.ID_NOT_FOUND,
-			                                     "User invitation not found");
-		}
-
-		final var entity = optional.get();
+		final var entity = getByExternalId(externalId);
 
 		if (entity.getStatus() == UserInvitationStatus.ACCEPTED) {
 			throw new BadUserInvitationException(BadUserInvitationException.ALREADY_ACCEPTED,
@@ -153,21 +140,16 @@ public class UserInvitationService {
 		entity.setExpiresAt(new Timestamp(now + expirationDuration.toMillis()));
 		entity.setStatus(UserInvitationStatus.PENDING);
 
-		sentInvitationEmail(entity, token);
+		sendInvitationEmail(entity, token, request);
 
 		final var savedEntity = repository.save(entity);
 		return mapper.toInfo(savedEntity);
 	}
 
 	@Transactional
-	public UserInvitationInfo revokeInvitation(final Long invitationId) throws BadUserInvitationException {
-		final var optional = repository.findById(invitationId);
-		if (optional.isEmpty()) {
-			throw new BadUserInvitationException(BadUserInvitationException.ID_NOT_FOUND,
-			                                     "User invitation not found");
-		}
-
-		final var entity = optional.get();
+	public UserInvitationInfo revokeInvitation(final String externalId)
+			throws BadArgumentException, BadUserInvitationException {
+		final var entity = getByExternalId(externalId);
 
 		if (entity.getStatus() == UserInvitationStatus.ACCEPTED) {
 			throw new BadUserInvitationException(BadUserInvitationException.ALREADY_ACCEPTED,
@@ -180,17 +162,6 @@ public class UserInvitationService {
 
 		final var savedEntity = repository.save(entity);
 		return mapper.toInfo(savedEntity);
-	}
-
-	@Transactional(readOnly = true)
-	public RegisterRequest getInvitationByToken(final String token)
-			throws BadUserInvitationException, InternalUserInvitationException {
-		final var entity = validateToken(token);
-
-		final var request = new RegisterRequest();
-		request.setEmail(entity.getEmail());
-
-		return request;
 	}
 
 	@Transactional
@@ -209,7 +180,8 @@ public class UserInvitationService {
 		repository.save(entity);
 	}
 
-	private void sentInvitationEmail(final UserInvitationEntity invitation, final String token)
+	private void sendInvitationEmail(final UserInvitationEntity invitation, final String token,
+	                                 final HttpServletRequest request)
 			throws BadMailSettingsException, InternalMailException {
 		String subject = invitation.getEmailTemplateItem() == null
 		                 ? invitation.getEmailCustomSubject()
@@ -222,8 +194,10 @@ public class UserInvitationService {
 			throw new InternalMailException(InternalMailException.MISSING_BODY, "Email body is null for invitation email");
 		}
 
+		final String invitationLink = assembleInvitationLink(request, token);
+
 		try {
-			body = resourceSelectorService.replaceSelectorsInString(body, null, invitation, token);
+			body = resourceSelectorService.replaceSelectorsInString(body, null, invitation, invitationLink);
 		} catch (ApiException e) {
 			throw new InternalMailException(InternalMailException.BODY_PLACEHOLDER_REPLACEMENT,
 			                                "Failed to replace placeholder in email body", e);
@@ -277,4 +251,29 @@ public class UserInvitationService {
 		}
 		return entity;
 	}
+
+	@Transactional(readOnly = true)
+	protected UserInvitationEntity getByExternalId(final String externalId)
+			throws BadArgumentException, BadUserInvitationException {
+		UUID id;
+
+		try {
+			id = UUID.fromString(externalId);
+		} catch (final IllegalArgumentException e) {
+			throw new BadArgumentException(BadArgumentException.INVALID_INVITATION_ID, "Invalid invitation ID format");
+		}
+
+		final var optional = repository.findByExternalId(id);
+		if (optional.isEmpty()) {
+			throw new BadUserInvitationException(BadUserInvitationException.ID_NOT_FOUND,
+			                                     "User invitation not found");
+		}
+		return optional.get();
+	}
+
+	private String assembleInvitationLink(final HttpServletRequest request, final String token) {
+		return request.getRequestURL().subSequence(0, request.getRequestURL().lastIndexOf("/api")) +
+		       "/register?token=" + token;
+	}
+
 }

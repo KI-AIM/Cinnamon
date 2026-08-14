@@ -45,6 +45,12 @@ export class SupportedLanguage {
  * The content of a mail template for a single language.
  */
 export class EmailTemplateItem {
+    /**
+     * ID of the template item.
+     * Only part of a response, ignored when creating or updating a template.
+     */
+    id: number | null;
+
     language: string;
     subject: string;
     body: string;

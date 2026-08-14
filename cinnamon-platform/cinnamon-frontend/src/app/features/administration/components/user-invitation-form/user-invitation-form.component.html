@@ -1,0 +1,235 @@
+@if (currentInvitation$ | async; as invitation) {
+    <div class="vertical-boxes">
+
+        <div class="box">
+
+            <div class="box-header box-header-expanded">
+                <span class="box-header-icon icon-enabled"><mat-icon>visibility</mat-icon></span>
+                <span class="box-header-title">Overview</span>
+            </div>
+
+            <div class="config-input-row">
+
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Status</div>
+                </div>
+
+                <div class="config-input-row-text fw-bold fs-5">
+                    {{ invitation.status }}
+                </div>
+            </div>
+
+            <div class="config-input-divider"></div>
+
+            <div class="config-input-row">
+
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Creator</div>
+                    <div class="config-input-row-label-inline-info">User created the initial invitation</div>
+                </div>
+
+                <div class="config-input-row-text">
+                    <div>
+                        <span class="fw-bold">Created by: </span>
+                        <span>{{ invitation.invitedBy ?? 'Not saved yet' }}</span>
+                    </div>
+                </div>
+
+                <div class="config-input-row-text">
+                    <div>
+                        <span class="fw-bold">Created at: </span>
+                        <span>{{ (invitation.createdAt | date) ?? 'Not saved yet' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-input-divider"></div>
+
+            <div class="config-input-row">
+
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Send invitation</div>
+                    <div class="config-input-row-label-inline-info">Send a new invitation link to the specified mail address</div>
+                </div>
+
+                <div class="config-input-row-text">
+                    <div>
+                        <span class="fw-bold">Last sent at: </span>
+                        <span>{{ (invitation.lastSentAt | date) ?? 'Not sent' }}</span>
+                    </div>
+                </div>
+
+                <div class="config-input-row-text">
+                    <div>
+                        <span class="fw-bold">Expires at: </span>
+                        <span>{{ (invitation.expiresAt | date) ?? 'Not sent' }}</span>
+                    </div>
+                </div>
+
+                <div class="config-input-row-button config-input-row-end">
+                    <button mat-raised-button color="primary" type="button"
+                            [disabled]="invitation.id == null || invitation.status === UserInvitationStatus.ACCEPTED"
+                            (click)="sendInvitation(invitation.id!)">
+                        Send
+                    </button>
+                </div>
+            </div>
+
+            <div class="config-input-divider"></div>
+
+            <div class="config-input-row">
+
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Revoke invitation</div>
+                    <div class="config-input-row-label-inline-info">User will not be able to accept the invitation</div>
+                </div>
+
+                <div class="config-input-row-text">
+                    <span class="fw-bold">Revoked at: </span>
+                    <span>{{ (invitation.revokedAt | date) ?? 'Not revoked' }}</span>
+                </div>
+
+                <div class="config-input-row-button config-input-row-end">
+                    <button mat-raised-button color="primary" type="button"
+                            [disabled]="invitation.id == null || invitation.status !== UserInvitationStatus.PENDING"
+                            (click)="revokeInvitation(invitation.id!)">
+                        Revoke
+                    </button>
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="box">
+            <div class="box-header box-header-expanded">
+                <span class="box-header-icon icon-enabled"><mat-icon>edit</mat-icon></span>
+                <span class="box-header-title">Data</span>
+            </div>
+
+            <form [formGroup]="invitationForm" (ngSubmit)="createOrUpdateInvitation()" class="workstep-part">
+
+                <div class="config-input-row">
+
+                    <div class="config-input-row-label-inline">
+                        <div class="config-input-row-label-inline-header">E-Mail</div>
+                        <div class="config-input-row-label-inline-info">Receives the invitation link</div>
+                    </div>
+
+                    <mat-form-field class="config-input-row-field">
+                        <mat-label>E-Mail</mat-label>
+                        <input matInput type="email" formControlName="email">
+                        @if (invitationForm.controls['email'].hasError('email')) {
+                            <mat-error>The E-Mail must be a valid email address.</mat-error>
+                        }
+                        @if (invitationForm.controls['email'].hasError('required')) {
+                            <mat-error>The E-Mail must not be blank.</mat-error>
+                        }
+                    </mat-form-field>
+                    <div class="config-input-row-info">
+                        <mat-icon class="icon-enabled">info</mat-icon>
+                    </div>
+                </div>
+
+                <div class="config-input-row">
+                    <div class="config-input-row-label-inline">
+                        <div class="config-input-row-label-inline-header">Roles</div>
+                        <div class="config-input-row-label-inline-info">Assigned to the user when accepting</div>
+                    </div>
+                    <div class="config-input-row-checkboxes" formArrayName="userRoles">
+                        @for (role of Object.values(UserRole); track role) {
+                            <mat-checkbox color="primary" [checked]="isRoleSelected(role)"
+                                          (change)="toggleRole(role, $event.checked)">
+                                {{ role }}
+                            </mat-checkbox>
+                        }
+                    </div>
+                    <div class="config-input-row-info">
+                        <mat-icon class="icon-enabled">info</mat-icon>
+                    </div>
+                </div>
+
+                <div class="config-input-row">
+                    <div class="config-input-row-label-inline">
+                        <div class="config-input-row-label-inline-header">E-Mail Template</div>
+                        <div class="config-input-row-label-inline-info">Template used for the invitation mail</div>
+                    </div>
+                    <mat-form-field class="config-input-row-field">
+                        <mat-label>E-Mail Template</mat-label>
+                        <mat-select [value]="selectedTemplateId" (selectionChange)="selectTemplate($event.value)">
+                            @for (template of availableTemplates; track template.id) {
+                                <mat-option [value]="template.id">
+                                    {{ template.name }}
+                                </mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                    <mat-form-field class="config-input-row-field">
+                        <mat-label>Language</mat-label>
+                        <mat-select [value]="selectedLanguage" [disabled]="selectedTemplateId === null"
+                                    (selectionChange)="selectLanguage($event.value)">
+                            @for (language of availableLanguages; track language.name) {
+                                <mat-option [value]="language.name">
+                                    {{ language.displayName }}
+                                </mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                    <div class="config-input-row-info">
+                        <mat-icon class="icon-enabled">info</mat-icon>
+                    </div>
+                </div>
+
+                <div class="config-input-row">
+                    <div class="config-input-row-label-inline">
+                        <div class="config-input-row-label-inline-header">Use Custom Mail</div>
+                        <div class="config-input-row-label-inline-info">Edit the content of the mail below</div>
+                    </div>
+                    <div class="config-input-row-checkboxes">
+                        <mat-checkbox color="primary" [checked]="useCustomMail"
+                                      (change)="toggleUseCustomMail($event.checked)">
+                            Use a custom invitation E-Mail
+                        </mat-checkbox>
+                    </div>
+                    <div class="config-input-row-info">
+                        <mat-icon class="icon-enabled">info</mat-icon>
+                    </div>
+                </div>
+
+                <div class="config-input-row">
+                    <div class="config-input-row-label-inline">
+                        <div class="config-input-row-label-inline-header">Custom Subject</div>
+                        <div class="config-input-row-label-inline-info">bla</div>
+                    </div>
+                    <mat-form-field class="config-input-row-field">
+                        <input matInput type="text" formControlName="emailCustomSubject">
+                    </mat-form-field>
+                    <div class="config-input-row-info">
+                        <mat-icon class="icon-enabled">info</mat-icon>
+                    </div>
+                </div>
+
+                <div class="config-input-row">
+                    <div class="config-input-row-label-inline">
+                        <div class="config-input-row-label-inline-header">Custom Body</div>
+                        <div class="config-input-row-label-inline-info">bla</div>
+                    </div>
+                    <mat-form-field class="config-input-row-field">
+                        <textarea matInput rows="10" formControlName="emailCustomBody"
+                                  placeholder="Content of the email"></textarea>
+                    </mat-form-field>
+                    <div class="config-input-row-info">
+                        <mat-icon class="icon-enabled">info</mat-icon>
+                    </div>
+                </div>
+
+                <div>
+                    <button mat-raised-button color="primary" type="submit" [disabled]="!canSaveInvitation">Save
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+}

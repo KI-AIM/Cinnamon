@@ -18,9 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,31 +81,18 @@ public class UserController {
 	@PostMapping(value = "/register",
 	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<Object> register(
+	public void register(
+			@RequestParam(required = false) final String token,
 			@Parameter(description = "Information about the new user.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE),
 			           schema = @Schema(implementation = RegisterRequest.class))
 			final @RequestBody @Valid RegisterRequest registerRequest
-	) throws BadAppStateException, BadUserException {
-		userService.register(registerRequest.getUsername(), registerRequest.getPassword(), registerRequest.getEmail());
-		return new ResponseEntity<>(HttpStatus.OK);
-	}
-
-	@GetMapping(value = "/accept-invitation/{token}",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public RegisterRequest getAcceptInvitation(
-			@PathVariable("token") final String token
 	) throws ApiException {
-		return userInvitationService.getInvitationByToken(token);
-	}
-
-	@PostMapping(value = "/accept-invitation/{token}",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public void postAcceptInvitation(
-			@PathVariable("token") final String token,
-			@RequestBody @Valid final RegisterRequest registerRequest
-	) throws ApiException {
-		userInvitationService.acceptInvitation(token, registerRequest);
+		if (token != null) {
+			userInvitationService.acceptInvitation(token, registerRequest);
+		} else {
+			userService.register(registerRequest.getUsername(), registerRequest.getPassword(), registerRequest.getEmail());
+		}
 	}
 
 	@Operation(summary="Deletes the currently authenticated user.",

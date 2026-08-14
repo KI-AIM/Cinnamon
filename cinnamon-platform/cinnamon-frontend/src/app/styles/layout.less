@@ -52,12 +52,62 @@ app-navigation{
     width: 100%;
 }
 
+.config-input-row:has(.config-input-row-checkboxes) {
+    margin-bottom: var(--mat-form-field-subscript-text-line-height);
+}
+
 .config-input-row-label {
     width: 100%;
 }
 
+.config-input-row-title {
+    display: inline-flex;
+    width: 100%;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.config-input-row-title-required::after {
+    content: "*";
+    font-size: 0.8rem;
+    font-weight: normal;
+}
+
+.config-input-row-label-inline {
+    margin-right: 2rem;
+    width: 250px;
+    justify-content: center;
+
+    .config-input-row-info;
+    .input-height;
+}
+.config-input-row-label-inline-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-weight: bold;
+}
+.config-input-row-label-inline-info {
+    font-size: 0.8rem;
+}
+
 .config-input-row-field {
     flex: 1 1 auto;
+}
+
+.config-input-row-checkboxes {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 16px;
+
+
+    & .mat-internal-form-field > label {
+        margin-left: -8px;
+    }
+
+    .config-input-row-field;
 }
 
 .config-input-row-button {
@@ -72,8 +122,17 @@ app-navigation{
     justify-content: center;
 }
 
-.config-input-row-field:has(.mat-mdc-form-field-subscript-wrapper) + .config-input-row-info {
+.config-input-row-text {
+    font-size: 0.8rem;
+    .config-input-row-info;
+}
+
+.config-input-row-field:has(.mat-mdc-form-field-subscript-wrapper) ~ .config-input-row-info {
     .input-height;
+}
+
+.config-input-row-end {
+    margin-left: auto;
 }
 
 .content-left, .content-right {
@@ -227,6 +286,42 @@ app-navigation{
 
 .input-height {
     height: 56px;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    button { flex: 0 0 auto; }
+}
+
+.settings-divided {
+    .setting-row {
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+    .setting-row:not(:last-child) {
+        border-bottom: 1px solid @color-gray-border;
+    }
+
+    .setting-row:first-child {
+        // Subtract the padding of the box header
+        padding-top: calc(20px - 1rem);
+    }
+
+    .setting-row:last-child {
+        // Subtract the padding of the box
+        padding-bottom: calc(20px - 1rem);
+    }
+}
+
+.settings-dialog-description { margin-bottom: 20px; line-height: 1.5; }
+
+@media (max-width: @phone-breakpoint) {
+    .setting-row { align-items: stretch; flex-direction: column; }
+    .setting-row button { width: 100%; }
 }
 
 .settings-label {

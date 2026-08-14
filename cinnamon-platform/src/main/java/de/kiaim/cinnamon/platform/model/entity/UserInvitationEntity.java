@@ -12,6 +12,7 @@ import org.springframework.lang.Nullable;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Entity representing a user invitation.
@@ -28,6 +29,12 @@ public class UserInvitationEntity {
 	@Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Setter(AccessLevel.NONE)
 	private Long id;
+
+	/**
+	 * External ID of the invitation.
+	 */
+	@Column(nullable = false, unique = true)
+	private UUID externalId;
 
 	/**
 	 * Status of the invitation.

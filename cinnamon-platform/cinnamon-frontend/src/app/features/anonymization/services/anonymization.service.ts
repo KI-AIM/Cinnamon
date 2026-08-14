@@ -9,6 +9,7 @@ import {
     AnonymizationAttributeRowConfiguration,
     ConfigurationObject
 } from "@shared/model/anonymization-attribute-config";
+import { TextAnonymizationConfiguration } from "@features/anonymization/services/text-anonymization-configuration.service";
 import { ConfigurationRegisterData } from "@shared/model/configuration-register-data";
 import { AlgorithmData, AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
@@ -27,6 +28,7 @@ export interface AnonymizationAlgorithmData extends AlgorithmData {
 export class AnonymizationFormConfig extends ConfigurationObject {
     modelConfiguration: any; // Specify the type of `modelConfiguration` as needed.
     attributeConfiguration: AnonymizationAttributeRowConfiguration[];
+    textAnonymizationConfiguration: TextAnonymizationConfiguration | null = null;
 }
 
 @Injectable({
@@ -62,6 +64,7 @@ export class AnonymizationService extends AlgorithmService {
                     },
                 ],
                 attributeConfiguration: arg.attributeConfiguration,
+                textAnonymizationConfiguration: arg.textAnonymizationConfiguration,
             }
         };
     }
@@ -73,6 +76,7 @@ export class AnonymizationService extends AlgorithmService {
         delete config["type"];
 
         config[this.attributeConfigurationService.formGroupName] = arg["anonymization"][this.attributeConfigurationService.formGroupName];
+        config.textAnonymizationConfiguration = arg["anonymization"].textAnonymizationConfiguration;
 
         return {config, selectedAlgorithm};
     }

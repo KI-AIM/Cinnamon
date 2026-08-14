@@ -6,6 +6,7 @@ target/
 
 ### Local files ###
 .env
+secrets/
 scripts/resources/
 .DS_Store
 **/.DS_Store
@@ -60,3 +61,4 @@ __pycache__/
 /**/ENV/
 /**/.env/
 /**/.venv/
+/cinnamon-text-anonymization/models/*

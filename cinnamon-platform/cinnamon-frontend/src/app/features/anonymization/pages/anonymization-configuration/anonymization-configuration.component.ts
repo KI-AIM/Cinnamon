@@ -19,6 +19,9 @@ import {
     AnonymizationAttributeConfigurationComponent
 } from '../../components/anonymization-attribute-configuration/anonymization-attribute-configuration.component';
 import { AnonymizationService } from "../../services/anonymization.service";
+import { TextAnonymizationConfigurationComponent } from '../../components/text-anonymization-configuration/text-anonymization-configuration.component';
+import { TextAnonymizationConfigurationService } from '../../services/text-anonymization-configuration.service';
+import { hasTextColumns } from '@shared/model/data-configuration';
 
 @Component({
     selector: 'app-anonymization-configuration',
@@ -42,6 +45,7 @@ export class AnonymizationConfigurationComponent implements OnInit {
     constructor(
         private readonly anonymizationService: AnonymizationService,
         private readonly anonymizationAttributeConfigurationService: AnonymizationAttributeConfigurationService,
+        private readonly textAnonymizationConfigurationService: TextAnonymizationConfigurationService,
         private titleService: TitleService,
     ) {
         this.titleService.setPageTitle("Anonymization");
@@ -50,8 +54,7 @@ export class AnonymizationConfigurationComponent implements OnInit {
     public ngOnInit(): void {
         this.configurationInfo$ = this.anonymizationService.fetchInfo();
 
-        const configs = new Array(
-            new AdditionalConfig(
+        const configs = [new AdditionalConfig(
                 AnonymizationAttributeConfigurationComponent,
                 "Attribute Anonymization Configuration",
                 "Define anonymization settings for each attribute. Each attribute requires a protection strategy and an interval size if applicable.",
@@ -60,7 +63,18 @@ export class AnonymizationConfigurationComponent implements OnInit {
                     this.anonymizationAttributeConfigurationService.initForm(form, configs as AnonymizationAttributeRowConfiguration[] | null, disabled);
                 },
             ),
-        );
+            new AdditionalConfig(
+                TextAnonymizationConfigurationComponent,
+                'Text Anonymization',
+                'Configure how personal data in free-text columns is detected and transformed.',
+                this.textAnonymizationConfigurationService.formGroupName,
+                (form: FormGroup, config: any, disabled: boolean) => {
+                    this.textAnonymizationConfigurationService.initForm(form, config, disabled);
+                },
+                null,
+                null,
+                (_, dataConfiguration) => hasTextColumns(dataConfiguration),
+            )];
         this.additionalConfigs = new ConfigurationAdditionalConfigs(configs);
     }
 }

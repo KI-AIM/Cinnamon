@@ -24,20 +24,27 @@ import {
 } from "@angular/material/table";
 import { RouterModule } from "@angular/router";
 import { SharedModule } from "@shared/shared.module";
+import {
+    UserInvitationFormComponent
+} from "@features/administration/components/user-invitation-form/user-invitation-form.component";
+import {
+    UserInvitationsComponent
+} from "@features/administration/components/user-invitations/user-invitations.component";
 import { AdminMailSettingsComponent } from './components/admin-mail-settings/admin-mail-settings.component';
 import { AdminShellComponent } from './components/admin-shell/admin-shell.component';
 import { AdminUsersComponent } from './components/admin-users/admin-users.component';
 import { MailTemplatesComponent } from './components/mail-templates/mail-templates.component';
 
 
-
 @NgModule({
-  declarations: [
-    AdminShellComponent,
-    AdminUsersComponent,
-    AdminMailSettingsComponent,
-    MailTemplatesComponent
-  ],
+    declarations: [
+        AdminShellComponent,
+        AdminUsersComponent,
+        AdminMailSettingsComponent,
+        MailTemplatesComponent,
+        UserInvitationsComponent,
+        UserInvitationFormComponent
+    ],
     imports: [
         CommonModule,
         MatDialogModule,
@@ -67,4 +74,5 @@ import { MailTemplatesComponent } from './components/mail-templates/mail-templat
         SharedModule,
     ]
 })
-export class AdministrationModule { }
+export class AdministrationModule {
+}

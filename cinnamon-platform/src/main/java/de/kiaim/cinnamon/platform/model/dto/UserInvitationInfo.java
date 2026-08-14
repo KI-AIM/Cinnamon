@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,10 +13,19 @@ import java.util.Set;
 
 /**
  * DTO for viewing user invitation information.
+ *
+ * @author Daniel Preciado-Marquez
  */
 @Data
 @Schema(description = "DTO for viewing user invitation information.")
 public class UserInvitationInfo {
+
+	/**
+	 * ID of the invitation.
+	 */
+	@JsonProperty("id")
+	@Schema(description = "ID of the invitation.", example = "123e4567-e89b-12d3-a456-426614174000")
+	private String externalId;
 
 	/**
 	 * Status of the invitation.
@@ -82,8 +92,10 @@ public class UserInvitationInfo {
 
 	/**
 	 * Timestamp when the invitation expires.
+	 * Null if the invitation has not been sent.
 	 */
 	@Schema(description = "Timestamp when the invitation expires.", example = "2024-06-01T12:00:00Z")
+	@Nullable
 	private Timestamp expiresAt;
 
 	/**

@@ -2,8 +2,6 @@ package de.kiaim.cinnamon.platform.controller;
 
 
 import de.kiaim.cinnamon.platform.exception.ApiException;
-import de.kiaim.cinnamon.platform.exception.BadUserException;
-import de.kiaim.cinnamon.platform.exception.BadUserInvitationException;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.AppSettingsService;
@@ -102,25 +100,25 @@ public class AdminController {
 	}
 
 	@GetMapping(value = "/invitations/{id}")
-	public UserInvitationInfo getInvitation(@PathVariable("id") final Long invitationId) throws ApiException {
+	public UserInvitationInfo getInvitation(@PathVariable("id") final String invitationId) throws ApiException {
 		return userInvitationService.getInvitationById(invitationId);
 	}
 
 	@PutMapping(value = "/invitations/{id}")
 	public UserInvitationInfo updateInvitation(
-			@PathVariable("id") final Long invitationId,
+			@PathVariable("id") final String invitationId,
 			@RequestBody @Valid final UserInvitationRequest request
 	) throws ApiException {
 		return userInvitationService.updateInvitation(invitationId, request);
 	}
 
 	@PostMapping(value = "/invitations/{id}/send")
-	public UserInvitationInfo sendInvitation(@PathVariable("id") final Long invitationId) throws ApiException {
+	public UserInvitationInfo sendInvitation(@PathVariable("id") final String invitationId) throws ApiException {
 		return userInvitationService.sendInvitation(invitationId);
 	}
 
 	@PostMapping(value = "/invitations/{id}/revoke")
-	public UserInvitationInfo revokeInvitation(@PathVariable("id") final Long invitationId) throws ApiException {
+	public UserInvitationInfo revokeInvitation(@PathVariable("id") final String invitationId) throws ApiException {
 		return userInvitationService.revokeInvitation(invitationId);
 	}
 

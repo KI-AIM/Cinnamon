@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
-import { Router } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { Observable, tap } from "rxjs";
 import { TitleService } from "src/app/core/services/title-service.service";
@@ -27,6 +27,7 @@ export class RegisterComponent implements OnInit {
     protected appConfig$: Observable<AppConfig>;
 
     constructor(
+        private readonly activatedRoute: ActivatedRoute,
         private readonly appConfigService: AppConfigService,
         private readonly errorHandlingService: ErrorHandlingService,
         private readonly notificationService: NotificationService,
@@ -66,7 +67,9 @@ export class RegisterComponent implements OnInit {
         const project = this.registerForm.controls["username"].value;
 
         const registerData = this.registerForm.value as { username: string; password: string; passwordRepeated: string };
-        this.userService.register(registerData).subscribe({
+        const invitationToke = this.activatedRoute.snapshot.queryParamMap.get('token');
+
+        this.userService.register(registerData, invitationToke).subscribe({
             next: () => this.handleRegisterSuccess(project),
             error: (e) => this.handleRegisterFailed(e),
         });

@@ -8,6 +8,9 @@ import { AdminUsersComponent } from "@features/administration/components/admin-u
 import { ProjectShellComponent } from "@features/project/components/project-shell/project-shell.component";
 import { UserHomePageComponent } from "@features/user/pages/user-home-page/user-home-page.component";
 import { UserSettingsComponent } from "@features/user/pages/user-settings/user-settings.component";
+import {
+    UserInvitationFormComponent
+} from "@features/administration/components/user-invitation-form/user-invitation-form.component";
 import { StartpageComponent } from './features/start/pages/startpage/startpage.component';
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 import { DataConfigurationComponent } from './features/data-upload/pages/data-configuration/data-configuration.component';
@@ -42,6 +45,7 @@ const routes: Routes = [
         children: [
             {path: '', redirectTo: 'users', pathMatch: 'full'},
             {path: 'users', component: AdminUsersComponent},
+            {path: 'invitation/:invitationId', component: UserInvitationFormComponent},
             {path: 'mail', component: AdminMailSettingsComponent},
         ],
     },

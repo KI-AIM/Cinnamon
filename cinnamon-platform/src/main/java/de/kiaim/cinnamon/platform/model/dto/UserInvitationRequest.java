@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.lang.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -40,6 +41,7 @@ public class UserInvitationRequest {
 	 * Either this or the custom subject and body must be provided.
 	 */
 	@Schema(description = "The ID of the email template item to be used for sending the invitation email.")
+	@Nullable
 	private Long emailTemplateItemId;
 
 	/**
@@ -47,6 +49,7 @@ public class UserInvitationRequest {
 	 * Either this and the custom body or the email template item must be provided.
 	 */
 	@Schema(description = "The custom subject of the invitation email.")
+	@Nullable
 	private String emailCustomSubject;
 
 	/**
@@ -54,5 +57,6 @@ public class UserInvitationRequest {
 	 * Either this and the custom subject or the email template item must be provided.
 	 */
 	@Schema(description = "The custom body of the invitation email.")
+	@Nullable
 	private String emailCustomBody;
 }

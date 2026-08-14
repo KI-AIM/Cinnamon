@@ -102,7 +102,6 @@ export class MailTemplatesComponent implements OnInit {
         this.addLanguageControl = this.formBuilder.control(null);
         this.buildForm();
         this.loadTemplates(null);
-        this.updateLanguageEnabled();
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ template ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -363,6 +362,8 @@ export class MailTemplatesComponent implements OnInit {
 
                 const template = this.templates.find(candidate => candidate.id === selectedId) ?? this.templates[0];
                 this.selectTemplate(template?.id ?? null);
+
+                this.updateLanguageEnabled();
             },
             error: e => {
                 this.loading = false;

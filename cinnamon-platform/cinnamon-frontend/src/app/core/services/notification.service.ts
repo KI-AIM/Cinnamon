@@ -88,6 +88,15 @@ export class NotificationService {
     }
 
     /**
+     * Adds a notification with the type 'success'.
+     * @param message The message of the notification.
+     */
+    public addNotificationSuccess(message: string) {
+        const notification = new AppNotification(message, 'success');
+        this.addNotification(notification);
+    }
+
+    /**
      * Notifies about all notifications.
      * Latest notifications are at the back.
      */

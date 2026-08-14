@@ -46,7 +46,7 @@ class ConfigurationControllerTest extends ControllerTest {
 				                .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
 		       .andExpect(
-				       content().json("{processes: [{job: 'anonymization', skip: false, holdOutFulfilled: true, configured: false}]}"));
+				       content().json("{processes: [{job: 'anonymization', skip: false, holdOutFulfilled: true, configured: false}, {job: 'text_anonymization', skip: false, holdOutFulfilled: true, configured: false}]}"));
 	}
 
 	@Test
@@ -67,7 +67,7 @@ class ConfigurationControllerTest extends ControllerTest {
 				                .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
 		       .andExpect(
-				       content().json("{processes: [{job: 'anonymization', skip: true, holdOutFulfilled: true, configured: true}]}"));
+				       content().json("{processes: [{job: 'anonymization', skip: true, holdOutFulfilled: true, configured: true}, {job: 'text_anonymization', skip: false, holdOutFulfilled: true, configured: false}]}"));
 	}
 
 	@Test

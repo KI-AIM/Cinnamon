@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -113,8 +114,11 @@ public class AdminController {
 	}
 
 	@PostMapping(value = "/invitations/{id}/send")
-	public UserInvitationInfo sendInvitation(@PathVariable("id") final String invitationId) throws ApiException {
-		return userInvitationService.sendInvitation(invitationId);
+	public UserInvitationInfo sendInvitation(
+			@PathVariable("id") final String invitationId,
+			final HttpServletRequest request
+	) throws ApiException {
+		return userInvitationService.sendInvitation(invitationId, request);
 	}
 
 	@PostMapping(value = "/invitations/{id}/revoke")

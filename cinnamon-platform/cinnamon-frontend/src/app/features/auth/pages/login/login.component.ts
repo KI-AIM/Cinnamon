@@ -3,8 +3,9 @@ import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { TitleService } from "@core/services/title-service.service";
+import { AppConfigService } from "@shared/services/app-config.service";
 import { UserService } from "@shared/services/user.service";
-import { switchMap } from "rxjs";
+import { map, Observable, switchMap } from "rxjs";
 
 interface LoginForm {
 	username: FormControl<string>;
@@ -18,9 +19,12 @@ interface LoginForm {
     standalone: false
 })
 export class LoginComponent implements OnInit {
+    protected isInvitationRequired$: Observable<boolean>;
+
 	loginForm: FormGroup<LoginForm>;
 
 	constructor(
+        private readonly appConfigService: AppConfigService,
         private readonly notificationService: NotificationService,
         private readonly router: Router,
 		private readonly titleService: TitleService,
@@ -30,6 +34,10 @@ export class LoginComponent implements OnInit {
 	}
 
 	ngOnInit() {
+        this.isInvitationRequired$ = this.appConfigService.appConfig$.pipe(
+            map(config => config.isInvitationRequired),
+        );
+
         this.loginForm = new FormGroup<LoginForm>({
             username: new FormControl<string>(this.userService.cachedUsernameInput ?? "", {
                 nonNullable: true,

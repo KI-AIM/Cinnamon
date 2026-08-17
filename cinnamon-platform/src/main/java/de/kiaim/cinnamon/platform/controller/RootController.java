@@ -26,13 +26,20 @@ public class RootController {
     @Value("${cinnamon.max-file-size}")
     private long maxFileSize;
 
+    private final boolean isInvitationRequired;
+
     @Value("${cinnamon.version}")
     private String version;
 
     private final CinnamonConfiguration cinnamonConfiguration;
 
-    public RootController(final CinnamonConfiguration cinnamonConfiguration) {
-	    this.cinnamonConfiguration = cinnamonConfiguration;
+
+    public RootController(
+            @Value("${cinnamon.users.invitation.is-required}") boolean isInvitationRequired,
+            final CinnamonConfiguration cinnamonConfiguration
+    ) {
+        this.isInvitationRequired = isInvitationRequired;
+        this.cinnamonConfiguration = cinnamonConfiguration;
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/")
@@ -53,7 +60,8 @@ public class RootController {
     @ResponseBody
     @GetMapping(value = "/config.json", produces = MediaType.APPLICATION_JSON_VALUE)
     public CinnamonInfo getConfig() {
-        return new CinnamonInfo(isDemoInstance,maxFileSize, cinnamonConfiguration.getPasswordRequirements(), version);
+        return new CinnamonInfo(isDemoInstance, maxFileSize, cinnamonConfiguration.getPasswordRequirements(),
+                                isInvitationRequired, version);
     }
 
 }

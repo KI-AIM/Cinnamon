@@ -10,8 +10,11 @@
 
         <button mat-raised-button color="primary" [disabled]="!loginForm.valid">Login</button>
     </form>
-    <div style="display: flex; flex-direction: column;">
-        <div style="margin: auto;">Want to create a new account?</div>
-        <button mat-raised-button color="primary" (click)="navigateToRegister()">Create new Account</button>
-    </div>
+
+    @if (!(isInvitationRequired$ | async)) {
+        <div style="display: flex; flex-direction: column;">
+            <div style="margin: auto;">Want to create a new account?</div>
+            <button mat-raised-button color="primary" (click)="navigateToRegister()">Create new Account</button>
+        </div>
+    }
 </div>

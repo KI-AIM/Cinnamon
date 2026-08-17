@@ -37,6 +37,7 @@ import java.util.UUID;
 public class UserInvitationService {
 
 	private final Duration expirationDuration;
+	private final Duration retentionDuration;
 	private final byte[] secret;
 
 	private final UserInvitationRepository repository;
@@ -49,6 +50,7 @@ public class UserInvitationService {
 
 	public UserInvitationService(
 			@Value("${cinnamon.users.invitation.expiration}") final Duration expirationDuration,
+			@Value("${cinnamon.users.invitation.retention}") final Duration retentionDuration,
 			@Value("${cinnamon.users.invitation.secret}") final String secret,
 			final UserInvitationRepository repository,
 			final UserInvitationMapper mapper,
@@ -57,6 +59,7 @@ public class UserInvitationService {
 			final UserService userService
 	) {
 		this.expirationDuration = expirationDuration;
+		this.retentionDuration = retentionDuration;
 		this.secret = secret.getBytes(StandardCharsets.UTF_8);
 		this.repository = repository;
 		this.mapper = mapper;
@@ -162,6 +165,16 @@ public class UserInvitationService {
 
 		final var savedEntity = repository.save(entity);
 		return mapper.toInfo(savedEntity);
+	}
+
+	/**
+	 * Deletes all invitations that have been accepted or revoked longer ago than the configured retention duration.
+	 */
+	@Transactional
+	public void deleteExpiredInvitations() {
+		final Timestamp cutoff = new Timestamp(System.currentTimeMillis() - retentionDuration.toMillis());
+		final var expiredInvitations = repository.findAllAcceptedOrRevokedBefore(cutoff);
+		repository.deleteAll(expiredInvitations);
 	}
 
 	@Transactional

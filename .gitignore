@@ -11,6 +11,7 @@ scripts/resources/
 .DS_Store
 **/.DS_Store
 cinnamon-synthetization/outputs/
+cinnamon-text-anonymization/outputs/
 cinnamon-synthetization/workspace/
 start-local-macos.sh
 restart-platform-synthetization-macos.sh

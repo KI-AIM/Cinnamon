@@ -145,6 +145,10 @@ class InferenceModel:
                 add_special_tokens=False,
                 return_offsets_mapping=True,
                 truncation=False,
+                # Long documents are intentionally tokenized in full here so
+                # their character offsets can be split into inference windows.
+                # The actual model call receives only the configured windows.
+                verbose=False,
             )
             for text in texts
         ]

@@ -51,7 +51,7 @@ public class ProjectServiceTest extends DatabaseTest {
 		assertEquals(exec.getStage(), stage, "Unexpected step!");
 		assertEquals(StageStatus.NOT_STARTED, exec.getStatus(), "Unexpected process status!");
 		assertNull(exec.getCurrentProcessIndex(), "No step has been created!");
-		assertEquals(2, exec.getProcesses().size(), "Unexpected number of processes!");
+		assertEquals(3, exec.getProcesses().size(), "Unexpected number of processes!");
 		var firstProcess = exec.getProcess(0);
 
 		assertEquals(ProcessStatus.NOT_STARTED, firstProcess.getExternalProcessStatus(), "Unexpected status!");

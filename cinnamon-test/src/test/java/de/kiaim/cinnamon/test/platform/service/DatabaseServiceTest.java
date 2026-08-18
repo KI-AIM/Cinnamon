@@ -318,6 +318,8 @@ class DatabaseServiceTest extends DatabaseTest {
 		process11.setExternalProcessStatus(ProcessStatus.FINISHED);
 		var process12 = stage1.getProcess(1);
 		process12.setExternalProcessStatus(ProcessStatus.FINISHED);
+		var process13 = stage1.getProcess(2);
+		process13.setExternalProcessStatus(ProcessStatus.FINISHED);
 
 		ExecutionStepEntity stage2 = project.getPipelines().get(0).getStageByIndex(1);
 		stage2.setStatus(StageStatus.FINISHED);
@@ -333,6 +335,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		assertEquals(StageStatus.OUTDATED, stage1.getStatus());
 		assertEquals(ProcessStatus.FINISHED, process11.getExternalProcessStatus());
 		assertEquals(ProcessStatus.OUTDATED, process12.getExternalProcessStatus());
+		assertEquals(ProcessStatus.OUTDATED, process13.getExternalProcessStatus());
 		assertEquals(StageStatus.OUTDATED, stage2.getStatus());
 		assertEquals(ProcessStatus.SKIPPED, process21.getExternalProcessStatus());
 		assertEquals(ProcessStatus.OUTDATED, process22.getExternalProcessStatus());

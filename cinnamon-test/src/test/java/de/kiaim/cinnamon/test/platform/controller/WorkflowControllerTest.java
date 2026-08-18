@@ -35,6 +35,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithUserDetails("test_user")
 public class WorkflowControllerTest extends ControllerTest {
 
+	private static final int TEXT_ANON_PROCESS_INDEX = 0;
+	private static final int ANON_PROCESS_INDEX = 1;
+	private static final int SYNTH_PROCESS_INDEX = 2;
+
 	private MockWebServer mockBackEnd;
 
 	@Autowired private ProjectRepository projectRepository;
@@ -114,12 +118,17 @@ public class WorkflowControllerTest extends ControllerTest {
 		                        "stages":[{
 		                          "stageName":"execution",
 		                          "status":"RUNNING",
-		                          "currentProcessIndex":0,
-		                          "processes":[{
-		                            "externalProcessStatus":"RUNNING",
-		                            "step":"anonymization",
-		                            "status":"status",
-		                            "processSteps":null
+			                          "currentProcessIndex":0,
+			                          "processes":[{
+			                            "externalProcessStatus":"RUNNING",
+			                            "step":"text_anonymization",
+			                            "status":"status",
+			                            "processSteps":null
+			                            },{
+			                            "externalProcessStatus":"NOT_STARTED",
+			                            "step":"anonymization",
+			                            "status":null,
+			                            "processSteps":null
 		                            },{
 		                            "externalProcessStatus":"NOT_STARTED",
 		                            "step":"synthetization",
@@ -167,12 +176,14 @@ public class WorkflowControllerTest extends ControllerTest {
 		                                                               WorkflowInformation.class);
 		String workflowId = workflowInformation.getWorkflowId();
 
-		verifyProcessStartRequest("/algorithmA");
+		verifyProcessStartRequest("/start_anonymization_process");
 		verifyProcessStatusRequest();
 		verifyWorkflow(workflowId, 0, true);
-		finish(workflowId, 0, 0, "/start_synthetization_process/ctgan");
+		finish(workflowId, 0, TEXT_ANON_PROCESS_INDEX, "/algorithmA");
 		verifyWorkflow(workflowId, 0, true);
-		finish(workflowId, 0, 1, "/start_synthetization_process/ctgan");
+		finish(workflowId, 0, ANON_PROCESS_INDEX, "/start_synthetization_process/ctgan");
+		verifyWorkflow(workflowId, 0, true);
+		finish(workflowId, 0, SYNTH_PROCESS_INDEX, "/start_synthetization_process/ctgan");
 		verifyWorkflow(workflowId, 1, false);
 		finish(workflowId, 1, 0, "");
 		verifyWorkflow(workflowId, 1, false);
@@ -220,6 +231,7 @@ public class WorkflowControllerTest extends ControllerTest {
 		                        pipeline:
 		                          pipelines:
 		                          - jobs:
+		                            - name: text_anonymization
 		                            - name: anonymization
 		                            - name: synthetization
 		                            - name: technical_evaluation
@@ -244,7 +256,8 @@ public class WorkflowControllerTest extends ControllerTest {
 				                    .code(200)
 				                    .body("""
 				                          {
-				                            "message": "Stated process"
+				                            "message": "Started process",
+				                            "pid": "text-pid"
 				                          }
 				                          """)
 				                    .build());

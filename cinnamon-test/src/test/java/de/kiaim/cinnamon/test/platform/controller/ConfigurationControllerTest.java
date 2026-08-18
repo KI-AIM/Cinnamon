@@ -459,6 +459,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             pipeline:
 		                               pipelines:
 		                               - jobs:
+		                                 - name: text_anonymization
 		                                 - name: anonymization
 		                                 - name: synthetization
 		                                   enabled: false
@@ -485,8 +486,9 @@ class ConfigurationControllerTest extends ControllerTest {
 		var pipeline = project.getPipelines().get(0);
 		var firstStage = pipeline.getStages().get(0);
 		assertFalse(firstStage.getProcesses().get(0).isSkip());
-		assertNotNull(firstStage.getProcesses().get(0).getConfiguration());
-		assertTrue(firstStage.getProcesses().get(1).isSkip());
+		assertFalse(firstStage.getProcesses().get(1).isSkip());
+		assertNotNull(firstStage.getProcesses().get(1).getConfiguration());
+		assertTrue(firstStage.getProcesses().get(2).isSkip());
 		var secondStage = pipeline.getStages().get(1);
 		assertTrue(secondStage.getProcesses().get(0).isSkip());
 		assertTrue(secondStage.getProcesses().get(1).isSkip());

@@ -142,11 +142,13 @@ services:
             - anonymization-network
         volumes:
             - ${TEXT_ANONYMIZATION_MODEL_HOST_PATH}:/app/models:${TEXT_ANONYMIZATION_MODEL_MOUNT_MODE}
+            - ${TEXT_ANONYMIZATION_STATUS_HOST_PATH:-./cinnamon-text-anonymization/outputs/status}:/app/outputs/status:rw
         secrets:
             - hf_token
         environment:
             HF_TOKEN_FILE: /run/secrets/hf_token
             TEXT_ANONYMIZATION_MODEL_CACHE: /app/models
+            TEXT_ANONYMIZATION_STATUS_DIR: /app/outputs/status
             TEXT_ANONYMIZATION_XLM_LOCAL_PATH: /app/models/xlm-grascco
             TEXT_ANONYMIZATION_GELECTRA_LOCAL_PATH: /app/models/gelectra-grascco
             TEXT_ANONYMIZATION_XLM_HF_REPOSITORY: ${TEXT_ANONYMIZATION_XLM_HF_REPOSITORY}

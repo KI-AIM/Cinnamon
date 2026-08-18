@@ -31,6 +31,8 @@ public class MockWebServerExtension implements BeforeAllCallback, BeforeEachCall
 		                   String.valueOf(mockBackEndPort));
 		System.setProperty("cinnamon.external-server.anonymization-server.instances.0.port",
 		                   String.valueOf(mockBackEndPort));
+		System.setProperty("cinnamon.external-server.text-anonymization-server.instances.0.port",
+		                   String.valueOf(mockBackEndPort));
 	}
 
 	@Override

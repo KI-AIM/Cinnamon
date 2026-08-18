@@ -36,7 +36,11 @@ public abstract class ContextRequiredTest {
 	protected ProjectEntity createProject(final Stage stage, final ProcessStatus status) {
 		final ExternalProcessEntity externalProcess = new DataProcessingEntity();
 		externalProcess.setExternalProcessStatus(status);
-		externalProcess.setJob(stage.getJobList().get(0));
+		final var job = stage.getJobList().stream()
+		                    .filter(candidate -> candidate.getName().equals("anonymization"))
+		                    .findFirst()
+		                    .get(); // We are fine with this failing if the anonymization is not there
+		externalProcess.setJob(job);
 		externalProcess.setUuid(UUID.randomUUID());
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
@@ -49,7 +53,7 @@ public abstract class ContextRequiredTest {
 
 		if (status == ProcessStatus.RUNNING) {
 			executionStep.setCurrentProcessIndex(0);
-			externalProcess.setServerInstance("anonymization-server.0");
+			externalProcess.setServerInstance(job.getServer().getName() + ".0");
 		} else if (status == ProcessStatus.FINISHED) {
 			externalProcess.setStatus("FINISHED");
 			externalProcess.getResultFiles().put("data", new LobWrapperEntity());

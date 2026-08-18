@@ -40,6 +40,8 @@ In the root of the project, in `.env` the following environmental variables shou
 `TEXT_ANONYMIZATION_MODEL_HOST_PATH` - the local path where you want the models downloaded from HF to be stored
 `TEXT_ANONYMIZATION_MODEL_MOUNT_MODE`=`rw` - relevant when using Docker. We need to allow the Docker container to write the downloaded HF model to TEXT_ANONYMIZATION_MODEL_HOST_PATH
 
+`TEXT_ANONYMIZATION_STATUS_HOST_PATH` remains read-write in both modes because job status and cancellation state are stored there.
+
 The current code assumes that there are models called XLM and GELECTRA, thus the following environmental variables are provided:
 `TEXT_ANONYMIZATION_[model_name]_HF_REPOSITORY`. These should be specified with:
 

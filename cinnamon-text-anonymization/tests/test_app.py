@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 import app as app_module
+from cinnamon_text_anonymization import status_store
 
 
 @pytest.fixture()
@@ -15,6 +16,11 @@ def client():
     app_module.app.config.update(TESTING=True)
     with app_module.app.test_client() as test_client:
         yield test_client
+
+
+@pytest.fixture(autouse=True)
+def isolated_status_directory(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_store, "STATUS_DIRECTORY", tmp_path / "status")
 
 
 def request_data(*,
@@ -48,6 +54,33 @@ def test_health_endpoint(client) -> None:
 
     assert response.status_code == app_module.StatusCode.OK
     assert response.get_json() == {"status": "UP"}
+
+
+def test_status_endpoint_returns_running_status(client) -> None:
+    assert app_module.register_job("session-1")
+
+    response = client.get("/status/session-1")
+
+    assert response.status_code == app_module.StatusCode.OK
+    assert response.get_json() == {
+        "session_key": "session-1",
+        "status": app_module.JobStatus.RUNNING.value,
+    }
+
+
+def test_job_status_is_persisted_in_shared_status_directory() -> None:
+    assert app_module.register_job("session-1")
+
+    status_file = status_store.STATUS_DIRECTORY / "session-1.yaml"
+    assert status_file.exists()
+    assert "status: RUNNING" in status_file.read_text(encoding="utf-8")
+
+
+def test_status_endpoint_returns_not_found_for_unknown_job(client) -> None:
+    response = client.get("/status/unknown-session")
+
+    assert response.status_code == app_module.StatusCode.NOT_FOUND
+    assert response.get_json()["message"] == "No status found for session key"
 
 
 @pytest.mark.parametrize(
@@ -84,6 +117,53 @@ def test_start_endpoint_rejects_invalid_json(client) -> None:
     body = response.get_json()
     assert body["message"] == "Could not parse input"
     assert body["session_key"] == "session-1"
+
+
+def test_cancel_endpoint_requests_cancellation(client) -> None:
+    assert app_module.register_job("session-1")
+
+    response = client.post(
+        "/cancel_anonymization_process",
+        data={"session_key": "session-1", "pid": "1234"},
+    )
+
+    assert response.status_code == app_module.StatusCode.OK
+    assert response.get_json() == {
+        "message": "Cancellation requested",
+        "session_key": "session-1",
+    }
+    assert app_module.is_cancellation_requested("session-1")
+
+    status_response = client.get("/status/session-1")
+    assert status_response.get_json()["status"] == app_module.JobStatus.CANCELED
+
+
+def test_cancel_endpoint_returns_not_found_for_unknown_job(client) -> None:
+    response = client.post(
+        "/cancel_anonymization_process",
+        data={"session_key": "unknown-session", "pid": "1234"},
+    )
+
+    assert response.status_code == app_module.StatusCode.NOT_FOUND
+    assert response.get_json()["message"] == "No running process found"
+
+
+def test_cancelled_job_does_not_send_callback() -> None:
+    data = pd.DataFrame({"text": ["Jane"]})
+    config = {"anonymization": {"textAnonymizationConfiguration": {"columns": ["text"]}}}
+    assert app_module.register_job("session-1")
+    assert app_module.cancel_job("session-1")
+
+    with (
+        patch.object(app_module, "run_anonymization") as anonymize,
+        patch.object(app_module, "post_success_callback") as success_callback,
+        patch.object(app_module, "post_error_callback") as error_callback,
+    ):
+        app_module.run_anonymization_job("session-1", "http://callback", data, config)
+
+    anonymize.assert_not_called()
+    success_callback.assert_not_called()
+    error_callback.assert_not_called()
 
 
 def test_start_endpoint_parses_csv_and_starts_background_job(client) -> None:
@@ -123,6 +203,7 @@ def test_start_endpoint_parses_csv_and_starts_background_job(client) -> None:
 def test_run_anonymization_job_posts_success_callback() -> None:
     data = pd.DataFrame({"text": ["[PERSON]"]})
     config = {"anonymization": {"textAnonymizationConfiguration": {"columns": ["text"]}}}
+    assert app_module.register_job("session-1")
 
     with (
         patch.object(app_module, "run_anonymization", return_value=data),
@@ -141,6 +222,7 @@ def test_run_anonymization_job_posts_success_callback() -> None:
 def test_run_anonymization_job_posts_error_callback_when_processing_fails() -> None:
     data = pd.DataFrame({"text": ["Jane"]})
     config = {"anonymization": {"textAnonymizationConfiguration": {"columns": ["text"]}}}
+    assert app_module.register_job("session-1")
 
     with (
         patch.object(app_module, "run_anonymization", side_effect=ValueError("bad model")),

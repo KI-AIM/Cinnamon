@@ -82,6 +82,7 @@ public class UserController {
 	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE},
 	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public void register(
+			@Parameter(description = "The token of the invitation to accept.")
 			@RequestParam(required = false) final String token,
 			@Parameter(description = "Information about the new user.",
 			           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE),

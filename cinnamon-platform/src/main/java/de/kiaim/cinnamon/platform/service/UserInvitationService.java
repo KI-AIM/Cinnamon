@@ -68,6 +68,11 @@ public class UserInvitationService {
 		this.userService = userService;
 	}
 
+	/**
+	 * Returns all user invitations in the system.
+	 *
+	 * @return a set of user invitation information.
+	 */
 	@Transactional(readOnly = true)
 	public Set<UserInvitationInfo> getAllInvitations() {
 		Set<UserInvitationInfo> invitations = new HashSet<>();
@@ -77,6 +82,14 @@ public class UserInvitationService {
 		return invitations;
 	}
 
+	/**
+	 * Returns the invitation for the given external ID.
+	 *
+	 * @param externalId the external ID of the user invitation.
+	 * @return the user invitation information.
+	 * @throws BadArgumentException       if the external ID is invalid.
+	 * @throws BadUserInvitationException if the user invitation is not found.
+	 */
 	@Transactional(readOnly = true)
 	public UserInvitationInfo getInvitationById(final String externalId)
 			throws BadArgumentException, BadUserInvitationException {
@@ -84,6 +97,14 @@ public class UserInvitationService {
 		return mapper.toInfo(invitation);
 	}
 
+	/**
+	 * Creates a new user invitation.
+	 *
+	 * @param request   The user invitation request.
+	 * @param invitedBy The username of the user who is creating the invitation.
+	 * @return The created user invitation information.
+	 * @throws BadUserException if no user with the given username exists.
+	 */
 	@Transactional
 	public UserInvitationInfo createInvitation(final UserInvitationRequest request, final String invitedBy)
 			throws BadUserException {
@@ -101,6 +122,17 @@ public class UserInvitationService {
 		return mapper.toInfo(savedEntity);
 	}
 
+	/**
+	 * Updates an existing user invitation.
+	 * Cannot be done if the invitation has already been accepted.
+	 * Resets the invitation status to NOT_SENT and clears the token, last sent time, expiration time, and revoked time.
+	 *
+	 * @param externalId The external ID of the user invitation.
+	 * @param request    The user invitation request.
+	 * @return The updated user invitation information.
+	 * @throws BadArgumentException       if the external ID is invalid.
+	 * @throws BadUserInvitationException if the user invitation is not found or already accepted.
+	 */
 	@Transactional
 	public UserInvitationInfo updateInvitation(final String externalId, final UserInvitationRequest request)
 			throws BadArgumentException, BadUserInvitationException {
@@ -124,6 +156,20 @@ public class UserInvitationService {
 		return mapper.toInfo(savedEntity);
 	}
 
+	/**
+	 * Sends an invitation email for the invitation with the given external ID.
+	 * Cannot be done if the invitation has already been accepted.
+	 * Requires the mail settings to be configured.
+	 *
+	 * @param externalId The external ID of the user invitation.
+	 * @param request    The HTTP servlet request triggering the method call.
+	 * @return The updated user invitation information.
+	 * @throws BadArgumentException            If the external ID is invalid.
+	 * @throws BadUserInvitationException      If the user invitation is not found or already accepted.
+	 * @throws BadMailSettingsException        If the mail settings are invalid.
+	 * @throws InternalMailException           If an internal mail error occurs.
+	 * @throws InternalUserInvitationException If the invitation token cannot be generated or hashed.
+	 */
 	@Transactional
 	public UserInvitationInfo sendInvitation(final String externalId, final HttpServletRequest request)
 			throws BadArgumentException, BadUserInvitationException, BadMailSettingsException, InternalMailException,
@@ -149,6 +195,15 @@ public class UserInvitationService {
 		return mapper.toInfo(savedEntity);
 	}
 
+	/**
+	 * Revokes the invitation with the given external ID.
+	 * Cannot be done if the invitation has already been accepted.
+	 *
+	 * @param externalId The external ID of the user invitation.
+	 * @return The updated user invitation information.
+	 * @throws BadArgumentException       If the external ID is invalid.
+	 * @throws BadUserInvitationException If the user invitation is not found or already accepted.
+	 */
 	@Transactional
 	public UserInvitationInfo revokeInvitation(final String externalId)
 			throws BadArgumentException, BadUserInvitationException {
@@ -177,6 +232,15 @@ public class UserInvitationService {
 		repository.deleteAll(expiredInvitations);
 	}
 
+	/**
+	 * Accepts the invitation with the given token and registers a new user with the provided registration request.
+	 *
+	 * @param token   The unhashed token of the user invitation.
+	 * @param request The registration request containing user details.
+	 * @throws BadUserInvitationException      If the user invitation is invalid.
+	 * @throws BadUserException                If the user registration fails.
+	 * @throws InternalUserInvitationException If an internal error occurs while processing the invitation.
+	 */
 	@Transactional
 	public void acceptInvitation(final String token, final RegisterRequest request)
 			throws BadUserInvitationException, BadUserException, InternalUserInvitationException {
@@ -193,6 +257,15 @@ public class UserInvitationService {
 		repository.save(entity);
 	}
 
+	/**
+	 * Sends an invitation email to the user specified in the invitation entity.
+	 *
+	 * @param invitation The user invitation entity.
+	 * @param token      The unhashed token of the user invitation.
+	 * @param request    The HTTP servlet request triggering the method call.
+	 * @throws BadMailSettingsException If the mail settings are invalid.
+	 * @throws InternalMailException    If an internal error occurs while sending the email.
+	 */
 	private void sendInvitationEmail(final UserInvitationEntity invitation, final String token,
 	                                 final HttpServletRequest request)
 			throws BadMailSettingsException, InternalMailException {
@@ -219,13 +292,25 @@ public class UserInvitationService {
 		mailService.sendMail(invitation.getEmail(), subject, body);
 	}
 
-	public String generateToken() {
+	/**
+	 * Generates a secure random token for user invitations.
+	 *
+	 * @return A base64 URL-encoded string representing the generated token.
+	 */
+	private String generateToken() {
 		BytesKeyGenerator generator = KeyGenerators.secureRandom(32);
 		final byte[] bytes = generator.generateKey();
 		return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 	}
 
-	public String hash(final String token) throws InternalUserInvitationException {
+	/**
+	 * Hashes the given token using HMAC-SHA256 with the configured secret.
+	 *
+	 * @param token The token to hash.
+	 * @return A base64 URL-encoded string representing the hashed token.
+	 * @throws InternalUserInvitationException If the hashing algorithm is not available or the key is invalid.
+	 */
+	private String hash(final String token) throws InternalUserInvitationException {
 		try {
 			final Mac mac = Mac.getInstance("HmacSHA256");
 			mac.init(new SecretKeySpec(secret, "HmacSHA256"));
@@ -238,6 +323,15 @@ public class UserInvitationService {
 		}
 	}
 
+	/**
+	 * Validates the given token by checking its existence, status, and expiration.
+	 * Returns the corresponding UserInvitationEntity if valid, otherwise throws an exception.
+	 *
+	 * @param token The unhashed token to validate.
+	 * @return The corresponding UserInvitationEntity if the token is valid.
+	 * @throws BadUserInvitationException      If the token is invalid, revoked, already accepted, or expired.
+	 * @throws InternalUserInvitationException If there is an internal error while validating the token.
+	 */
 	private UserInvitationEntity validateToken(final String token)
 			throws BadUserInvitationException, InternalUserInvitationException {
 		final String tokenHash = hash(token);
@@ -265,6 +359,14 @@ public class UserInvitationService {
 		return entity;
 	}
 
+	/**
+	 * Retrieves a UserInvitationEntity by its external ID.
+	 *
+	 * @param externalId The external ID of the user invitation.
+	 * @return The corresponding UserInvitationEntity if found.
+	 * @throws BadArgumentException       If the external ID is invalid.
+	 * @throws BadUserInvitationException If the user invitation is not found or has an invalid status.
+	 */
 	@Transactional(readOnly = true)
 	protected UserInvitationEntity getByExternalId(final String externalId)
 			throws BadArgumentException, BadUserInvitationException {
@@ -284,6 +386,14 @@ public class UserInvitationService {
 		return optional.get();
 	}
 
+	/**
+	 * Assembles the invitation link for the user.
+	 * Uses the current request URL to determine the base URL and appends the registration path with the token as a query parameter.
+	 *
+	 * @param request The HTTP servlet request triggering the invitation.
+	 * @param token   The unhashed invitation token.
+	 * @return The complete invitation link.
+	 */
 	private String assembleInvitationLink(final HttpServletRequest request, final String token) {
 		return request.getRequestURL().subSequence(0, request.getRequestURL().lastIndexOf("/api")) +
 		       "/register?token=" + token;

@@ -14,12 +14,9 @@ The start the service with `python app.py`.
 __NOTE__ _The service expects either having the local models stored under `cinnamon-text-anonymization/models` or to provide a Hugging Face (HF) token to fetch the required models_.
 For more details we refer to __Environment variables__.
 
-
-### Using Docker
-
 The commands below assume you're in the project root folder.
 
-#### Prerequisites
+### Prerequisites
 
 1. Either download the models under `cinnamon-text-anonymization/models`, or provide a hf_token to download them from Hugging Face.
 2. To be able to download the models from Hugging Face, create the directory `secrets` in the root of the Cinnamon project, and within the directory create a file called `hf_token` and past your HF token there.
@@ -47,6 +44,8 @@ The current code assumes that there are models called XLM and GELECTRA, thus the
 
 `TEXT_ANONYMIZATION_XLM_HF_REPOSITORY` - the HF repository storing the XLM model
 `TEXT_ANONYMIZATION_GELECTRA_HF_REPOSITORY` - the HF repository storing the GELECTRA model
+
+### Using Docker
 
 To build only the cinnamon-text-anonymization image, run:
 ```bash

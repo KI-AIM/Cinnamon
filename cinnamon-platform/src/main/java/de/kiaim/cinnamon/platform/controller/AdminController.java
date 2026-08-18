@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.controller;
 
 
+import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
@@ -87,12 +88,29 @@ public class AdminController {
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Invitations ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-	@GetMapping(value = "/invitations")
+	@Operation(summary = "Get all invitations.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Response contains the list of invitations."),
+	})
+	@GetMapping(value = "/invitations",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public Set<UserInvitationInfo> getAllInvitations() {
 		return userInvitationService.getAllInvitations();
 	}
 
-	@PostMapping(value = "/invitations")
+	@Operation(summary = "Create a new invitation.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Successfully created the invitation."),
+			@ApiResponse(responseCode = "400", description = "Invalid request. The request body is missing or invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "404", description = "User who created the invitation is not found.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@PostMapping(value = "/invitations",
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE},
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public UserInvitationInfo createInvitation(
 			@RequestBody @Valid final UserInvitationRequest request,
 			@AuthenticationPrincipal final UserEntity currentUser
@@ -100,12 +118,35 @@ public class AdminController {
 		return userInvitationService.createInvitation(request, currentUser.getUsername());
 	}
 
-	@GetMapping(value = "/invitations/{id}")
+	@Operation(summary = "Get invitation by id")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Successfully retrieved the invitation."),
+			@ApiResponse(responseCode = "400", description = "Form of the invitation ID is invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "404", description = "Invitation not found.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@GetMapping(value = "/invitations/{id}",
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public UserInvitationInfo getInvitation(@PathVariable("id") final String invitationId) throws ApiException {
 		return userInvitationService.getInvitationById(invitationId);
 	}
 
-	@PutMapping(value = "/invitations/{id}")
+	@Operation(summary = "Update invitation by id")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Successfully updated the invitation."),
+			@ApiResponse(responseCode = "400", description = "Form of the invitation ID is invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "404", description = "Invitation not found.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@PutMapping(value = "/invitations/{id}",
+	            consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE},
+	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public UserInvitationInfo updateInvitation(
 			@PathVariable("id") final String invitationId,
 			@RequestBody @Valid final UserInvitationRequest request
@@ -113,7 +154,18 @@ public class AdminController {
 		return userInvitationService.updateInvitation(invitationId, request);
 	}
 
-	@PostMapping(value = "/invitations/{id}/send")
+	@Operation(summary = "Send invitation by id")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Successfully sent the invitation."),
+			@ApiResponse(responseCode = "400", description = "Form of the invitation ID is invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "404", description = "Invitation not found.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@PostMapping(value = "/invitations/{id}/send",
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public UserInvitationInfo sendInvitation(
 			@PathVariable("id") final String invitationId,
 			final HttpServletRequest request
@@ -121,7 +173,18 @@ public class AdminController {
 		return userInvitationService.sendInvitation(invitationId, request);
 	}
 
-	@PostMapping(value = "/invitations/{id}/revoke")
+	@Operation(summary = "Revoke invitation by id")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Successfully revoked the invitation."),
+			@ApiResponse(responseCode = "400", description = "Form of the invitation ID is invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "404", description = "Invitation not found.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@PostMapping(value = "/invitations/{id}/revoke",
+	             produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
 	public UserInvitationInfo revokeInvitation(@PathVariable("id") final String invitationId) throws ApiException {
 		return userInvitationService.revokeInvitation(invitationId);
 	}

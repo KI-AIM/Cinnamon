@@ -11,11 +11,28 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Repository for managing user invitations.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Transactional(readOnly = true)
 public interface UserInvitationRepository extends CrudRepository<UserInvitationEntity, Long> {
 
+	/**
+	 * Finds a user invitation by its external ID.
+	 *
+	 * @param externalId The external ID of the user invitation.
+	 * @return An Optional containing the UserInvitationEntity if found, or empty if not found.
+	 */
 	Optional<UserInvitationEntity> findByExternalId(UUID externalId);
 
+	/**
+	 * Finds a user invitation by its hashed token.
+	 *
+	 * @param tokenHash The hash of the invitation token.
+	 * @return An Optional containing the UserInvitationEntity if found, or empty if not found.
+	 */
 	Optional<UserInvitationEntity> findByTokenHash(String tokenHash);
 
 	/**

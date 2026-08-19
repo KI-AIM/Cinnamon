@@ -27,7 +27,7 @@ const templateList: EmailTemplateList = {
         {
             id: 1,
             name: 'Registration confirmation',
-            items: [{language: 'ENGLISH', subject: 'Welcome', body: 'Hello!'}],
+            items: [{id: 1, language: 'ENGLISH', subject: 'Welcome', body: 'Hello!'}],
         },
     ],
 };
@@ -214,7 +214,7 @@ describe('MailTemplatesComponent rendering', () => {
         component['addLanguage']('GERMAN');
         fixture.detectChanges();
 
-        expect(fixture.nativeElement.querySelector('.mail-templates-add-language')).toBeNull();
+        expect(fixture.nativeElement.querySelector('.mail-templates-add-language')).not.toBeNull();
     });
 
     it('should bind the content of every tab to its own language', () => {

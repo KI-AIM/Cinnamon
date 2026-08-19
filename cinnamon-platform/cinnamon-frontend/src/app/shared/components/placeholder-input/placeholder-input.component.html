@@ -1,0 +1,47 @@
+@if (control.disabled) {
+    <mat-icon class="icon-disabled suffix-padding">add_circle</mat-icon>
+} @else {
+    <mat-icon class="icon-enabled suffix-padding" (click)="openDialog($event, placeholderDialog)">add_circle</mat-icon>
+}
+
+<ng-template #placeholderDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Insert Placeholder</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            @for (category of categories; track category.name) {
+                <div class="box" style="width: fit-content;">
+                    <div class="box-name">{{ category.name }}</div>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Explanation</th>
+                            <th>Example</th>
+                            <th>Key</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            @for (placeholder of category.placeholders; track placeholder.placeholder) {
+                                <tr>
+                                    <td>{{ placeholder.name }}</td>
+                                    <td>{{ placeholder.description }}</td>
+                                    <td>{{ placeholder.example }}</td>
+                                    <td>{{ placeholder.placeholder }}</td>
+                                    <td>
+                                        <mat-icon class="icon-enabled"
+                                                  (click)="insertPlaceholder(placeholder.placeholder)">add_circle
+                                        </mat-icon>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>

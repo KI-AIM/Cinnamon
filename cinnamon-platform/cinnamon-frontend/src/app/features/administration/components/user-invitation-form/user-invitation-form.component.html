@@ -131,6 +131,7 @@
                     <div class="config-input-row-checkboxes" formArrayName="userRoles">
                         @for (role of Object.values(UserRole); track role) {
                             <mat-checkbox color="primary" [checked]="isRoleSelected(role)"
+                                          [disabled]="invitation.status === UserInvitationStatus.ACCEPTED"
                                           (change)="toggleRole(role, $event.checked)">
                                 {{ role }}
                             </mat-checkbox>
@@ -145,7 +146,9 @@
                     </div>
                     <mat-form-field class="config-input-row-field">
                         <mat-label>E-Mail Template</mat-label>
-                        <mat-select [value]="selectedTemplateId" (selectionChange)="selectTemplate($event.value)">
+                        <mat-select [value]="selectedTemplateId"
+                                    [disabled]="invitation.status === UserInvitationStatus.ACCEPTED"
+                                    (selectionChange)="selectTemplate($event.value)">
                             @for (template of availableTemplates; track template.id) {
                                 <mat-option [value]="template.id">
                                     {{ template.name }}
@@ -158,7 +161,8 @@
                     </mat-form-field>
                     <mat-form-field class="config-input-row-field">
                         <mat-label>Language</mat-label>
-                        <mat-select [value]="selectedLanguage" [disabled]="selectedTemplateId === null"
+                        <mat-select [value]="selectedLanguage"
+                                    [disabled]="selectedTemplateId === null || invitation.status === UserInvitationStatus.ACCEPTED"
                                     (selectionChange)="selectLanguage($event.value)">
                             @for (language of availableLanguages; track language.name) {
                                 <mat-option [value]="language.name">
@@ -176,6 +180,7 @@
                     </div>
                     <div class="config-input-row-checkboxes">
                         <mat-checkbox color="primary" [checked]="useCustomMail"
+                                      [disabled]="invitation.status === UserInvitationStatus.ACCEPTED"
                                       (change)="toggleUseCustomMail($event.checked)">
                             Use a custom invitation E-Mail
                         </mat-checkbox>

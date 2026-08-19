@@ -183,12 +183,16 @@ export class UserInvitationFormComponent implements OnInit {
     }
 
     private createForm(initialValue: UserInvitationInfo): FormGroup {
+        const disabled = initialValue.status === UserInvitationStatus.ACCEPTED;
         return this.formBuilder.group({
-            email: [{value: initialValue.email, disabled: initialValue.status === UserInvitationStatus.ACCEPTED},
+            email: [{value: initialValue.email, disabled: disabled},
                 {nonNullable: true, validators: [Validators.required, Validators.email]}],
-            userRoles: this.formBuilder.array((initialValue.userRoles ?? []).map(role => this.formBuilder.control(role))),
-            emailCustomSubject: [initialValue.emailCustomSubject],
-            emailCustomBody: [initialValue.emailCustomBody],
+            userRoles: this.formBuilder.array((initialValue.userRoles ?? []).map(role => this.formBuilder.control({
+                value: role,
+                disabled: disabled
+            }))),
+            emailCustomSubject: [{value: initialValue.emailCustomSubject, disabled: disabled}],
+            emailCustomBody: [{value: initialValue.emailCustomBody, disabled: disabled}],
         });
     }
 
@@ -335,8 +339,10 @@ export class UserInvitationFormComponent implements OnInit {
         const bodyControl = this.invitationForm.get('emailCustomBody') as FormControl;
 
         if (this.useCustomMail) {
-            subjectControl.enable();
-            bodyControl.enable();
+            if (this.currentInvitation.value.status !== UserInvitationStatus.ACCEPTED) {
+                subjectControl.enable();
+                bodyControl.enable();
+            }
             subjectControl.setValidators([Validators.required]);
             bodyControl.setValidators([Validators.required]);
         } else {
@@ -358,7 +364,9 @@ export class UserInvitationFormComponent implements OnInit {
         if (this.invitationForm == null || this.invitationForm.invalid) {
             return false;
         }
-        return this.useCustomMail || this.selectedTemplateItem !== null;
+
+        return this.currentInvitation.value.status !== UserInvitationStatus.ACCEPTED
+            && (this.useCustomMail || this.selectedTemplateItem !== null);
     }
 
     /**

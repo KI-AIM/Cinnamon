@@ -41,8 +41,13 @@ public class ResourceSelectorService {
 	 * @return The resolved value.
 	 */
 	@Nullable
-	public Object getValueFromSelector(final String argument, @Nullable final ProjectEntity project)
-			throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException, BadStepNameException, InternalDataSetPersistenceException {
+	public Object getValueFromSelector(
+			final String argument,
+			@Nullable final ProjectEntity project,
+			@Nullable final UserInvitationEntity invitation,
+			@Nullable final String invitationUrl
+	) throws BadConfigurationNameException, BadStateException, BadStepNameException,
+			         InternalDataSetPersistenceException, InternalIOException, InternalInvalidStateException {
 
 		if (!argument.startsWith("${") || !argument.endsWith("}")) {
 			return argument;
@@ -57,7 +62,7 @@ public class ResourceSelectorService {
 			selector = selector.substring(0, separatorIndex);
 		}
 
-		final Object selectedResource = selectResource(selector, project, null, null);
+		final Object selectedResource = selectResource(selector, project, invitation, invitationUrl);
 
 		return selectedResource != null ? selectedResource : defaultValue;
 	}
@@ -100,15 +105,15 @@ public class ResourceSelectorService {
 				break;
 			}
 
-			result.append(input.substring(lastIndex, startIndex));
+			result.append(input, lastIndex, startIndex);
 
-			String selector = input.substring(startIndex + 2, endIndex);
-			Object selectedResource = selectResource(selector, project, invitation, invitationUrl);
+			String selector = input.substring(startIndex, endIndex + 1);
+			Object selectedResource = getValueFromSelector(selector, project, invitation, invitationUrl);
 
 			if (selectedResource != null) {
 				result.append(selectedResource);
 			} else {
-				result.append("${").append(selector).append("}");
+				result.append(selector);
 			}
 
 			lastIndex = endIndex + 1;

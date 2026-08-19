@@ -353,7 +353,7 @@ public class ExternalConfigurationService {
 
 			if (entry.getValue().isTextual()) {
 				final var stringValue = entry.getValue().asText();
-				final var resolvedValue = resourceSelectorService.getValueFromSelector(stringValue, project);
+				final var resolvedValue = resourceSelectorService.getValueFromSelector(stringValue, project, null, null);
 				final JsonNode newValue = yamlMapper.valueToTree(resolvedValue);
 				entry.setValue(newValue);
 			}

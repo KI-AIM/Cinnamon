@@ -28,11 +28,11 @@ interface PlaceholderDefinition {
 }
 
 /**
- * A group of placeholders that belong to the same context, e.g. the invitation mail.
+ * A group of placeholders that belong to the same context.
  */
 interface PlaceholderCategory {
     /**
-     * Name of the category displayed above its placeholders.
+     * The name of the category displayed above its placeholders.
      */
     name: string;
 

@@ -62,10 +62,28 @@ public class ResourceSelectorService {
 		return selectedResource != null ? selectedResource : defaultValue;
 	}
 
-	public String replaceSelectorsInString(final String input, @Nullable final ProjectEntity project,
-	                                       @Nullable final UserInvitationEntity invitation,
-	                                       @Nullable final String invitationToken)
-			throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException, BadStepNameException, InternalDataSetPersistenceException {
+	/**
+	 * Replaces all selectors in the given input string with their corresponding values.
+	 *
+	 * @param input The input string containing selectors to be replaced.
+	 * @param project The project entity used to resolve the selectors.
+	 * @param invitation The user invitation entity used to resolve invitation-related selectors.
+	 * @param invitationUrl The URL associated with the invitation, used for resolving invitation-related selectors.
+	 * @return The input string with all selectors replaced by their corresponding values.
+	 * @throws BadConfigurationNameException       If the configuration name is invalid.
+	 * @throws BadStateException                   If the application state is invalid.
+	 * @throws BadStepNameException                If the step name is invalid.
+	 * @throws InternalDataSetPersistenceException If there is an error accessing the dataset.
+	 * @throws InternalIOException                 A serialization error occurs.
+	 * @throws InternalInvalidStateException       If the project state is invalid.
+	 */
+	public String replaceSelectorsInString(
+			final String input,
+			@Nullable final ProjectEntity project,
+			@Nullable final UserInvitationEntity invitation,
+			@Nullable final String invitationUrl
+	) throws BadConfigurationNameException, BadStateException, BadStepNameException,
+			         InternalDataSetPersistenceException, InternalIOException, InternalInvalidStateException {
 		StringBuilder result = new StringBuilder();
 		int lastIndex = 0;
 
@@ -85,10 +103,10 @@ public class ResourceSelectorService {
 			result.append(input.substring(lastIndex, startIndex));
 
 			String selector = input.substring(startIndex + 2, endIndex);
-			Object selectedResource = selectResource(selector, project, invitation, invitationToken);
+			Object selectedResource = selectResource(selector, project, invitation, invitationUrl);
 
 			if (selectedResource != null) {
-				result.append(selectedResource.toString());
+				result.append(selectedResource);
 			} else {
 				result.append("${").append(selector).append("}");
 			}
@@ -111,8 +129,10 @@ public class ResourceSelectorService {
 	 *     <li>{@link ExternalProcessEntity} for other resources</li>
 	 * </ul>
 	 *
-	 * @param selector The selector string used to identify the resource.
-	 * @param project  Project entity used to resolve the selector.
+	 * @param selector      The selector string used to identify the resource.
+	 * @param project       Project entity used to resolve the selector.
+	 * @param invitation    The user invitation entity used to resolve invitation-related selectors.
+	 * @param invitationUrl The URL associated with the invitation, used for resolving invitation-related selectors.
 	 * @return The selected resource, or null if not found.
 	 * @throws BadConfigurationNameException       If the configuration name is invalid.
 	 * @throws BadStateException                   If the application state is invalid.
@@ -123,7 +143,7 @@ public class ResourceSelectorService {
 	 */
 	@Nullable
 	public Object selectResource(final String selector, @Nullable final ProjectEntity project,
-	                             @Nullable final UserInvitationEntity invitation, @Nullable final String invitationToken)
+	                             @Nullable final UserInvitationEntity invitation, @Nullable final String invitationUrl)
 			throws BadConfigurationNameException, BadStateException, InternalIOException, InternalInvalidStateException, BadStepNameException, InternalDataSetPersistenceException {
 		final String[] parts = selector.split("\\.");
 
@@ -131,7 +151,7 @@ public class ResourceSelectorService {
 			case "configuration" -> handleConfigurationSelector(parts, 1, project);
 			case "original" -> handleOriginalSelector(parts, 1, project);
 			case "pipeline" -> handlePipelineSelector(parts, 1, project);
-			case "invitation" -> handleInvitation(parts, 1, invitation, invitationToken);
+			case "invitation" -> handleInvitation(parts, 1, invitation, invitationUrl);
 			default -> null;
 		};
 	}
@@ -170,7 +190,7 @@ public class ResourceSelectorService {
 	@Nullable
 	private Object handlePipelineSelector(final String[] parts, final int nextPart,
 	                                      @Nullable final ProjectEntity project)
-			throws BadStepNameException, InternalInvalidStateException, InternalDataSetPersistenceException, BadStateException {
+			throws BadStepNameException, InternalInvalidStateException, InternalDataSetPersistenceException {
 		if (project == null)
 			return null;
 
@@ -231,7 +251,7 @@ public class ResourceSelectorService {
 
 	private Object handleInvitation(final String[] parts, final int nextPart,
 	                                @Nullable final UserInvitationEntity invitation,
-	                                @Nullable final String invitationToken) {
+	                                @Nullable final String invitationUrl) {
 		if (invitation == null) {
 			return null;
 		}
@@ -242,7 +262,7 @@ public class ResourceSelectorService {
 
 		return switch (parts[nextPart]) {
 			case "expiresAt" -> invitation.getExpiresAt();
-			case "token" -> invitationToken;
+			case "url" -> invitationUrl;
 			default -> null;
 		};
 	}

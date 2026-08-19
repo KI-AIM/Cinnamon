@@ -389,7 +389,7 @@ public class UserInvitationServiceTest extends ContextRequiredTest {
 		request.setUserRoles(roles.length == 0 ? Set.of() : Set.of(roles));
 		request.setEmailCustomSubject("Invitation subject");
 		// The body only contains the invitation link so that the token can be extracted from the received test mail.
-		request.setEmailCustomBody("${invitation.token}");
+		request.setEmailCustomBody("${invitation.url}");
 		return request;
 	}
 

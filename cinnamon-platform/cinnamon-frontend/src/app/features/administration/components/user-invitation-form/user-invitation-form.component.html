@@ -93,6 +93,26 @@
                 </div>
             </div>
 
+            <div class="config-input-divider"></div>
+
+            <div class="config-input-row no-wrap">
+
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Accepted</div>
+                    <div class="config-input-row-label-inline-info">User will not be able to accept the invitation</div>
+                </div>
+
+                <div class="config-input-row-text" style="flex: 0 1 150px;">
+                    <span class="fw-bold">Accepted at: </span>
+                    <span>{{ (invitation.acceptedAt | date) ?? 'Not accepted' }}</span>
+                </div>
+
+                <div class="config-input-row-text">
+                    <span class="fw-bold">Accepted by: </span>
+                    <span>{{ invitation.acceptedBy ?? 'Not accepted' }}</span>
+                </div>
+            </div>
+
 
         </div>
 

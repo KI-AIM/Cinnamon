@@ -2,7 +2,6 @@ package de.kiaim.cinnamon.test.platform.service;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
-import com.icegreen.greenmail.util.ServerSetup;
 import de.kiaim.cinnamon.platform.exception.BadArgumentException;
 import de.kiaim.cinnamon.platform.exception.BadMailSettingsException;
 import de.kiaim.cinnamon.platform.exception.BadUserException;
@@ -18,15 +17,14 @@ import de.kiaim.cinnamon.platform.service.AppSettingsService;
 import de.kiaim.cinnamon.platform.service.UserInvitationService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
+import de.kiaim.cinnamon.test.util.GreenMailPort;
+import de.kiaim.cinnamon.test.util.WithGreenMail;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.test.util.TestSocketUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
@@ -43,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Daniel Preciado-Marquez
  */
 @Transactional
+@WithGreenMail
 public class UserInvitationServiceTest extends ContextRequiredTest {
 
 	@Autowired private UserInvitationService userInvitationService;
@@ -52,19 +51,7 @@ public class UserInvitationServiceTest extends ContextRequiredTest {
 	@PersistenceContext private EntityManager entityManager;
 
 	private GreenMail greenMail;
-	private int greenMailPort;
-
-	@BeforeEach
-	public void setUpGreenMail() {
-		greenMailPort = TestSocketUtils.findAvailableTcpPort();
-		greenMail = new GreenMail(new ServerSetup(greenMailPort, null, ServerSetup.PROTOCOL_SMTP));
-		greenMail.start();
-	}
-
-	@AfterEach
-	public void tearDownGreenMail() {
-		greenMail.stop();
-	}
+	@GreenMailPort private int greenMailPort;
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ createInvitation ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

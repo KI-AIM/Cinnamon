@@ -1,43 +1,30 @@
 package de.kiaim.cinnamon.test.platform.service;
 
 import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
 import de.kiaim.cinnamon.platform.exception.BadMailSettingsException;
 import de.kiaim.cinnamon.platform.exception.InternalMailException;
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
 import de.kiaim.cinnamon.platform.repository.EmailSettingsRepository;
 import de.kiaim.cinnamon.platform.service.AppSettingsService;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
+import de.kiaim.cinnamon.test.util.GreenMailPort;
+import de.kiaim.cinnamon.test.util.WithGreenMail;
 import jakarta.mail.internet.MimeMessage;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.util.TestSocketUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
+@WithGreenMail
 public class AppSettingsServiceTest extends ContextRequiredTest {
 
 	@Autowired private AppSettingsService appSettingsService;
 	@Autowired private EmailSettingsRepository emailSettingsRepository;
 
 	private GreenMail greenMail;
-	private int port;
-
-	@BeforeEach
-	public void setUpGreenMail() {
-		port = TestSocketUtils.findAvailableTcpPort();
-		greenMail = new GreenMail(new ServerSetup(port, null, ServerSetup.PROTOCOL_SMTP));
-		greenMail.start();
-	}
-
-	@AfterEach
-	public void tearDownGreenMail() {
-		greenMail.stop();
-	}
+	@GreenMailPort private int port;
 
 	@Test
 	public void getMailSettingsNotConfigured() {

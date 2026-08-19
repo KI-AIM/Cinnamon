@@ -1,22 +1,38 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.GreenMailUtil;
+import com.icegreen.greenmail.util.ServerSetup;
+import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.dto.UpdatePasswordRequest;
 import de.kiaim.cinnamon.platform.model.dto.UpdateUsernameRequest;
+import de.kiaim.cinnamon.platform.model.dto.UserInvitationInfo;
+import de.kiaim.cinnamon.platform.model.dto.UserInvitationRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
+import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
+import de.kiaim.cinnamon.platform.service.AppSettingsService;
+import de.kiaim.cinnamon.platform.service.UserInvitationService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import jakarta.mail.internet.MimeMessage;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.util.TestSocketUtils;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -30,6 +46,35 @@ public class UserControllerTest extends ControllerTest {
 
 	@Autowired
 	UserService userService;
+
+	@Autowired
+	UserInvitationService userInvitationService;
+
+	@Autowired
+	AppSettingsService appSettingsService;
+
+	private GreenMail greenMail;
+	private int greenMailPort;
+
+	@BeforeEach
+	public void setUpGreenMail() {
+		greenMailPort = TestSocketUtils.findAvailableTcpPort();
+		greenMail = new GreenMail(new ServerSetup(greenMailPort, null, ServerSetup.PROTOCOL_SMTP));
+		greenMail.start();
+
+		final EMailSettingsDTO mailSettings = new EMailSettingsDTO();
+		mailSettings.setMailHost("localhost");
+		mailSettings.setMailPort(greenMailPort);
+		mailSettings.setMailTLS(false);
+		mailSettings.setMailSMTPAuth(false);
+		mailSettings.setMailSender("no-reply@example.com");
+		appSettingsService.setMailSettings(mailSettings);
+	}
+
+	@AfterEach
+	public void tearDownGreenMail() {
+		greenMail.stop();
+	}
 
 	@Test
 	@WithUserDetails("test_user")
@@ -219,6 +264,104 @@ public class UserControllerTest extends ControllerTest {
 		       .andExpect(validationError("password", "Password must be at least 12 characters long!",
 		                                  "Password must contain at least one uppercase character!"));
 	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ register with invitation token ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	public void registerWithInvitationToken() throws Exception {
+		final String token = createAndSendInvitation("invitee@example.com", UserRole.ROLE_API);
+		final String username = "invited_user";
+		final String password = "$tr0ngPa$$w0rd";
+
+		mockMvc.perform(post("/api/user/register")
+				                .param("token", token)
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(
+						                new RegisterRequest(username, "invited@example.com", password, password))))
+		       .andExpect(status().isOk());
+
+		assertTrue(userService.doesUserWithUsernameExist(username), "User has not been created!");
+		final UserEntity user = userService.loadUserByUsername(username);
+		assertEquals(Set.of(UserRole.ROLE_API), user.getUserRoles(), "Unexpected roles!");
+		assertEquals("invited@example.com", user.getEmail());
+	}
+
+	@Test
+	public void registerWithInvitationTokenUnknown() throws Exception {
+		final String password = "$tr0ngPa$$w0rd";
+
+		mockMvc.perform(post("/api/user/register")
+				                .param("token", "unknown-token")
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(
+						                new RegisterRequest("unknown_token_user", null, password, password))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_21_3"));
+	}
+
+	@Test
+	public void registerWithInvitationTokenRevoked() throws Exception {
+		final String token = createAndSendInvitation("invitee@example.com");
+		final var invitation = getOnlyInvitation();
+		userInvitationService.revokeInvitation(invitation.getExternalId());
+
+		final String password = "$tr0ngPa$$w0rd";
+		mockMvc.perform(post("/api/user/register")
+				                .param("token", token)
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(
+						                new RegisterRequest("revoked_token_user", null, password, password))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorCode("PLATFORM_1_21_5"));
+	}
+
+	@Test
+	public void registerWithInvitationTokenExistingUsername() throws Exception {
+		final String token = createAndSendInvitation("invitee@example.com");
+		final String password = "$tr0ngPa$$w0rd";
+
+		// The @Username validator rejects an unavailable username before the invitation is even looked at.
+		mockMvc.perform(post("/api/user/register")
+				                .param("token", token)
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(
+						                new RegisterRequest(getTestUser().getUsername(), null, password, password))))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("username", "Username is not available!"));
+	}
+
+	private String createAndSendInvitation(final String email, final UserRole... roles) throws Exception {
+		final UserInvitationRequest request = new UserInvitationRequest();
+		request.setEmail(email);
+		request.setUserRoles(roles.length == 0 ? Set.of() : Set.of(roles));
+		request.setEmailCustomSubject("Invitation subject");
+		// The body only contains the invitation link so that the token can be extracted from the received test mail.
+		request.setEmailCustomBody("${invitation.token}");
+
+		final var created = userInvitationService.createInvitation(request, getTestUser().getUsername());
+
+		final var mockRequest = new MockHttpServletRequest();
+		mockRequest.setScheme("http");
+		mockRequest.setServerName("localhost");
+		mockRequest.setServerPort(80);
+		mockRequest.setRequestURI("/api/admin/invitations/" + created.getExternalId() + "/send");
+		userInvitationService.sendInvitation(created.getExternalId(), mockRequest);
+
+		assertTrue(greenMail.waitForIncomingEmail(5_000, 1));
+		final MimeMessage[] messages = greenMail.getReceivedMessages();
+		final String link = GreenMailUtil.getBody(messages[messages.length - 1]).trim();
+
+		final int tokenIndex = link.indexOf("token=");
+		assertTrue(tokenIndex >= 0, "Invitation link did not contain a token: " + link);
+		return link.substring(tokenIndex + "token=".length());
+	}
+
+	private UserInvitationInfo getOnlyInvitation() {
+		final var invitations = userInvitationService.getAllInvitations();
+		assertEquals(1, invitations.size(), "Unexpected number of invitations!");
+		return invitations.iterator().next();
+	}
+
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ updateUsername ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	@Test

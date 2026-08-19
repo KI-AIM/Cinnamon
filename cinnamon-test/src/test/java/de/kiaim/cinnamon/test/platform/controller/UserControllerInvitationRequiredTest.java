@@ -80,7 +80,7 @@ public class UserControllerInvitationRequiredTest extends ControllerTest {
 		invitationRequest.setEmail("invitee@example.com");
 		invitationRequest.setUserRoles(Set.of(UserRole.ROLE_API));
 		invitationRequest.setEmailCustomSubject("Invitation subject");
-		invitationRequest.setEmailCustomBody("${invitation.token}");
+		invitationRequest.setEmailCustomBody("${invitation.url}");
 
 		final var created = userInvitationService.createInvitation(invitationRequest, getTestUser().getUsername());
 

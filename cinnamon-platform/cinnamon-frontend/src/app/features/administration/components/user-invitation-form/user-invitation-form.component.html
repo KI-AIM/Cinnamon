@@ -14,8 +14,10 @@
                     <div class="config-input-row-label-inline-header">Status</div>
                 </div>
 
-                <div class="config-input-row-text fw-bold fs-5">
-                    {{ invitation.status }}
+                <div class="config-input-row-info config-input-row-end">
+                    <div class="status" [ngClass]="'invite-' + invitation.status">
+                        <span>{{ invitation.status.replace('_', ' ') }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -28,19 +30,16 @@
                     <div class="config-input-row-label-inline-info">User created the initial invitation</div>
                 </div>
 
-                <div class="config-input-row-text">
-                    <div>
-                        <span class="fw-bold">Created by: </span>
-                        <span>{{ invitation.invitedBy ?? 'Not saved yet' }}</span>
-                    </div>
+                <div class="config-input-row-text" style="flex: 0 1 150px;">
+                    <span class="fw-bold">Created at: </span>
+                    <span>{{ (invitation.createdAt | date) ?? 'Not saved yet' }}</span>
                 </div>
 
                 <div class="config-input-row-text">
-                    <div>
-                        <span class="fw-bold">Created at: </span>
-                        <span>{{ (invitation.createdAt | date) ?? 'Not saved yet' }}</span>
-                    </div>
+                    <span class="fw-bold">Created by: </span>
+                    <span>{{ invitation.invitedBy ?? 'Not saved yet' }}</span>
                 </div>
+
             </div>
 
             <div class="config-input-divider"></div>
@@ -52,18 +51,14 @@
                     <div class="config-input-row-label-inline-info">Send a new invitation link to the specified mail address</div>
                 </div>
 
-                <div class="config-input-row-text">
-                    <div>
-                        <span class="fw-bold">Last sent at: </span>
-                        <span>{{ (invitation.lastSentAt | date) ?? 'Not sent' }}</span>
-                    </div>
+                <div class="config-input-row-text" style="flex: 0 1 150px;">
+                    <span class="fw-bold">Last sent at: </span>
+                    <span>{{ (invitation.lastSentAt | date) ?? 'Not sent' }}</span>
                 </div>
 
-                <div class="config-input-row-text">
-                    <div>
-                        <span class="fw-bold">Expires at: </span>
-                        <span>{{ (invitation.expiresAt | date) ?? 'Not sent' }}</span>
-                    </div>
+                <div class="config-input-row-text" style="flex: 0 1 150px;">
+                    <span class="fw-bold">Expires at: </span>
+                    <span>{{ (invitation.expiresAt | date) ?? 'Not sent' }}</span>
                 </div>
 
                 <div class="config-input-row-button config-input-row-end">
@@ -77,14 +72,14 @@
 
             <div class="config-input-divider"></div>
 
-            <div class="config-input-row">
+            <div class="config-input-row no-wrap">
 
                 <div class="config-input-row-label-inline">
                     <div class="config-input-row-label-inline-header">Revoke invitation</div>
                     <div class="config-input-row-label-inline-info">User will not be able to accept the invitation</div>
                 </div>
 
-                <div class="config-input-row-text">
+                <div class="config-input-row-text" style="flex: 0 1 150px;">
                     <span class="fw-bold">Revoked at: </span>
                     <span>{{ (invitation.revokedAt | date) ?? 'Not revoked' }}</span>
                 </div>
@@ -109,7 +104,7 @@
 
             <form [formGroup]="invitationForm" (ngSubmit)="createOrUpdateInvitation()" class="workstep-part">
 
-                <div class="config-input-row">
+                <div class="config-input-row no-wrap">
 
                     <div class="config-input-row-label-inline">
                         <div class="config-input-row-label-inline-header">E-Mail</div>
@@ -126,12 +121,9 @@
                             <mat-error>The E-Mail must not be blank.</mat-error>
                         }
                     </mat-form-field>
-                    <div class="config-input-row-info">
-                        <mat-icon class="icon-enabled">info</mat-icon>
-                    </div>
                 </div>
 
-                <div class="config-input-row">
+                <div class="config-input-row no-wrap">
                     <div class="config-input-row-label-inline">
                         <div class="config-input-row-label-inline-header">Roles</div>
                         <div class="config-input-row-label-inline-info">Assigned to the user when accepting</div>
@@ -144,15 +136,12 @@
                             </mat-checkbox>
                         }
                     </div>
-                    <div class="config-input-row-info">
-                        <mat-icon class="icon-enabled">info</mat-icon>
-                    </div>
                 </div>
 
-                <div class="config-input-row">
+                <div class="config-input-row no-wrap">
                     <div class="config-input-row-label-inline">
                         <div class="config-input-row-label-inline-header">E-Mail Template</div>
-                        <div class="config-input-row-label-inline-info">Template used for the invitation mail</div>
+                        <div class="config-input-row-label-inline-info">Used for the invitation mail</div>
                     </div>
                     <mat-form-field class="config-input-row-field">
                         <mat-label>E-Mail Template</mat-label>
@@ -163,6 +152,9 @@
                                 </mat-option>
                             }
                         </mat-select>
+                        @if (availableTemplates.length === 0) {
+                            <mat-hint class="color-warning">No templates available. Please create one first.</mat-hint>
+                        }
                     </mat-form-field>
                     <mat-form-field class="config-input-row-field">
                         <mat-label>Language</mat-label>
@@ -175,12 +167,9 @@
                             }
                         </mat-select>
                     </mat-form-field>
-                    <div class="config-input-row-info">
-                        <mat-icon class="icon-enabled">info</mat-icon>
-                    </div>
                 </div>
 
-                <div class="config-input-row">
+                <div class="config-input-row no-wrap">
                     <div class="config-input-row-label-inline">
                         <div class="config-input-row-label-inline-header">Use Custom Mail</div>
                         <div class="config-input-row-label-inline-info">Edit the content of the mail below</div>
@@ -191,36 +180,29 @@
                             Use a custom invitation E-Mail
                         </mat-checkbox>
                     </div>
-                    <div class="config-input-row-info">
-                        <mat-icon class="icon-enabled">info</mat-icon>
-                    </div>
                 </div>
 
-                <div class="config-input-row">
+                <div class="config-input-row no-wrap">
                     <div class="config-input-row-label-inline">
                         <div class="config-input-row-label-inline-header">Custom Subject</div>
-                        <div class="config-input-row-label-inline-info">bla</div>
+                        <div class="config-input-row-label-inline-info">Used for the invitation mail</div>
                     </div>
                     <mat-form-field class="config-input-row-field">
                         <input matInput type="text" formControlName="emailCustomSubject">
                     </mat-form-field>
-                    <div class="config-input-row-info">
-                        <mat-icon class="icon-enabled">info</mat-icon>
-                    </div>
                 </div>
 
-                <div class="config-input-row">
+                <div class="config-input-row no-wrap">
                     <div class="config-input-row-label-inline">
                         <div class="config-input-row-label-inline-header">Custom Body</div>
-                        <div class="config-input-row-label-inline-info">bla</div>
+                        <div class="config-input-row-label-inline-info">Used for the invitation mail</div>
                     </div>
                     <mat-form-field class="config-input-row-field">
-                        <textarea matInput rows="10" formControlName="emailCustomBody"
+                        <textarea #emailCustomBodyInput matInput rows="10" formControlName="emailCustomBody"
                                   placeholder="Content of the email"></textarea>
+                        <app-placeholder-input matSuffix [control]="emailCustomBodyControl"
+                                               [textarea]="emailCustomBodyInput"></app-placeholder-input>
                     </mat-form-field>
-                    <div class="config-input-row-info">
-                        <mat-icon class="icon-enabled">info</mat-icon>
-                    </div>
                 </div>
 
                 <div>

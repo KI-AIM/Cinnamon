@@ -152,6 +152,14 @@ export class UserInvitationFormComponent implements OnInit {
         });
     }
 
+    /**
+     * The control containing the custom body, typed for {@link app-placeholder-input}.
+     * @protected
+     */
+    protected get emailCustomBodyControl(): FormControl<string | null> {
+        return this.invitationForm.get('emailCustomBody') as FormControl<string | null>;
+    }
+
     protected get rolesArray(): FormArray<FormControl<string>> {
         return this.invitationForm.get('userRoles') as FormArray<FormControl<string>>;
     }

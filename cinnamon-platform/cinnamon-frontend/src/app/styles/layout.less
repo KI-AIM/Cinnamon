@@ -50,6 +50,10 @@ app-navigation{
     column-gap: 16px;
     row-gap: 4px;
     width: 100%;
+
+    &.no-wrap {
+        flex-wrap: nowrap;
+    }
 }
 
 .config-input-row:has(.config-input-row-checkboxes) {
@@ -75,7 +79,7 @@ app-navigation{
 
 .config-input-row-label-inline {
     margin-right: 2rem;
-    width: 250px;
+    flex: 0 0 250px;
     justify-content: center;
 
     .config-input-row-info;

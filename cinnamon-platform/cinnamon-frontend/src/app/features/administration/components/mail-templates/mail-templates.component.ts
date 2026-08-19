@@ -1,29 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from "@angular/forms";
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
-import { MatSelectChange } from "@angular/material/select";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { EmailTemplate, EmailTemplateItem, SupportedLanguage } from "@shared/model/admin-settings";
 import { AdminService } from "@shared/services/admin.service";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { UserService } from "@shared/services/user.service";
 import { Observable } from "rxjs";
-
-/**
- * A placeholder that can be inserted into the body of a mail template and is replaced by the backend when the mail
- * is sent.
- */
-interface MailTemplatePlaceholder {
-    /**
-     * Short, speaking name describing the value the placeholder is replaced with.
-     */
-    name: string;
-
-    /**
-     * The placeholder itself as it must appear in the body for the backend to replace it.
-     */
-    placeholder: string;
-}
 
 /**
  * Settings for the mail templates of the application.
@@ -49,15 +32,6 @@ export class MailTemplatesComponent implements OnInit {
      * All templates stored in the backend.
      */
     protected templates: EmailTemplate[] = [];
-
-    /**
-     * Placeholders that can be inserted into the body of a template.
-     * Kept in sync by hand with the selectors resolved by the backend's ResourceSelectorService.
-     */
-    protected readonly placeholders: MailTemplatePlaceholder[] = [
-        {name: 'Invitation token', placeholder: '${invitation.token}'},
-        {name: 'Invitation expiration date', placeholder: '${invitation.expiresAt}'},
-    ];
 
     /**
      * Form containing the name of the template and its content.
@@ -308,39 +282,14 @@ export class MailTemplatesComponent implements OnInit {
         }
     }
 
-    //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ placeholders ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
     /**
-     * Inserts the placeholder selected in the given select event into the body of the given language at the
-     * current cursor position of the passed textarea, replacing the selection if there is one.
-     * The select is reset to its placeholder afterward so the same placeholder can be inserted again.
+     * Returns the control containing the body of the given language, typed for {@link app-placeholder-input}.
      *
-     * @param event The selection change event of the placeholder select.
-     * @param textarea The textarea element displaying the body so the cursor position can be read and restored.
-     * @param language The name of the language whose body is edited.
+     * @param language The name of the language.
      * @protected
      */
-    protected insertPlaceholder(event: MatSelectChange, textarea: HTMLTextAreaElement, language: string): void {
-        const placeholder: string = event.value;
-
-        const bodyControl = this.languageGroup(language).get('body') as FormControl<string>;
-        const value = bodyControl.value ?? '';
-        const start = textarea.selectionStart ?? value.length;
-        const end = textarea.selectionEnd ?? value.length;
-
-        bodyControl.setValue(value.substring(0, start) + placeholder + value.substring(end));
-        bodyControl.markAsDirty();
-
-        // Resets the select so it shows its placeholder again and the same placeholder can be inserted again.
-        event.source.value = null;
-
-        // Restores focus and places the cursor right behind the inserted placeholder. Deferred so that the
-        // textarea has already picked up the new value before the selection is set.
-        const cursorPosition = start + placeholder.length;
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(cursorPosition, cursorPosition);
-        });
+    protected bodyControl(language: string): FormControl<string | null> {
+        return this.languageGroup(language).get('body') as FormControl<string | null>;
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ internal ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

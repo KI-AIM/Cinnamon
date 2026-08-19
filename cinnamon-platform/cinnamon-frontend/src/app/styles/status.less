@@ -1,3 +1,5 @@
+@import "colors";
+
 .status {
     border: black solid 1px;
     border-radius: .5rem;
@@ -61,5 +63,23 @@
 }
 
 .error {
+    background-color: @color-error;
+}
+
+// UserInvitationStatus
+.invite-NOT_CREATED,
+.invite-NOT_SENT {
+    background-color: @color-info;
+}
+
+.invite-PENDING {
+    background-color: @color-warning;
+}
+
+.invite-ACCEPTED {
+    background-color: @color-success;
+}
+
+.invite-REVOKED {
     background-color: @color-error;
 }

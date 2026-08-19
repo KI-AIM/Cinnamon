@@ -180,15 +180,16 @@ public class UserInvitationService {
 			                                     "Cannot send an already accepted invitation");
 		}
 
-		final var now = System.currentTimeMillis();
-
+		// First try to send the email
 		final String token = generateToken();
+		sendInvitationEmail(entity, token, request);
+
+		// If successful, update the entity with the new token and timestamps
+		final var now = System.currentTimeMillis();
 		entity.setTokenHash(hash(token));
 		entity.setLastSentAt(new Timestamp(now));
 		entity.setExpiresAt(new Timestamp(now + expirationDuration.toMillis()));
 		entity.setStatus(UserInvitationStatus.PENDING);
-
-		sendInvitationEmail(entity, token, request);
 
 		final var savedEntity = repository.save(entity);
 		return mapper.toInfo(savedEntity);

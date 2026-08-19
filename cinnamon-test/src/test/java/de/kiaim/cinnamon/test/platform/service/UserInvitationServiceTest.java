@@ -177,6 +177,9 @@ public class UserInvitationServiceTest extends ContextRequiredTest {
 		                           () -> userInvitationService.sendInvitation(created.getExternalId(),
 		                                                                     mockRequest(created.getExternalId())));
 		assertEquals("PLATFORM_1_19_1", e.getErrorCode());
+
+		var updated = userInvitationService.getInvitationById(created.getExternalId());
+		assertEquals(UserInvitationStatus.NOT_SENT, updated.getStatus());
 	}
 
 	@Test

@@ -23,10 +23,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.time.Duration;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Service for managing user invitations.
@@ -144,11 +141,13 @@ public class UserInvitationService {
 		}
 
 		// Clear already set token
-		entity.setStatus(UserInvitationStatus.NOT_SENT);
-		entity.setTokenHash(null);
-		entity.setLastSentAt(null);
-		entity.setExpiresAt(null);
-		entity.setRevokedAt(null);
+		if (!Objects.equals(entity.getEmail(), request.getEmail())) {
+			entity.setStatus(UserInvitationStatus.NOT_SENT);
+			entity.setTokenHash(null);
+			entity.setLastSentAt(null);
+			entity.setExpiresAt(null);
+			entity.setRevokedAt(null);
+		}
 
 		mapper.updateEntity(entity, request);
 
@@ -216,7 +215,6 @@ public class UserInvitationService {
 
 		entity.setStatus(UserInvitationStatus.REVOKED);
 		entity.setRevokedAt(new Timestamp(System.currentTimeMillis()));
-		entity.setTokenHash(null);
 
 		final var savedEntity = repository.save(entity);
 		return mapper.toInfo(savedEntity);
@@ -250,7 +248,6 @@ public class UserInvitationService {
 		                                             entity.getUserRoles(), request.getEmail());
 
 		entity.setStatus(UserInvitationStatus.ACCEPTED);
-		entity.setTokenHash(null);
 		entity.setAcceptedAt(new Timestamp(System.currentTimeMillis()));
 		entity.setAcceptedBy(user);
 

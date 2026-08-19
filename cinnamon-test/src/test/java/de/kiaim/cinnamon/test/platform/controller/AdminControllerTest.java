@@ -2,7 +2,6 @@ package de.kiaim.cinnamon.test.platform.controller;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
-import com.icegreen.greenmail.util.ServerSetup;
 import de.kiaim.cinnamon.platform.exception.BadUserException;
 import de.kiaim.cinnamon.platform.model.dto.AdminUserRoleChangeRequest;
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
@@ -14,14 +13,14 @@ import de.kiaim.cinnamon.platform.model.dto.UserInvitationRequest;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import de.kiaim.cinnamon.test.util.GreenMailPort;
+import de.kiaim.cinnamon.test.util.WithGreenMail;
 import jakarta.mail.internet.MimeMessage;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.TestSocketUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
@@ -43,6 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Daniel Preciado-Marquez
  */
 @Transactional
+@WithGreenMail
 public class AdminControllerTest extends ControllerTest {
 
 	private static final String ADMIN_USER = "admin_user";
@@ -52,23 +52,11 @@ public class AdminControllerTest extends ControllerTest {
 	private UserService userService;
 
 	private GreenMail greenMail;
-	private int greenMailPort;
+	@GreenMailPort private int greenMailPort;
 
 	@BeforeEach
 	public void createAdminUser() throws BadUserException {
 		userService.register(ADMIN_USER, ADMIN_PASSWORD, Set.of(UserRole.ROLE_ADMIN), null);
-	}
-
-	@BeforeEach
-	public void setUpGreenMail() {
-		greenMailPort = TestSocketUtils.findAvailableTcpPort();
-		greenMail = new GreenMail(new ServerSetup(greenMailPort, null, ServerSetup.PROTOCOL_SMTP));
-		greenMail.start();
-	}
-
-	@AfterEach
-	public void tearDownGreenMail() {
-		greenMail.stop();
 	}
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GET /api/admin/users ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

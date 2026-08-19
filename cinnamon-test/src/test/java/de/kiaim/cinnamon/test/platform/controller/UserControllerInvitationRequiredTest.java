@@ -2,7 +2,6 @@ package de.kiaim.cinnamon.test.platform.controller;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
-import com.icegreen.greenmail.util.ServerSetup;
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
 import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
 import de.kiaim.cinnamon.platform.model.dto.UserInvitationRequest;
@@ -12,15 +11,15 @@ import de.kiaim.cinnamon.platform.service.AppSettingsService;
 import de.kiaim.cinnamon.platform.service.UserInvitationService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
+import de.kiaim.cinnamon.test.util.GreenMailPort;
+import de.kiaim.cinnamon.test.util.WithGreenMail;
 import jakarta.mail.internet.MimeMessage;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.util.TestSocketUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
@@ -37,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @TestPropertySource(properties = "cinnamon.users.invitation.is-required=true")
 @Transactional
+@WithGreenMail
 public class UserControllerInvitationRequiredTest extends ControllerTest {
 
 	@Autowired
@@ -47,14 +47,10 @@ public class UserControllerInvitationRequiredTest extends ControllerTest {
 	private AppSettingsService appSettingsService;
 
 	private GreenMail greenMail;
-	private int greenMailPort;
+	@GreenMailPort private int greenMailPort;
 
 	@BeforeEach
-	public void setUpGreenMail() {
-		greenMailPort = TestSocketUtils.findAvailableTcpPort();
-		greenMail = new GreenMail(new ServerSetup(greenMailPort, null, ServerSetup.PROTOCOL_SMTP));
-		greenMail.start();
-
+	public void configureMailSettings() {
 		final EMailSettingsDTO mailSettings = new EMailSettingsDTO();
 		mailSettings.setMailHost("localhost");
 		mailSettings.setMailPort(greenMailPort);
@@ -62,11 +58,6 @@ public class UserControllerInvitationRequiredTest extends ControllerTest {
 		mailSettings.setMailSMTPAuth(false);
 		mailSettings.setMailSender("no-reply@example.com");
 		appSettingsService.setMailSettings(mailSettings);
-	}
-
-	@AfterEach
-	public void tearDownGreenMail() {
-		greenMail.stop();
 	}
 
 	@Test

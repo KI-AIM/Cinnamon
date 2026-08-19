@@ -3,12 +3,15 @@ package de.kiaim.cinnamon.test.platform.controller;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
 import de.kiaim.cinnamon.platform.exception.BadUserException;
+import de.kiaim.cinnamon.platform.model.dto.AdminUserRoleChangeRequest;
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
 import de.kiaim.cinnamon.platform.model.dto.TestMailRequest;
+import de.kiaim.cinnamon.platform.model.dto.UserInfo;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import jakarta.mail.internet.MimeMessage;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +20,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.util.TestSocketUtils;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,7 +32,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Tests for the mail settings endpoints of {@link de.kiaim.cinnamon.platform.controller.AdminController}.
+ * Tests for the user management and mail settings endpoints of
+ * {@link de.kiaim.cinnamon.platform.controller.AdminController}.
  *
  * @author Daniel Preciado-Marquez
  */
@@ -59,6 +66,183 @@ public class AdminControllerTest extends ControllerTest {
 		greenMail.stop();
 	}
 
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GET /api/admin/users ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	public void getAllUsersUnauthorized() throws Exception {
+		mockMvc.perform(get("/api/admin/users"))
+		       .andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	public void getAllUsersForbiddenWithoutAdminRole() throws Exception {
+		mockMvc.perform(get("/api/admin/users").with(httpBasic(getTestUser().getUsername(), "changeme")))
+		       .andExpect(status().isForbidden());
+	}
+
+	@Test
+	public void getAllUsersReturnsAllUsers() throws Exception {
+		final String response = mockMvc.perform(get("/api/admin/users").with(httpBasic(ADMIN_USER, ADMIN_PASSWORD)))
+		                               .andExpect(status().isOk())
+		                               .andReturn().getResponse().getContentAsString();
+
+		final UserInfo[] users = objectMapper.readValue(response, UserInfo[].class);
+		final Map<String, Set<UserRole>> rolesByUsername =
+				Arrays.stream(users).collect(Collectors.toMap(UserInfo::getUsername, UserInfo::getRoles));
+
+		assertEquals(Set.of(UserRole.ROLE_ADMIN), rolesByUsername.get(ADMIN_USER), "Unexpected admin roles!");
+		assertEquals(Set.of(UserRole.ROLE_USER), rolesByUsername.get(getTestUser().getUsername()),
+		             "Unexpected roles for test user!");
+	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ PATCH /api/admin/users/roles ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	public void updateUserRolesUnauthorized() throws Exception {
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(
+						                createRoleChangeRequest(getTestUser().getUsername(),
+						                                        AdminUserRoleChangeRequest.Action.ADD,
+						                                        UserRole.ROLE_API))))
+		       .andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	public void updateUserRolesForbiddenWithoutAdminRole() throws Exception {
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(getTestUser().getUsername(), "changeme"))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(
+						                createRoleChangeRequest(getTestUser().getUsername(),
+						                                        AdminUserRoleChangeRequest.Action.ADD,
+						                                        UserRole.ROLE_API))))
+		       .andExpect(status().isForbidden());
+	}
+
+	@Test
+	public void updateUserRolesWithBlankUsername() throws Exception {
+		final AdminUserRoleChangeRequest request =
+				createRoleChangeRequest(" ", AdminUserRoleChangeRequest.Action.ADD, UserRole.ROLE_API);
+
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("username", "Username must not be blank."));
+	}
+
+	@Test
+	public void updateUserRolesWithoutAction() throws Exception {
+		final AdminUserRoleChangeRequest request =
+				createRoleChangeRequest(getTestUser().getUsername(), null, UserRole.ROLE_API);
+
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("action", "Action must not be null."));
+	}
+
+	@Test
+	public void updateUserRolesWithInvalidAction() throws Exception {
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content("{\"username\":\"" + getTestUser().getUsername() +
+				                         "\",\"action\":\"INVALID_ACTION\",\"roles\":[\"ROLE_API\"]}"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("action", "Invalid value 'INVALID_ACTION'. Possible values are: [ADD, REMOVE]"));
+	}
+
+	@Test
+	public void updateUserRolesWithoutRoles() throws Exception {
+		final AdminUserRoleChangeRequest request =
+				createRoleChangeRequest(getTestUser().getUsername(), AdminUserRoleChangeRequest.Action.ADD);
+
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(validationError("roles", "At least one role must be specified."));
+	}
+
+	@Test
+	public void updateUserRolesUserNotFound() throws Exception {
+		final AdminUserRoleChangeRequest request =
+				createRoleChangeRequest("unknown_user", AdminUserRoleChangeRequest.Action.ADD, UserRole.ROLE_API);
+
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isNotFound())
+		       .andExpect(errorCode("PLATFORM_1_16_1"));
+	}
+
+	@Test
+	public void updateUserRolesAddsRole() throws Exception {
+		final AdminUserRoleChangeRequest request =
+				createRoleChangeRequest(getTestUser().getUsername(), AdminUserRoleChangeRequest.Action.ADD,
+				                        UserRole.ROLE_API);
+
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.username").value(getTestUser().getUsername()))
+		       .andExpect(jsonPath("$.roles", Matchers.containsInAnyOrder("ROLE_USER", "ROLE_API")));
+	}
+
+	@Test
+	public void updateUserRolesRemovesRole() throws Exception {
+		addRole(getTestUser().getUsername(), UserRole.ROLE_API);
+
+		final AdminUserRoleChangeRequest request =
+				createRoleChangeRequest(getTestUser().getUsername(), AdminUserRoleChangeRequest.Action.REMOVE,
+				                        UserRole.ROLE_API);
+
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.username").value(getTestUser().getUsername()))
+		       .andExpect(jsonPath("$.roles", Matchers.containsInAnyOrder("ROLE_USER")));
+	}
+
+	@Test
+	public void updateUserRolesRemovingLastAdminRoleFails() throws Exception {
+		final AdminUserRoleChangeRequest request =
+				createRoleChangeRequest(ADMIN_USER, AdminUserRoleChangeRequest.Action.REMOVE, UserRole.ROLE_ADMIN);
+
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isConflict())
+		       .andExpect(errorCode("PLATFORM_1_18_1"));
+	}
+
+	@Test
+	public void updateUserRolesRemovingAdminRoleSucceedsWithOtherAdminPresent() throws Exception {
+		userService.register("second_admin", "changeme", Set.of(UserRole.ROLE_ADMIN), null);
+
+		final AdminUserRoleChangeRequest request =
+				createRoleChangeRequest(ADMIN_USER, AdminUserRoleChangeRequest.Action.REMOVE, UserRole.ROLE_ADMIN);
+
+		mockMvc.perform(patch("/api/admin/users/roles")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.roles", Matchers.not(Matchers.hasItem("ROLE_ADMIN"))));
+	}
+
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ GET /api/admin/settings/mail ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	@Test
@@ -87,15 +271,15 @@ public class AdminControllerTest extends ControllerTest {
 		mockMvc.perform(get("/api/admin/settings/mail").with(httpBasic(ADMIN_USER, ADMIN_PASSWORD)))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
-				       {
-				         mailHost: 'mail.example.com',
-				         mailPort: 587,
-				         mailTLS: true,
-				         mailSMTPAuth: true,
-				         mailUsername: 'mailer',
-				         mailPasswordSet: true,
-				         mailSender: 'no-reply@example.com'
-				       }"""))
+		                                 {
+		                                   mailHost: 'mail.example.com',
+		                                   mailPort: 587,
+		                                   mailTLS: true,
+		                                   mailSMTPAuth: true,
+		                                   mailUsername: 'mailer',
+		                                   mailPasswordSet: true,
+		                                   mailSender: 'no-reply@example.com'
+		                                 }"""))
 		       .andExpect(jsonPath("$.mailPassword").doesNotExist());
 	}
 
@@ -196,15 +380,15 @@ public class AdminControllerTest extends ControllerTest {
 				                .content(objectMapper.writeValueAsString(createRequest("mail.example.com"))))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
-				       {
-				         mailHost: 'mail.example.com',
-				         mailPort: 587,
-				         mailTLS: true,
-				         mailSMTPAuth: true,
-				         mailUsername: 'mailer',
-				         mailPasswordSet: true,
-				         mailSender: 'no-reply@example.com'
-				       }"""))
+		                                 {
+		                                   mailHost: 'mail.example.com',
+		                                   mailPort: 587,
+		                                   mailTLS: true,
+		                                   mailSMTPAuth: true,
+		                                   mailUsername: 'mailer',
+		                                   mailPasswordSet: true,
+		                                   mailSender: 'no-reply@example.com'
+		                                 }"""))
 		       .andExpect(jsonPath("$.mailPassword").doesNotExist());
 	}
 
@@ -230,7 +414,8 @@ public class AdminControllerTest extends ControllerTest {
 	public void testMailSettingsUnauthorized() throws Exception {
 		mockMvc.perform(post("/api/admin/settings/mail/test")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+				                .content(objectMapper.writeValueAsString(
+						                createTestMailRequest("recipient@example.com"))))
 		       .andExpect(status().isUnauthorized());
 	}
 
@@ -239,7 +424,8 @@ public class AdminControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/admin/settings/mail/test")
 				                .with(httpBasic(getTestUser().getUsername(), "changeme"))
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+				                .content(objectMapper.writeValueAsString(
+						                createTestMailRequest("recipient@example.com"))))
 		       .andExpect(status().isForbidden());
 	}
 
@@ -248,7 +434,8 @@ public class AdminControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/admin/settings/mail/test")
 				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+				                .content(objectMapper.writeValueAsString(
+						                createTestMailRequest("recipient@example.com"))))
 		       .andExpect(status().isNotFound())
 		       .andExpect(errorCode("PLATFORM_1_19_1"));
 	}
@@ -281,7 +468,8 @@ public class AdminControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/admin/settings/mail/test")
 				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+				                .content(objectMapper.writeValueAsString(
+						                createTestMailRequest("recipient@example.com"))))
 		       .andExpect(status().isOk());
 
 		assertTrue(greenMail.waitForIncomingEmail(5_000, 1));
@@ -300,12 +488,27 @@ public class AdminControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/admin/settings/mail/test")
 				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
-				                .content(objectMapper.writeValueAsString(createTestMailRequest("recipient@example.com"))))
+				                .content(objectMapper.writeValueAsString(
+						                createTestMailRequest("recipient@example.com"))))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorCode("PLATFORM_2_9_1"));
 	}
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	private AdminUserRoleChangeRequest createRoleChangeRequest(final String username,
+	                                                           final AdminUserRoleChangeRequest.Action action,
+	                                                           final UserRole... roles) {
+		final AdminUserRoleChangeRequest request = new AdminUserRoleChangeRequest();
+		request.setUsername(username);
+		request.setAction(action);
+		request.setRoles(roles.length == 0 ? Set.of() : Set.of(roles));
+		return request;
+	}
+
+	private void addRole(final String username, final UserRole role) throws BadUserException {
+		userService.addRoles(username, Set.of(role));
+	}
 
 	private void setMailSettings(final String host) throws Exception {
 		setMailSettings(createRequest(host));

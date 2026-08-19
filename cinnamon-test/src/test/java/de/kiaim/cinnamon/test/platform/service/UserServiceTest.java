@@ -1,15 +1,19 @@
 package de.kiaim.cinnamon.test.platform.service;
 
+import de.kiaim.cinnamon.platform.exception.BadAppStateException;
 import de.kiaim.cinnamon.platform.exception.BadUserConfirmationException;
+import de.kiaim.cinnamon.platform.exception.BadUserException;
 import de.kiaim.cinnamon.platform.model.dto.ConfirmUserRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
+import de.kiaim.cinnamon.platform.repository.UserRepository;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,6 +24,7 @@ public class UserServiceTest extends ContextRequiredTest {
 
 	@Autowired private PasswordEncoder passwordEncoder;
 	@Autowired private UserService userService;
+	@Autowired private UserRepository userRepository;
 
 	@Test
 	public void confirmUser() {
@@ -97,6 +102,107 @@ public class UserServiceTest extends ContextRequiredTest {
 		assertEquals(roles.stream().map(UserRole::name).collect(Collectors.toSet()),
 		             user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet()),
 		             "Unexpected authorities!");
+	}
+
+	@Test
+	@Transactional
+	public void addRoles() {
+		var user = assertDoesNotThrow(
+				() -> userService.register("add_roles_user", "password", Set.of(UserRole.ROLE_USER), null));
+
+		var updatedUser = assertDoesNotThrow(
+				() -> userService.addRoles(user.getUsername(), Set.of(UserRole.ROLE_API)));
+
+		assertEquals(Set.of(UserRole.ROLE_USER, UserRole.ROLE_API), updatedUser.getUserRoles(), "Unexpected roles!");
+	}
+
+	@Test
+	@Transactional
+	public void addRolesIgnoresAlreadyPresentRoles() {
+		var user = assertDoesNotThrow(
+				() -> userService.register("add_existing_role_user", "password", Set.of(UserRole.ROLE_USER), null));
+
+		var updatedUser = assertDoesNotThrow(
+				() -> userService.addRoles(user.getUsername(), Set.of(UserRole.ROLE_USER)));
+
+		assertEquals(Set.of(UserRole.ROLE_USER), updatedUser.getUserRoles(), "Unexpected roles!");
+	}
+
+	@Test
+	@Transactional
+	public void addRolesUserNotFound() {
+		var e = assertThrows(BadUserException.class,
+		                     () -> userService.addRoles("unknown_user", Set.of(UserRole.ROLE_API)));
+		assertEquals("PLATFORM_1_16_1", e.getErrorCode());
+	}
+
+	@Test
+	@Transactional
+	public void removeRoles() {
+		var user = assertDoesNotThrow(
+				() -> userService.register("remove_roles_user", "password",
+				                           Set.of(UserRole.ROLE_USER, UserRole.ROLE_API), null));
+
+		var updatedUser = assertDoesNotThrow(
+				() -> userService.removeRoles(user.getUsername(), Set.of(UserRole.ROLE_API)));
+
+		assertEquals(Set.of(UserRole.ROLE_USER), updatedUser.getUserRoles(), "Unexpected roles!");
+	}
+
+	@Test
+	@Transactional
+	public void removeRolesIgnoresNotPresentRoles() {
+		var user = assertDoesNotThrow(
+				() -> userService.register("remove_missing_role_user", "password", Set.of(UserRole.ROLE_USER), null));
+
+		var updatedUser = assertDoesNotThrow(
+				() -> userService.removeRoles(user.getUsername(), Set.of(UserRole.ROLE_API)));
+
+		assertEquals(Set.of(UserRole.ROLE_USER), updatedUser.getUserRoles(), "Unexpected roles!");
+	}
+
+	@Test
+	@Transactional
+	public void removeRolesUserNotFound() {
+		var e = assertThrows(BadUserException.class,
+		                     () -> userService.removeRoles("unknown_user", Set.of(UserRole.ROLE_API)));
+		assertEquals("PLATFORM_1_16_1", e.getErrorCode());
+	}
+
+	@Test
+	@Transactional
+	public void removeRolesLastAdminIsProtected() {
+		// Strip the admin role from any admin left over by other tests, bypassing the last-admin guard, so
+		// that the newly registered user below is guaranteed to be the only admin in the system.
+		userRepository.findAll().forEach(u -> {
+			if (u.hasRole(UserRole.ROLE_ADMIN)) {
+				u.removeRole(UserRole.ROLE_ADMIN);
+				userRepository.save(u);
+			}
+		});
+
+		var admin = assertDoesNotThrow(
+				() -> userService.register("last_admin_user", "password", Set.of(UserRole.ROLE_ADMIN), null));
+
+		var e = assertThrows(BadAppStateException.class,
+		                     () -> userService.removeRoles(admin.getUsername(), Set.of(UserRole.ROLE_ADMIN)));
+		assertEquals("PLATFORM_1_18_1", e.getErrorCode());
+		assertEquals(Set.of(UserRole.ROLE_ADMIN), admin.getUserRoles(),
+		             "Roles should not have been changed after a failed removal!");
+	}
+
+	@Test
+	@Transactional
+	public void removeRolesAdminAllowedWhenAnotherAdminExists() {
+		var admin = assertDoesNotThrow(
+				() -> userService.register("removable_admin_user", "password", Set.of(UserRole.ROLE_ADMIN), null));
+		assertDoesNotThrow(
+				() -> userService.register("other_admin_user", "password", Set.of(UserRole.ROLE_ADMIN), null));
+
+		var updatedUser = assertDoesNotThrow(
+				() -> userService.removeRoles(admin.getUsername(), Set.of(UserRole.ROLE_ADMIN)));
+
+		assertEquals(Set.of(), updatedUser.getUserRoles(), "Unexpected roles!");
 	}
 
 	@Test

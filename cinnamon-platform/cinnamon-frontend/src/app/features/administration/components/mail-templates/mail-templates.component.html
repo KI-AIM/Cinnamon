@@ -86,10 +86,15 @@
                                     <div class="settings-label settings-label-required">Body</div>
 
                                     <mat-form-field class="w-100">
+                                        <textarea #bodyPreview matInput rows="10" [disabled]="true" [hidden]="true">
+                                        </textarea>
                                         <textarea #bodyInput matInput rows="10" formControlName="body"
-                                                  placeholder="Content of the email"></textarea>
+                                                  placeholder="Content of the email">
+                                        </textarea>
                                         <app-placeholder-input matSuffix [control]="bodyControl(language.name)"
-                                                                [textarea]="bodyInput"></app-placeholder-input>
+                                                               [textarea]="bodyInput" [previewInput]="bodyPreview">
+                                        </app-placeholder-input>
+
                                         <mat-error>The body must not be blank.</mat-error>
                                     </mat-form-field>
                                 </div>

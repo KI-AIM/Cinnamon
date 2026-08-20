@@ -3,13 +3,7 @@ package de.kiaim.cinnamon.test.platform.controller;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
 import de.kiaim.cinnamon.platform.exception.BadUserException;
-import de.kiaim.cinnamon.platform.model.dto.AdminUserRoleChangeRequest;
-import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
-import de.kiaim.cinnamon.platform.model.dto.RegisterRequest;
-import de.kiaim.cinnamon.platform.model.dto.TestMailRequest;
-import de.kiaim.cinnamon.platform.model.dto.UserInfo;
-import de.kiaim.cinnamon.platform.model.dto.UserInvitationInfo;
-import de.kiaim.cinnamon.platform.model.dto.UserInvitationRequest;
+import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.UserInvitationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import de.kiaim.cinnamon.platform.repository.UserInvitationRepository;
@@ -819,6 +813,35 @@ public class AdminControllerTest extends ControllerTest {
 						                createTestMailRequest("recipient@example.com"))))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorCode("PLATFORM_2_9_1"));
+	}
+
+	//━━━━━━━━━━━━━━━━━━━━━━━ POST /api/admin/settings/mail/preview ━━━━━━━━━━━━━━━━━━━━━━━
+
+	@Test
+	public void previewMailNoInvitation() throws Exception {
+		var request = new TextPreviewRequest();
+		request.setText("Invitation link: ${invitation.url}");
+
+		mockMvc.perform(post("/api/admin/settings/mail/preview")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("Invitation link: ${invitation.url}"));
+	}
+
+	@Test
+	public void previewMailSubstituteInvitation() throws Exception {
+		var request = new TextPreviewRequest();
+		request.setText("Invitation link: ${invitation.url}");
+		request.setSubstituteInvitation(true);
+
+		mockMvc.perform(post("/api/admin/settings/mail/preview")
+				                .with(httpBasic(ADMIN_USER, ADMIN_PASSWORD))
+				                .contentType(MediaType.APPLICATION_JSON_VALUE)
+				                .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string("Invitation link: http://localhost/register?token=<token>"));
 	}
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ helpers ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

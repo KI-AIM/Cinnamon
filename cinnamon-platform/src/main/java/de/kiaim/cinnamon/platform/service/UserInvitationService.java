@@ -10,6 +10,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import de.kiaim.cinnamon.platform.model.mapper.UserInvitationMapper;
 import de.kiaim.cinnamon.platform.repository.UserInvitationRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.keygen.BytesKeyGenerator;
 import org.springframework.security.crypto.keygen.KeyGenerators;
@@ -33,6 +34,7 @@ import java.util.*;
 @Service
 public class UserInvitationService {
 
+	@Getter
 	private final Duration expirationDuration;
 	private final Duration retentionDuration;
 	private final byte[] secret;
@@ -366,7 +368,7 @@ public class UserInvitationService {
 	 * @throws BadUserInvitationException If the user invitation is not found or has an invalid status.
 	 */
 	@Transactional(readOnly = true)
-	protected UserInvitationEntity getByExternalId(final String externalId)
+	public UserInvitationEntity getByExternalId(final String externalId)
 			throws BadArgumentException, BadUserInvitationException {
 		UUID id;
 
@@ -392,7 +394,7 @@ public class UserInvitationService {
 	 * @param token   The unhashed invitation token.
 	 * @return The complete invitation link.
 	 */
-	private String assembleInvitationLink(final HttpServletRequest request, final String token) {
+	public String assembleInvitationLink(final HttpServletRequest request, final String token) {
 		return request.getRequestURL().subSequence(0, request.getRequestURL().lastIndexOf("/api")) +
 		       "/register?token=" + token;
 	}

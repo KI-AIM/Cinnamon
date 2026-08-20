@@ -32,7 +32,7 @@
 
                 <div class="config-input-row-text" style="flex: 0 1 150px;">
                     <span class="fw-bold">Created at: </span>
-                    <span>{{ (invitation.createdAt | date) ?? 'Not saved yet' }}</span>
+                    <span>{{ (invitation.createdAt | date:'short') ?? 'Not saved yet' }}</span>
                 </div>
 
                 <div class="config-input-row-text">
@@ -53,12 +53,12 @@
 
                 <div class="config-input-row-text" style="flex: 0 1 150px;">
                     <span class="fw-bold">Last sent at: </span>
-                    <span>{{ (invitation.lastSentAt | date) ?? 'Not sent' }}</span>
+                    <span>{{ (invitation.lastSentAt | date:'short') ?? 'Not sent' }}</span>
                 </div>
 
                 <div class="config-input-row-text" style="flex: 0 1 150px;">
                     <span class="fw-bold">Expires at: </span>
-                    <span>{{ (invitation.expiresAt | date) ?? 'Not sent' }}</span>
+                    <span>{{ (invitation.expiresAt | date:'short') ?? 'Not sent' }}</span>
                 </div>
 
                 <div class="config-input-row-button config-input-row-end">
@@ -81,7 +81,7 @@
 
                 <div class="config-input-row-text" style="flex: 0 1 150px;">
                     <span class="fw-bold">Revoked at: </span>
-                    <span>{{ (invitation.revokedAt | date) ?? 'Not revoked' }}</span>
+                    <span>{{ (invitation.revokedAt | date:'short') ?? 'Not revoked' }}</span>
                 </div>
 
                 <div class="config-input-row-button config-input-row-end">
@@ -104,7 +104,7 @@
 
                 <div class="config-input-row-text" style="flex: 0 1 150px;">
                     <span class="fw-bold">Accepted at: </span>
-                    <span>{{ (invitation.acceptedAt | date) ?? 'Not accepted' }}</span>
+                    <span>{{ (invitation.acceptedAt | date:'short') ?? 'Not accepted' }}</span>
                 </div>
 
                 <div class="config-input-row-text">
@@ -223,10 +223,15 @@
                         <div class="config-input-row-label-inline-info">Used for the invitation mail</div>
                     </div>
                     <mat-form-field class="config-input-row-field">
+                        <textarea #emailCustomBodyPreview matInput rows="10" [disabled]="true" [hidden]="true">
+                        </textarea>
                         <textarea #emailCustomBodyInput matInput rows="10" formControlName="emailCustomBody"
                                   placeholder="Content of the email"></textarea>
                         <app-placeholder-input matSuffix [control]="emailCustomBodyControl"
-                                               [textarea]="emailCustomBodyInput"></app-placeholder-input>
+                                               [textarea]="emailCustomBodyInput"
+                                               [previewInput]="emailCustomBodyPreview"
+                                               [contextInvitationId]="invitation.id">
+                        </app-placeholder-input>
                     </mat-form-field>
                 </div>
 

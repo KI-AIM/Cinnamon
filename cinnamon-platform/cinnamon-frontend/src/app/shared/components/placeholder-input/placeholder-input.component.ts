@@ -1,6 +1,8 @@
 import { Component, Input, TemplateRef } from '@angular/core';
 import { FormControl } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
+import { AdminService } from "@shared/services/admin.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
 
 /**
  * A placeholder that can be inserted into an input and is replaced by the backend when the content is used.
@@ -68,6 +70,16 @@ export class PlaceholderInputComponent {
     @Input({required: true}) public textarea!: HTMLTextAreaElement;
 
     /**
+     * The input used for previewing the placeholder content.
+     */
+    @Input() public previewInput: HTMLTextAreaElement | null = null;
+
+    /**
+     * The ID of the invitation for which the placeholders are inserted. Used for previewing the placeholder content.
+     */
+    @Input() public contextInvitationId: string | null = null;
+
+    /**
      * The placeholders that can be inserted, grouped into categories.
      * Kept in sync by hand with the selectors resolved by the backend's ResourceSelectorService.
      */
@@ -91,8 +103,16 @@ export class PlaceholderInputComponent {
         },
     ];
 
+    /**
+     * Whether the preview is currently enabled, and the preview input is shown instead of the textarea.
+     * @protected
+     */
+    protected isPreviewEnabled = false;
+
     public constructor(
         private readonly matDialog: MatDialog,
+        private readonly adminService: AdminService,
+        private readonly errorHandlingService: ErrorHandlingService,
     ) {
     }
 
@@ -131,6 +151,43 @@ export class PlaceholderInputComponent {
             this.textarea.focus();
             this.textarea.setSelectionRange(cursorPosition, cursorPosition);
         });
+    }
+
+    /**
+     * Toggles the preview of the placeholder content.
+     * If the preview is enabled, the preview content is updated by sending the current value of the control to the backend for processing.
+     * @protected
+     */
+    protected togglePreview(): void {
+        if (this.previewInput == null) {
+            return;
+        }
+
+        if (this.isPreviewEnabled) {
+            this.isPreviewEnabled = false;
+            this.control.enable()
+            this.previewInput.hidden = true;
+            this.textarea.hidden = false;
+        } else {
+
+            const body = this.control.value;
+            if (body == null || body.trim() === '') {
+                return;
+            }
+
+            this.adminService.previewText(body, this.contextInvitationId).subscribe({
+                next: preview => {
+                    this.isPreviewEnabled = true;
+                    this.control.disable();
+                    this.previewInput!.value = preview;
+                    this.previewInput!.hidden = false;
+                    this.textarea.hidden = true;
+                },
+                error: e => {
+                    this.errorHandlingService.addError(e);
+                },
+            });
+        }
     }
 
 }

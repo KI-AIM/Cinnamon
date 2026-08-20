@@ -1,8 +1,19 @@
-@if (control.disabled) {
-    <mat-icon class="icon-disabled suffix-padding">add_circle</mat-icon>
-} @else {
-    <mat-icon class="icon-enabled suffix-padding" (click)="openDialog($event, placeholderDialog)">add_circle</mat-icon>
-}
+<div class="suffix-padding" style="display: flex; flex-direction: column; gap: 0.5rem;">
+
+    @if (control.disabled) {
+        <mat-icon class="icon-disabled">add_circle</mat-icon>
+    } @else {
+        <mat-icon class="icon-enabled" (click)="openDialog($event, placeholderDialog)">add_circle</mat-icon>
+    }
+
+    @if (previewInput) {
+        @if (isPreviewEnabled) {
+            <mat-icon class="icon-enabled" (click)="togglePreview()">preview_off</mat-icon>
+        } @else {
+            <mat-icon class="icon-enabled" (click)="togglePreview()">preview</mat-icon>
+        }
+    }
+</div>
 
 <ng-template #placeholderDialog>
     <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Insert Placeholder</h2>

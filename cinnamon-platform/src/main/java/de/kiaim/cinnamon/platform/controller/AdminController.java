@@ -1,14 +1,12 @@
 package de.kiaim.cinnamon.platform.controller;
 
-
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.dto.*;
+import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.service.AppSettingsService;
-import de.kiaim.cinnamon.platform.service.EmailTemplateService;
-import de.kiaim.cinnamon.platform.service.UserInvitationService;
-import de.kiaim.cinnamon.platform.service.UserService;
+import de.kiaim.cinnamon.platform.model.entity.UserInvitationEntity;
+import de.kiaim.cinnamon.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
 import java.util.Set;
 
 /**
@@ -38,15 +37,20 @@ public class AdminController {
 	private final UserInvitationService userInvitationService;
 	private final AppSettingsService appSettingsService;
 	private final EmailTemplateService emailTemplateService;
+	private final ResourceSelectorService resourceSelectorService;
+	private final ProjectService projectService;
 
 	public AdminController(final UserService userService,
 	                       final UserInvitationService userInvitationService,
 	                       final AppSettingsService appSettingsService,
-	                       final EmailTemplateService emailTemplateService) {
+	                       final EmailTemplateService emailTemplateService,
+	                       final ResourceSelectorService resourceSelectorService, ProjectService projectService) {
 		this.userService = userService;
 		this.userInvitationService = userInvitationService;
 		this.appSettingsService = appSettingsService;
 		this.emailTemplateService = emailTemplateService;
+		this.resourceSelectorService = resourceSelectorService;
+		this.projectService = projectService;
 	}
 
 	@Operation(summary = "Returns a list of all users.",
@@ -331,6 +335,50 @@ public class AdminController {
 	public ResponseEntity<Void> deleteEmailTemplate(@PathVariable final Long id) throws ApiException {
 		emailTemplateService.deleteEmailTemplate(id);
 		return ResponseEntity.ok().build();
+	}
+
+	@Operation(summary = "Substitutes placeholders in the given text.",
+	           description = "Previews the given text after postprocessing it with the configured selectors. "
+	                         + "The request can contain a project ID and/or an invitation ID to substitute relevant "
+	                         + "placeholders in the text.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "The text has been postprocessed and returned."),
+			@ApiResponse(responseCode = "400", description = "Invalid request. The request body is missing or invalid.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "404", description = "Not found. The project or invitation ID does not exist.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+			@ApiResponse(responseCode = "500", description = "Internal server error. An error occurred while postprocessing the text.",
+			             content = {@Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                 schema = @Schema(implementation = ErrorResponse.class))}),
+	})
+	@PostMapping(value = "/settings/mail/preview",
+	             consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE},
+	             produces = {MediaType.TEXT_PLAIN_VALUE})
+	public String previewEmailTemplate(
+			@RequestBody @Valid final TextPreviewRequest request,
+			@AuthenticationPrincipal final UserEntity currentUser,
+			final HttpServletRequest httpRequest
+	) throws ApiException {
+		ProjectEntity project = null;
+		if (request.getProjectId() != null) {
+			project = projectService.getProject(currentUser, request.getProjectId());
+		}
+
+		UserInvitationEntity invitation = null;
+		if (request.getInvitationId() != null) {
+			invitation = userInvitationService.getByExternalId(request.getInvitationId());
+		}
+		if (invitation == null && request.isSubstituteInvitation()) {
+			// Only set relevant fields for placeholder substitution
+			invitation = new UserInvitationEntity();
+			invitation.setExpiresAt(new Timestamp(
+					System.currentTimeMillis() + userInvitationService.getExpirationDuration().toMillis()));
+		}
+
+		final var invitationLink = userInvitationService.assembleInvitationLink(httpRequest, "<token>");
+		return resourceSelectorService.replaceSelectorsInString(request.getText(), project, invitation, invitationLink);
 	}
 
 }

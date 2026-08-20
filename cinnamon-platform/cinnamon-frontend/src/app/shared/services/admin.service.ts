@@ -117,6 +117,16 @@ export class AdminService {
         return this.http.delete<void>(this.baseUrl() + "/settings/mail/templates/" + id);
     }
 
+    public previewText(body: string, invitationId: string | null): Observable<string> {
+        return this.http.post<string>(this.baseUrl() + "/settings/mail/preview", {
+            text: body,
+            invitationId: invitationId,
+            substituteInvitation: true,
+        }, {
+            responseType: 'text' as 'json',
+        });
+    }
+
     private baseUrl(): string {
         return environments.apiUrl + "/api/admin";
     }

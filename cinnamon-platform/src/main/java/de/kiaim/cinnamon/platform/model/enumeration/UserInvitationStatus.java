@@ -24,4 +24,11 @@ public enum UserInvitationStatus {
 	 * The inviter revoked the invitation. The user can no longer accept the invitation.
 	 */
 	REVOKED,
+
+	/**
+	 * The invitation has expired. The user can no longer accept the invitation.
+	 * This status is not persisted in the database but is calculated when mapping the entity to the DTO.
+	 * If the status is PENDING and the invitation has expired, the status is considered EXPIRED.
+	 */
+	EXPIRED,
 }

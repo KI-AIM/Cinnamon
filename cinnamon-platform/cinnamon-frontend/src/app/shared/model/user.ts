@@ -23,6 +23,7 @@ export enum UserInvitationStatus {
     PENDING = "PENDING",
     ACCEPTED = "ACCEPTED",
     REVOKED = "REVOKED",
+    EXPIRED = "EXPIRED",
 
     // Only available in the frontend, not in the backend.
     NOT_CREATED = "NOT_CREATED",

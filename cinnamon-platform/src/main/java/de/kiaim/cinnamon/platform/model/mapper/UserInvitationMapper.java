@@ -4,12 +4,12 @@ import de.kiaim.cinnamon.platform.model.dto.UserInvitationInfo;
 import de.kiaim.cinnamon.platform.model.dto.UserInvitationRequest;
 import de.kiaim.cinnamon.platform.model.entity.UserInvitationEntity;
 import de.kiaim.cinnamon.platform.model.entity.admin.EmailTemplateItemEntity;
+import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import de.kiaim.cinnamon.platform.repository.EmailTemplateItemRepository;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.sql.Timestamp;
 
 /**
  * Mapper for {@link UserInvitationEntity} and {@link UserInvitationInfo}.
@@ -22,6 +22,7 @@ public abstract class UserInvitationMapper {
 	@Autowired
 	private EmailTemplateItemRepository emailTemplateItemRepository;
 
+	@Mapping(target = "status", source = "entity", qualifiedByName = "mapStatus")
 	@Mapping(target = "emailTemplateItemId", source = "emailTemplateItem.id")
 	@Mapping(target = "invitedBy", source = "invitedBy.username")
 	@Mapping(target = "acceptedBy", source = "acceptedBy.username")
@@ -41,5 +42,10 @@ public abstract class UserInvitationMapper {
 			return null;
 		}
 		return emailTemplateItemRepository.findById(emailTemplateItemId).orElse(null);
+	}
+
+	@Named("mapStatus")
+	protected UserInvitationStatus mapStatus(final UserInvitationEntity entity) {
+		return entity.isExpired() ? UserInvitationStatus.EXPIRED : entity.getStatus();
 	}
 }

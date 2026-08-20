@@ -350,7 +350,7 @@ public class UserInvitationService {
 			                                     "Cannot accept an already accepted invitation");
 		}
 
-		if (entity.getExpiresAt() != null && System.currentTimeMillis() > entity.getExpiresAt().getTime()) {
+		if (entity.isExpired()) {
 			throw new BadUserInvitationException(BadUserInvitationException.EXPIRED,
 			                                     "User invitation has expired");
 		}

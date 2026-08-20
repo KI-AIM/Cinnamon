@@ -38,6 +38,8 @@ public class UserInvitationEntity {
 
 	/**
 	 * Status of the invitation.
+	 * Does not include EXPIRED, which is calculated based on the expiration date.
+	 * Use {@link #isExpired()} to check if the invitation is expired instead.
 	 */
 	@Column(nullable = false)
 	private UserInvitationStatus status;
@@ -160,6 +162,16 @@ public class UserInvitationEntity {
 		if (acceptedBy != null && acceptedBy.getInvitation() != this) {
 			acceptedBy.setInvitation(this);
 		}
+	}
+
+	/**
+	 * Checks if the invitation is expired.
+	 * @return true if the invitation is expired, false otherwise.
+	 */
+	public boolean isExpired() {
+		return status == UserInvitationStatus.PENDING
+		       && expiresAt != null
+		       && expiresAt.before(new Timestamp(System.currentTimeMillis()));
 	}
 
 }

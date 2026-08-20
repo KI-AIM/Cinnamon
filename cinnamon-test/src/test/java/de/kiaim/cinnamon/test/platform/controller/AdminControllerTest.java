@@ -10,7 +10,9 @@ import de.kiaim.cinnamon.platform.model.dto.TestMailRequest;
 import de.kiaim.cinnamon.platform.model.dto.UserInfo;
 import de.kiaim.cinnamon.platform.model.dto.UserInvitationInfo;
 import de.kiaim.cinnamon.platform.model.dto.UserInvitationRequest;
+import de.kiaim.cinnamon.platform.model.entity.UserInvitationEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
+import de.kiaim.cinnamon.platform.repository.UserInvitationRepository;
 import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.GreenMailPort;
@@ -23,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -47,6 +50,8 @@ public class AdminControllerTest extends ControllerTest {
 
 	private static final String ADMIN_USER = "admin_user";
 	private static final String ADMIN_PASSWORD = "changeme";
+
+	@Autowired private UserInvitationRepository userInvitationRepository;
 
 	@Autowired
 	private UserService userService;
@@ -367,6 +372,25 @@ public class AdminControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.id").value(id))
 		       .andExpect(jsonPath("$.email").value("invitee@example.com"));
+	}
+
+	@Test
+	public void getInvitationReturnsExpiredInvitation() throws Exception {
+		setMailSettings(createGreenMailRequest());
+		final String id = createInvitation("invitee@example.com");
+		sendInvitation(id);
+
+		// Force the invitation to already be expired.
+		final UserInvitationEntity entity = userInvitationRepository.findByExternalId(UUID.fromString(id))
+		                                                            .orElseThrow();
+		entity.setExpiresAt(new Timestamp(System.currentTimeMillis() - 1000));
+		userInvitationRepository.save(entity);
+
+		mockMvc.perform(get("/api/admin/invitations/" + id).with(httpBasic(ADMIN_USER, ADMIN_PASSWORD)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.id").value(id))
+		       .andExpect(jsonPath("$.email").value("invitee@example.com"))
+		       .andExpect(jsonPath("$.status").value("EXPIRED"));
 	}
 
 	//━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ PUT /api/admin/invitations/{id} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

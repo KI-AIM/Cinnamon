@@ -310,6 +310,13 @@ export class UserInvitationFormComponent implements OnInit {
         this.selectedLanguage = match?.item.language ?? null;
         this.useCustomMail = match === null;
 
+        if (!this.useCustomMail) {
+            this.invitationForm.patchValue({
+                emailCustomSubject: match?.item.subject,
+                emailCustomBody: match?.item.body,
+            });
+        }
+
         this.updateCustomMailControls();
     }
 

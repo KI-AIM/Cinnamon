@@ -83,7 +83,7 @@ export class UserSettingsComponent implements OnInit {
 
     protected openChangeUsernameDialog(dialog: any): void {
         this.updateUsernameDialog = this.matDialog.open(dialog, {
-            width: '500px',
+            width: '700px',
             autoFocus: false,
             disableClose: false,
             hasBackdrop: true,
@@ -137,7 +137,7 @@ export class UserSettingsComponent implements OnInit {
 
     protected openChangePasswordDialog(dialog: any): void {
         this.updatePasswordDialog = this.matDialog.open(dialog, {
-            width: '500px',
+            width: '700px',
             autoFocus: false,
             disableClose: false,
             hasBackdrop: true,
@@ -189,7 +189,7 @@ export class UserSettingsComponent implements OnInit {
     protected openDeleteAccountDialog(dialog: any): void {
         this.deletionError = null;
         this.deletionDialog = this.matDialog.open(dialog, {
-            width: '500px',
+            width: '700px',
             autoFocus: false,
             disableClose: false,
             hasBackdrop: true,

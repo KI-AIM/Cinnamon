@@ -169,18 +169,16 @@ uses `.stage-head` (the `.box` styling plus that same header-row layout, but as 
 buttons/status rather than a content box). Reach for these two specifically only if you're
 extending the execution/stage-tree flow — elsewhere, `.box-name` is the right default.
 
-`user-settings` is a good reference for combining the shared box pieces above with a page-specific
-row layout that doesn't have a shared equivalent yet. Each section is an ordinary `.box` with a
-`.box-header` (see above) for the title/icon, but the settings rows themselves use a local
-`.setting-row` class (label + description on the left, one action button on the right — a plain
-flex row, since `.config-input-row-label` deliberately forces the label onto its own line, which
-isn't wanted here), wrapped in a local `.settings-divided` container that turns a plain list of
-`.setting-row`s into a divided list: each row gets top/bottom padding and a `border-bottom` except
-the last, and the first/last rows adjust their padding to offset the box's own 1rem padding so the
-dividers sit flush against the box edges. Neither `.setting-row` nor `.settings-divided` is in
-`layout.less` — they're local to `user-settings.component.less` — but they're a reasonable pair to
-copy into another settings-style page that needs a divided list of label/action rows rather than
-wizard-style `.config-input-row`s.
+`user-settings` is a good reference for combining the shared box pieces above with the
+label/action row layout also used by `mail-templates` and `admin-mail-settings`: each section is
+an ordinary `.box` with a `.box-header` (see above) for the title/icon, and each row inside is a
+`.config-input-row.no-wrap` with a `.config-input-row-label-inline` (bold header line + a
+`.config-input-row-label-inline-info` description line, fixed-width so it lines up across rows)
+on the left and a `.config-input-row-button.config-input-row-end` (or a `.config-input-row-field`
+for an actual input) on the right, separated from the next row by `.config-input-divider`. See
+"Configuration rows and form inputs" below for the full class breakdown — this is the same
+`.config-input-row` family used everywhere else, not a page-specific pattern, so reach for it
+directly rather than hand-rolling a label/action flex row.
 
 **Dialogs.** Never a separate dialog component class opened programmatically with a data model —
 always an inline `<ng-template #someDialog>` in the host component's HTML, opened by injecting
@@ -310,12 +308,45 @@ it's a small fixed set of fields specific to one page.
   `class="icon-disabled"` when not). `.input-height` (56px) keeps icon columns vertically aligned
   with the Material input next to them — it's applied automatically when the field can show an
   error subscript, but add it by hand on icon/button columns you write yourself.
-- `.config-input-divider` (a subtle horizontal rule) is available for separating rows/sections but
-  isn't currently used anywhere — most rows are separated by `.workstep-part`'s own bottom margin
-  instead, so only reach for the divider if a workstep genuinely needs a rule inside one part.
+- `.config-input-divider` (a subtle horizontal rule, `margin: 20px 0`) separates sibling rows or
+  sections *within* the same `.box` — see `mail-templates` (between the "Name" row and the
+  language tabs) and `admin-mail-settings` (between the settings form and the "Test mail" row).
+  Rows inside one section still rely on `.workstep-part`'s own bottom margin / the field's error
+  subscript spacing for gaps; reach for the divider specifically where you want a visible rule
+  between two chunks of one box, not as a general row separator.
+- `.config-input-row-end` (`margin-left: auto`) pushes a trailing element (typically a
+  `.config-input-row-button`) to the far right of the row when there's no `.config-input-row-field`
+  in between to absorb the remaining space.
+- `.config-input-row-label-inline` is the settings-style alternative to `.config-input-row-label`:
+  instead of a full-width label forcing the field onto its own line, it's a fixed-width
+  (`flex: 0 0 250px`) column that sits *beside* the field/button, built from two stacked lines —
+  `.config-input-row-label-inline-header` (bold caption) and `.config-input-row-label-inline-info`
+  (smaller description). Pair it with `.no-wrap` on the `.config-input-row` itself (so the label
+  column doesn't wrap onto its own line first) and `.config-input-row-end` on the trailing
+  button/field so it's pushed to the row's right edge. This is the pattern used by
+  `mail-templates`, `admin-mail-settings`, and `user-settings` for "bold title + one-line
+  description, with a field or action button next to it" rows — prefer it over composing a
+  one-off label/description/button flex row by hand:
+  ```html
+  <div class="config-input-row no-wrap">
+    <div class="config-input-row-label-inline">
+      <div class="config-input-row-label-inline-header">Password</div>
+      <div class="config-input-row-label-inline-info">Choose a strong, unique password for your account.</div>
+    </div>
+    <div class="config-input-row-button config-input-row-end input-height">
+      <button mat-raised-button color="primary" (click)="openChangePasswordDialog(changePasswordDialog)">
+        Change password
+      </button>
+    </div>
+  </div>
+  ```
+- `.config-input-row-checkboxes` groups a run of `mat-checkbox`es as the row's "field" column
+  (flex-wrapping, `gap: 16px`) — see `admin-mail-settings`'s "Connection" row (TLS / SMTP auth).
 
-**2. Settings field (`.settings-label` / `.settings-info`)** — for simple, static settings forms
-(account/user settings, project settings) that aren't part of a multi-step wizard:
+**2. Settings field (`.settings-label` / `.settings-info`)** — for a plain vertical field caption
+in a static settings form (project settings, metric configuration) that isn't paired with an
+inline action button — a label stacked directly above one field, not a label-beside-field/button
+row (use flavor 1's `.config-input-row-label-inline` for that instead):
 
 ```html
 <div class="mb-3">
@@ -372,5 +403,7 @@ page-level chrome:
 - [ ] Layout uses flexbox (Bootstrap utility classes or hand-written), not Bootstrap grid columns
 - [ ] Icons are `<mat-icon>` with semantic color classes, not `bi-*` or inline `style=`
 - [ ] Reused an existing pattern (card/dialog/table/expansion/chart) instead of a new bespoke one
-- [ ] Config/settings fields use `.config-input-row*` (wizard/dynamic config) or
-      `.settings-label`/`.settings-info` (static settings form) — not a one-off layout
+- [ ] Config/settings fields use `.config-input-row*` — plain `.config-input-row-label` for
+      wizard/dynamic config, `.config-input-row-label-inline` for a settings-style label+action row
+      (account/mail settings) — or `.settings-label`/`.settings-info` only for a plain vertical
+      field caption (project settings) — not a one-off layout

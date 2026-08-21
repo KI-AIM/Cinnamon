@@ -229,6 +229,7 @@
                                   placeholder="Content of the email"></textarea>
                         <app-placeholder-input matSuffix [control]="emailCustomBodyControl"
                                                [textarea]="emailCustomBodyInput"
+                                               [textareaDisabled]="invitation.status === UserInvitationStatus.ACCEPTED || !useCustomMail"
                                                [previewInput]="emailCustomBodyPreview"
                                                [contextInvitationId]="invitation.id">
                         </app-placeholder-input>

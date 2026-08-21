@@ -5,9 +5,15 @@ import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
+import de.kiaim.cinnamon.platform.model.enumeration.DateFormatPreset;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Service for selecting resources based on a selector string and project.
@@ -17,23 +23,41 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResourceSelectorService {
 
+	/**
+	 * Pattern used to render a {@link Timestamp} as an absolute, user-friendly date/time.
+	 */
+	private static final DateTimeFormatter ABSOLUTE_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm");
+
 	private final ConfigurationService configurationService;
 	private final StepService stepService;
 	private final DatabaseService databaseService;
+	private final Clock clock;
 
 	public ResourceSelectorService(@Lazy final ConfigurationService configurationService,
 	                               final StepService stepService,
-	                               final DatabaseService databaseService) {
+	                               final DatabaseService databaseService,
+	                               final Clock clock) {
 		this.configurationService = configurationService;
 		this.stepService = stepService;
 		this.databaseService = databaseService;
+		this.clock = clock;
 	}
 
 	/**
 	 * Resolves the given argument.
 	 * If the argument is a selector of the form {@code ${selector}}, the corresponding resource is returned.
-	 * A default value may be appended after the selector, separated by a colon, e.g. {@code ${selector:defaultValue}}.
-	 * The default value is returned if the selector does not resolve to a resource.
+	 * <p>
+	 * A user-friendly display format may be requested by appending {@code |format} to the selector, e.g.
+	 * {@code ${selector|format}}. Which format keys are supported depends on the type of the resolved value;
+	 * see {@link DateFormatPreset} for the formats supported for date/time values. If no format is requested,
+	 * a type-appropriate default format is used where one exists (for date/time values, {@link DateFormatPreset#COMBINED}),
+	 * otherwise the resource is returned unchanged.
+	 * <p>
+	 * A default value may be appended after the selector (and format), separated by a colon, e.g.
+	 * {@code ${selector:defaultValue}} or {@code ${selector|format:defaultValue}}.
+	 * The default value is returned if the selector does not resolve to a resource, or if an explicitly requested
+	 * format is not supported for the resolved value's type.
+	 * <p>
 	 * If the argument is not a selector, it is returned unchanged.
 	 *
 	 * @param argument The argument to resolve.
@@ -62,9 +86,97 @@ public class ResourceSelectorService {
 			selector = selector.substring(0, separatorIndex);
 		}
 
-		final Object selectedResource = selectResource(selector, project, invitation, invitationUrl);
+		String format = null;
+		final int formatIndex = selector.indexOf('|');
+		if (formatIndex != -1) {
+			format = selector.substring(formatIndex + 1);
+			selector = selector.substring(0, formatIndex);
+		}
 
-		return selectedResource != null ? selectedResource : defaultValue;
+		final Object selectedResource = selectResource(selector, project, invitation, invitationUrl);
+		if (selectedResource == null) {
+			return defaultValue;
+		}
+
+		if (format != null) {
+			final Object formatted = formatValue(selectedResource, format);
+			return formatted != null ? formatted : defaultValue;
+		}
+
+		final Object defaultFormatted = formatValue(selectedResource, null);
+		return defaultFormatted != null ? defaultFormatted : selectedResource;
+	}
+
+	/**
+	 * Formats the given resolved selector value for user-friendly display, if a format is known for its type.
+	 *
+	 * @param value     The resolved, non-null selector value.
+	 * @param formatKey The requested format key (case-insensitive), or {@code null} to use the type's default format.
+	 * @return The formatted value, or {@code null} if no format is known for the value's type, or the requested
+	 * format key is not supported.
+	 */
+	@Nullable
+	private Object formatValue(final Object value, @Nullable final String formatKey) {
+		if (!(value instanceof Timestamp timestamp)) {
+			return null;
+		}
+
+		final DateFormatPreset preset;
+		if (formatKey == null) {
+			preset = DateFormatPreset.COMBINED;
+		} else {
+			try {
+				preset = DateFormatPreset.valueOf(formatKey.toUpperCase());
+			} catch (IllegalArgumentException e) {
+				return null;
+			}
+		}
+
+		return formatTimestamp(timestamp, preset);
+	}
+
+	private String formatTimestamp(final Timestamp timestamp, final DateFormatPreset preset) {
+		final Duration offset = Duration.between(clock.instant(), timestamp.toInstant());
+		final String absolute = ABSOLUTE_DATE_TIME_FORMATTER.format(timestamp.toInstant().atZone(clock.getZone()));
+
+		if (preset == DateFormatPreset.COMBINED) {
+			return formatRelativeDuration(offset) + " (" + absolute + ")";
+		}
+
+		final Duration threshold = preset.getRelativeThreshold();
+		return threshold != null && offset.abs().compareTo(threshold) < 0 ? formatRelativeDuration(offset) : absolute;
+	}
+
+	/**
+	 * Renders the given offset from now as relative wording, e.g. "in 3 days" for a positive offset, or
+	 * "3 days ago" for a negative one.
+	 *
+	 * @param offset The offset from now; positive for a point in the future, negative for a point in the past.
+	 */
+	private static String formatRelativeDuration(final Duration offset) {
+		final boolean past = offset.isNegative();
+		final Duration magnitude = offset.abs();
+
+		final long minutes = magnitude.toMinutes();
+		if (minutes < 1) {
+			return "just now";
+		}
+		if (minutes < 60) {
+			return formatRelative(minutes, "minute", past);
+		}
+
+		final long hours = magnitude.toHours();
+		if (hours < 24) {
+			return formatRelative(hours, "hour", past);
+		}
+
+		final long days = magnitude.toDays();
+		return formatRelative(days, "day", past);
+	}
+
+	private static String formatRelative(final long amount, final String unit, final boolean past) {
+		final String plural = unit + (amount == 1 ? "" : "s");
+		return past ? amount + " " + plural + " ago" : "in " + amount + " " + plural;
 	}
 
 	/**

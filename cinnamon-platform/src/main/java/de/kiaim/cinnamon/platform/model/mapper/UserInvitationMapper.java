@@ -9,8 +9,6 @@ import de.kiaim.cinnamon.platform.repository.EmailTemplateItemRepository;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.sql.Timestamp;
-
 /**
  * Mapper for {@link UserInvitationEntity} and {@link UserInvitationInfo}.
  *

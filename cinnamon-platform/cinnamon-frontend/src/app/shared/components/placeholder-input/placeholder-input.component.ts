@@ -108,6 +108,38 @@ export class PlaceholderInputComponent {
         },
     ];
 
+    protected readonly formatting: PlaceholderCategory[] = [
+        {
+            name: 'Timestamp Formatting',
+            placeholders: [
+                {
+                    name: 'Absolute',
+                    description: 'Displays the date and time in a fixed format.',
+                    example: '2023-01-01 12:00:00',
+                    placeholder: 'absolute'
+                },
+                {
+                    name: 'Relative',
+                    description: 'Displays the date and time relative to the current moment.',
+                    example: 'in 1 day',
+                    placeholder: 'relative'
+                },
+                {
+                    name: 'Absolute + Relative',
+                    description: 'Displays the date and time in both absolute and relative formats.',
+                    example: 'in 1 day (2023-01-01 12:00:00)',
+                    placeholder: 'combined'
+                },
+                {
+                    name: 'Smart',
+                    description: 'Uses relative formatting for recent timestamps and absolute formatting for older timestamps',
+                    example: '',
+                    placeholder: 'smart'
+                },
+            ],
+        },
+    ];
+
     /**
      * Whether the preview is currently enabled, and the preview input is shown instead of the textarea.
      * @protected
@@ -152,6 +184,44 @@ export class PlaceholderInputComponent {
         // Restores focus and places the cursor right behind the inserted placeholder. Deferred so that the
         // textarea has already picked up the new value before the selection is set.
         const cursorPosition = start + placeholder.length;
+        setTimeout(() => {
+            this.textarea.focus();
+            this.textarea.setSelectionRange(cursorPosition, cursorPosition);
+        });
+    }
+
+    protected insertFormatting(formatting: string): void {
+        const value = this.control.value ?? '';
+        const start = this.textarea.selectionStart ?? value.length;
+        const end = this.textarea.selectionEnd ?? value.length;
+
+        // Check if the current cursor position is inside a placeholder
+        const placeholderStart = value.lastIndexOf('${', start);
+        const placeholderEnd = value.indexOf('}', start);
+
+        if (placeholderStart === -1 || placeholderEnd === -1 || placeholderStart >= start || placeholderEnd <= end) {
+            return;
+        }
+
+        const placeholderContent = value.substring(placeholderStart + 2, placeholderEnd);
+        console.log(placeholderContent);
+
+        // Find the end position for inserting the formatting, take default values in consideration
+        const defaultValueIndex = placeholderContent.indexOf(':');
+        const formattingEnd = defaultValueIndex !== -1 ? defaultValueIndex : placeholderContent.length;
+
+        // Find the start position for inserting the formatting, take existing formatting into consideration
+        const existingFormattingIndex = placeholderContent.indexOf('|');
+        const formattingStart = existingFormattingIndex !== -1 ? existingFormattingIndex : formattingEnd;
+
+
+        // Insert the formatting inside the placeholder
+        const newValue = value.substring(0, placeholderStart + 2 + formattingStart) + "|" + formatting + value.substring(placeholderStart + 2 + formattingEnd);
+        this.control.setValue(newValue);
+        this.control.markAsDirty();
+
+        // Restore focus and place the cursor right after the inserted formatting
+        const cursorPosition = placeholderStart + 2 + formattingStart + formatting.length;
         setTimeout(() => {
             this.textarea.focus();
             this.textarea.setSelectionRange(cursorPosition, cursorPosition);

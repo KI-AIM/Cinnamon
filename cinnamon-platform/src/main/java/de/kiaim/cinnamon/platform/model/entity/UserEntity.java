@@ -1,7 +1,6 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
-import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.lang.Nullable;

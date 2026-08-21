@@ -20,7 +20,7 @@
     <mat-dialog-content class="mat-typography dialog-content">
         <div class="vertical-boxes">
             @for (category of categories; track category.name) {
-                <div class="box" style="width: fit-content;">
+                <div class="box" style="min-width: fit-content;">
                     <div class="box-name">{{ category.name }}</div>
                     <table class="table">
                         <thead>
@@ -42,6 +42,37 @@
                                     <td>
                                         <mat-icon class="icon-enabled"
                                                   (click)="insertPlaceholder(placeholder.placeholder)">add_circle
+                                        </mat-icon>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            @for (category of formatting; track category.name) {
+                <div class="box" style="min-width: fit-content;">
+                    <div class="box-name">{{ category.name }}</div>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Explanation</th>
+                            <th>Example</th>
+                            <th>Key</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            @for (formatter of category.placeholders; track formatter.placeholder) {
+                                <tr>
+                                    <td>{{ formatter.name }}</td>
+                                    <td>{{ formatter.description }}</td>
+                                    <td>{{ formatter.example }}</td>
+                                    <td>{{ formatter.placeholder }}</td>
+                                    <td>
+                                        <mat-icon class="icon-enabled"
+                                                  (click)="insertFormatting(formatter.placeholder)">add_circle
                                         </mat-icon>
                                     </td>
                                 </tr>

@@ -19,6 +19,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,6 +38,11 @@ import static org.mockito.Mockito.when;
  */
 public class ResourceSelectorServiceTest {
 
+	/**
+	 * Fixed "now" used by {@link #resourceSelectorService} to resolve date/time selector values deterministically.
+	 */
+	private static final Instant NOW = Instant.parse("2026-01-01T00:00:00Z");
+
 	private ConfigurationService configurationService;
 	private StepService stepService;
 	private DatabaseService databaseService;
@@ -44,7 +53,8 @@ public class ResourceSelectorServiceTest {
 		configurationService = mock(ConfigurationService.class);
 		stepService = mock(StepService.class);
 		databaseService = mock(DatabaseService.class);
-		resourceSelectorService = new ResourceSelectorService(configurationService, stepService, databaseService);
+		final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
+		resourceSelectorService = new ResourceSelectorService(configurationService, stepService, databaseService, clock);
 	}
 
 	//===========================
@@ -292,13 +302,123 @@ public class ResourceSelectorServiceTest {
 	}
 
 	@Test
-	public void invitationExpiresAtSelectorResolvesTimestamp() throws Exception {
-		final UserInvitationEntity invitation = new UserInvitationEntity();
-		final Timestamp expiresAt = Timestamp.valueOf("2026-01-01 12:00:00");
-		invitation.setExpiresAt(expiresAt);
+	public void invitationExpiresAtSelectorWithoutFormatDefaultsToCombined() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(3, 0, 0);
 
 		final String result = replace("${invitation.expiresAt}", null, invitation, null);
-		assertEquals(expiresAt.toString(), result);
+		assertEquals("in 3 days (04.01.2026, 00:00)", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithExplicitCombinedFormat() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(3, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|combined}", null, invitation, null);
+		assertEquals("in 3 days (04.01.2026, 00:00)", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithSmartFormatShowsRelativeWithinThreshold() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(3, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|smart}", null, invitation, null);
+		assertEquals("in 3 days", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithSmartFormatShowsAbsoluteBeyondThreshold() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(10, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|smart}", null, invitation, null);
+		assertEquals("11.01.2026, 00:00", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithRelativeFormatShowsRelativeWithinThreshold() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(10, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|relative}", null, invitation, null);
+		assertEquals("in 10 days", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithRelativeFormatShowsAbsoluteBeyondThreshold() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(40, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|relative}", null, invitation, null);
+		assertEquals("10.02.2026, 00:00", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithAbsoluteFormatShowsRelativeWithinThreshold() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(0, 5, 0);
+
+		final String result = replace("${invitation.expiresAt|absolute}", null, invitation, null);
+		assertEquals("in 5 hours", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithAbsoluteFormatShowsAbsoluteBeyondThreshold() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(3, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|absolute}", null, invitation, null);
+		assertEquals("04.01.2026, 00:00", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithoutFormatShowsPastCombined() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(0, -2, 0);
+
+		final String result = replace("${invitation.expiresAt}", null, invitation, null);
+		assertEquals("2 hours ago (31.12.2025, 22:00)", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithSmartFormatShowsRelativePastWithinThreshold() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(0, -2, 0);
+
+		final String result = replace("${invitation.expiresAt|smart}", null, invitation, null);
+		assertEquals("2 hours ago", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithSmartFormatShowsAbsolutePastBeyondThreshold() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(-10, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|smart}", null, invitation, null);
+		assertEquals("22.12.2025, 00:00", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithUnknownFormatIsLeftUnchangedWithoutDefault() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(3, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|bogus}", null, invitation, null);
+		assertEquals("${invitation.expiresAt|bogus}", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithUnknownFormatUsesDefault() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(3, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|bogus:N/A}", null, invitation, null);
+		assertEquals("N/A", result);
+	}
+
+	@Test
+	public void invitationExpiresAtSelectorWithValidFormatIgnoresDefault() throws Exception {
+		final UserInvitationEntity invitation = invitationExpiringIn(3, 0, 0);
+
+		final String result = replace("${invitation.expiresAt|smart:N/A}", null, invitation, null);
+		assertEquals("in 3 days", result);
+	}
+
+	@Test
+	public void nonDateSelectorWithFormatIsLeftUnchangedWithoutDefault() throws Exception {
+		final UserInvitationEntity invitation = new UserInvitationEntity();
+
+		final String result = replace("${invitation.url|smart}", null, invitation, "http://example.com/invite");
+		assertEquals("${invitation.url|smart}", result);
 	}
 
 	@Test
@@ -338,6 +458,17 @@ public class ResourceSelectorServiceTest {
 				return value;
 			}
 		};
+	}
+
+	/**
+	 * Creates an invitation whose {@code expiresAt} is offset from {@link #NOW} by the given amount
+	 * (negative values yield an already-expired invitation).
+	 */
+	private UserInvitationEntity invitationExpiringIn(final long days, final long hours, final long minutes) {
+		final UserInvitationEntity invitation = new UserInvitationEntity();
+		final Instant expiresAt = NOW.plus(Duration.ofDays(days).plusHours(hours).plusMinutes(minutes));
+		invitation.setExpiresAt(Timestamp.from(expiresAt));
+		return invitation;
 	}
 
 	/**

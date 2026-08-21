@@ -29,6 +29,10 @@
                     <mat-option [value]="null" disabled>No templates available</mat-option>
                 }
             </mat-select>
+
+            @if (form.dirty || selectedTemplateId === -1) {
+                <mat-hint class="color-warning">Unsaved changes are lost when another template is selected.</mat-hint>
+            }
         </mat-form-field>
 
         <div class="config-input-row-button config-input-row-end input-height">
@@ -44,10 +48,6 @@
             <div class="mail-templates-none-selected">No template selected.</div>
         </div>
     } @else {
-
-        @if (form.dirty || selectedTemplateId === -1) {
-            <div class="settings-warn">Unsaved changes are lost when another template is selected.</div>
-        }
 
         <form [formGroup]="form" (ngSubmit)="saveTemplate()" class="workstep-part">
 

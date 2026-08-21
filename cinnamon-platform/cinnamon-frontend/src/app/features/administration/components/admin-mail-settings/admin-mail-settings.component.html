@@ -122,6 +122,7 @@
                     <mat-label>Recipient</mat-label>
                     <input matInput type="email" [formControl]="testMailControl" placeholder="test@example.com">
                     <mat-error>The recipient must be a valid email address.</mat-error>
+                    <mat-hint class="color-warning">Unsaved changes are not used for the test mail.</mat-hint>
                 </mat-form-field>
 
                 <div class="config-input-row-button config-input-row-end input-height">
@@ -137,10 +138,6 @@
                     </button>
                 </div>
             </div>
-
-            @if (mailSettingsConfigured && mailSettingsForm.dirty) {
-                <div class="settings-warn">Unsaved changes are not used for the test mail.</div>
-            }
 
         </div>
 

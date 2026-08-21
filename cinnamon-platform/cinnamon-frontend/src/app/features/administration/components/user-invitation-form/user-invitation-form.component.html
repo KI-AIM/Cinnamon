@@ -214,6 +214,7 @@
                     </div>
                     <mat-form-field class="config-input-row-field">
                         <input matInput type="text" formControlName="emailCustomSubject">
+                        <mat-error>The subject must not be blank.</mat-error>
                     </mat-form-field>
                 </div>
 
@@ -223,16 +224,17 @@
                         <div class="config-input-row-label-inline-info">Used for the invitation mail</div>
                     </div>
                     <mat-form-field class="config-input-row-field">
-                        <textarea #emailCustomBodyPreview matInput rows="10" [disabled]="true" [hidden]="true">
-                        </textarea>
                         <textarea #emailCustomBodyInput matInput rows="10" formControlName="emailCustomBody"
                                   placeholder="Content of the email"></textarea>
+                        <textarea #emailCustomBodyPreview matInput rows="10" [disabled]="true" [hidden]="true">
+                        </textarea>
                         <app-placeholder-input matSuffix [control]="emailCustomBodyControl"
                                                [textarea]="emailCustomBodyInput"
                                                [textareaDisabled]="invitation.status === UserInvitationStatus.ACCEPTED || !useCustomMail"
                                                [previewInput]="emailCustomBodyPreview"
                                                [contextInvitationId]="invitation.id">
                         </app-placeholder-input>
+                        <mat-error>The body must not be blank.</mat-error>
                     </mat-form-field>
                 </div>
 

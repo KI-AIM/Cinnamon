@@ -11,9 +11,10 @@
 
 } @else {
 
-    <div class="config-input-row workstep-part">
-        <div class="config-input-row-label">
-            Select the template you want to edit or create a new one.
+    <div class="config-input-row no-wrap workstep-part">
+        <div class="config-input-row-label-inline">
+            <div class="config-input-row-label-inline-header">Template</div>
+            <div class="config-input-row-label-inline-info">Select the template you want to edit or create a new one</div>
         </div>
 
         <mat-form-field class="config-input-row-field hide-mat-error-gap">
@@ -30,7 +31,7 @@
             </mat-select>
         </mat-form-field>
 
-        <div class="config-input-row-button input-height">
+        <div class="config-input-row-button config-input-row-end input-height">
             <button mat-raised-button color="primary" type="button" [disabled]="creatingTemplate"
                     (click)="addTemplate()">
                 New template
@@ -50,20 +51,27 @@
 
         <form [formGroup]="form" (ngSubmit)="saveTemplate()" class="workstep-part">
 
-            <div>
-                <div class="settings-label settings-label-required">Name</div>
-                <mat-form-field class="w-100">
+            <div class="config-input-row no-wrap">
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Name</div>
+                    <div class="config-input-row-label-inline-info">Identifies the template and must be unique</div>
+                </div>
+                <mat-form-field class="config-input-row-field">
                     <input matInput type="text" formControlName="name" placeholder="Registration confirmation">
                     <mat-error>The name must not be blank.</mat-error>
-                    <mat-hint>The name identifies the template and must be unique.</mat-hint>
                 </mat-form-field>
             </div>
+
+            <div class="config-input-divider"></div>
 
             <!-- One tab per language the template is configured for. -->
             <div class="mail-templates-tabs workstep-part"
                  [class.mail-templates-tabs-add-language]="availableLanguages.length > 0">
 
-                <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start"
+                <!-- The tab set is fully rebuilt whenever a different template is selected (see applyTemplate()),
+                     which breaks mat-tab-group's carousel animation - the new template's tab is already visible
+                     while the old one is still sliding out. So the animation is disabled entirely. -->
+                <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" animationDuration="0ms"
                                [(selectedIndex)]="selectedTabIndex">
                     @if (addedLanguages.length === 0) {
                         <mat-tab label="No languages" disabled>
@@ -73,23 +81,35 @@
                         <mat-tab [label]="language.displayName">
                             <div class="mail-templates-tab-content" [formGroup]="languageGroup(language.name)">
 
-                                <div>
-                                    <div class="settings-label settings-label-required">Subject</div>
-                                    <mat-form-field class="w-100">
+                                <div class="config-input-row input-height">
+                                    <button mat-raised-button color="warn" type="button" class="config-input-row-button"
+                                            (click)="removeLanguage(language.name)">
+                                        Remove {{ language.displayName }}
+                                    </button>
+                                </div>
+
+                                <div class="config-input-row no-wrap">
+                                    <div class="config-input-row-label-inline">
+                                        <div class="config-input-row-label-inline-header">Subject</div>
+                                        <div class="config-input-row-label-inline-info">Subject line of the email</div>
+                                    </div>
+                                    <mat-form-field class="config-input-row-field">
                                         <input matInput type="text" formControlName="subject"
                                                placeholder="Welcome to Cinnamon">
                                         <mat-error>The subject must not be blank.</mat-error>
                                     </mat-form-field>
                                 </div>
 
-                                <div>
-                                    <div class="settings-label settings-label-required">Body</div>
-
-                                    <mat-form-field class="w-100">
-                                        <textarea #bodyPreview matInput rows="10" [disabled]="true" [hidden]="true">
-                                        </textarea>
+                                <div class="config-input-row no-wrap">
+                                    <div class="config-input-row-label-inline">
+                                        <div class="config-input-row-label-inline-header">Body</div>
+                                        <div class="config-input-row-label-inline-info">Content of the email</div>
+                                    </div>
+                                    <mat-form-field class="config-input-row-field">
                                         <textarea #bodyInput matInput rows="10" formControlName="body"
                                                   placeholder="Content of the email">
+                                        </textarea>
+                                        <textarea #bodyPreview matInput rows="10" [disabled]="true" [hidden]="true">
                                         </textarea>
                                         <app-placeholder-input matSuffix [control]="bodyControl(language.name)"
                                                                [textarea]="bodyInput" [previewInput]="bodyPreview">
@@ -97,13 +117,6 @@
 
                                         <mat-error>The body must not be blank.</mat-error>
                                     </mat-form-field>
-                                </div>
-
-                                <div class="mail-templates-language-actions mb-2">
-                                    <button mat-raised-button color="warn" type="button"
-                                            (click)="removeLanguage(language.name)">
-                                        Remove {{ language.displayName }}
-                                    </button>
                                 </div>
 
                             </div>
@@ -133,14 +146,15 @@
                 </div>
             }
 
-            <div class="mail-templates-actions">
+            <div class="config-input-row">
                 @if (!creatingTemplate) {
                     <button mat-raised-button color="warn" type="button"
+                            class="config-input-row-button config-input-row-end"
                             (click)="openDeleteTemplateDialog(deleteTemplateDialog)">
                         Delete template
                     </button>
                 }
-                <button mat-raised-button color="primary" type="submit"
+                <button mat-raised-button color="primary" type="submit" class="config-input-row-button"
                         [disabled]="!form.valid || form.pristine || saving">
                     {{ creatingTemplate ? 'Create template' : 'Save template' }}
                 </button>

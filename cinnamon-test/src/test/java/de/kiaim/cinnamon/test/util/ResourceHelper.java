@@ -52,9 +52,13 @@ public class ResourceHelper {
 	}
 
 	public static String loadFhirBundleAsString() throws IOException {
+		return loadFileAsString("fhir-bundle.json");
+	}
+
+	public static String loadFileAsString(final String fileName) throws IOException {
 		ClassLoader classLoader = TestModelHelper.class.getClassLoader();
 
-		try (var inputStream = classLoader.getResourceAsStream("fhir-bundle.json")) {
+		try (var inputStream = classLoader.getResourceAsStream(fileName)) {
 			assert inputStream != null;
 			return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 		}

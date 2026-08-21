@@ -65,6 +65,11 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String XLSX_READING = "12";
 
+	/**
+	 * Exception code for a failed FHIR bundle writing.
+	 */
+	public static final String FHIR_WRITING = "13";
+
 	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

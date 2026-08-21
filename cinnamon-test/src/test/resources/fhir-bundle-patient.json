@@ -1,0 +1,29 @@
+{
+  "resourceType": "Bundle",
+  "entry": [ {
+    "fullUrl": "https://hapi.fhir.org/baseR4/Patient/30209",
+    "resource": {
+      "resourceType": "Patient",
+      "id": "30163",
+      "meta": {
+        "versionId": "17",
+        "lastUpdated": "2024-12-17T20:17:48.265+00:00",
+        "source": "#084xwFTmqJH0RTYf"
+      },
+      "text": {
+        "status": "generated",
+        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">JOHN STEVE <b>SMITH </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>urn:id:999991</td></tr><tr><td>Date of birth</td><td><span>01 January 1950</span></td></tr></tbody></table></div>"
+      },
+      "identifier": [ {
+        "system": "coolGym101",
+        "value": "cg44444"
+      } ],
+      "name": [ {
+        "family": "PATEL",
+        "given": [ "MARY", "CATHERINE" ]
+      } ],
+      "gender": "female",
+      "birthDate": "1950-01-01"
+    }
+  } ]
+}

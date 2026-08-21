@@ -92,7 +92,9 @@ app-navigation{
     font-weight: bold;
 }
 .config-input-row-label-inline-info {
+    padding-top: 0.1rem;
     font-size: 0.8rem;
+    line-height: 0.9rem;
 }
 
 .config-input-row-field {
@@ -290,42 +292,6 @@ app-navigation{
 
 .input-height {
     height: 56px;
-}
-
-.setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-
-    button { flex: 0 0 auto; }
-}
-
-.settings-divided {
-    .setting-row {
-        padding-top: 20px;
-        padding-bottom: 20px;
-    }
-    .setting-row:not(:last-child) {
-        border-bottom: 1px solid @color-gray-border;
-    }
-
-    .setting-row:first-child {
-        // Subtract the padding of the box header
-        padding-top: calc(20px - 1rem);
-    }
-
-    .setting-row:last-child {
-        // Subtract the padding of the box
-        padding-bottom: calc(20px - 1rem);
-    }
-}
-
-.settings-dialog-description { margin-bottom: 20px; line-height: 1.5; }
-
-@media (max-width: @phone-breakpoint) {
-    .setting-row { align-items: stretch; flex-direction: column; }
-    .setting-row button { width: 100%; }
 }
 
 .settings-label {

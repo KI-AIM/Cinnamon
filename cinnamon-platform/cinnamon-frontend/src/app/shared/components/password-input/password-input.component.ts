@@ -16,6 +16,8 @@ export class PasswordInputComponent {
 
     @Input() public autocomplete: 'current-password' | 'new-password' = 'current-password';
     @Input() public heading: string | null = null;
+    @Input() public inlineHeading: string | null = null;
+    @Input() public inlineInfo: string | null = null;
     @Input() public passwordRequirements: PasswordRequirements | null = null;
 
     protected hidePassword: boolean = true;

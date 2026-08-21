@@ -1,4 +1,4 @@
-<main class="settings-page">
+<main>
 
     <div class="vertical-boxes">
 
@@ -8,24 +8,27 @@
                 <span class="box-header-title">Account &amp; security</span>
             </div>
 
-            <div class="settings-divided">
-
-                <div class="setting-row">
-                    <div>
-                        <div class="settings-label">Username</div>
-                        <div class="settings-info">Update the name you use to sign in.</div>
-                    </div>
+            <div class="config-input-row no-wrap">
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Username</div>
+                    <div class="config-input-row-label-inline-info">Update the name you use to sign in.</div>
+                </div>
+                <div class="config-input-row-button config-input-row-end input-height">
                     <button mat-raised-button color="primary"
                             (click)="openChangeUsernameDialog(changeUsernameDialog)">
                         Change username
                     </button>
                 </div>
+            </div>
 
-                <div class="setting-row">
-                    <div>
-                        <div class="settings-label">Password</div>
-                        <div class="settings-info">Choose a strong, unique password for your account.</div>
-                    </div>
+            <div class="config-input-divider"></div>
+
+            <div class="config-input-row no-wrap">
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Password</div>
+                    <div class="config-input-row-label-inline-info">Choose a strong, unique password for your account.</div>
+                </div>
+                <div class="config-input-row-button config-input-row-end input-height">
                     <button mat-raised-button color="primary"
                             (click)="openChangePasswordDialog(changePasswordDialog)">
                         Change password
@@ -40,19 +43,17 @@
                 <span class="box-header-title">Danger zone</span>
             </div>
 
-            <div class="settings-divided">
-
-                <div class="setting-row">
-                    <div>
-                        <div class="settings-label">Delete account</div>
-                        <div class="settings-info">Permanently delete your account and all of your projects.</div>
-                    </div>
+            <div class="config-input-row no-wrap">
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Delete account</div>
+                    <div class="config-input-row-label-inline-info">Permanently delete your account and all of your projects.</div>
+                </div>
+                <div class="config-input-row-button config-input-row-end input-height">
                     <button mat-raised-button color="warn"
                             (click)="openDeleteAccountDialog(deleteAccountDialog)">
                         Delete account
                     </button>
                 </div>
-
             </div>
         </div>
 
@@ -65,11 +66,11 @@
     <mat-dialog-content class="mat-typography dialog-content">
 
         <div class="box">
-            <p class="settings-dialog-description">Enter a new username and confirm the change with your current password.</p>
 
             <div class="config-input-row">
-                <div class="config-input-row-label">
-                    Choose a new username
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">New Username</div>
+                    <div class="config-input-row-label-inline-info">Enter a new username.</div>
                 </div>
                 <mat-form-field class="config-input-row-field">
                     <mat-label>New username</mat-label>
@@ -78,7 +79,8 @@
                 </mat-form-field>
             </div>
 
-            <app-password-input label="Current password" heading="Enter your current password"
+            <app-password-input label="Current password" inlineHeading="Current Password"
+                                inlineInfo="Enter your current password to confirm the change."
                                 [control]="changeUsernameCurrentPasswordControl">
             </app-password-input>
         </div>
@@ -96,20 +98,18 @@
     <mat-dialog-content class="mat-typography dialog-content">
 
         <div class="box">
-            <p class="settings-dialog-description">Use a strong password that you do not use for another account.</p>
             @if (appConfig$ | async; as appConfig) {
-                <app-password-input label="Current password" heading="Enter your current password"
-                                    [control]="currentPasswordControl">
+                <app-password-input label="Current password" inlineHeading="Current password"
+                                    inlineInfo="Enter your current password" [control]="currentPasswordControl">
                 </app-password-input>
-                <div class="new-password-fields">
-                    <app-password-input label="New password" heading="Choose a new password"
-                                        [passwordRequirements]="appConfig.passwordRequirements"
-                                        autocomplete="new-password" [control]="newPasswordControl">
-                    </app-password-input>
-                    <app-password-input label="Confirm new password" autocomplete="new-password"
-                                        [control]="newPasswordRepeatedControl">
-                    </app-password-input>
-                </div>
+                <app-password-input label="New password" inlineHeading="New password" inlineInfo="Enter a new password"
+                                    [passwordRequirements]="appConfig.passwordRequirements"
+                                    autocomplete="new-password" [control]="newPasswordControl">
+                </app-password-input>
+                <app-password-input label="Confirm new password" inlineHeading="Confirm new password"
+                                    inlineInfo="Re-enter your new password" autocomplete="new-password"
+                                    [control]="newPasswordRepeatedControl">
+                </app-password-input>
             }
         </div>
 
@@ -126,25 +126,30 @@
     <mat-dialog-content class="mat-typography dialog-content">
 
         <app-info-card typeClass="card-warn">
-            <p><strong>This action is permanent.</strong> Your account and all of your projects will be deleted.</p>
+            <strong>This action is permanent.</strong> Your account and all of your projects will be deleted.
         </app-info-card>
 
         <div class="box">
-            <p class="settings-dialog-description">To confirm, enter your username <strong>{{ username }}</strong> and
-                password.</p>
+            <p>To confirm, enter your username <strong>{{ username }}</strong> and password.</p>
 
             <div class="config-input-row">
+                <div class="config-input-row-label-inline">
+                    <div class="config-input-row-label-inline-header">Username</div>
+                    <div class="config-input-row-label-inline-info">Enter your username.</div>
+                </div>
+
                 <mat-form-field class="config-input-row-field">
                     <mat-label>Username</mat-label>
                     <input type="text" matInput autocomplete="username" [formControl]="confirmDeletionUsernameControl">
                 </mat-form-field>
             </div>
 
-            <app-password-input label="Password" [control]="confirmDeletionPasswordControl">
+            <app-password-input label="Password" [control]="confirmDeletionPasswordControl" inlineHeading="Password"
+                                inlineInfo="Enter your password.">
             </app-password-input>
 
             @if (deletionError != null) {
-                <div class="error-text" role="alert">{{ deletionError }}</div>
+                <div class="color-error" role="alert">{{ deletionError }}</div>
             }
 
         </div>

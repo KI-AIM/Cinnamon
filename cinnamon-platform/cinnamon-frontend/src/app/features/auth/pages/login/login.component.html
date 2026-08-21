@@ -11,7 +11,7 @@
         <button mat-raised-button color="primary" [disabled]="!loginForm.valid">Login</button>
     </form>
 
-    @if (!(isInvitationRequired$ | async)) {
+    @if ((isInvitationRequired$ | async) === false) {
         <div style="display: flex; flex-direction: column;">
             <div style="margin: auto;">Want to create a new account?</div>
             <button mat-raised-button color="primary" (click)="navigateToRegister()">Create new Account</button>

@@ -15,15 +15,14 @@ import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.unimuenster.imi.fhir.columns_parser.Column;
 import de.unimuenster.imi.fhir.transform.BundleTransformer;
+import de.unimuenster.imi.fhir.transform.CsvToFhirTransformer;
 import de.unimuenster.imi.fhir.transform.ResourceExtractor;
 import de.unimuenster.imi.fhir.transform.TransformationParameters;
 import org.apache.commons.csv.CSVFormat;
+import org.hl7.fhir.r4.model.Bundle;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.List;
 import java.util.Set;
 
@@ -134,7 +133,23 @@ public class FhirProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(OutputStream outputStream, DataSet dataset) {
+	public void write(OutputStream outputStream, DataSet dataset) throws InternalIOException {
+		// First, convert the dataset into a CSV string
+		final OutputStream csvOutputStream = new ByteArrayOutputStream();
+		csvProcessor.write(csvOutputStream, dataset);
+		String csvString = csvOutputStream.toString();
+
+		CsvToFhirTransformer csvToFhirTransformer = new CsvToFhirTransformer();
+		final Bundle bundle = csvToFhirTransformer.parseCsvToBundle(csvString);
+
+		final FhirContext fhirContext = FhirContext.forR4();
+		try {
+			fhirContext.newJsonParser()
+			           .setPrettyPrint(true)
+			           .encodeResourceToWriter(bundle, new OutputStreamWriter(outputStream));
+		} catch (final IOException e) {
+			throw new InternalIOException(InternalIOException.FHIR_WRITING, "Failed to write FHIR bundle.", e);
+		}
 	}
 
 	/**

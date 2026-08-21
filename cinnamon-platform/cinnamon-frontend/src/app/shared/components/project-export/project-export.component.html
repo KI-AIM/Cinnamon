@@ -143,22 +143,26 @@
                         </ng-container>
                     </table>
 
-                    <ng-container *ngIf="{datasetInfo: dataSetInfo$ | async} as data">
-                        <div class="settings-label">Dataset splits to include</div>
+                    @if (dataSetInfo$ | async; as datasetInfo) {
+                        <div class="settings-label d-block">Dataset splits to include</div>
                         <mat-form-field class="hide-mat-error-gap">
-                            <mat-select [disabled]="data.datasetInfo == null || !data.datasetInfo.hasHoldOutSplit" [(ngModel)]="holdOutSelector">
+                            <mat-select [disabled]="datasetInfo == null || !datasetInfo.hasHoldOutSplit"
+                                        [(ngModel)]="holdOutSelector">
                                 <mat-option [value]="HoldOutSelector.ALL">All</mat-option>
                                 <mat-option [value]="HoldOutSelector.HOLD_OUT">Hold-Out</mat-option>
                                 <mat-option [value]="HoldOutSelector.NOT_HOLD_OUT">Not Hold-Out</mat-option>
                             </mat-select>
                         </mat-form-field>
-                    </ng-container>
+                    }
 
-                    <div class="settings-label">Format of datasets</div>
+                    <div class="settings-label d-block">Format of datasets</div>
                     <mat-form-field class="hide-mat-error-gap">
                         <mat-select [(ngModel)]="datasetFileType">
                             <mat-option [value]="FileType.CSV">CSV</mat-option>
                             <mat-option [value]="FileType.XLSX">XLSX</mat-option>
+                            @if (datasetFileType === FileType.FHIR) {
+                                <mat-option [value]="FileType.FHIR">FHIR</mat-option>
+                            }
                         </mat-select>
                     </mat-form-field>
 

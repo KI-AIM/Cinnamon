@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef } from '@angular/core';
+import { booleanAttribute, Component, Input, TemplateRef } from '@angular/core';
 import { FormControl } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { AdminService } from "@shared/services/admin.service";
@@ -68,6 +68,11 @@ export class PlaceholderInputComponent {
      * The input the placeholder is inserted into at its current cursor position.
      */
     @Input({required: true}) public textarea!: HTMLTextAreaElement;
+
+    /**
+     * Whether the input is disabled.
+     */
+    @Input({transform: booleanAttribute}) public textareaDisabled: boolean = false;
 
     /**
      * The input used for previewing the placeholder content.
@@ -165,9 +170,12 @@ export class PlaceholderInputComponent {
 
         if (this.isPreviewEnabled) {
             this.isPreviewEnabled = false;
-            this.control.enable()
             this.previewInput.hidden = true;
             this.textarea.hidden = false;
+
+            if (!this.textareaDisabled) {
+                this.control.enable()
+            }
         } else {
 
             const body = this.control.value;

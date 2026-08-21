@@ -17,8 +17,8 @@
 	<repositories>
 		<repository>
 			<id>github</id>
-			<name>GitHub FhirExtinguisher</name>
-			<url>https://maven.pkg.github.com/JohannesOehm/FhirExtinguisher</url>
+			<name>GitHub Caramelizer</name>
+			<url>https://maven.pkg.github.com/KI-AIM/Caramelizer</url>
 			<releases><enabled>true</enabled></releases>
 			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
@@ -103,14 +103,14 @@
 		</dependency>
 
 		<dependency>
-		  <groupId>de.unimuenster.imi.fhir</groupId>
-		  <artifactId>columns-parser-jvm</artifactId>
-		  <version>1.8.0-DEV4</version>
+			<groupId>de.unimuenster.imi.fhir</groupId>
+			<artifactId>columns-parser-jvm</artifactId>
+			<version>0.9.1</version>
 		</dependency>
 		<dependency>
-		  <groupId>de.unimuenster.imi.fhir</groupId>
-		  <artifactId>transform-fhir</artifactId>
-		  <version>1.8.0-DEV4</version>
+			<groupId>de.unimuenster.imi.fhir</groupId>
+			<artifactId>transform-fhir</artifactId>
+			<version>0.9.1</version>
 		</dependency>
 
 		<dependency>
@@ -143,7 +143,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-csv</artifactId>
-			<version>1.11.0</version>
+			<version>1.14.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.hypersistence</groupId>

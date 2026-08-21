@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.test.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
+import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
@@ -13,7 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -81,6 +84,30 @@ public class FhirProcessorTest extends ContextRequiredTest {
 				                                              DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 
 		assertEquals(13, estimation.getDataConfiguration().getConfigurations().size());
+	}
+
+	@Test
+	public void write() throws IOException {
+		var bundle = ResourceHelper.loadFileAsString("fhir-bundle-patient.json");
+
+		var fhirFileConfiguration = new FhirFileConfiguration("Patient");
+		var fileConfiguration = new FhirFileConfigurationEntity(fhirFileConfiguration);
+
+		var estimation = assertDoesNotThrow(
+				() -> fhirProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
+				                                              fileConfiguration,
+				                                              DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+		var data = assertDoesNotThrow(
+				() -> fhirProcessor.read(new ByteArrayInputStream(bundle.getBytes()), fileConfiguration,
+				                         estimation.getDataConfiguration()));
+		DataSet dataset = data.getDataSet();
+
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		assertDoesNotThrow(() -> fhirProcessor.write(stream, dataset));
+
+		String content = stream.toString(StandardCharsets.UTF_8);
+		String expectedContent = ResourceHelper.loadFileAsString("fhir-bundle-patient.json").replaceAll(",2023-11-20,", ",20.11.2023,");
+		assertEquals(expectedContent, content);
 	}
 
 	private static FileCompatibilityEntity getFileCompatibility() {

@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ValidatorFn, Validators } from "@angular/forms";
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
-import { DataConfiguration } from "@shared/model/data-configuration";
+import { DataConfiguration, isTextOnlyDataConfiguration } from "@shared/model/data-configuration";
 import { catchError, Observable, of, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
@@ -99,13 +99,14 @@ export class ConfigurationFormComponent implements OnInit {
     ngOnInit() {
         this.configurationData$ = this.anonService.getAlgorithmDefinition(this.algorithm).pipe(
             tap(value => {
-                this.algorithmDefinition = value
+                this.algorithmDefinition = this.getVisibleAlgorithmDefinition(value);
             }),
             tap(value => {
+                const visibleDefinition = this.getVisibleAlgorithmDefinition(value);
                 this.applicableAdditionalConfigs = this.resolveAdditionalConfigs(this.additionalConfigs);
-                this.form = this.createForm(value, this.initialConfigurationData.config, this.dataConfiguration);
+                this.form = this.createForm(visibleDefinition, this.initialConfigurationData.config, this.dataConfiguration);
 
-                this.fixAttributeLists(value, this.initialConfigurationData.config, this.form, this.dataConfiguration);
+                this.fixAttributeLists(visibleDefinition, this.initialConfigurationData.config, this.form, this.dataConfiguration);
                 setTimeout(() => {
                     // Has to be run after the page is initialized
                     for (const group of this.groups) {
@@ -326,6 +327,25 @@ export class ConfigurationFormComponent implements OnInit {
 
     private isMandatory(inputDefinition: { mandatory?: boolean | null }): boolean {
         return inputDefinition.mandatory !== false;
+    }
+
+    private getVisibleAlgorithmDefinition(definition: AlgorithmDefinition): AlgorithmDefinition {
+        if (
+            this.anonService.getConfigurationName() !== "anonymization"
+            || !isTextOnlyDataConfiguration(this.dataConfiguration)
+            || definition.configurations == null
+            || definition.configurations["modelConfiguration"] == null
+        ) {
+            return definition;
+        }
+
+        const configurations = {...definition.configurations};
+        delete configurations["modelConfiguration"];
+
+        return {
+            ...definition,
+            configurations,
+        };
     }
 
     private createNamedListItemGroup(

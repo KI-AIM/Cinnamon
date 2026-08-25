@@ -21,7 +21,7 @@ import {
 import { AnonymizationService } from "../../services/anonymization.service";
 import { TextAnonymizationConfigurationComponent } from '../../components/text-anonymization-configuration/text-anonymization-configuration.component';
 import { TextAnonymizationConfigurationService } from '../../services/text-anonymization-configuration.service';
-import { hasTextColumns } from '@shared/model/data-configuration';
+import { hasStructuredColumns, hasTextColumns } from '@shared/model/data-configuration';
 
 @Component({
     selector: 'app-anonymization-configuration',
@@ -62,6 +62,9 @@ export class AnonymizationConfigurationComponent implements OnInit {
                 (form: FormGroup, configs: ConfigurationObject[] | null, disabled: boolean) => {
                     this.anonymizationAttributeConfigurationService.initForm(form, configs as AnonymizationAttributeRowConfiguration[] | null, disabled);
                 },
+                null,
+                null,
+                (_, dataConfiguration) => hasStructuredColumns(dataConfiguration),
             ),
             new AdditionalConfig(
                 TextAnonymizationConfigurationComponent,

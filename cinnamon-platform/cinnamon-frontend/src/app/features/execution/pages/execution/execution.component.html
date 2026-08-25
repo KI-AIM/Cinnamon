@@ -101,6 +101,11 @@
                                             {{ status }}
                                         </div>
                                     </ng-container>
+                                    <ng-container *ngIf="process === 'text_anonymization'">
+                                        <div *ngIf="pageData.stage && pageData.stage.processes[i] as textProcess; else noStatus">
+                                            {{ getTextAnonymizationStatus(textProcess.externalProcessStatus) }}
+                                        </div>
+                                    </ng-container>
                                     <ng-container *ngIf="process === 'synthetization'">
                                         <div *ngIf="pageData.stage && pageData.stage.processes[i].status as status; else noStatus">
                                             <div

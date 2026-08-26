@@ -65,6 +65,7 @@ export class AnonymizationConfigurationComponent implements OnInit {
                 null,
                 null,
                 (_, dataConfiguration) => hasStructuredColumns(dataConfiguration),
+                'anonymization',
             ),
             new AdditionalConfig(
                 TextAnonymizationConfigurationComponent,
@@ -77,6 +78,7 @@ export class AnonymizationConfigurationComponent implements OnInit {
                 null,
                 null,
                 (_, dataConfiguration) => hasTextColumns(dataConfiguration),
+                'text_anonymization',
             )];
         this.additionalConfigs = new ConfigurationAdditionalConfigs(configs);
     }

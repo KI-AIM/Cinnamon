@@ -4,8 +4,7 @@
 </ng-container>
 
 <mat-accordion>
-    <ng-container *ngFor="let groupDefinition of group.configurations | keyvalue">
-
+<ng-container *ngFor="let groupDefinition of group.configurations | keyvalue">
         <mat-expansion-panel appExpansionPanelOverflow>
             <mat-expansion-panel-header>
                 <mat-panel-title [class.invalid-group]="formGroup.controls[groupDefinition.key].invalid">
@@ -17,7 +16,8 @@
             </mat-expansion-panel-header>
 
             <app-configuration-group #configurations [form]="formGroup" [fromGroupName]="groupDefinition.key"
-                                     [group]="groupDefinition.value" [disabled]="disabled" [isOption]="false">
+                                     [group]="groupDefinition.value" [disabled]="disabled"
+                                     [processEnabled]="processEnabled" [isOption]="false">
             </app-configuration-group>
         </mat-expansion-panel>
 
@@ -76,7 +76,8 @@
             </mat-expansion-panel-header>
 
             <app-configuration-group #options [form]="formGroup" [fromGroupName]="groupDefinition.key"
-                                     [group]="groupDefinition.value" [disabled]="disabled" [isOption]="true">
+                                     [group]="groupDefinition.value" [disabled]="disabled"
+                                     [processEnabled]="processEnabled" [isOption]="true">
             </app-configuration-group>
         </mat-expansion-panel>
 
@@ -84,7 +85,7 @@
 
     <ng-container *ngIf="additionalConfigs">
         <ng-container *ngFor="let additionalConfig of getRemainingAdditionalConfigs()">
-            <mat-expansion-panel appExpansionPanelOverflow>
+                <mat-expansion-panel appExpansionPanelOverflow>
                 <mat-expansion-panel-header>
                     <mat-panel-title
                         [class.invalid-group]="formGroup.controls[additionalConfig.formGroupName].invalid">

@@ -3,11 +3,13 @@ import {
     Component,
     EventEmitter,
     Input,
+    OnChanges,
     OnInit,
     Output,
     QueryList,
     ViewChild,
-    ViewChildren
+    ViewChildren,
+    SimpleChanges
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ValidatorFn, Validators } from "@angular/forms";
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
@@ -36,7 +38,7 @@ import { ConfigurationService } from "../../services/configuration.service";
     styleUrls: ['./configuration-form.component.less'],
     standalone: false
 })
-export class ConfigurationFormComponent implements OnInit {
+export class ConfigurationFormComponent implements OnChanges, OnInit {
 
     @Input() additionalConfigs: ConfigurationAdditionalConfigs | null = null
 
@@ -54,6 +56,16 @@ export class ConfigurationFormComponent implements OnInit {
      * If this form is disabled.
      */
     @Input() public disabled!: boolean;
+
+    /**
+     * Current state of the jobs shown on the configuration page.
+     */
+    @Input() public processEnabled: Record<string, boolean> = {};
+
+    /**
+     * Job owning the main algorithm configuration, if any.
+     */
+    @Input() public processJob: string | null = null;
 
     /**
      * The initial configuration to be displayed.
@@ -96,6 +108,12 @@ export class ConfigurationFormComponent implements OnInit {
         this.form = new FormGroup({});
     }
 
+    public ngOnChanges(changes: SimpleChanges): void {
+        if (changes['disabled'] || changes['processEnabled'] || changes['processJob']) {
+            this.updateProcessConfigurationState();
+        }
+    }
+
     ngOnInit() {
         this.configurationData$ = this.anonService.getAlgorithmDefinition(this.algorithm).pipe(
             tap(value => {
@@ -107,11 +125,13 @@ export class ConfigurationFormComponent implements OnInit {
                 this.form = this.createForm(visibleDefinition, this.initialConfigurationData.config, this.dataConfiguration);
 
                 this.fixAttributeLists(visibleDefinition, this.initialConfigurationData.config, this.form, this.dataConfiguration);
+                this.updateProcessConfigurationState();
                 setTimeout(() => {
                     // Has to be run after the page is initialized
                     for (const group of this.groups) {
                         group.handleMissingOptions(this.initialConfigurationData.config);
                     }
+                    this.updateProcessConfigurationState();
                 });
 
                 this.form.valueChanges.pipe().subscribe(_ => {
@@ -226,7 +246,7 @@ export class ConfigurationFormComponent implements OnInit {
                     const formList = form.get(key.name) as FormArray;
                     formList.clear();
                     for (const item of list) {
-                        formList.push(this.createNamedListItemGroup(item, this.disabled));
+                        formList.push(this.createNamedListItemGroup(item, this.algorithmConfigurationDisabled));
                     }
                 }
             }
@@ -243,12 +263,12 @@ export class ConfigurationFormComponent implements OnInit {
      * @private
      */
     private createForm(algorithmDefinition: AlgorithmDefinition, initialValues: any, dataConfig: DataConfiguration): FormGroup {
-        const form = this.createGroup(algorithmDefinition, initialValues, dataConfig);
+        const form = this.createGroup(algorithmDefinition, initialValues, dataConfig, this.algorithmConfigurationDisabled);
 
         if (this.applicableAdditionalConfigs) {
             for (const additionalConfig of this.applicableAdditionalConfigs.configs) {
                 const config = initialValues[additionalConfig.formGroupName] ? initialValues[additionalConfig.formGroupName] : null;
-                additionalConfig.initializeForm(form, config, this.disabled);
+                additionalConfig.initializeForm(form, config, this.additionalConfigurationDisabled(additionalConfig));
             }
         }
 
@@ -257,13 +277,18 @@ export class ConfigurationFormComponent implements OnInit {
 
     private createGroups(formGroup: any, configurations: {
         [name: string]: ConfigurationGroupDefinition
-    }, initialValues: any, dataConfig: DataConfiguration) {
+    }, initialValues: any, dataConfig: DataConfiguration, disabled: boolean) {
         Object.entries(configurations).forEach(([name, groupDefinition]) => {
-            formGroup[name] = this.createGroup(groupDefinition, initialValues[name] ?? {}, dataConfig);
+            formGroup[name] = this.createGroup(groupDefinition, initialValues[name] ?? {}, dataConfig, disabled);
         });
     }
 
-    private createGroup(groupDefinition: ConfigurationGroupDefinition, initialValues: any, dataConfig: DataConfiguration): FormGroup {
+    private createGroup(
+        groupDefinition: ConfigurationGroupDefinition,
+        initialValues: any,
+        dataConfig: DataConfiguration,
+        disabled: boolean,
+    ): FormGroup {
         const group: any = {};
 
         if (groupDefinition.parameters) {
@@ -276,7 +301,7 @@ export class ConfigurationFormComponent implements OnInit {
                     for (const defaultValue of initialValue as number[]) {
                         controls.push(new FormControl({
                             value: defaultValue,
-                            disabled: this.disabled
+                            disabled
                         }, Validators.required));
                     }
 
@@ -285,7 +310,7 @@ export class ConfigurationFormComponent implements OnInit {
                     const initialValue = initialValues[inputDefinition.name] ?? inputDefinition.default_value ?? [];
                     const controls = [];
                     for (const item of initialValue as Array<{name?: string, description?: string}>) {
-                        controls.push(this.createNamedListItemGroup(item, this.disabled));
+                        controls.push(this.createNamedListItemGroup(item, disabled));
                     }
                     group[inputDefinition.name] = new FormArray(controls, mandatory ? Validators.required : null);
                 } else if (inputDefinition.type === ConfigurationInputType.ATTRIBUTE_LIST) {
@@ -310,16 +335,16 @@ export class ConfigurationFormComponent implements OnInit {
                     }
 
                     const initialValue = initialValues[inputDefinition.name] ?? inputDefinition.default_value;
-                    group[inputDefinition.name] = new FormControl({value: initialValue, disabled: this.disabled} , validators)
+                    group[inputDefinition.name] = new FormControl({value: initialValue, disabled}, validators)
                 }
             });
         }
 
         if (groupDefinition.configurations) {
-            this.createGroups(group, groupDefinition.configurations, initialValues, dataConfig);
+            this.createGroups(group, groupDefinition.configurations, initialValues, dataConfig, disabled);
         }
         if (groupDefinition.options) {
-            this.createGroups(group, groupDefinition.options, initialValues, dataConfig);
+            this.createGroups(group, groupDefinition.options, initialValues, dataConfig, disabled);
         }
 
         return new FormGroup(group);
@@ -327,6 +352,45 @@ export class ConfigurationFormComponent implements OnInit {
 
     private isMandatory(inputDefinition: { mandatory?: boolean | null }): boolean {
         return inputDefinition.mandatory !== false;
+    }
+
+    private get algorithmConfigurationDisabled(): boolean {
+        return this.isProcessDisabled(this.processJob);
+    }
+
+    private additionalConfigurationDisabled(config: ConfigurationAdditionalConfigs['configs'][number]): boolean {
+        return this.isProcessDisabled(config.processJob);
+    }
+
+    private isProcessDisabled(processJob: string | null): boolean {
+        return this.disabled || (processJob !== null && this.processEnabled[processJob] === false);
+    }
+
+    private updateProcessConfigurationState(): void {
+        if (!this.form) {
+            return;
+        }
+
+        const additionalConfigs = this.applicableAdditionalConfigs?.configs ?? [];
+        const additionalNames = new Set(additionalConfigs.map(config => config.formGroupName));
+        const algorithmDisabled = this.algorithmConfigurationDisabled;
+
+        for (const name of Object.keys(this.form.controls)) {
+            if (additionalNames.has(name)) {
+                continue;
+            }
+
+            const control = this.form.controls[name];
+            algorithmDisabled ? control.disable({emitEvent: false}) : control.enable({emitEvent: false});
+            this.rootGroup?.setGroupDisabled(name, algorithmDisabled);
+        }
+
+        for (const config of additionalConfigs) {
+            const disabled = this.additionalConfigurationDisabled(config);
+            const control = this.form.controls[config.formGroupName];
+            disabled ? control.disable({emitEvent: false}) : control.enable({emitEvent: false});
+            this.rootGroup?.setAdditionalConfigDisabled(config.formGroupName, disabled);
+        }
     }
 
     private getVisibleAlgorithmDefinition(definition: AlgorithmDefinition): AlgorithmDefinition {

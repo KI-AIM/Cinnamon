@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import fcntl
 import os
 import re
 import tempfile
@@ -10,6 +9,8 @@ from enum import Enum
 from pathlib import Path
 
 import yaml
+from filelock import FileLock
+
 
 class JobStatus(str, Enum):
     RUNNING = "RUNNING"
@@ -56,12 +57,8 @@ def _status_directory_lock() -> Iterator[None]:
     """
     STATUS_DIRECTORY.mkdir(parents=True, exist_ok=True)
     lock_path = STATUS_DIRECTORY / LOCK_FILE_NAME
-    with lock_path.open("a+", encoding="utf-8") as lock_file:
-        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+    with FileLock(str(lock_path)):
+        yield
 
 
 def read_status_file(path: Path) -> dict[str, str] | None:

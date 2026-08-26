@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { AdditionalConfigurationGroup } from '@shared/interfaces/AdditionalConfigurationGroup';
 import { DataType } from '@shared/model/data-type';
@@ -14,7 +14,7 @@ import { ConfigurationInputType } from '@shared/model/configuration-input-type';
     templateUrl: './text-anonymization-configuration.component.html',
     standalone: false,
 })
-export class TextAnonymizationConfigurationComponent implements AdditionalConfigurationGroup, OnInit, OnDestroy {
+export class TextAnonymizationConfigurationComponent implements AdditionalConfigurationGroup, OnChanges, OnInit, OnDestroy {
     @Input() public disabled!: boolean;
     @Input() public form!: FormGroup;
     protected readonly AnonymizationMode = AnonymizationMode;
@@ -86,6 +86,12 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
     ) {
     }
 
+    public ngOnChanges(changes: SimpleChanges): void {
+        if (changes['disabled']) {
+            this.updateFormDisabledState();
+        }
+    }
+
     public ngOnInit(): void {
         this.dataConfigurationSubscription = this.dataConfigurationService.dataConfiguration$.subscribe(configuration => {
             this.textColumns = configuration.configurations
@@ -97,6 +103,23 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
 
     public ngOnDestroy(): void {
         this.dataConfigurationSubscription?.unsubscribe();
+    }
+
+    private updateFormDisabledState(): void {
+        if (!this.form) {
+            return;
+        }
+
+        const group = this.form.controls[this.textAnonymizationConfigurationService.formGroupName] as FormGroup | undefined;
+        if (!group) {
+            return;
+        }
+
+        if (this.disabled) {
+            group.disable({emitEvent: false});
+        } else {
+            group.enable({emitEvent: false});
+        }
     }
 
     public patchValue(config: any): void {

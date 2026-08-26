@@ -55,6 +55,11 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
     @Input() public disabled!: boolean;
 
     /**
+     * Enabled state of the jobs in the group.
+     */
+    @Input() public processEnabled: Record<string, boolean> = {};
+
+    /**
      * If the group is an option.
      */
     @Input() public isOption!: boolean;
@@ -109,17 +114,50 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
      * @param changes The changes.
      */
     public ngOnChanges(changes: SimpleChanges): void {
-        if (changes['disabled'] != null && !changes['disabled'].firstChange) {
-            const disabled = changes['disabled'].currentValue;
+        const disabledChanged = changes['disabled'] != null && !changes['disabled'].firstChange;
+        const processChanged = changes['processEnabled'] != null && !changes['processEnabled'].firstChange;
+        if (disabledChanged || processChanged) {
+            const disabled = changes['disabled']?.currentValue ?? this.disabled;
 
             for (const input of this.inputs) {
                 input.setDisabled(disabled);
             }
 
-            this.instances.forEach((instance) => {
-                instance.setInput('disabled', disabled);
-            });
+            this.updateAdditionalConfigDisabledStates();
         }
+    }
+
+    /** Disables this group and all nested algorithm groups. */
+    public setDisabled(disabled: boolean): void {
+        this.disabled = disabled;
+        for (const input of this.inputs ?? []) {
+            input.setDisabled(disabled);
+        }
+        for (const group of this.configurations ?? []) {
+            group.setDisabled(disabled);
+        }
+        for (const group of this.options ?? []) {
+            group.setDisabled(disabled);
+        }
+    }
+
+    /** Updates one named top-level algorithm group. */
+    public setGroupDisabled(groupName: string, disabled: boolean): void {
+        for (const group of [...(this.configurations ?? []), ...(this.options ?? [])]) {
+            if (group.fromGroupName === groupName) {
+                group.setDisabled(disabled);
+                return;
+            }
+        }
+    }
+
+    /** Updates one dynamically rendered additional configuration group. */
+    public setAdditionalConfigDisabled(formGroupName: string, disabled: boolean): void {
+        this.getRenderedAdditionalConfigs().forEach((config, index) => {
+            if (config.formGroupName === formGroupName && this.instances[index]) {
+                this.instances[index].setInput('disabled', disabled);
+            }
+        });
     }
 
     /**
@@ -249,7 +287,7 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
                 }
 
                 const componentRef: ComponentRef<AdditionalConfigurationGroup> = container.createComponent(config.component);
-                componentRef.setInput('disabled', this.disabled);
+                componentRef.setInput('disabled', this.isAdditionalConfigDisabled(config));
                 componentRef.instance.form = this.form;
                 this.instances.push(componentRef);
             });
@@ -305,5 +343,20 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
 
         remaining.forEach(config => result.push(config));
         return result;
+    }
+
+    private isAdditionalConfigDisabled(config: AdditionalConfig): boolean {
+        return this.disabled
+            || (config.processJob !== null && this.processEnabled[config.processJob] === false);
+    }
+
+    private updateAdditionalConfigDisabledStates(): void {
+        const configs = this.getRenderedAdditionalConfigs();
+        this.instances.forEach((instance, index) => {
+            const config = configs[index];
+            if (config) {
+                instance.setInput('disabled', this.isAdditionalConfigDisabled(config));
+            }
+        });
     }
 }

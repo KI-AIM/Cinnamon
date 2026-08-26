@@ -52,7 +52,7 @@ import { TextSynthesisConfigurationService } from "../../../features/synthetizat
 export class ConfigurationPageComponent implements OnInit {
     protected readonly Mode = Mode;
     protected readonly jobLabels: Record<string, string> = {
-        anonymization: "Anonymization",
+        anonymization: "Tabular Anonymization",
         synthetization: "Synthetization",
         technical_evaluation: "Technical Evaluation",
         risk_evaluation: "Risk Evaluation of the synthesized dataset",
@@ -139,6 +139,17 @@ export class ConfigurationPageComponent implements OnInit {
             return hasStructuredColumns(dataConfiguration);
         }
         return true;
+    }
+
+    protected get configurationProcessJob(): string | null {
+        switch (this.algorithmService.getConfigurationName()) {
+            case "anonymization":
+                return "anonymization";
+            case "synthetization_configuration":
+                return "synthetization";
+            default:
+                return null;
+        }
     }
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
@@ -476,9 +487,12 @@ export class ConfigurationPageComponent implements OnInit {
      * @protected
      */
     protected onProcessToggle(job: string) {
+        // Trigger Angular input change detection for the shared configuration form.
+        this.processEnabled = {...this.processEnabled};
         this.updateOneEnabled();
 
         this.changeDetectorRef.detectChanges();
+        this.formValid = this.forms?.valid ?? this.formValid;
 
         // Cache the value change
         this.configurationService.setProcessStatus(this.algorithmService.getConfigurationName(), job, this.processEnabled[job]);
@@ -490,6 +504,7 @@ export class ConfigurationPageComponent implements OnInit {
      * cached independently from the data configuration.
      */
     private applyProcessAvailability(dataConfiguration: DataConfiguration): void {
+        let changed = false;
         for (const process of this.configurationInfo.processes) {
             if (this.isProcessAvailable(process.job, dataConfiguration) || !this.processEnabled[process.job]) {
                 continue;
@@ -501,6 +516,10 @@ export class ConfigurationPageComponent implements OnInit {
                 process.job,
                 false,
             );
+            changed = true;
+        }
+        if (changed) {
+            this.processEnabled = {...this.processEnabled};
         }
         this.updateOneEnabled();
     }

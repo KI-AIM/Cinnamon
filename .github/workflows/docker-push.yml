@@ -52,6 +52,14 @@ jobs:
           echo PG_DATABASE="cinnamon_db" >> .env
           echo PG_PASSWORD="etugahjfre" >> .env
           echo PG_USERNAME="cinnamon_user" >> .env
+          echo TEXT_ANONYMIZATION_MODEL_HOST_PATH="./cinnamon-text-anonymization/models" >> .env
+          echo TEXT_ANONYMIZATION_MODEL_MOUNT_MODE="rw" >> .env
+          echo HF_TOKEN_FILE="./secrets/hf_token" >> .env
+          echo TEXT_ANONYMIZATION_XLM_HF_REPOSITORY="ki-aim/xlm-grascco" >> .env
+          echo TEXT_ANONYMIZATION_GELECTRA_HF_REPOSITORY="ki-aim/gelectra-grascco" >> .env
+          echo TEXT_ANONYMIZATION_XLM_LOCAL_PATH="models/xlm-grascco" >> .env
+          echo TEXT_ANONYMIZATION_GELECTRA_LOCAL_PATH="models/gelectra-grascco" >> .env
+          echo TEXT_ANONYMIZATION_MODEL_CACHE="models" >> .env
           cat .env
 
       # Start all containers

@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild } from '@angular/core';
 import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
@@ -15,7 +15,7 @@ import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
     styleUrls: ['./anonymization-attribute-configuration.component.less'],
     standalone: false
 })
-export class AnonymizationAttributeConfigurationComponent implements OnInit, OnDestroy, AdditionalConfigurationGroup {
+export class AnonymizationAttributeConfigurationComponent implements OnChanges, OnInit, OnDestroy, AdditionalConfigurationGroup {
     @Input() public disabled!: boolean;
     @Input() public form!: FormGroup;
 
@@ -32,6 +32,12 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
     ) {
     }
 
+    public ngOnChanges(changes: SimpleChanges): void {
+        if (changes['disabled']) {
+            this.updateFormDisabledState();
+        }
+    }
+
     ngOnInit() {
         this.dataConfigurationSubscription = this.configuration.dataConfiguration$.subscribe(value => {
             this.dataConfiguration = value;
@@ -40,6 +46,38 @@ export class AnonymizationAttributeConfigurationComponent implements OnInit, OnD
 
     ngOnDestroy() {
         this.dataConfigurationSubscription.unsubscribe();
+    }
+
+    private updateFormDisabledState(): void {
+        if (!this.form) {
+            return;
+        }
+
+        const formArray = this.form.controls[this.attributeConfigurationService.formGroupName] as FormArray | undefined;
+        if (!formArray) {
+            return;
+        }
+
+        if (this.disabled) {
+            formArray.disable({emitEvent: false});
+            return;
+        }
+
+        formArray.enable({emitEvent: false});
+        for (const row of formArray.controls as FormGroup[]) {
+            row.controls['dataType'].disable({emitEvent: false});
+            row.controls['name'].disable({emitEvent: false});
+            row.controls['scale'].disable({emitEvent: false});
+
+            const intervalSettings = this.attributeConfigurationService.getIntervalSettings(
+                row.controls['attributeProtection'].value,
+                row.controls['scale'].value,
+                row.controls['dataType'].value,
+            );
+            if (intervalSettings.deactivateInterval) {
+                row.controls['intervalSize'].disable({emitEvent: false});
+            }
+        }
     }
 
     /**

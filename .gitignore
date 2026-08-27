@@ -6,10 +6,12 @@ target/
 
 ### Local files ###
 .env
+secrets/
 scripts/resources/
 .DS_Store
 **/.DS_Store
 cinnamon-synthetization/outputs/
+cinnamon-text-anonymization/outputs/
 cinnamon-synthetization/workspace/
 start-local-macos.sh
 restart-platform-synthetization-macos.sh
@@ -60,3 +62,4 @@ __pycache__/
 /**/ENV/
 /**/.env/
 /**/.venv/
+/cinnamon-text-anonymization/models/*

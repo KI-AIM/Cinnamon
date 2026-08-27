@@ -17,6 +17,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AnonymizationAttributeConfigurationComponent } from './components/anonymization-attribute-configuration/anonymization-attribute-configuration.component';
 import { AnonymizationAttributeRowComponent } from './components/anonymization-attribute-row/anonymization-attribute-row.component';
 import { AnonymizationAttributeConfigurationDirective } from './directives/anonymization-attribute-configuration.directive';
+import { TextAnonymizationConfigurationComponent } from './components/text-anonymization-configuration/text-anonymization-configuration.component';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatOptionModule } from '@angular/material/core';
 
 @NgModule({
     declarations: [
@@ -24,6 +27,7 @@ import { AnonymizationAttributeConfigurationDirective } from './directives/anony
         AnonymizationAttributeConfigurationComponent,
         AnonymizationAttributeRowComponent,
         AnonymizationAttributeConfigurationDirective,
+        TextAnonymizationConfigurationComponent,
     ],
     imports: [
         CommonModule,
@@ -39,7 +43,9 @@ import { AnonymizationAttributeConfigurationDirective } from './directives/anony
         MatInputModule,
         MatIconModule,
         MatSelectModule,
-        ReactiveFormsModule
+        MatOptionModule,
+        ReactiveFormsModule,
+        MatCheckboxModule,
     ],
     providers: [
         provideAppInitializer(() => {

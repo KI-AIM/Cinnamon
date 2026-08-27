@@ -1,0 +1,94 @@
+<div [formGroup]="form">
+    <div [formGroupName]="textAnonymizationConfigurationService.formGroupName">
+        <div class="d-flex">
+            <mat-form-field class="flex-grow-1">
+                <mat-label>Model</mat-label>
+                <mat-select formControlName="modelType">
+                    <mat-option *ngFor="let model of modelTypes" [value]="model">
+                        {{ model }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height ms-2">
+                <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('modelType')" class="icon-enabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </a>
+                <span *ngIf="disabled" title="Set to default" class="icon-disabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </span>
+            </div>
+            <div class="config-input-row-info ms-2">
+                <app-configuration-input-info
+                    [configurationInputDefinition]="modelTypeInfo">
+                </app-configuration-input-info>
+            </div>
+        </div>
+
+        <div class="d-flex">
+            <mat-form-field class="flex-grow-1">
+                <mat-label>Text columns</mat-label>
+                <mat-select formControlName="columns" multiple>
+                    <mat-option *ngFor="let column of textColumns" [value]="column.name">{{ column.name }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height ms-2">
+                <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('columns')" class="icon-enabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </a>
+                <span *ngIf="disabled" title="Set to default" class="icon-disabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </span>
+            </div>
+            <div class="config-input-row-info ms-2">
+                <app-configuration-input-info
+                    [configurationInputDefinition]="textColumnsInfo">
+                </app-configuration-input-info>
+            </div>
+        </div>
+
+        <div class="d-flex">
+            <mat-form-field class="flex-grow-1">
+                <mat-label>Detection confidence threshold</mat-label>
+                <input matInput type="number" step="0.05" min="0" max="1" formControlName="confidenceThreshold">
+                <mat-error *ngIf="textConfigGroup.get('confidenceThreshold')?.invalid">Enter a value from 0 to 1.</mat-error>
+            </mat-form-field>
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height ms-2">
+                <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('confidenceThreshold')" class="icon-enabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </a>
+                <span *ngIf="disabled" title="Set to default" class="icon-disabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </span>
+            </div>
+            <div class="config-input-row-info ms-2">
+                <app-configuration-input-info
+                    [configurationInputDefinition]="confidenceThresholdInfo">
+                </app-configuration-input-info>
+            </div>
+        </div>
+
+        <div class="d-flex">
+            <mat-form-field class="flex-grow-1">
+                <mat-label>Anonymization mode</mat-label>
+                <mat-select formControlName="anonymizationMode">
+                    <mat-option [value]="AnonymizationMode.Redact">Redact</mat-option>
+                    <mat-option [value]="AnonymizationMode.Pseudonymize">Pseudonymize</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height ms-2">
+                <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('anonymizationMode')" class="icon-enabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </a>
+                <span *ngIf="disabled" title="Set to default" class="icon-disabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </span>
+            </div>
+            <div class="config-input-row-info ms-2">
+                <app-configuration-input-info
+                    [configurationInputDefinition]="anonymizationModeInfo">
+                </app-configuration-input-info>
+            </div>
+        </div>
+
+    </div>
+</div>

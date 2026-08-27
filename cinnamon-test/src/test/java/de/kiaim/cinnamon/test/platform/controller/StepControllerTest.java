@@ -18,7 +18,7 @@ public class StepControllerTest extends ControllerTest {
 		                          .andExpect(status().isOk())
 		                          .andReturn().getResponse().getContentAsString();
 		final var stageConfig = objectMapper.readValue(config, Stage.class);
-		assertEquals(2, stageConfig.getJobs().size(), "Unexpected number of jobs!");
+		assertEquals(3, stageConfig.getJobs().size(), "Unexpected number of jobs!");
 	}
 
 	@Test

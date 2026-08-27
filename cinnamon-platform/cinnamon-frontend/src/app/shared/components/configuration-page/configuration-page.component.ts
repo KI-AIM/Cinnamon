@@ -29,6 +29,8 @@ import { ConfigurationFormComponent } from "../configuration-form/configuration-
 import { ConfigurationSelectionComponent } from "../configuration-selection/configuration-selection.component";
 import {
     DataConfiguration,
+    hasStructuredColumns,
+    hasTextColumns,
     isMixedDataConfiguration,
     isStructuredOnlyDataConfiguration,
     isTextOnlyDataConfiguration,
@@ -50,11 +52,12 @@ import { TextSynthesisConfigurationService } from "../../../features/synthetizat
 export class ConfigurationPageComponent implements OnInit {
     protected readonly Mode = Mode;
     protected readonly jobLabels: Record<string, string> = {
-        anonymization: "Anonymization",
+        anonymization: "Tabular Anonymization",
         synthetization: "Synthetization",
         technical_evaluation: "Technical Evaluation",
         risk_evaluation: "Risk Evaluation of the synthesized dataset",
         risk_evaluation_o: "Privacy Score Calculation of the original dataset",
+        text_anonymization: "Text Anonymization",
     };
     private readonly baseUrl: string = environments.apiUrl + "/api/process";
 
@@ -124,6 +127,30 @@ export class ConfigurationPageComponent implements OnInit {
     protected currentAlgorithms: Algorithm[] = [];
     protected currentDataConfiguration: DataConfiguration | null = null;
     private freeTextDefinitionCache: Map<string, Observable<AlgorithmDefinition>> = new Map<string, Observable<AlgorithmDefinition>>();
+
+    protected isProcessAvailable(job: string, dataConfiguration: DataConfiguration | null): boolean {
+        if (dataConfiguration === null) {
+            return false;
+        }
+        if (job === "text_anonymization") {
+            return hasTextColumns(dataConfiguration);
+        }
+        if (job === "anonymization") {
+            return hasStructuredColumns(dataConfiguration);
+        }
+        return true;
+    }
+
+    protected get configurationProcessJob(): string | null {
+        switch (this.algorithmService.getConfigurationName()) {
+            case "anonymization":
+                return "anonymization";
+            case "synthetization_configuration":
+                return "synthetization";
+            default:
+                return null;
+        }
+    }
 
     @ViewChild('selection') private selection: ConfigurationSelectionComponent;
     @ViewChild('form') protected forms: ConfigurationFormComponent;
@@ -392,6 +419,7 @@ export class ConfigurationPageComponent implements OnInit {
             switchMap(pageData => {
                 this.currentAlgorithms = pageData.algorithms;
                 this.currentDataConfiguration = pageData.dataConfiguration;
+                this.applyProcessAvailability(pageData.dataConfiguration);
                 const primaryAlgorithms = this.getPrimaryAlgorithms(pageData.algorithms, pageData.dataConfiguration);
                 this.hasAlgorithmSelection = primaryAlgorithms.length > 1;
 
@@ -459,22 +487,45 @@ export class ConfigurationPageComponent implements OnInit {
      * @protected
      */
     protected onProcessToggle(job: string) {
-        // Checks if at least one process is enabled.
-        let _oneEnabled = false;
-        for (const enabled of Object.values(this.processEnabled)) {
-            if (enabled) {
-                _oneEnabled = true;
-                break;
-            }
-        }
+        // Trigger Angular input change detection for the shared configuration form.
+        this.processEnabled = {...this.processEnabled};
+        this.updateOneEnabled();
 
-        if (_oneEnabled !== this.oneEnabled) {
-            this.oneEnabled = _oneEnabled;
-            this.changeDetectorRef.detectChanges();
-        }
+        this.changeDetectorRef.detectChanges();
+        this.formValid = this.forms?.valid ?? this.formValid;
 
         // Cache the value change
         this.configurationService.setProcessStatus(this.algorithmService.getConfigurationName(), job, this.processEnabled[job]);
+    }
+
+    /**
+     * Disables processes that do not apply to the selected data. This is also
+     * needed when the user switches projects, because process toggle state is
+     * cached independently from the data configuration.
+     */
+    private applyProcessAvailability(dataConfiguration: DataConfiguration): void {
+        let changed = false;
+        for (const process of this.configurationInfo.processes) {
+            if (this.isProcessAvailable(process.job, dataConfiguration) || !this.processEnabled[process.job]) {
+                continue;
+            }
+
+            this.processEnabled[process.job] = false;
+            this.configurationService.setProcessStatus(
+                this.algorithmService.getConfigurationName(),
+                process.job,
+                false,
+            );
+            changed = true;
+        }
+        if (changed) {
+            this.processEnabled = {...this.processEnabled};
+        }
+        this.updateOneEnabled();
+    }
+
+    private updateOneEnabled(): void {
+        this.oneEnabled = Object.values(this.processEnabled).some(enabled => enabled);
     }
 
     /**
@@ -661,8 +712,10 @@ export class ConfigurationPageComponent implements OnInit {
      */
     private configureJobs(): Observable<void> {
         return from(Object.entries(this.processEnabled)).pipe(
-            mergeMap(process => {
-                return this.postConfigure(!process[1], process[0]);
+            mergeMap(([job, enabled]) => {
+                const available = this.isProcessAvailable(job, this.currentDataConfiguration);
+                const skip = !enabled || !available;
+                return this.postConfigure(skip, job);
             }),
         );
     }

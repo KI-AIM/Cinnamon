@@ -79,9 +79,14 @@ public class ExportServiceTest extends DatabaseTest {
 		var otherFile = ResourceHelper.loadCsvFileWithErrors();
 		final TransformationResult otherTransformationResult = assertDoesNotThrow(
 				() -> dataProcessor.read(otherFile.getInputStream(), csvFileConfiguration, configuration));
+		final int anonymizationIndex = stage.getJobList().stream()
+		                                             .map(job -> job.getName())
+		                                             .toList()
+		                                             .indexOf("anonymization");
+		assertTrue(anonymizationIndex >= 0, "The anonymization job is not configured in the execution stage!");
 		databaseService.storeTransformationResult(otherTransformationResult,
-		                                          (DataProcessingEntity) execution.getProcesses().get(0),
-		                                          List.of(stage.getJobList().get(0)));
+		                                          (DataProcessingEntity) execution.getProcesses().get(anonymizationIndex),
+		                                          List.of(stage.getJobList().get(anonymizationIndex)));
 
 		// The test
 		var out = new ByteArrayOutputStream();
@@ -171,6 +176,9 @@ public class ExportServiceTest extends DatabaseTest {
 		       pipeline:
 		         pipelines:
 		         - jobs:
+		           - name: "text_anonymization"
+		             enabled: true
+		             configuration: 0
 		           - name: "anonymization"
 		             enabled: true
 		             configuration: 0

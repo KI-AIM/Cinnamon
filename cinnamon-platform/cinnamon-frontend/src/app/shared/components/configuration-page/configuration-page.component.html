@@ -56,6 +56,8 @@
                                     <app-configuration-form #form [algorithm]="item"
                                                             [dataConfiguration]="data.dataConfiguration"
                                                             [disabled]="data.locked || !oneEnabled"
+                                                            [processEnabled]="processEnabled"
+                                                            [processJob]="configurationProcessJob"
                                                             (onChange)="onFormChange($event)"
                                                             [additionalConfigs]="additionalConfigs"
                                                             [initialConfigurationData]="data.configurationData">
@@ -80,6 +82,8 @@
                                 <app-configuration-form #form [algorithm]="item"
                                                         [dataConfiguration]="data.dataConfiguration"
                                                         [disabled]="data.locked || !oneEnabled"
+                                                        [processEnabled]="processEnabled"
+                                                        [processJob]="configurationProcessJob"
                                                         (onChange)="onFormChange($event)"
                                                         [additionalConfigs]="additionalConfigs"
                                                         [initialConfigurationData]="data.configurationData">
@@ -175,6 +179,8 @@
                                 <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
                                                         [dataConfiguration]="data.dataConfiguration"
                                                         [disabled]="data.locked || !oneEnabled"
+                                                        [processEnabled]="processEnabled"
+                                                        [processJob]="configurationProcessJob"
                                                         [initialConfigurationData]="data.configurationData"
                                                         (onChange)="onFormChange($event)">
                                 </app-configuration-form>
@@ -195,9 +201,13 @@
                 <ng-template #configurationForms>
                     <div *ngFor="let item of getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)" [id]="item">
                         <ng-container *ngIf="selectedAlgorithm!.name === item.name">
-                            <app-configuration-form #form [additionalConfigs]="additionalConfigs" [algorithm]="item"
+                            <app-configuration-form #form
+                                                    [additionalConfigs]="additionalConfigs"
+                                                    [algorithm]="item"
                                                     [dataConfiguration]="data.dataConfiguration"
                                                     [disabled]="data.locked || !oneEnabled"
+                                                    [processEnabled]="processEnabled"
+                                                    [processJob]="configurationProcessJob"
                                                     [initialConfigurationData]="data.configurationData"
                                                     (onChange)="onFormChange($event)">
                             </app-configuration-form>
@@ -250,7 +260,7 @@
 
     <ng-template #processActivation>
         <ng-container *ngFor="let process of configurationInfo.processes;">
-            <div class="d-flex">
+            <div *ngIf="isProcessAvailable(process.job, data.dataConfiguration)" class="d-flex">
                 <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]"
                               [disabled]="data.locked || !process.holdOutFulfilled || data.algorithms.length === 0"
                               (input)="onProcessToggle(process.job)">

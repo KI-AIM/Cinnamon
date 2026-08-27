@@ -118,6 +118,17 @@ export class ExecutionComponent implements OnInit {
         return plainToInstance(SynthetizationProcess, JSON.parse(value));
     }
 
+    protected getTextAnonymizationStatus(status: ProcessStatus): string {
+        switch (status) {
+            case ProcessStatus.RUNNING:
+                return "The text anonymization is running";
+            case ProcessStatus.FINISHED:
+                return "The text anonymization is finished";
+            default:
+                return status.replace("_", " ");
+        }
+    }
+
     protected formatStepDuration(step: ProcessProgress): string {
         return this.formatDurationValue(step?.duration);
     }

@@ -60,6 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WithUserDetails("test_user")
 public class ProcessControllerTest extends ControllerTest {
 
+	private static final String TEXT_ANON_JOB = "text_anonymization";
 	private static final String ANON_JOB = "anonymization";
 	private static final String SYNTH_JOB = "synthetization";
 
@@ -107,8 +108,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("currentStageIndex").value(0))
 		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()));
 
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = getTestProcess(ANON_JOB);
 		String id = process.getUuid().toString();
 
 		var recordedRequest = mockBackEnd.takeRequest();
@@ -134,7 +134,13 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/configure")
 				                .param("jobName", SYNTH_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
-		       .andExpect(status().isOk());
+			       .andExpect(status().isOk());
+
+		mockMvc.perform(post("/api/process/configure")
+				                .param("jobName", TEXT_ANON_JOB)
+				                .param("skip", "true")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+				       .andExpect(status().isOk());
 	}
 
 	@Test
@@ -145,8 +151,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = getTestProcess(ANON_JOB);
 		assertTrue(process.isSkip());
 		assertNull(process.getConfiguration());
 	}
@@ -163,8 +168,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = getTestProcess(ANON_JOB);
 		assertTrue(process.isSkip());
 		assertNotNull(process.getConfiguration());
 	}
@@ -211,19 +215,20 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentProcessIndex").value(0))
-		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes[0].step").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[0].status").value(nullValue()))
-		       .andExpect(jsonPath("processes[0].processSteps").value(nullValue()))
-		       .andExpect(jsonPath("processes[1].externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("processes[1].step").value(SYNTH_JOB))
-		       .andExpect(jsonPath("processes[1].status").value(nullValue()))
-		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
+		       .andExpect(jsonPath("currentProcessIndex").value(processIndex(ANON_JOB)))
+		       .andExpect(jsonPath(processPath(TEXT_ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.SKIPPED.name()))
+		       .andExpect(jsonPath(processPath(TEXT_ANON_JOB) + ".step").value(TEXT_ANON_JOB))
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".step").value(ANON_JOB))
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".status").value(nullValue()))
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".processSteps").value(nullValue()))
+		       .andExpect(jsonPath(processPath(SYNTH_JOB) + ".externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath(processPath(SYNTH_JOB) + ".step").value(SYNTH_JOB))
+		       .andExpect(jsonPath(processPath(SYNTH_JOB) + ".status").value(nullValue()))
+		       .andExpect(jsonPath(processPath(SYNTH_JOB) + ".processSteps").value(nullValue()));
 
 		// Test state changes
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = getTestProcess(ANON_JOB);
 		assertNotNull(process, "No external process has been created!");
 		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
@@ -270,8 +275,7 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void getStatus1() throws Exception {
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = getTestProcess(ANON_JOB);
 		String id = process.getUuid().toString();
 
 		// Get status
@@ -280,15 +284,16 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("currentStageIndex").value(0))
 		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("stages[0].currentProcessIndex").value(0))
-		       .andExpect(jsonPath("stages[0].processes[0].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("stages[0].processes[0].status").value("status"))
-		       .andExpect(jsonPath("stages[0].processes[0].step").value(ANON_JOB))
-		       .andExpect(jsonPath("stages[0].processes[0].processSteps").value(nullValue()))
-		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.NOT_STARTED.name()))
-		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
-		       .andExpect(jsonPath("stages[0].processes[1].status").value(nullValue()))
-		       .andExpect(jsonPath("stages[0].processes[1].processSteps").value(nullValue()));
+		       .andExpect(jsonPath("stages[0].currentProcessIndex").value(processIndex(ANON_JOB)))
+		       .andExpect(jsonPath(stageProcessPath(TEXT_ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.SKIPPED.name()))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".status").value("status"))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".step").value(ANON_JOB))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".processSteps").value(nullValue()))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".externalProcessStatus").value(ProcessStatus.NOT_STARTED.name()))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".step").value(SYNTH_JOB))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".status").value(nullValue()))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".processSteps").value(nullValue()));
 
 
 		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
@@ -299,10 +304,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private void finish1() throws Exception {
 		var updateTestProject = getTestProject();
-
-		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
-
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = getTestProcess(ANON_JOB);
 		String id = process.getUuid().toString();
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
@@ -332,20 +334,21 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
 
 		// Test state changes
-		process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
-		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(updateTestProject, DataSetSource.Job(firstStage.getJobs().get(0)));
+		process = getTestProcess(ANON_JOB);
+		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(updateTestProject, DataSetSource.Job(ANON_JOB));
 		assertEquals(ProcessStatus.FINISHED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertNull(process.getServerInstance(), "Server instance has not been reset!");
 		assertTrue(existsDataSet(dataSetEntity.getId()), "Dataset has not been stored!");
 		assertTrue(dataSetEntity.isStoredData(), "Dataset has not been stored!");
-		assertEquals(firstStage.getJobList().subList(0, 1), dataSetEntity.getProcessed(), "Unexpected previous processes!");
+		assertEquals(List.of(ANON_JOB), dataSetEntity.getProcessed().stream().map(Job::getName).toList(),
+		             "Unexpected previous processes!");
 		assertTrue(process.getResultFiles().containsKey("additional.txt"),
 		           "Additional result has not been set!");
 		assertEquals("anon-info", process.getResultFiles().get("additional.txt").getLobString(),
 		             "Additional result has not been set correctly!");
 
-		var secondProcess = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(1);
+		var secondProcess = getTestProcess(SYNTH_JOB);
 		assertEquals(ProcessStatus.RUNNING, secondProcess.getExternalProcessStatus(), "Unexpected status of second process!");
 		assertEquals("synthetization-server.0", secondProcess.getServerInstance(), "Unexpected server instance of second process!");
 
@@ -356,8 +359,7 @@ public class ProcessControllerTest extends ControllerTest {
 	}
 
 	private void getStatus2() throws Exception {
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(1);
+		var process = getTestProcess(SYNTH_JOB);
 		String id = process.getUuid().toString();
 
 		enqueueSynthStatus();
@@ -366,15 +368,16 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("currentStageIndex").value(0))
 		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("stages[0].currentProcessIndex").value(1))
-		       .andExpect(jsonPath("stages[0].processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("stages[0].processes[0].status").value("status"))
-		       .andExpect(jsonPath("stages[0].processes[0].step").value(ANON_JOB))
-		       .andExpect(jsonPath("stages[0].processes[0].processSteps[0]").value(ANON_JOB))
-		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("stages[0].processes[1].status").value(expectedSynthStatusJson(false)))
-		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
-		       .andExpect(jsonPath("stages[0].processes[1].processSteps").value(nullValue()));
+		       .andExpect(jsonPath("stages[0].currentProcessIndex").value(processIndex(SYNTH_JOB)))
+		       .andExpect(jsonPath(stageProcessPath(TEXT_ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.SKIPPED.name()))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".status").value("status"))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".step").value(ANON_JOB))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".status").value(expectedSynthStatusJson(false)))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".step").value(SYNTH_JOB))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".processSteps").value(nullValue()));
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
 		assertEquals("/get_status/" + id, recordedRequest.getPath());
@@ -382,10 +385,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 	private void finish2() throws Exception {
 		var updateTestProject = getTestProject();
-
-		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
-
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(1);
+		var process = getTestProcess(SYNTH_JOB);
 		String id = process.getUuid().toString();
 
 		enqueueSynthStatus();
@@ -400,8 +400,10 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(updateTestProject, DataSetSource.Job(
-				firstStage.getJobs().get(1)));
-		assertEquals(firstStage.getJobList(), dataSetEntity.getProcessed(), "Unexpected previous processes!");
+				SYNTH_JOB));
+		assertEquals(List.of(ANON_JOB, SYNTH_JOB),
+		             dataSetEntity.getProcessed().stream().map(Job::getName).toList(),
+		             "Unexpected previous processes!");
 
 		// Test the protected selector
 		final DataSetEntity protectedDataset = dataSetService.getDataSetEntityOrThrow(updateTestProject,
@@ -415,17 +417,18 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("currentStageIndex").value(nullValue()))
 		       .andExpect(jsonPath("stages[0].status").value(ProcessStatus.FINISHED.name()))
 		       .andExpect(jsonPath("stages[0].currentProcessIndex").value(nullValue()))
-		       .andExpect(jsonPath("stages[0].processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("stages[0].processes[0].status").value("status"))
-		       .andExpect(jsonPath("stages[0].processes[0].step").value(ANON_JOB))
-		       .andExpect(jsonPath("stages[0].processes[0].processSteps[0]").value(ANON_JOB))
-		       .andExpect(jsonPath("stages[0].processes[0].processSteps[1]").doesNotExist())
-		       .andExpect(jsonPath("stages[0].processes[1].externalProcessStatus").value( ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("stages[0].processes[1].status").value(expectedSynthStatusJson(true)))
-		       .andExpect(jsonPath("stages[0].processes[1].step").value(SYNTH_JOB))
-		       .andExpect(jsonPath("stages[0].processes[1].processSteps[0]").value(ANON_JOB))
-		       .andExpect(jsonPath("stages[0].processes[1].processSteps[1]").value(SYNTH_JOB))
-		       .andExpect(jsonPath("stages[0].processes[1].processSteps[2]").doesNotExist());
+		       .andExpect(jsonPath(stageProcessPath(TEXT_ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.SKIPPED.name()))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".status").value("status"))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".step").value(ANON_JOB))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath(stageProcessPath(ANON_JOB) + ".processSteps[1]").doesNotExist())
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".status").value(expectedSynthStatusJson(true)))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".step").value(SYNTH_JOB))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".processSteps[1]").value(SYNTH_JOB))
+		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".processSteps[2]").doesNotExist());
 	}
 
 	private void getResultFile() throws Exception {
@@ -552,6 +555,22 @@ public class ProcessControllerTest extends ControllerTest {
 		return jsonMapper.writeValueAsString(synthStatus);
 	}
 
+	private int processIndex(final String jobName) {
+		return cinnamonConfiguration.getPipeline().getStageList().get(0).getJobs().indexOf(jobName);
+	}
+
+	private String processPath(final String jobName) {
+		return "processes[" + processIndex(jobName) + "]";
+	}
+
+	private String stageProcessPath(final String jobName) {
+		return "stages[0]." + processPath(jobName);
+	}
+
+	private ExternalProcessEntity getTestProcess(final String jobName) {
+		return getTestProject().getPipelines().get(0).getStageByIndex(0).getProcess(processIndex(jobName));
+	}
+
 	@Test
 	public void startJob() throws Exception {
 		postData(false);
@@ -561,7 +580,10 @@ public class ProcessControllerTest extends ControllerTest {
 		finish2();
 
 		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
-		final Job secondJob = firstStage.getJobList().get(1);
+		final Job secondJob = firstStage.getJobList().stream()
+				.filter(candidate -> SYNTH_JOB.equals(candidate.getName()))
+				.findFirst()
+				.orElseThrow();
 
 		final ExternalProcessResponse response = new ExternalProcessResponse();
 		response.setPid("123");
@@ -574,15 +596,16 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentProcessIndex").value(1))
-		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.FINISHED.name()))
-		       .andExpect(jsonPath("processes[0].step").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[0].status").value(nullValue()))
-		       .andExpect(jsonPath("processes[0].processSteps[0]").value(ANON_JOB))
-		       .andExpect(jsonPath("processes[1].externalProcessStatus").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes[1].step").value(SYNTH_JOB))
-		       .andExpect(jsonPath("processes[1].status").value(nullValue()))
-		       .andExpect(jsonPath("processes[1].processSteps").value(nullValue()));
+		       .andExpect(jsonPath("currentProcessIndex").value(processIndex(SYNTH_JOB)))
+		       .andExpect(jsonPath(processPath(TEXT_ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.SKIPPED.name()))
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.FINISHED.name()))
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".step").value(ANON_JOB))
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".status").value(nullValue()))
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".processSteps[0]").value(ANON_JOB))
+		       .andExpect(jsonPath(processPath(SYNTH_JOB) + ".externalProcessStatus").value(ProcessStatus.RUNNING.name()))
+		       .andExpect(jsonPath(processPath(SYNTH_JOB) + ".step").value(SYNTH_JOB))
+		       .andExpect(jsonPath(processPath(SYNTH_JOB) + ".status").value(nullValue()))
+		       .andExpect(jsonPath(processPath(SYNTH_JOB) + ".processSteps").value(nullValue()));
 	}
 
 	@Test
@@ -606,7 +629,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/start"))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("currentProcessIndex").value(0));
+		       .andExpect(jsonPath("currentProcessIndex").value(processIndex(ANON_JOB)));
 
 		mockMvc.perform(multipart("/api/process/execution/cancel")
 				                .param("jobName", SYNTH_JOB))
@@ -615,7 +638,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("currentProcessIndex").value(nullValue()));
 
 		// Test state changes
-		final ExternalProcessEntity process = getTestProject().getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		final ExternalProcessEntity process = getTestProcess(ANON_JOB);
 		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
 		assertNull(process.getServerInstance(), "Server instance has not been reset!");
@@ -664,13 +687,19 @@ public class ProcessControllerTest extends ControllerTest {
 				                .with(httpBasic("test_user_3", "changeme"))
 				                .param("jobName", SYNTH_JOB)
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
-		       .andExpect(status().isOk());
+			       .andExpect(status().isOk());
+		mockMvc.perform(post("/api/process/configure")
+				                .with(httpBasic("test_user_3", "changeme"))
+				                .param("jobName", TEXT_ANON_JOB)
+				                .param("skip", "true")
+				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+			       .andExpect(status().isOk());
 
 		mockMvc.perform(post("/api/process/execution/start")
-				                .with(httpBasic("test_user_3", "changeme")))
+		                .with(httpBasic("test_user_3", "changeme")))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()))
-		       .andExpect(jsonPath("processes[0].externalProcessStatus").value(ProcessStatus.SCHEDULED.name()));
+		       .andExpect(jsonPath(processPath(ANON_JOB) + ".externalProcessStatus").value(ProcessStatus.SCHEDULED.name()));
 
 		// Cancel first
 		mockBackEnd.enqueue(new MockResponse.Builder()
@@ -690,7 +719,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath("status").value(ProcessStatus.CANCELED.name()));
 
 		project = projectService.getProject(user);
-		var process = project.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = project.getPipelines().get(0).getStageByIndex(0).getProcess(processIndex(ANON_JOB));
 
 		// Check if the second process is running
 		assertEquals(ProcessStatus.RUNNING, process.getExternalProcessStatus());
@@ -721,8 +750,7 @@ public class ProcessControllerTest extends ControllerTest {
 		assertEquals("/algorithmA", recordedRequest.getPath());
 
 		// Test state changes
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = getTestProcess(ANON_JOB);
 		assertEquals(StageStatus.ERROR, process.getExecutionStep().getStatus());
 		assertEquals(ProcessStatus.ERROR, process.getExternalProcessStatus(),
 		             "External process status has not been updated!");
@@ -760,7 +788,7 @@ public class ProcessControllerTest extends ControllerTest {
 		mockMvc.perform(post("/api/process/execution/start"))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(errorMessage(
-				       "No configuration for step 'anonymization' found!"));
+			       "No configuration for step '" + TEXT_ANON_JOB + "' found!"));
 	}
 
 	@Test
@@ -786,7 +814,10 @@ public class ProcessControllerTest extends ControllerTest {
 	@Test
 	public void startJobPrecedingNotFinished() throws Exception {
 		final Stage firstStage = cinnamonConfiguration.getPipeline().getStageList().get(0);
-		final Job secondJob = firstStage.getJobList().get(1);
+		final Job secondJob = firstStage.getJobList().stream()
+				.filter(candidate -> candidate.getName().equals(ANON_JOB))
+				.findFirst()
+				.orElseThrow();
 
 		mockMvc.perform(post("/api/process/" + firstStage.getStageName() + "/start/" + secondJob.getName()))
 		       .andExpect(status().isBadRequest())
@@ -831,8 +862,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("status").value(ProcessStatus.RUNNING.name()));
 
-		var updateTestProject = getTestProject();
-		var process = updateTestProject.getPipelines().get(0).getStageByIndex(0).getProcess(0);
+		var process = getTestProcess(ANON_JOB);
 		assertNotNull(process.getUuid(), "Process UUID is null!");
 
 		return process.getUuid().toString();

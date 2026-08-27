@@ -19,6 +19,7 @@ export class AdditionalConfig {
     insertAfterGroupName: string | null;
     initializeForm: (formGroup: FormGroup, configs: any, disabled: boolean) => void;
     predicate: ((algorithm: Algorithm, dataConfiguration: DataConfiguration) => boolean) | null;
+    processJob: string | null;
 
     constructor(
         component: any,
@@ -29,6 +30,7 @@ export class AdditionalConfig {
         applicableAlgorithmNames: string[] | null = null,
         insertAfterGroupName: string | null = null,
         predicate: ((algorithm: Algorithm, dataConfiguration: DataConfiguration) => boolean) | null = null,
+        processJob: string | null = null,
     ) {
         this.component = component;
         this.title = title;
@@ -38,5 +40,6 @@ export class AdditionalConfig {
         this.insertAfterGroupName = insertAfterGroupName;
         this.initializeForm = initializeForm;
         this.predicate = predicate;
+        this.processJob = processJob;
     }
 }

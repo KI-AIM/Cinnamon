@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class to represent the anonymization configuration received from the frontend.
@@ -20,6 +21,12 @@ import java.util.List;
 public class FrontendAnonConfig {
     private List<FrontendPrivacyModelConfig> privacyModels;
     private List<FrontendAttributeConfig> attributeConfiguration;
+    /**
+     * Optional settings for a text-anonymization worker. The ARX-based module
+     * does not use these values, but retaining them lets the platform forward
+     * one anonymization configuration to both workers.
+     */
+    private Map<String, Object> textAnonymizationConfiguration;
 
     public FrontendAttributeConfig getAttributeConfigByIndex(int index) {
         return attributeConfiguration.stream()

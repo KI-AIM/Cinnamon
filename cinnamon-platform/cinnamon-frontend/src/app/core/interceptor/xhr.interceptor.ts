@@ -1,7 +1,6 @@
 import { Injectable } from "@angular/core";
 import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpXsrfTokenExtractor } from "@angular/common/http";
 import { Observable } from "rxjs";
-import { UserService } from "src/app/shared/services/user.service";
 
 /**
  * Header Angular's CSRF cookie value is echoed back as, matching the backend's
@@ -14,7 +13,6 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 @Injectable()
 export class XhrInterceptor implements HttpInterceptor {
 	constructor(
-		private readonly userService: UserService,
 		private readonly xsrfTokenExtractor: HttpXsrfTokenExtractor,
 	) {}
 
@@ -22,13 +20,8 @@ export class XhrInterceptor implements HttpInterceptor {
 		request: HttpRequest<unknown>,
 		next: HttpHandler
 	): Observable<HttpEvent<unknown>> {
+		// The user is authenticated via a session (JSESSIONID cookie, sent automatically below),
 		let header = request.headers.set("X-Requested-With", "XMLHttpRequest");
-		if (this.userService.isAuthenticated()) {
-			header = header.set(
-				"authorization",
-				"Basic " + this.userService.getUser().token
-			);
-		}
 
 		// Angular's built-in XSRF interceptor skips absolute URLs (used in dev mode, where the API is
 		// served from a different origin than the Angular dev server), so the header is attached here

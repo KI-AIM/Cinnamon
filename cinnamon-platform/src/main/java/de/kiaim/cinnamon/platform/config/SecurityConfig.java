@@ -1,19 +1,25 @@
 package de.kiaim.cinnamon.platform.config;
 
+import de.kiaim.cinnamon.platform.controller.ProcessController;
+import de.kiaim.cinnamon.platform.controller.UserController;
 import de.kiaim.cinnamon.platform.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
@@ -36,58 +42,69 @@ public class SecurityConfig {
 		this.projectLogContextFilter = projectLogContextFilter;
 	}
 
+	/**
+	 * Covers the endpoints only ever used by plain HTTP Basic Auth clients that never load the Angular app and
+	 * therefore never obtain a CSRF cookie or a session. This includes external modules calling the callback endpoint
+	 * for processes (see {@link ProcessController#callback}), external {@code ROLE_API} users calling
+	 * {@code /api/workflow}, and infrastructure/monitoring tools polling the actuator endpoints.
+	 */
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity.csrf(csrf -> csrf
-				            // Cookie is readable by JavaScript (withHttpOnlyFalse) so the Angular frontend can
-				            // read it and echo it back as the X-XSRF-TOKEN header, per Angular's built-in
-				            // HttpClient XSRF support.
-				            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-				            // Use the plain (non-BREACH-protected) token value, since it is exposed via a
-				            // cookie anyway. Required for the cookie-based SPA pattern to work, see
-				            // https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html#csrf-integration-javascript-spa
-				            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-				            // These endpoints are only meant to be used by plain HTTP Basic Auth clients
-				            // (e.g. the Python microservices, or external API users with ROLE_API) that never
-				            // load the Angular app and therefore never obtain a CSRF cookie.
-				            .ignoringRequestMatchers(antMatcher("/api/workflow"),
-				                                      antMatcher("/api/workflow/**"),
-				                                      antMatcher("/api/project/**/process/**/callback")))
+	@Order(1)
+	public SecurityFilterChain externalApiFilterChain(final HttpSecurity httpSecurity) throws Exception {
+		httpSecurity.securityMatchers(matchers -> matchers.requestMatchers(
+				            antMatcher("/api/workflow"),
+				            antMatcher("/api/workflow/**"),
+				            antMatcher("/api/project/**/process/**/callback"),
+				            antMatcher("/actuator/**")))
+		            .csrf(AbstractHttpConfigurer::disable)
 		            .cors(Customizer.withDefaults())
-		            .authorizeHttpRequests(authz -> authz
-				            .requestMatchers(antMatcher("/api/doc"),
-				                             // TODO Implement proper security
-				                             antMatcher("/api/project/**/process/**/callback"),
-				                             antMatcher("/api/swagger-ui/**"),
-				                             // Left open, so infrastructure health checks do not need credentials.
-				                             // The health details are only shown to authenticated ROLE_MONITORING
-				                             // users, see management.endpoint.health.* in the application.properties.
-				                             antMatcher("/actuator/health"),
-				                             antMatcher("/actuator/health/**"),
-				                             antMatcher("/api/user/register")).permitAll()
-				            .requestMatchers(antMatcher("/actuator/**")).hasRole("MONITORING")
-				            .requestMatchers(antMatcher("/api/workflow"),
-				                             antMatcher("/api/workflow/**")).hasRole("API")
-				            .requestMatchers(antMatcher("/api/admin"),
-				                             antMatcher("/api/admin/**")).hasRole("ADMIN")
-				            .requestMatchers(antMatcher("/api/**")).hasRole("USER")
-				            .requestMatchers(antMatcher("/**")).permitAll()
-				            .anyRequest().authenticated())
+		            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+		            .authorizeHttpRequests(authz -> authz.requestMatchers(
+				                                                 // TODO Implement proper security
+				                                                 antMatcher("/api/project/**/process/**/callback"),
+				                                                 antMatcher("/actuator/health"),
+				                                                 antMatcher("/actuator/health/**")).permitAll()
+		                                                 .requestMatchers(antMatcher("/actuator/**"))
+		                                                 .hasRole("MONITORING")
+		                                                 .requestMatchers(antMatcher("/api/workflow"),
+		                                                                  antMatcher("/api/workflow/**"))
+		                                                 .hasRole("API")
+		                                                 .anyRequest().authenticated())
 		            .httpBasic(Customizer.withDefaults())
-		            // The Angular app re-authenticates every request with Basic Auth itself, and
-		            // BasicAuthenticationFilter's default SecurityContextRepository is request-scoped
-		            // (not session-based), so there is normally no server-side session to end. A dedicated
-		            // logout is still worthwhile: it clears the XSRF-TOKEN cookie server-side (Spring
-		            // Security wires in a CsrfLogoutHandler automatically here, since CSRF is enabled
-		            // above) and safely invalidates a session too on the off chance one exists, instead of
-		            // the frontend merely forgetting its locally cached credentials.
-		            .logout(logout -> logout
-				            .logoutUrl("/api/user/logout")
-				            .invalidateHttpSession(true)
-				            .deleteCookies("JSESSIONID")
-				            // This is an API, not a page, so respond with plain 200 instead of a redirect.
-				            .logoutSuccessHandler((request, response, authentication) ->
-						                                   response.setStatus(HttpServletResponse.SC_OK)))
+		            .addFilterAfter(projectLogContextFilter, BasicAuthenticationFilter.class);
+		return httpSecurity.build();
+	}
+
+	/**
+	 * Covers the Angular app and the browser-facing {@code /api/**} it calls. The Angular app authenticates once via
+	 * {@code GET /api/user/login} (Basic Auth, see {@link UserController}), and the resulting authentication is
+	 * persisted into an {@link jakarta.servlet.http.HttpSession} so subsequent requests are authenticated via the
+	 * {@code JSESSIONID} cookie the browser then sends automatically.
+	 */
+	@Bean
+	@Order(2)
+	public SecurityFilterChain appFilterChain(final HttpSecurity httpSecurity) throws Exception {
+		httpSecurity.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+		                              .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+		            .cors(Customizer.withDefaults())
+		            .authorizeHttpRequests(authz -> authz.requestMatchers(antMatcher("/api/doc"),
+		                                                                  antMatcher("/api/swagger-ui/**"),
+		                                                                  antMatcher("/api/user/register"))
+		                                                 .permitAll()
+		                                                 .requestMatchers(antMatcher("/api/admin"),
+		                                                                  antMatcher("/api/admin/**"))
+		                                                 .hasRole("ADMIN")
+		                                                 .requestMatchers(antMatcher("/api/**")).hasRole("USER")
+		                                                 .requestMatchers(antMatcher("/**")).permitAll()
+		                                                 .anyRequest().authenticated())
+		            .httpBasic(basic -> basic.securityContextRepository(new HttpSessionSecurityContextRepository()))
+		            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+		            .logout(logout -> logout .logoutUrl("/api/user/logout")
+				                              .invalidateHttpSession(true)
+				                              .deleteCookies("JSESSIONID")
+				                             .logoutSuccessHandler(
+						                             (request, response, authentication) -> response.setStatus(
+								                             HttpServletResponse.SC_OK)))
 		            .addFilterAfter(projectLogContextFilter, BasicAuthenticationFilter.class)
 		            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class);
 		return httpSecurity.build();

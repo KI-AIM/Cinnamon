@@ -169,7 +169,7 @@ public class ConfigurationService {
 
 		// Extract the configuration names
 		final List<String> fieldNames = new ArrayList<>();
-		yamlConfig.fields().forEachRemaining(field -> fieldNames.add(field.getKey()));
+		yamlConfig.properties().forEach(field -> fieldNames.add(field.getKey()));
 
 		// Sort the configuration names by the import order
 		fieldNames.sort((name1, name2) -> {

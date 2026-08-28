@@ -92,6 +92,7 @@ public interface EmailTemplateMapper {
 	 */
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "emailTemplate", ignore = true)
+	@Mapping(target = "usages", ignore = true)
 	EmailTemplateItemEntity toEntity(EmailTemplateItemDTO dto);
 
 }

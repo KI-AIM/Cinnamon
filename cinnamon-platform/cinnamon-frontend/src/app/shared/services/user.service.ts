@@ -183,8 +183,11 @@ export class UserService {
         );
     }
 
-    public getProjectsForCurrentUser$(): Observable<ProjectOverview[]> {
-        this.refreshProjectsForCurrentUser$().subscribe();
+    /**
+     * The current user's projects, as last fetched via {@link refreshProjectsForCurrentUser$}. Does not trigger
+     * a fetch itself; callers that need fresh data must call {@link refreshProjectsForCurrentUser$}.
+     */
+    public get projectList$(): Observable<ProjectOverview[]> {
         return this.projectListSubject.asObservable();
     }
 

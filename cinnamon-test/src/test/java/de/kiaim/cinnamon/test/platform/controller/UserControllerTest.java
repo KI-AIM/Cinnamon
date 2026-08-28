@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithUserDetails;
@@ -79,6 +80,27 @@ public class UserControllerTest extends ControllerTest {
 	public void loginUnauthorized() throws Exception {
 		mockMvc.perform(get("/api/user/login"))
 		       .andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	public void logoutClearsTheCsrfCookie() throws Exception {
+		// The app authenticates every request with Basic Auth, so no session normally exists to end, but
+		// logout should still clear the CSRF cookie server-side (via Spring Security's CsrfLogoutHandler).
+		mockMvc.perform(post("/api/user/logout"))
+		       .andExpect(status().isOk())
+		       .andExpect(cookie().maxAge("XSRF-TOKEN", 0));
+	}
+
+	@Test
+	public void logoutInvalidatesASessionIfOnePresent() throws Exception {
+		// Defensive coverage: nothing in this app currently creates a session (see the comment on
+		// SecurityConfig#filterChain), but logout should still end one correctly if it ever exists.
+		final MockHttpSession session = new MockHttpSession();
+
+		mockMvc.perform(post("/api/user/logout").session(session))
+		       .andExpect(status().isOk());
+
+		assertTrue(session.isInvalid(), "Logout did not invalidate the session!");
 	}
 
 	@Test

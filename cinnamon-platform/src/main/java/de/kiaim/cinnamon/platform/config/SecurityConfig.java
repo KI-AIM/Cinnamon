@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.config;
 
 import de.kiaim.cinnamon.platform.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,10 +11,11 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
@@ -36,9 +38,21 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-//		httpSecurity.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer
-//				            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
-		httpSecurity.csrf(AbstractHttpConfigurer::disable)
+		httpSecurity.csrf(csrf -> csrf
+				            // Cookie is readable by JavaScript (withHttpOnlyFalse) so the Angular frontend can
+				            // read it and echo it back as the X-XSRF-TOKEN header, per Angular's built-in
+				            // HttpClient XSRF support.
+				            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+				            // Use the plain (non-BREACH-protected) token value, since it is exposed via a
+				            // cookie anyway. Required for the cookie-based SPA pattern to work, see
+				            // https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html#csrf-integration-javascript-spa
+				            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+				            // These endpoints are only meant to be used by plain HTTP Basic Auth clients
+				            // (e.g. the Python microservices, or external API users with ROLE_API) that never
+				            // load the Angular app and therefore never obtain a CSRF cookie.
+				            .ignoringRequestMatchers(antMatcher("/api/workflow"),
+				                                      antMatcher("/api/workflow/**"),
+				                                      antMatcher("/api/project/**/process/**/callback")))
 		            .cors(Customizer.withDefaults())
 		            .authorizeHttpRequests(authz -> authz
 				            .requestMatchers(antMatcher("/api/doc"),
@@ -60,7 +74,22 @@ public class SecurityConfig {
 				            .requestMatchers(antMatcher("/**")).permitAll()
 				            .anyRequest().authenticated())
 		            .httpBasic(Customizer.withDefaults())
-		            .addFilterAfter(projectLogContextFilter, BasicAuthenticationFilter.class);
+		            // The Angular app re-authenticates every request with Basic Auth itself, and
+		            // BasicAuthenticationFilter's default SecurityContextRepository is request-scoped
+		            // (not session-based), so there is normally no server-side session to end. A dedicated
+		            // logout is still worthwhile: it clears the XSRF-TOKEN cookie server-side (Spring
+		            // Security wires in a CsrfLogoutHandler automatically here, since CSRF is enabled
+		            // above) and safely invalidates a session too on the off chance one exists, instead of
+		            // the frontend merely forgetting its locally cached credentials.
+		            .logout(logout -> logout
+				            .logoutUrl("/api/user/logout")
+				            .invalidateHttpSession(true)
+				            .deleteCookies("JSESSIONID")
+				            // This is an API, not a page, so respond with plain 200 instead of a redirect.
+				            .logoutSuccessHandler((request, response, authentication) ->
+						                                   response.setStatus(HttpServletResponse.SC_OK)))
+		            .addFilterAfter(projectLogContextFilter, BasicAuthenticationFilter.class)
+		            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class);
 		return httpSecurity.build();
 	}
 

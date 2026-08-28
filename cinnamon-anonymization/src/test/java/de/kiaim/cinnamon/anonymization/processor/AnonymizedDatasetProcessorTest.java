@@ -42,7 +42,7 @@ public class AnonymizedDatasetProcessorTest extends AbstractAnonymizationTests {
 
     public DataSet importAnonymizedDataset(String anonymizedDatasetPath) throws IOException {
         String dataSetJson = new String(Files.readAllBytes(Paths.get(anonymizedDatasetPath)));
-        return objectMapper.readValue(dataSetJson, DataSet.class);
+        return jsonMapper.readValue(dataSetJson, DataSet.class);
     }
 
     @Test

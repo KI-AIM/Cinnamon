@@ -4,8 +4,8 @@ import de.kiaim.cinnamon.anonymization.AbstractAnonymizationTests;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -29,7 +29,7 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
     @Test
     public void testObject() throws Exception {
-        String jsonRequest = objectMapper.writeValueAsString(request);
+        String jsonRequest = jsonMapper.writeValueAsString(request);
 //        System.out.println("JSON Request");
 //        System.out.println(request.getSession_key());
 
@@ -37,8 +37,8 @@ public class AnonymizationControllerTest extends AbstractAnonymizationTests {
 
     @Test
     public void testCreateAnonymizationTaskWithCallbackResult() throws Exception {
-        byte[] dataSetBytes = objectMapper.writeValueAsBytes(request.getData());
-        byte[] frontendConfigBytes = objectMapper.writeValueAsBytes(frontendAnonConfig);
+        byte[] dataSetBytes = jsonMapper.writeValueAsBytes(request.getData());
+        byte[] frontendConfigBytes = jsonMapper.writeValueAsBytes(frontendAnonConfig);
 
         // Create multipart file with MockMultipartFile
         MockMultipartFile dataSetFile = new MockMultipartFile(

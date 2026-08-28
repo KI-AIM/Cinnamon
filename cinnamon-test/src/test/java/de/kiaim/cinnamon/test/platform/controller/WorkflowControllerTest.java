@@ -215,7 +215,7 @@ public class WorkflowControllerTest extends ControllerTest {
 		assertNotNull(recordedRequest, "No start request has been sent to the server!");
 		assertEquals("POST", recordedRequest.getMethod());
 		if (!algorithm.isEmpty()) {
-			assertEquals(algorithm, recordedRequest.getPath());
+			assertEquals(algorithm, recordedRequest.getUrl().encodedPath());
 		}
 	}
 

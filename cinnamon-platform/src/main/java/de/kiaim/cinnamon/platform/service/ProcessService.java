@@ -13,7 +13,7 @@ import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.*;
@@ -1286,7 +1286,7 @@ public class ProcessService {
 	                           final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
 			throws InternalIOException {
 		try {
-			final String dataSetString = JsonMapper.jsonMapper().writeValueAsString(dataSet);
+			final String dataSetString = CinnamonJsonMapper.jsonMapper().writeValueAsString(dataSet);
 			bodyBuilder.part(stepInputConfiguration.getPartName(),
 			                 new ByteArrayResource(dataSetString.getBytes(StandardCharsets.UTF_8)) {
 				@Override

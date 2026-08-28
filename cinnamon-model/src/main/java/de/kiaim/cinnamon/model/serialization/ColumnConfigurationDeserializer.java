@@ -1,10 +1,10 @@
 package de.kiaim.cinnamon.model.serialization;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.node.ArrayNode;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.Configuration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
@@ -21,32 +21,31 @@ import de.kiaim.cinnamon.model.serialization.exception.DataBuildingJsonException
 import de.kiaim.cinnamon.model.serialization.exception.InvalidDatatypeJsonException;
 import org.springframework.lang.Nullable;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ColumnConfigurationDeserializer extends JsonDeserializer<ColumnConfiguration> {
+public class ColumnConfigurationDeserializer extends ValueDeserializer<ColumnConfiguration> {
 
 	private final DataTransformationHelper dataTransformationHelper = new DataTransformationHelper();
 
 	@Override
-	public ColumnConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-		final JsonNode jsonNode = p.getCodec().readTree(p);
+	public ColumnConfiguration deserialize(JsonParser p, DeserializationContext ctxt) {
+		final JsonNode jsonNode = p.objectReadContext().readTree(p);
 
 		final Integer index = jsonNode.has("index")
 		                      ? jsonNode.get("index").asInt()
 		                      : null;
 		final String columnName = jsonNode.has("name")
-		                          ? jsonNode.get("name").asText()
+		                          ? jsonNode.get("name").asString()
 		                          : null;
 		final DataType type = jsonNode.has("type")
-		                      ? p.getCodec().readValue(jsonNode.get("type").traverse(), DataType.class)
+		                      ? p.objectReadContext().readValue(jsonNode.get("type").traverse(p.objectReadContext()), DataType.class)
 		                      : null;
 		final DataScale scale = jsonNode.has("scale")
-		                        ? p.getCodec().readValue(jsonNode.get("scale").traverse(), DataScale.class)
+		                        ? p.objectReadContext().readValue(jsonNode.get("scale").traverse(p.objectReadContext()), DataScale.class)
 		                        : null;
 
 		final ArrayNode configurationNodes = (ArrayNode) jsonNode.get("configurations");
@@ -74,7 +73,7 @@ public class ColumnConfigurationDeserializer extends JsonDeserializer<ColumnConf
 			result = arrayNodeToDateTime((ArrayNode) node);
 		} else {
 			final DataBuilder builder = dataTransformationHelper.getDataBuilderOrThrow(targetType);
-			result = builder.setValue(node.asText(), new ArrayList<>()).build();
+			result = builder.setValue(node.asString(), new ArrayList<>()).build();
 		}
 
 		return result;
@@ -121,8 +120,7 @@ public class ColumnConfigurationDeserializer extends JsonDeserializer<ColumnConf
 
 	private List<Configuration> convertConfigurationArrayValue(@Nullable final JsonNode configurationArrayNode,
 	                                                           @Nullable final DataType type,
-	                                                           final JsonParser jsonParser)
-			throws IOException {
+	                                                           final JsonParser jsonParser) {
 		final List<Configuration> configurations = new ArrayList<>();
 
 		if (configurationArrayNode == null) {
@@ -132,7 +130,7 @@ public class ColumnConfigurationDeserializer extends JsonDeserializer<ColumnConf
 		final ArrayNode configurationNodes = (ArrayNode) configurationArrayNode;
 
 		for (JsonNode configurationNode : configurationNodes) {
-			final String configurationName = configurationNode.get("name").asText();
+			final String configurationName = configurationNode.get("name").asString();
 			if ("RangeConfiguration".equals(configurationName)) {
 				if (type == null) {
 					configurations.add(new RangeConfiguration(null, null));
@@ -142,17 +140,23 @@ public class ColumnConfigurationDeserializer extends JsonDeserializer<ColumnConf
 						final Data maxValue = convertRangeValue(configurationNode.get("maxValue"), type);
 						configurations.add(new RangeConfiguration(minValue, maxValue));
 					} catch (ConfigurationFormatException e) {
-						throw new InvalidDatatypeJsonException(
-								"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because the column configuration contains an invalid data type!",
-								configurationNode.traverse().currentLocation(), e);
+						try (JsonParser parser = configurationNode.traverse(jsonParser.objectReadContext())) {
+							throw new InvalidDatatypeJsonException(
+									"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because the column configuration contains an invalid data type!",
+									parser.currentLocation(), e);
+						}
 					} catch (DataBuildingException e) {
-						throw new DataBuildingJsonException(
-								"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because of an invalid format!",
-								configurationNode.traverse().currentLocation(), e);
+						try (JsonParser parser = configurationNode.traverse(jsonParser.objectReadContext())) {
+							throw new DataBuildingJsonException(
+									"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because the data could not be built!",
+									parser.currentLocation(), e);
+						}
 					}
 				}
 			} else {
-				configurations.add(jsonParser.getCodec().readValue(configurationNode.traverse(), Configuration.class));
+				configurations.add(jsonParser.objectReadContext()
+				                              .readValue(configurationNode.traverse(jsonParser.objectReadContext()),
+				                                         Configuration.class));
 			}
 		}
 

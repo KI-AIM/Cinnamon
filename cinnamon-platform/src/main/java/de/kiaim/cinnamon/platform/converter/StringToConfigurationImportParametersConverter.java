@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.platform.converter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import lombok.SneakyThrows;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.convert.converter.Converter;
@@ -20,7 +20,7 @@ public class StringToConfigurationImportParametersConverter implements Converter
 	private final ObjectMapper jsonMapper;
 
 	public StringToConfigurationImportParametersConverter() {
-		this.jsonMapper = JsonMapper.jsonMapper();
+		this.jsonMapper = CinnamonJsonMapper.jsonMapper();
 	}
 
 	@Override

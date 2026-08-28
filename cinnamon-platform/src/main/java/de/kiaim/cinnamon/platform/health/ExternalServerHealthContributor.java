@@ -1,15 +1,15 @@
 package de.kiaim.cinnamon.platform.health;
 
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
-import org.springframework.boot.actuate.health.CompositeHealthContributor;
-import org.springframework.boot.actuate.health.HealthContributor;
-import org.springframework.boot.actuate.health.NamedContributor;
+import org.springframework.boot.health.contributor.CompositeHealthContributor;
+import org.springframework.boot.health.contributor.HealthContributor;
+import org.springframework.boot.health.contributor.HealthContributors;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Health contributor that checks if all external servers are healthy.
@@ -35,8 +35,8 @@ public class ExternalServerHealthContributor implements CompositeHealthContribut
 	}
 
 	@Override
-	public Iterator<NamedContributor<HealthContributor>> iterator() {
+	public Stream<HealthContributors.Entry> stream() {
 		return healthContributors.entrySet().stream()
-		                         .map(entry -> NamedContributor.of(entry.getKey(), entry.getValue())).iterator();
+		                         .map(entry -> new HealthContributors.Entry(entry.getKey(), entry.getValue()));
 	}
 }

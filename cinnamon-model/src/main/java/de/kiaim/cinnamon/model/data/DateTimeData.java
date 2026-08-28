@@ -10,7 +10,7 @@ import de.kiaim.cinnamon.model.exception.ValueNotInRangeException;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;

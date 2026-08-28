@@ -6,7 +6,7 @@ import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.ConfigurationFormatException;
 import de.kiaim.cinnamon.model.exception.DataBuildingException;
 import de.kiaim.cinnamon.model.exception.MissingValueException;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,6 +25,7 @@ public class DataTransformationHelper {
      * @return Instance of an Implementation of the Data Interface
      * @throws DataBuildingException if anything is faulty when creating the object
      */
+    @Nullable
     public Data transformData(String value, ColumnConfiguration configuration) throws DataBuildingException {
         if (isValueEmpty(value)) {
             throw new MissingValueException();
@@ -38,6 +39,7 @@ public class DataTransformationHelper {
         return dataBuilder.setValue(value, configuration.getConfigurations()).build();
     }
 
+    @Nullable
     public Data transformNullValue(ColumnConfiguration configuration) {
         return switch (configuration.getType()) {
             case BOOLEAN -> new BooleanData(null);

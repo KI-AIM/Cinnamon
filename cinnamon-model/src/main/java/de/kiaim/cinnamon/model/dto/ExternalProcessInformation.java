@@ -4,7 +4,7 @@ import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

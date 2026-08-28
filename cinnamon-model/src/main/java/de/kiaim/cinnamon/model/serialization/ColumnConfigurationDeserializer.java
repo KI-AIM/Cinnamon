@@ -19,7 +19,7 @@ import de.kiaim.cinnamon.model.exception.DataBuildingException;
 import de.kiaim.cinnamon.model.helper.DataTransformationHelper;
 import de.kiaim.cinnamon.model.serialization.exception.DataBuildingJsonException;
 import de.kiaim.cinnamon.model.serialization.exception.InvalidDatatypeJsonException;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

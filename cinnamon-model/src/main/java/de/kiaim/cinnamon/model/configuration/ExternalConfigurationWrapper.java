@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.model.configuration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -33,7 +34,7 @@ public final class ExternalConfigurationWrapper implements ConfigurationDTO {
 	 * @throws IllegalArgumentException if the input does not contain exactly one property.
 	 */
 	@JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-	public ExternalConfigurationWrapper(final Map<String, ConfigurationPart> configurations) {
+	public ExternalConfigurationWrapper(@Nullable final Map<String, ConfigurationPart> configurations) {
 		if (configurations == null || configurations.size() != 1) {
 			throw new IllegalArgumentException("Exactly one configuration property is required");
 		}

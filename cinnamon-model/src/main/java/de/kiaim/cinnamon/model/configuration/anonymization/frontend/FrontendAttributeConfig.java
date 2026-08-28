@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.exception.anonymization.InvalidAttributeConfigExc
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -19,10 +20,13 @@ public class FrontendAttributeConfig {
     private DataType dataType;
     private DataScale scale;
     private AttributeProtection attributeProtection;
+    @Nullable
     private String intervalSize;
+    @Nullable
     private String dateFormat;
 
     // List of possible values for attributes with an ordinal scale
+    @Nullable
     private String[] values;
 
     // Validate the attribute configuration based on its type, scale, and protection

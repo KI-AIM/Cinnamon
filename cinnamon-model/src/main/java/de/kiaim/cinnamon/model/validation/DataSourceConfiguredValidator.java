@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.model.validation;
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DataSourceServerConfiguration;
 import jakarta.validation.*;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 
@@ -16,7 +17,7 @@ import java.util.Set;
 public class DataSourceConfiguredValidator implements ConstraintValidator<DataSourceConfigured, DataSourceConfiguration> {
 
 	@Override
-	public boolean isValid(final DataSourceConfiguration value, final ConstraintValidatorContext context) {
+	public boolean isValid(@Nullable final DataSourceConfiguration value, final ConstraintValidatorContext context) {
 		if (value == null || value.getDataSourceType() == null) {
 			return true; // @NotNull handles null values if needed
 		}

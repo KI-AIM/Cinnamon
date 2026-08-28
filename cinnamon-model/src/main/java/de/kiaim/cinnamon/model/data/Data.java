@@ -6,7 +6,7 @@ import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.serialization.DataDeserializer;
 import de.kiaim.cinnamon.model.serialization.DataSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

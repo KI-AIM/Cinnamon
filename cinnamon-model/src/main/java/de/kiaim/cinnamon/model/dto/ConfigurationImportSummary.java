@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Map;

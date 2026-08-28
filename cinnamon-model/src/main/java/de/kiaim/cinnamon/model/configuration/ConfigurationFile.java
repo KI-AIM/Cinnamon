@@ -13,7 +13,7 @@ import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;

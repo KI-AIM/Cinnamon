@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.exception.anonymization.InvalidSuppressionLimitEx
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class FrontendAnonConfig {
      * does not use these values, but retaining them lets the platform forward
      * one anonymization configuration to both workers.
      */
+    @Nullable
     private Map<String, Object> textAnonymizationConfiguration;
 
     public FrontendAttributeConfig getAttributeConfigByIndex(int index) {

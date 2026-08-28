@@ -5,7 +5,7 @@ import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.XlsxFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import jakarta.validation.*;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 

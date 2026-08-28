@@ -16,7 +16,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,27 +36,33 @@ import java.util.List;
 public class ColumnConfiguration {
 
     /**
-     * The index of the column
+     * The index of the column.
+     * Can be null between the upload step and the data configuration step.
      */
     @Schema(description = "Index of the column in the data set.", example = "1")
     @NotNull(message = "The index must not be empty!")
     @Min(value = 0, message = "The index must not be negative!")
+    @Nullable
     Integer index;
 
     /**
-     * The name of the column
+     * The name of the column.
+     * Can be null between the upload step and the data configuration step.
      */
     @Schema(description = "Name of the column.", example = "dateOfBirth")
     @NotBlank(message = "The column name must not be empty!")
     @Pattern(regexp = "^\\S+$", message = "The column name must not contain space characters!")
+    @Nullable
     String name;
 
     /**
-     * The datatype of the column
+     * The datatype of the column.
+     * Can be null between the upload step and the data configuration step.
      */
     @Schema(description = "Data type of the column.", example = "DATE")
     @NotNull(message = "The data type must not be empty!")
     @DataTypeNotUndefined()
+    @Nullable
     DataType type = DataType.UNDEFINED;
 
     /**
@@ -65,6 +71,7 @@ public class ColumnConfiguration {
      */
     @Schema(description = "Data scale of the column.", example = "INTERVAL")
     @NotNull(message = "The data scale must not be empty!")
+    @Nullable
     DataScale scale;
 
     /**

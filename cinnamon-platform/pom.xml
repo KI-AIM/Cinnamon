@@ -43,6 +43,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-properties-migrator</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
@@ -147,8 +153,8 @@
 		</dependency>
 		<dependency>
 			<groupId>io.hypersistence</groupId>
-			<artifactId>hypersistence-utils-hibernate-62</artifactId>
-			<version>3.9.4</version>
+			<artifactId>hypersistence-utils-hibernate-71</artifactId>
+			<version>3.15.4</version>
 		</dependency>
 
 		<dependency>

@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.anonymization;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.anonymization.model.AnonymizationRequest;
 import de.kiaim.cinnamon.anonymization.service.AnonymizationService;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.ResourceUtils;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -29,7 +29,7 @@ public class AbstractAnonymizationTests {
     protected AnonymizationService anonymizationService;
 
     @Autowired
-    protected ObjectMapper objectMapper;
+    protected JsonMapper jsonMapper;
 
     @Autowired
     protected FrontendAnonConfigWrapperReader frontendAnonConfigWrapperReader;
@@ -46,8 +46,6 @@ public class AbstractAnonymizationTests {
 
     @BeforeEach
     public void setUp() throws Exception {
-        objectMapper.findAndRegisterModules();
-
         String datasetPath = "data/oncology/data.json-dataset-demo-data_DE 25k.json";
         String frontendAnonConfigPath = "data/oncology/data.example-new-anon-config-demodata.yml";
 
@@ -88,7 +86,7 @@ public class AbstractAnonymizationTests {
 
     public DataSet importDataset(String datasetPath) throws IOException {
         String dataSetJson = new String(Files.readAllBytes(Paths.get(datasetPath)));
-        return objectMapper.readValue(dataSetJson, DataSet.class);
+        return jsonMapper.readValue(dataSetJson, DataSet.class);
     }
 
     public FrontendAnonConfigWrapper importFrontendAnonConfig(String frontendAnonConfigPath) throws IOException {

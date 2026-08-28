@@ -337,10 +337,7 @@ public class ExternalConfigurationService {
 			return;
 		}
 
-		final var fields = objectNode.fields();
-		while (fields.hasNext()) {
-			final var entry = fields.next();
-
+		for (final var entry : objectNode.properties()) {
 			// Nested groups
 			if (entry.getValue().isObject()) {
 				injectParameters(project, entry.getValue());

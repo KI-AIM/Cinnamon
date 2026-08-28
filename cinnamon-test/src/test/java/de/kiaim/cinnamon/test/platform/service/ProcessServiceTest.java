@@ -100,11 +100,11 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	}
 
 	@Test
-	public void fetchStatusUnavailable() throws IOException {
+	public void fetchStatusUnavailable() {
 		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
 		final ProjectEntity project = createProject(stage, ProcessStatus.RUNNING);
 
-		mockBackEnd.shutdown();
+		mockBackEnd.close();
 
 		final var updatedExecutionStep = assertDoesNotThrow(() -> processService.getStatus(project, stage));
 

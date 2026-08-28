@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
-import de.kiaim.cinnamon.model.serialization.mapper.YamlMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonYamlMapper;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.exception.InternalMissingHandlingException;
@@ -120,7 +120,7 @@ public class HttpService {
 			case JSON -> {
 				//Convert yaml config to json for anonymization controller
 				try {
-					final String jsonConfig = YamlMapper.toJson(configuration);
+					final String jsonConfig = CinnamonYamlMapper.toJson(configuration);
 					bodyBuilder.part(partName, jsonConfig, MediaType.APPLICATION_JSON);
 				} catch (JsonProcessingException e) {
 					throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,

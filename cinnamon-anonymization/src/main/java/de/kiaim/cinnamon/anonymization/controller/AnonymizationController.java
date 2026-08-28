@@ -8,7 +8,7 @@ import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnon
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.dto.ModuleReportContent;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -46,7 +46,7 @@ public class AnonymizationController {
     public AnonymizationController(final AnonymizationService anonymizationService, final ReportService reportService) {
         this.anonymizationService = anonymizationService;
 	    this.reportService = reportService;
-	    this.jsonMapper = JsonMapper.jsonMapper();
+	    this.jsonMapper = CinnamonJsonMapper.jsonMapper();
     }
 
     @Operation(summary = "Creates a new anonymization task.",

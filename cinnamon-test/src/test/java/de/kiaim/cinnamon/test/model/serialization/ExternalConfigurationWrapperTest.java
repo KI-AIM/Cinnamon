@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
 import de.kiaim.cinnamon.model.configuration.ExternalConfigurationWrapper;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
-import de.kiaim.cinnamon.model.serialization.mapper.YamlMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonYamlMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -19,8 +19,8 @@ class ExternalConfigurationWrapperTest {
 
 	@BeforeAll
 	static void beforeAll() {
-		jsonMapper = JsonMapper.jsonMapper();
-		yamlMapper = YamlMapper.yamlMapper();
+		jsonMapper = CinnamonJsonMapper.jsonMapper();
+		yamlMapper = CinnamonYamlMapper.yamlMapper();
 	}
 
 	@Test

@@ -1,10 +1,10 @@
 package de.kiaim.cinnamon.model.serialization.exception;
 
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.TokenStreamLocation;
 
-public class InvalidDatatypeJsonException extends JsonProcessingException {
-	public InvalidDatatypeJsonException(String msg, JsonLocation loc, Throwable rootCause) {
+public class InvalidDatatypeJsonException extends JacksonException {
+	public InvalidDatatypeJsonException(String msg, TokenStreamLocation loc, Throwable rootCause) {
 		super(msg, loc, rootCause);
 	}
 }

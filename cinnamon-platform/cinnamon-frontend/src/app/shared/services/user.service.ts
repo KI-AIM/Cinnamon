@@ -89,7 +89,7 @@ export class UserService {
 
         return this.http.get<UserInfo>(this.baseURL + "/login", {headers: headers}).pipe(
             tap(userInfo => {
-                this.setUser(this.createLoggedInUser(credentials.username, credentials.password, userInfo));
+                this.setUser(this.createLoggedInUser(userInfo));
                 this.loginSubject.next();
             }),
         );
@@ -125,7 +125,7 @@ export class UserService {
     public logout(mode: LogoutMode) {
         const user = this.getUser().userInfo.username || null;
 
-        // Tells the backend to end the session and clear its cookies (see SecurityConfig#filterChain).
+        // Tells the backend to end the session and clear its cookies (see SecurityConfig#appFilterChain).
         // The user is logged out locally regardless of whether this succeeds, e.g., if the
         // session already expired or the request fails.
         this.http.post(this.baseURL + "/logout", null).subscribe({ error: () => undefined });
@@ -164,7 +164,7 @@ export class UserService {
 
         return this.http.post<UserInfo>(this.baseURL + "/-/update-username", body).pipe(
             tap(userInfo => {
-                this.setUser(this.createLoggedInUser(newUsername, currentPassword, userInfo));
+                this.setUser(this.createLoggedInUser(userInfo));
             }),
         );
     }
@@ -178,7 +178,7 @@ export class UserService {
 
         return this.http.post<UserInfo>(this.baseURL + "/-/update-password", body).pipe(
             tap(userInfo => {
-                this.setUser(this.createLoggedInUser(this.getUser().userInfo.username, newPassword, userInfo));
+                this.setUser(this.createLoggedInUser(userInfo));
             }),
         );
     }
@@ -208,12 +208,11 @@ export class UserService {
     }
 
     private createLoggedOutUser(): User {
-        return new User(false, new UserInfo(), "");
+        return new User(false, new UserInfo());
     }
 
-    private createLoggedInUser(username: string, password: string, userInfo: UserInfo): User {
-        const token = btoa(username + ":" + password);
-        return new User(true, userInfo, token);
+    private createLoggedInUser(userInfo: UserInfo): User {
+        return new User(true, userInfo);
     }
 
     private setUser(user: User): void {

@@ -84,17 +84,13 @@ public class UserControllerTest extends ControllerTest {
 
 	@Test
 	public void logoutClearsTheCsrfCookie() throws Exception {
-		// The app authenticates every request with Basic Auth, so no session normally exists to end, but
-		// logout should still clear the CSRF cookie server-side (via Spring Security's CsrfLogoutHandler).
 		mockMvc.perform(post("/api/user/logout"))
 		       .andExpect(status().isOk())
 		       .andExpect(cookie().maxAge("XSRF-TOKEN", 0));
 	}
 
 	@Test
-	public void logoutInvalidatesASessionIfOnePresent() throws Exception {
-		// Defensive coverage: nothing in this app currently creates a session (see the comment on
-		// SecurityConfig#filterChain), but logout should still end one correctly if it ever exists.
+	public void logoutInvalidatesTheSession() throws Exception {
 		final MockHttpSession session = new MockHttpSession();
 
 		mockMvc.perform(post("/api/user/logout").session(session))

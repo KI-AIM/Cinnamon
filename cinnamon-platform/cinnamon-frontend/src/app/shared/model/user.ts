@@ -2,7 +2,6 @@ export class User {
 	constructor(
 		public authenticated: boolean,
         public userInfo: UserInfo,
-		public token: string,
 	) {}
 }
 

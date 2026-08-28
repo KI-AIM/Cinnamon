@@ -51,7 +51,7 @@ public class StatisticsControllerTest extends ControllerTest {
 		assertEquals(1, mockBackEnd.getRequestCount());
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("POST", recordedRequest.getMethod());
-		assertEquals("/calculate_descriptive_statistics", recordedRequest.getPath());
+		assertEquals("/calculate_descriptive_statistics", recordedRequest.getUrl().encodedPath());
 
 		var updateTestProject = getTestProject();
 		assertNotNull(updateTestProject.getOriginalData().getDataSet());

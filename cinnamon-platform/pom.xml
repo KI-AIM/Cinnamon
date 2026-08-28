@@ -25,7 +25,7 @@
 	</repositories>
 
 	<properties>
-		<org.dhatim.fastexcel.version>0.19.0</org.dhatim.fastexcel.version>
+		<org.dhatim.fastexcel.version>0.20.2</org.dhatim.fastexcel.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
         <skip.frontend>false</skip.frontend>
 	</properties>
@@ -143,7 +143,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-csv</artifactId>
-			<version>1.11.0</version>
+			<version>1.14.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.hypersistence</groupId>
@@ -208,7 +208,7 @@
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
-				<version>1.14.0</version>
+				<version>2.0.2</version>
 				<executions>
 					<execution>
 						<id>install node and npm</id>
@@ -243,7 +243,7 @@
 
 			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
-				<version>3.3.2</version>
+				<version>3.5.1</version>
 				<configuration>
 					<attachClasses>true</attachClasses>
 					<classesClassifier>classes</classesClassifier>

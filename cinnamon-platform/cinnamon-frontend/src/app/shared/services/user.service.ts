@@ -125,6 +125,11 @@ export class UserService {
     public logout(mode: LogoutMode) {
         const user = this.getUser().userInfo.username || null;
 
+        // Tells the backend to end the session and clear its cookies (see SecurityConfig#filterChain).
+        // The user is logged out locally regardless of whether this succeeds, e.g., if the
+        // session already expired or the request fails.
+        this.http.post(this.baseURL + "/logout", null).subscribe({ error: () => undefined });
+
         this.setUser(this.createLoggedOutUser());
 
         let message = "";

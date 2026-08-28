@@ -11,7 +11,7 @@ import de.kiaim.cinnamon.anonymization.processor.DataSetProcessor;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfig;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorRequest;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.bihmi.jal.anon.Anonymizer;
 import org.bihmi.jal.anon.exception.NoOptimumFoundException;
@@ -155,7 +155,7 @@ public class AnonymizationService {
 
         try {
             // Convert DataSet object to JSON
-            ObjectMapper jsonMapper = JsonMapper.jsonMapper();
+            ObjectMapper jsonMapper = CinnamonJsonMapper.jsonMapper();
             String anonymizedDatasetJson = jsonMapper.writeValueAsString(result);
 
             // Create Multipart request

@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.model.configuration;
 
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;

@@ -6,7 +6,7 @@ import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationComponentStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
@@ -739,7 +739,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		// Send callback request with error
 		ErrorRequest errorResponse = new ErrorRequest("about:blank", "SYNTH_1_2_3", "An error occurred!", "An error occurred!");
-		var errorJson = JsonMapper.jsonMapper().writeValueAsString(errorResponse);
+		var errorJson = CinnamonJsonMapper.jsonMapper().writeValueAsString(errorResponse);
 		final MockMultipartFile resultData = new MockMultipartFile("error", "exception_message.txt",
 		                                                           MediaType.APPLICATION_JSON_VALUE,
 		                                                           errorJson.getBytes());

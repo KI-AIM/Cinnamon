@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.test.model.serialization.mapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ public class SynthetizationStatusDeserializationTest {
 
 	@BeforeAll
 	static void beforeAll() {
-		jsonMapper = JsonMapper.jsonMapper();
+		jsonMapper = CinnamonJsonMapper.jsonMapper();
 	}
 
 	@Test

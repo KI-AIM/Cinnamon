@@ -36,13 +36,17 @@ public class AttributeConfig {
     private String dateFormat; //if attribute is a Date, define format here, if null ARX Default is used "dd.MM.yyyy"
     private String[] possibleEntries; // if categorical, each possible value
     private Boolean is_nullable; //TODO: what is the function of this? -> could contain NULL values, not in use currently
+    @Builder.Default
     private Boolean include = true; // if false, attribute is excluded for almost everything
     private Object min; // min of all possible values (may exceed data range from sample)
     private Object max; // max of all possible values (may exceed data range from sample)
     private HierarchyConfig hierarchyConfig;
+    @Builder.Default
     private boolean useMicroAggregation = true; // if true, use micro aggregation for this attribute
     private MicroAggregationFunction microAggregationFunction; // = MicroAggregationFunction.ARITHMETIC_MEAN; // parameter for micro aggregation
+    @Builder.Default
     private boolean performClustering = true; // parameter for micro aggregation
+    @Builder.Default
     private boolean ignoreMissingData = true; // parameter for micro aggregation
 
     public AttributeType getArxAttributeType() {

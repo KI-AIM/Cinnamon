@@ -23,8 +23,6 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
-import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -52,22 +50,21 @@ public class SecurityConfig {
 	@Order(1)
 	public SecurityFilterChain externalApiFilterChain(final HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.securityMatchers(matchers -> matchers.requestMatchers(
-				            antMatcher("/api/workflow"),
-				            antMatcher("/api/workflow/**"),
-				            antMatcher("/api/project/**/process/**/callback"),
-				            antMatcher("/actuator/**")))
+				            "/api/workflow",
+				            "/api/workflow/**",
+				            "/api/project/*/process/*/callback",
+				            "/actuator/**"))
 		            .csrf(AbstractHttpConfigurer::disable)
 		            .cors(Customizer.withDefaults())
 		            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		            .authorizeHttpRequests(authz -> authz.requestMatchers(
 				                                                 // TODO Implement proper security
-				                                                 antMatcher("/api/project/**/process/**/callback"),
-				                                                 antMatcher("/actuator/health"),
-				                                                 antMatcher("/actuator/health/**")).permitAll()
-		                                                 .requestMatchers(antMatcher("/actuator/**"))
+				                                                 "/api/project/*/process/*/callback",
+				                                                 "/actuator/health",
+				                                                 "/actuator/health/**").permitAll()
+		                                                 .requestMatchers("/actuator/**")
 		                                                 .hasRole("MONITORING")
-		                                                 .requestMatchers(antMatcher("/api/workflow"),
-		                                                                  antMatcher("/api/workflow/**"))
+		                                                 .requestMatchers("/api/workflow", "/api/workflow/**")
 		                                                 .hasRole("API")
 		                                                 .anyRequest().authenticated())
 		            .httpBasic(Customizer.withDefaults())
@@ -87,24 +84,23 @@ public class SecurityConfig {
 		httpSecurity.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
 		                              .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
 		            .cors(Customizer.withDefaults())
-		            .authorizeHttpRequests(authz -> authz.requestMatchers(antMatcher("/api/doc"),
-		                                                                  antMatcher("/api/swagger-ui/**"),
-		                                                                  antMatcher("/api/user/register"))
+		            .authorizeHttpRequests(authz -> authz.requestMatchers("/api/doc",
+		                                                                  "/api/swagger-ui/**",
+		                                                                  "/api/user/register")
 		                                                 .permitAll()
-		                                                 .requestMatchers(antMatcher("/api/admin"),
-		                                                                  antMatcher("/api/admin/**"))
+		                                                 .requestMatchers("/api/admin", "/api/admin/**")
 		                                                 .hasRole("ADMIN")
-		                                                 .requestMatchers(antMatcher("/api/**")).hasRole("USER")
-		                                                 .requestMatchers(antMatcher("/**")).permitAll()
+		                                                 .requestMatchers("/api/**").hasRole("USER")
+		                                                 .requestMatchers("/**").permitAll()
 		                                                 .anyRequest().authenticated())
 		            .httpBasic(basic -> basic.securityContextRepository(new HttpSessionSecurityContextRepository()))
 		            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-		            .logout(logout -> logout .logoutUrl("/api/user/logout")
-				                              .invalidateHttpSession(true)
-				                              .deleteCookies("JSESSIONID")
-				                             .logoutSuccessHandler(
-						                             (request, response, authentication) -> response.setStatus(
-								                             HttpServletResponse.SC_OK)))
+		            .logout(logout -> logout.logoutUrl("/api/user/logout")
+		                                    .invalidateHttpSession(true)
+		                                    .deleteCookies("JSESSIONID")
+		                                    .logoutSuccessHandler(
+				                                    (request, response, authentication) -> response.setStatus(
+						                                    HttpServletResponse.SC_OK)))
 		            .addFilterAfter(projectLogContextFilter, BasicAuthenticationFilter.class)
 		            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class);
 		return httpSecurity.build();
@@ -112,9 +108,8 @@ public class SecurityConfig {
 
 	@Bean
 	public AuthenticationManager authenticationManager() {
-		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userService);
 		provider.setPasswordEncoder(passwordEncoder);
-		provider.setUserDetailsService(userService);
 		return new ProviderManager(provider);
 	}
 }

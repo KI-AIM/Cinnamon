@@ -42,6 +42,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -258,15 +259,15 @@ public class ProcessControllerTest extends ControllerTest {
 		// Test request content
 		for (final DiskFileItem fileItem : fileItems) {
 			if (fileItem.getFieldName().equals("data")) {
-				assertEquals(DataSetTestHelper.generateDataSetAsJson(false), fileItem.getString(),
-				             "Unexpected content of data!");
+				assertEquals(DataSetTestHelper.generateDataSetAsJson(false),
+				             fileItem.getString(Charset.defaultCharset()), "Unexpected content of data!");
 			} else if (fileItem.getFieldName().equals("session_key")) {
-				assertEquals(id, fileItem.getString(), "Unexpected session key!");
+				assertEquals(id, fileItem.getString(Charset.defaultCharset()), "Unexpected session key!");
 			} else if (fileItem.getFieldName().equals("callback")) {
-				assertEquals(callbackUrl, fileItem.getString(), "Unexpected callback URL!");
+				assertEquals(callbackUrl, fileItem.getString(Charset.defaultCharset()), "Unexpected callback URL!");
 			} else if (fileItem.getFieldName().equals("anonymizationConfig")) {
-				assertEquals(AlgorithmTestHelper.generateAlgorithmConfigurationJson(), fileItem.getString(),
-				             "Unexpected anonymization config!");
+				assertEquals(AlgorithmTestHelper.generateAlgorithmConfigurationJson(),
+				             fileItem.getString(Charset.defaultCharset()), "Unexpected anonymization config!");
 			} else {
 				fail("Unexpected field: " + fileItem.getFieldName());
 			}

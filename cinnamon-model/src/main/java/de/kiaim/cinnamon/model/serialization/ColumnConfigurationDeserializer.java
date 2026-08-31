@@ -133,7 +133,7 @@ public class ColumnConfigurationDeserializer extends JsonDeserializer<ColumnConf
 
 		for (JsonNode configurationNode : configurationNodes) {
 			final String configurationName = configurationNode.get("name").asText();
-			if (configurationName.equals("RangeConfiguration")) {
+			if ("RangeConfiguration".equals(configurationName)) {
 				if (type == null) {
 					configurations.add(new RangeConfiguration(null, null));
 				} else {

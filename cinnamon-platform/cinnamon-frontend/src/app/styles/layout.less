@@ -37,6 +37,12 @@ app-navigation{
     flex-wrap: nowrap !important;
 }
 
+.config-input-divider {
+    border-bottom: 1px solid @color-gray-border;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
 .config-input-row {
     display: flex;
     flex-direction: row;
@@ -44,17 +50,75 @@ app-navigation{
     column-gap: 16px;
     row-gap: 4px;
     width: 100%;
+
+    &.no-wrap {
+        flex-wrap: nowrap;
+    }
+}
+
+.config-input-row:has(.config-input-row-checkboxes) {
+    margin-bottom: var(--mat-form-field-subscript-text-line-height);
 }
 
 .config-input-row-label {
     width: 100%;
 }
 
+.config-input-row-title {
+    display: inline-flex;
+    width: 100%;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.config-input-row-title-required::after {
+    content: "*";
+    font-size: 0.8rem;
+    font-weight: normal;
+}
+
+.config-input-row-label-inline {
+    margin-right: 2rem;
+    flex: 0 0 250px;
+    justify-content: center;
+
+    .config-input-row-info;
+    .input-height;
+}
+.config-input-row-label-inline-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-weight: bold;
+}
+.config-input-row-label-inline-info {
+    padding-top: 0.1rem;
+    font-size: 0.8rem;
+    line-height: 0.9rem;
+}
+
 .config-input-row-field {
     flex: 1 1 auto;
 }
 
+.config-input-row-checkboxes {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 16px;
+
+
+    & .mat-internal-form-field > label {
+        margin-left: -8px;
+    }
+
+    .config-input-row-field;
+}
+
 .config-input-row-button {
+    display: flex;
+    align-items: center;
     flex: 0 1 auto;
 }
 
@@ -64,8 +128,17 @@ app-navigation{
     justify-content: center;
 }
 
-.config-input-row-field:has(.mat-mdc-form-field-subscript-wrapper) + .config-input-row-info {
+.config-input-row-text {
+    font-size: 0.8rem;
+    .config-input-row-info;
+}
+
+.config-input-row-field:has(.mat-mdc-form-field-subscript-wrapper) ~ .config-input-row-info {
     .input-height;
+}
+
+.config-input-row-end {
+    margin-left: auto;
 }
 
 .content-left, .content-right {
@@ -167,7 +240,7 @@ app-navigation{
     border-radius: 0.3rem;
     color: @color-text;
     padding: 1rem;
-    box-shadow: rgba(100, 100, 111, 0.2) 0 1px 5px 0;
+    box-shadow: @shadow-box;
 }
 
 .box-name {
@@ -176,6 +249,34 @@ app-navigation{
     font-weight: bold;
     padding-bottom: 0.4rem;
     margin-bottom: 0.25rem;
+}
+
+.box-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: @color-success-background;
+    border-radius: 0.3rem 0.3rem 0 0;
+    margin: -1rem -1rem 1rem -1rem;
+    padding: 0.75rem 1rem;
+    font-weight: bold;
+}
+
+.box-header-expanded {
+    height: var(--mat-expansion-header-expanded-state-height);
+}
+
+.box-header-danger {
+    background-color: rgba(@color-failure-background, 0.4);
+    color: @color-failure-text;
+}
+
+.box-header-title {
+    font-size: 1.5rem;
+}
+
+.box-header-icon {
+    display: flex;
 }
 
 .vertical-boxes {
@@ -194,6 +295,7 @@ app-navigation{
 }
 
 .settings-label {
+    display: inline-flex; // Prevents spaces between label and required asterisk
     font-size: 0.8rem;
     font-weight: bold;
 }
@@ -202,7 +304,6 @@ app-navigation{
     content: "*";
     font-size: 0.8rem;
     font-weight: normal;
-    margin-left: -0.2rem;
 }
 
 .settings-label:has(+ .mat-form-field-invalid)  {
@@ -358,7 +459,7 @@ app-navigation{
     width: 100%;
 }
 
-.workstep-part:not(:last-child):not(:has(.mat-mdc-form-field)) {
+.workstep-part:not(:last-child):not(:has(.mat-mdc-form-field):not(:has(.hide-mat-error-gap))) {
     margin-bottom: 1.5rem;
 }
 
@@ -375,7 +476,7 @@ app-navigation{
 }
 
 .workstep-expansion-panel {
-    box-shadow: rgba(100, 100, 111, 0.2) 0 1px 5px 0 !important;
+    box-shadow: @shadow-box !important;
 }
 
 .workstep-expansion-panel {

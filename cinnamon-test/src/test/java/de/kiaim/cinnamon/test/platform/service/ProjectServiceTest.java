@@ -9,7 +9,6 @@ import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.Step;
 import de.kiaim.cinnamon.platform.repository.UserRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
-import de.kiaim.cinnamon.platform.service.UserService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
 import de.kiaim.cinnamon.test.util.WithMockWebServer;
 import mockwebserver3.MockResponse;
@@ -25,18 +24,12 @@ public class ProjectServiceTest extends DatabaseTest {
 	@Autowired CinnamonConfiguration cinnamonConfiguration;
 	@Autowired UserRepository userRepository;
 	@Autowired ProjectService projectService;
-	@Autowired UserService userService;
 
 	private MockWebServer mockBackEnd;
 
 	@Test
 	public void createProject() {
-		var user = userService.save("email", "password");
-
-		assertDoesNotThrow(() -> projectService.createProject(user));
-
-		assertNotNull(user.getProject(), "No project has been created!");
-		var project = user.getProject();
+		var project = assertDoesNotThrow(() -> projectService.createProject(123L, "Test"));
 
 		assertEquals(1, project.getPipelines().size(), "Unexpected  number of created pipelines!");
 		var pipeline = project.getPipelines().get(0);
@@ -60,12 +53,14 @@ public class ProjectServiceTest extends DatabaseTest {
 	@Test
 	public void getExistingProject() {
 		final UserEntity user = getTestUser();
-		ProjectEntity initialProject = assertDoesNotThrow(() -> projectService.createProject(0L));
+		ProjectEntity initialProject = assertDoesNotThrow(() -> projectService.createProject(0L, "Test"));
 		initialProject.getStatus().setCurrentStep(Step.VALIDATION);
-		user.setProject(initialProject);
-		initialProject = userRepository.save(user).getProject();
+		user.addProject(initialProject);
+		initialProject = userRepository.save(user).getProject(initialProject.getExternalId());
 
-		final ProjectEntity project = projectService.getProject(user);
+		ProjectEntity finalInitialProject = initialProject;
+		final ProjectEntity project = assertDoesNotThrow(
+				() -> projectService.getProject(user, finalInitialProject.getExternalId()));
 
 		assertEquals(initialProject.getId(), project.getId(), "The returned project is not equal to the users project!");
 		assertEquals(Step.VALIDATION, project.getStatus().getCurrentStep(), "The initial status is wrong!");

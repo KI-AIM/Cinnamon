@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { ProjectService } from "@shared/services/project.service";
 import { Algorithm } from 'src/app/shared/model/algorithm';
 import { AlgorithmService, ReadConfigResult } from "../../../shared/services/algorithm.service";
 import { HttpClient } from "@angular/common/http";
@@ -14,8 +15,9 @@ export class TechnicalEvaluationService extends AlgorithmService {
     constructor(
         http: HttpClient,
         configurationService: ConfigurationService,
+        projectService: ProjectService,
     ) {
-        super(http, configurationService);
+        super(http, configurationService, projectService);
     }
 
     public override getConfigurationName(): string {

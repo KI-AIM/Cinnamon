@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -57,6 +58,8 @@ class ProjectRepositoryTest extends DatabaseTest {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 
 		final ProjectEntity entity = new ProjectEntity();
+		entity.setExternalId(UUID.randomUUID());
+		entity.getProjectConfiguration().setProjectName("Test Project");
 
 		final DataSetEntity dataSetEntity = new DataSetEntity();
 		dataSetEntity.setDataConfiguration(dataConfiguration);

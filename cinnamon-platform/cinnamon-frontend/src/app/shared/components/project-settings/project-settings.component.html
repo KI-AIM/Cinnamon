@@ -93,20 +93,27 @@
                     <div class="settings-info">
                         Deleting the project is irreversible. Make sure that you downloaded all the data you want to
                         keep.<br>
-                        Please confirm that you want to delete the project by entering the project name and password
-                        again:
+                        Please confirm that you want to delete the project by entering the project name and your
+                        credentials again:
                     </div>
                     <div>
                         <mat-form-field class="w-100 hide-mat-error-gap">
                             <mat-label>Project Name</mat-label>
-                            <input type="text" matInput #confirmProjectNameInput>
+                            <input type="text" matInput required #confirmProjectNameInput>
+                        </mat-form-field>
+                    </div>
+
+                    <div>
+                        <mat-form-field class="w-100 hide-mat-error-gap">
+                            <mat-label>Username</mat-label>
+                            <input type="text" matInput required #confirmUsernameInput>
                         </mat-form-field>
                     </div>
 
                     <div>
                         <mat-form-field class="w-100 hide-mat-error-gap">
                             <mat-label>Password</mat-label>
-                            <input [type]="hidePassword ? 'password' : 'text'" matInput #confirmPasswordInput>
+                            <input [type]="hidePassword ? 'password' : 'text'" matInput required #confirmPasswordInput>
                             <mat-icon class="icon-enabled"
                                       (click)="hidePassword = !hidePassword; $event.stopPropagation();" matSuffix>
                                 {{ hidePassword ? 'visibility_off' : 'visibility' }}
@@ -119,8 +126,8 @@
                             {{ deletionError }}
                         </div>
                         <button mat-raised-button color="warn" type="button"
-                                [disabled]="confirmProjectNameInput.value !== projectName || confirmPasswordInput.value === ''"
-                                (click)="deleteProject(confirmProjectNameInput.value, confirmPasswordInput.value)">
+                                [disabled]="confirmProjectNameInput.value !== projectName || confirmUsernameInput.value !== username || confirmPasswordInput.value === ''"
+                                (click)="deleteProject(confirmProjectNameInput.value, confirmUsernameInput.value, confirmPasswordInput.value)">
                             <mat-icon>delete</mat-icon>
                             Delete Project
                         </button>

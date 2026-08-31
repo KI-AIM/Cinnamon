@@ -437,6 +437,10 @@ public class DatabaseService {
 			fileInformation.setFhirResourceTypes(file.getCompatibility().getFhirResourceTypes());
 		}
 
+		if (file.getDataSourceConfiguration() != null) {
+			fileInformation.setDataSourceType(file.getDataSourceConfiguration().getDataSourceType());
+		}
+
 		if (file.getFileConfiguration() != null) {
 			fileInformation.setType(file.getFileConfiguration().getFileType());
 		} else if (file.getName() != null) {
@@ -992,7 +996,7 @@ public class DatabaseService {
 			return new DataSetInfo(0, 0, false, 0.0f, 0, 0, numberRetainedRows, dataConfigurationInfo);
 		}
 
-		final int rows = countEntries(dataSetEntity.getId());
+		final int rows = getNumberRows(dataSetEntity);
 		final int invalidRows = countInvalidRows(dataSetEntity.getId());
 
 		boolean hasHoldOutSplit = dataSetEntity.isHasHoldOut();
@@ -1007,7 +1011,7 @@ public class DatabaseService {
 			holdOutPercentage = originalData.getDatasetConfiguration().getHoldOutSplitPercentage();
 
 			if (hasHoldOutSplit) {
-				numberHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL, null);
+				numberHoldOutRows = getNumberHoldOutRows(dataSetEntity);
 				numberInvalidHoldOutRows = countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ERRORS, null);
 			}
 		} else {
@@ -1389,6 +1393,30 @@ public class DatabaseService {
 		dataSet.getStatisticsProcess().reset();
 
 		log.debug("Deleted dataset with ID {}", dataSet.getId());
+	}
+
+	/**
+	 * Returns the number of rows in the given dataset.
+	 *
+	 * @param dataSetEntity The dataset.
+	 * @return The number of rows in the dataset.
+	 * @throws InternalDataSetPersistenceException If the number could not be retrieved.
+	 */
+	public int getNumberRows(final DataSetEntity dataSetEntity) throws InternalDataSetPersistenceException {
+		return countEntries(dataSetEntity.getId());
+	}
+
+	/**
+	 * Returns the number of hold-out rows in the given dataset.
+	 *
+	 * @param dataSetEntity The dataset.
+	 * @return The number of hold-out rows in the dataset.
+	 * @throws InternalDataSetPersistenceException If the number could not be retrieved.
+	 */
+	public int getNumberHoldOutRows(final DataSetEntity dataSetEntity) throws InternalDataSetPersistenceException {
+		return dataSetEntity.isHasHoldOut()
+		       ? countEntries(dataSetEntity.getId(), HoldOutSelector.HOLD_OUT, RowSelector.ALL, null)
+		       : 0;
 	}
 
 	/**

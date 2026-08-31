@@ -5,7 +5,6 @@ import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular
 import { MatButton } from "@angular/material/button";
 import { ProcessStatus } from "@core/enums/process-status";
 import { StateManagementService } from "@core/services/state-management.service";
-import { TitleService } from "@core/services/title-service.service";
 import {
     AnonymizationAlgorithmData,
     AnonymizationService
@@ -34,6 +33,7 @@ import { AlgorithmData } from "@shared/services/algorithm.service";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
+import { ProjectService } from "@shared/services/project.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
 import { catchError, combineLatest, map, Observable, of, switchMap } from "rxjs";
@@ -63,7 +63,6 @@ import { environments } from "src/environments/environment";
 })
 export class ReportComponent implements OnInit {
 
-    private readonly baseUrl: string = environments.apiUrl + "/api/report";
     private readonly PAGE_HEIGHT = 1122;
 
     protected readonly CHART_BAR = 740;
@@ -119,13 +118,12 @@ export class ReportComponent implements OnInit {
         private readonly http: HttpClient,
         protected readonly platform: Platform,
         private projectConfigService: ProjectConfigurationService,
+        private readonly projectService: ProjectService,
         private readonly riskAssessmentService: RiskAssessmentService,
         private readonly stateManagementService: StateManagementService,
         private statisticsService: StatisticsService,
         private readonly synthetizationService: SynthetizationService,
-        titleService: TitleService,
     ) {
-        titleService.setPageTitle("Report");
         this.reportDate = new Date().toLocaleString();
     }
 
@@ -138,7 +136,7 @@ export class ReportComponent implements OnInit {
             datasetInfoProtected: this.datasetInfoService.getDataSetInfo("PROTECTED"),
             mc: this.projectConfigService.projectSettings$,
             pipeline: this.stateManagementService.pipelineInformation$,
-            reportData: this.fetchReportData(),
+            reportData: this.getReportData(),
             riskAssessmentConfig: this.riskAssessmentService.fetchConfiguration().pipe(
                 map(value => (value.config as any) as RiskAssessmentConfig),
             ),
@@ -411,8 +409,18 @@ export class ReportComponent implements OnInit {
         return this.statisticsService.getColorSchemeGradient(value);
     }
 
-    private fetchReportData(): Observable<ReportData> {
-        return this.http.get<ReportData>(this.baseUrl);
+    private baseUrl(projectId: string): string {
+        return `${environments.apiUrl}/api/project/${projectId}/report`;
+    }
+
+    private getReportData(): Observable<ReportData> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchReportData(projectId)),
+        );
+    }
+
+    private fetchReportData(projectId: string): Observable<ReportData> {
+        return this.http.get<ReportData>(this.baseUrl(projectId));
     }
 
     /**

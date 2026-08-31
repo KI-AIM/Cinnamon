@@ -45,6 +45,12 @@ public class CinnamonInfo {
 	private final PasswordRequirementsConfiguration passwordRequirements;
 
 	/**
+	 * Whether an invitation is required to register a new user.
+	 */
+	@Schema(description = "Whether an invitation is required to register a new user.")
+	private final boolean isInvitationRequired;
+
+	/**
 	 * The Cinnamon version.
 	 */
 	@Schema(description = "The Cinnamon version.", example = "1.0.0")

@@ -2,6 +2,9 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from "@angular/forms";
 import { MatTooltip } from "@angular/material/tooltip";
 import { BrowserModule } from '@angular/platform-browser';
+import { AdministrationModule } from "@features/administration/administration.module";
+import { ProjectModule } from "@features/project/project.module";
+import { UserModule } from "@features/user/user.module";
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -34,6 +37,7 @@ import { EvaluationModule } from "./features/evaluation/evaluation.module";
 import { RiskAssessmentModule } from "./features/risk-assessment/risk-assessment.module";
 import { NotFoundComponent } from './core/components/not-found/not-found.component';
 import { NotificationCenterComponent } from './core/components/notification-center/notification-center.component';
+import { UserCenterComponent } from '@core/components/user-center/user-center.component';
 
 @NgModule({
     declarations: [
@@ -41,13 +45,17 @@ import { NotificationCenterComponent } from './core/components/notification-cent
         NavigationComponent,
         NotFoundComponent,
         NotificationCenterComponent,
+        UserCenterComponent,
     ],
     imports: [
         BrowserModule,
         SharedModule,
+        AdministrationModule,
         AnonymizationModule,
         AppRoutingModule,
         AuthModule,
+        UserModule,
+        ProjectModule,
         EvaluationModule,
         ExecutionModule,
         StartModule,

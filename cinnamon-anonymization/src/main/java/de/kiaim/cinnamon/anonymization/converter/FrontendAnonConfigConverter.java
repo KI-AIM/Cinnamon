@@ -84,13 +84,13 @@ public class FrontendAnonConfigConverter {
         Collection<PrivacyModel> privacyModels = new ArrayList<>();
 
         // Check riskThresholdType and generate corresponding PrivacyModel
-        if (riskThresholdType.equalsIgnoreCase("Max")) {
+        if ("Max".equalsIgnoreCase(riskThresholdType)) {
             // K-Anonymity
             int k = calculateKFromThreshold(riskThresholdValue);
             KAnonymity kAnonymity = new KAnonymity();
             kAnonymity.setK(k);
             privacyModels.add(kAnonymity);
-        } else if (riskThresholdType.equalsIgnoreCase("Avg")) {
+        } else if ("Avg".equalsIgnoreCase(riskThresholdType)) {
             AverageReidentificationRisk averageReidentificationRisk = new AverageReidentificationRisk();
             averageReidentificationRisk.setAverageRisk((double) riskThresholdValue);
             privacyModels.add(averageReidentificationRisk);

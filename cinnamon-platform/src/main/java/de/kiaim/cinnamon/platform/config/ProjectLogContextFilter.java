@@ -4,7 +4,7 @@ import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.BackgroundProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
-import de.kiaim.cinnamon.platform.repository.UserRepository;
+import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,7 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -33,13 +32,15 @@ public class ProjectLogContextFilter extends OncePerRequestFilter {
 	private static final String CALLBACK_PATH_PREFIX = "/api/process/";
 	private static final String CALLBACK_PATH_SUFFIX = "/callback";
 
-	private final UserRepository userRepository;
 	private final BackgroundProcessRepository backgroundProcessRepository;
+	final private ProjectRepository projectRepository;
 
-	public ProjectLogContextFilter(final UserRepository userRepository,
-	                              final BackgroundProcessRepository backgroundProcessRepository) {
-		this.userRepository = userRepository;
+	public ProjectLogContextFilter(
+			final BackgroundProcessRepository backgroundProcessRepository,
+			final ProjectRepository projectRepository
+	) {
 		this.backgroundProcessRepository = backgroundProcessRepository;
+		this.projectRepository = projectRepository;
 	}
 
 	@Override
@@ -60,22 +61,38 @@ public class ProjectLogContextFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (authentication == null) {
-			return;
+		setProjectLogContextFormProjectId(request);
+	}
+
+	private boolean setProjectLogContextFormProjectId(final HttpServletRequest request) {
+		final UUID projectId = extractProjectIdFromUri(request.getRequestURI());
+		if (projectId == null) {
+			return false;
 		}
 
-		final String email = extractEmail(authentication);
-		if (email == null || email.isBlank()) {
-			return;
+		final ProjectEntity project = projectRepository.findByExternalId(projectId).orElse(null);
+		populateProjectContext(project);
+		return project != null;
+	}
+
+	@Nullable
+	private UUID extractProjectIdFromUri(final String requestUri) {
+		var parts = requestUri.split("/");
+
+		for (int i = 0; i < parts.length; i++) {
+			if (parts[i].equals("project") || parts[i].equals("workflow")) {
+				if (i + 1 >= parts.length) {
+					return null;
+				}
+				try {
+					return UUID.fromString(parts[i + 1]);
+				} catch (final IllegalArgumentException e) {
+					return null;
+				}
+			}
 		}
 
-		final UserEntity user = userRepository.findByEmail(email).orElse(null);
-		if (user == null) {
-			return;
-		}
-
-		populateProjectContext(user.getProject());
+		return null;
 	}
 
 	private boolean setProjectLogContextFromProcessId(final HttpServletRequest request) {
@@ -111,7 +128,7 @@ public class ProjectLogContextFilter extends OncePerRequestFilter {
 
 	private String extractEmail(final Authentication authentication) {
 		if (authentication.getPrincipal() instanceof UserEntity user) {
-			return user.getEmail();
+			return user.getUsername();
 		}
 
 		return authentication.getName();

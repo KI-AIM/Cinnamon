@@ -31,6 +31,7 @@ public class ProjectConfigurationEntity {
 	/**
 	 * Name of the dataset.
 	 */
+	@Column(nullable = false)
 	private String projectName;
 
 	/**

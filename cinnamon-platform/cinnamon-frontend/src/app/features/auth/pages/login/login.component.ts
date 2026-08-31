@@ -2,12 +2,13 @@ import { Component, OnInit } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
-import { StateManagementService } from "@core/services/state-management.service";
 import { TitleService } from "@core/services/title-service.service";
+import { AppConfigService } from "@shared/services/app-config.service";
 import { UserService } from "@shared/services/user.service";
+import { map, Observable, switchMap } from "rxjs";
 
 interface LoginForm {
-	email: FormControl<string>;
+	username: FormControl<string>;
 	password: FormControl<string>;
 }
 
@@ -18,26 +19,27 @@ interface LoginForm {
     standalone: false
 })
 export class LoginComponent implements OnInit {
+    protected isInvitationRequired$: Observable<boolean>;
+
 	loginForm: FormGroup<LoginForm>;
 
-    /**
-     * If the password should be hidden by dots.
-     */
-    protected hidePassword: boolean = true;
-
 	constructor(
+        private readonly appConfigService: AppConfigService,
         private readonly notificationService: NotificationService,
         private readonly router: Router,
 		private readonly titleService: TitleService,
 		private readonly userService: UserService,
-        private readonly stateManagementService: StateManagementService,
 	) {
-		this.titleService.setPageTitle("Open project");
+		this.titleService.setPageTitle("Login");
 	}
 
 	ngOnInit() {
+        this.isInvitationRequired$ = this.appConfigService.appConfig$.pipe(
+            map(config => config.isInvitationRequired),
+        );
+
         this.loginForm = new FormGroup<LoginForm>({
-            email: new FormControl<string>(this.userService.cachedEmailInput ?? "", {
+            username: new FormControl<string>(this.userService.cachedUsernameInput ?? "", {
                 nonNullable: true,
                 validators: [Validators.required],
             }),
@@ -48,36 +50,45 @@ export class LoginComponent implements OnInit {
         });
 
         // Reset the cached login inputs
-        this.userService.cachedEmailInput = null;
+        this.userService.cachedUsernameInput = null;
         this.userService.cachedPasswordInput = null;
 
-
         if (this.userService.isAuthenticated()) {
-            this.stateManagementService.fetchAndRouteToCurrentStep();
+            this.userService.routeToUser$().subscribe();
         }
 	}
 
 	onSubmit() {
-        const loginData = this.loginForm.value as { email: string; password: string };
-        this.userService.login(loginData).subscribe({
-            next: () => {
-                this.stateManagementService.fetchAndRouteToCurrentStep();
-            },
-            error: () => {
+        const loginData = this.loginForm.value as { username: string; password: string };
+        this.userService.login(loginData).pipe(
+            switchMap(() => this.userService.routeToUser$())
+        ).subscribe({
+            error: (error) => {
+                let message = "Something went wrong during login. Please try again";
+                if (error.status === 401) {
+                    message = "Account name or password wrong";
+                } else if (error.status === 403) {
+                    message = "Your account has not the permissions to login";
+                }
+
                 this.notificationService.addNotification(
-                    new AppNotification("Project name or password wrong", 'failure')
+                    new AppNotification(message, 'failure')
                 );
             },
         });
     }
 
+    protected get passwordControl(): FormControl<string> {
+        return this.loginForm.get('password') as FormControl<string>;
+    }
+
     /**
      * Navigates to the register page.
-     * Caches the current email and password inputs.
+     * Caches the current username and password inputs.
      */
     protected navigateToRegister() {
-        this.userService.cachedEmailInput = this.loginForm.value.email ?? null;
+        this.userService.cachedUsernameInput = this.loginForm.value.username ?? null;
         this.userService.cachedPasswordInput = this.loginForm.value.password ?? null;
-        this.router.navigate(["/create"]);
+        this.router.navigate(["/register"]);
     }
 }

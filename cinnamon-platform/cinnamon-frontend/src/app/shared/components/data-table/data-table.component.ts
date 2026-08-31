@@ -9,6 +9,7 @@ import { DataRowTransformationError } from "@shared/model/data-row-transformatio
 import { DataSet } from "@shared/model/data-set";
 import { DataSetInfo } from "@shared/model/data-set-info";
 import { DataConfigurationService } from "@shared/services/data-configuration.service";
+import { ProjectService } from "@shared/services/project.service";
 import { catchError, map, Observable, of, startWith, switchMap } from "rxjs";
 import { environments } from "src/environments/environment";
 
@@ -26,10 +27,10 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 
     protected readonly HoldOutSelector = HoldOutSelector;
 
-	dataSource = new MatTableDataSource<TableElement>();
-	@ViewChild(MatPaginator) paginator: MatPaginator;
-	displayedColumns: string[] = ['position'];
-	protected errorFilter = "ALL";
+    dataSource = new MatTableDataSource<TableElement>();
+    @ViewChild(MatPaginator) paginator: MatPaginator;
+    displayedColumns: string[] = ['position'];
+    protected errorFilter = "ALL";
     protected holdOutFilter: HoldOutSelector = HoldOutSelector.NOT_HOLD_OUT;
 
     protected isLoading: boolean = false;
@@ -37,19 +38,20 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 
     protected dataSetInfo$: Observable<DataSetInfo>;
 
-	constructor(
+    constructor(
         private readonly dataConfigurationService: DataConfigurationService,
         private readonly dataSetInfoService: DataSetInfoService,
         private readonly http: HttpClient,
-	) {
-	}
+        private readonly projectService: ProjectService,
+    ) {
+    }
 
     ngOnInit() {
         this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo(this.getSource());
     }
 
     ngAfterViewInit() {
-		this.dataSource.paginator = this.paginator;
+        this.dataSource.paginator = this.paginator;
 
         this.dataConfigurationService.downloadDataConfigurationAsJson().subscribe(
             {
@@ -66,21 +68,12 @@ export class DataTableComponent implements OnInit, AfterViewInit {
 
                     this.paginator.page.pipe(
                         startWith({}),
-                        switchMap(() => {
+                        switchMap(() => this.projectService.projectIdRequiredOnce$),
+                        switchMap(projectId => {
                             this.isLoading = true;
-                            return this.http.get<DataSetPage>(environments.apiUrl + "/api/data/transformationResult/page", {
-                                params: {
-                                    selector: this.getSource().toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
-                                    jobName: this.getSource(),
-
-                                    defaultNullEncoding: "$value",
-                                    columns: columnName,
-                                    holdOutSelector: this.holdOutFilter,
-                                    page: this.paginator.pageIndex + 1,
-                                    perPage: this.paginator.pageSize,
-                                    rowSelector: this.errorFilter,
-                                }
-                            }).pipe(catchError(() => of(null)));
+                            return this.fetchDataSetPage(projectId, columnName).pipe(
+                                catchError(() => of(null)),
+                            );
                         }),
                         map(value => {
                             if (value == null) {
@@ -101,107 +94,107 @@ export class DataTableComponent implements OnInit, AfterViewInit {
                 }
             }
         );
-	}
+    }
 
-	/**
-	 * Function that transforms a dataSet object
-	 * into a format that is usable by the angular
-	 * material data tables
-	 * @param dataSet to be transformed
+    /**
+     * Function that transforms a dataSet object
+     * into a format that is usable by the angular
+     * material data tables
+     * @param dataSet to be transformed
      * @param rowNumbers Mapping of row numbers
-	 * @returns Array<TableElement>
-	 */
-	transformDataSet(dataSet: DataSet, rowNumbers: number[]) : TableElement[] {
-		const transformedData: TableElement[] = [];
+     * @returns Array<TableElement>
+     */
+    transformDataSet(dataSet: DataSet, rowNumbers: number[]): TableElement[] {
+        const transformedData: TableElement[] = [];
 
-		dataSet.data.forEach((dataRow, index) => {
-			const transformedRow: TableElement = {position: rowNumbers[index], errorsInRow: []};
-			dataRow.forEach((dataItem, index) => {
-				const columnName =
-					dataSet.dataConfiguration.configurations[index].name;
-				transformedRow[columnName as string] = dataItem?.toString();
-			});
-			transformedData.push(transformedRow);
-		});
+        dataSet.data.forEach((dataRow, index) => {
+            const transformedRow: TableElement = {position: rowNumbers[index], errorsInRow: []};
+            dataRow.forEach((dataItem, index) => {
+                const columnName =
+                    dataSet.dataConfiguration.configurations[index].name;
+                transformedRow[columnName as string] = dataItem?.toString();
+            });
+            transformedData.push(transformedRow);
+        });
 
-		return transformedData;
-	}
+        return transformedData;
+    }
 
-	/**
-	 * Adds a new entry to the transformed TableElement Array
-	 * that contains the indices of the faulty columns of each row
-	 * so they can be highlighted in the frontend
-	 * @param data transformed Array<TableElement>
-	 * @param transformationErrors Array<DataRowTransformationError>
-	 * @returns adjusted Array<TableElement>
-	 */
-	addColumnErrorsToTableData(data: TableElement[], transformationErrors: DataRowTransformationError[]): TableElement[] {
-		data.forEach((dataRow, index) => {
-			dataRow.errorsInRow = this.getErrorColumnIndicesForRowIndex(index, transformationErrors);
-		})
-		return data;
-	}
+    /**
+     * Adds a new entry to the transformed TableElement Array
+     * that contains the indices of the faulty columns of each row
+     * so they can be highlighted in the frontend
+     * @param data transformed Array<TableElement>
+     * @param transformationErrors Array<DataRowTransformationError>
+     * @returns adjusted Array<TableElement>
+     */
+    addColumnErrorsToTableData(data: TableElement[], transformationErrors: DataRowTransformationError[]): TableElement[] {
+        data.forEach((dataRow, index) => {
+            dataRow.errorsInRow = this.getErrorColumnIndicesForRowIndex(index, transformationErrors);
+        })
+        return data;
+    }
 
-	/**
-	 * Processes the DataRowTransformationErrors and returns
-	 * a list of indices if a column in a row has any errors.
-	 * Returns an empty Array if no error is present
-	 * @param index of the row
-	 * @param transformationErrors Array of transformation Errors
-	 * @returns Array with Indices
-	 */
-	getErrorColumnIndicesForRowIndex(index: number, transformationErrors: DataRowTransformationError[]): Array<number> {
-		const resultIndices: Array<number>  = [];
+    /**
+     * Processes the DataRowTransformationErrors and returns
+     * a list of indices if a column in a row has any errors.
+     * Returns an empty Array if no error is present
+     * @param index of the row
+     * @param transformationErrors Array of transformation Errors
+     * @returns Array with Indices
+     */
+    getErrorColumnIndicesForRowIndex(index: number, transformationErrors: DataRowTransformationError[]): Array<number> {
+        const resultIndices: Array<number> = [];
 
-		transformationErrors.forEach(transformationError => {
-			if (transformationError.index === index) {
-				transformationError.dataTransformationErrors.forEach(errors => {
-					resultIndices.push(errors.index)
-				});
-			}
-		});
+        transformationErrors.forEach(transformationError => {
+            if (transformationError.index === index) {
+                transformationError.dataTransformationErrors.forEach(errors => {
+                    resultIndices.push(errors.index)
+                });
+            }
+        });
 
-		return resultIndices;
-	}
+        return resultIndices;
+    }
 
-	/**
-	 * Returns the column names of a DataConfiguration in a String Array
-	 * @param dataConfiguration to be processed
-	 * @returns Array<string>
-	 */
-	getColumnNames(dataConfiguration: DataConfiguration): string[] {
-		const result: string[] = [];
+    /**
+     * Returns the column names of a DataConfiguration in a String Array
+     * @param dataConfiguration to be processed
+     * @returns Array<string>
+     */
+    getColumnNames(dataConfiguration: DataConfiguration): string[] {
+        const result: string[] = [];
 
-		dataConfiguration.configurations.forEach((column) => {
-			result.push(column.name as string);
-		});
+        dataConfiguration.configurations.forEach((column) => {
+            result.push(column.name as string);
+        });
 
-		return result;
-	}
+        return result;
+    }
 
-	/**
-	 * Returns true if the input error array has any entries.
-	 * Returns false if the array is empty
-	 * @param errorArray the Array stored in TableElement.errorsInRow
-	 * @returns boolean
-	 */
-	rowHasErrors(errorArray: Array<any>): boolean {
-		return errorArray.length > 0;
-	}
+    /**
+     * Returns true if the input error array has any entries.
+     * Returns false if the array is empty
+     * @param errorArray the Array stored in TableElement.errorsInRow
+     * @returns boolean
+     */
+    rowHasErrors(errorArray: Array<any>): boolean {
+        return errorArray.length > 0;
+    }
 
-	/**
-	 * Applies a filter to the table based on the select menu in frontend.
+    /**
+     * Applies a filter to the table based on the select menu in the frontend.
      * Goes to the first page of the table.
-	 * Shows different data depending on the number of errors in a row.
+     * Shows different data depending on the number of errors in a row.
      * It triggers the table to fetch the data from the backend.
      *
-	 * @param $event the selectionChange event
-	 */
-	applyErrorFilter($event: any) {
-		this.errorFilter = $event.value;
+     * @param $event the selectionChange event
+     */
+    applyErrorFilter($event: any) {
+        this.errorFilter = $event.value;
         this.paginator.firstPage()
         this.paginator.page.emit();
-	}
+    }
 
     /**
      * Applies the hold-out split filter of the event.
@@ -225,6 +218,25 @@ export class DataTableComponent implements OnInit, AfterViewInit {
         }
 
         return 'VALIDATION';
+    }
+
+    private baseUrl(projectId: string): string {
+        return `${environments.apiUrl}/api/project/${projectId}/data/transformationResult/page`;
+    }
+
+    private fetchDataSetPage(projectId: string, columnName: string): Observable<DataSetPage> {
+        return this.http.get<DataSetPage>(this.baseUrl(projectId), {
+            params: {
+                selector: this.getSource().toLowerCase() === "validation" ? "ORIGINAL" : "JOB",
+                jobName: this.getSource(),
+                defaultNullEncoding: "$value",
+                columns: columnName,
+                holdOutSelector: this.holdOutFilter,
+                page: this.paginator.pageIndex + 1,
+                perPage: this.paginator.pageSize,
+                rowSelector: this.errorFilter,
+            }
+        });
     }
 }
 

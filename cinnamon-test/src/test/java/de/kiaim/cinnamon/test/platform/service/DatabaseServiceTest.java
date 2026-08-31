@@ -10,7 +10,6 @@ import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
-import de.kiaim.cinnamon.platform.exception.InternalApplicationConfigurationException;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
 import de.kiaim.cinnamon.platform.model.entity.*;
@@ -55,8 +54,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		transformationResult.getDataSet().getDataRows().get(0).getData().add(new StringData("+1"));
 		transformationResult.getDataSet().getDataRows().get(1).getData().add(new StringData("+1"));
 		transformationResult.getDataSet().getDataRows().get(1).getData().add(new StringData("+2"));
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		long datasetId = assertDoesNotThrow(
 				() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
@@ -70,8 +68,7 @@ class DatabaseServiceTest extends DatabaseTest {
 		transformationResult.getDataSet().getDataRows().get(0).getData().remove(5);
 		transformationResult.getDataSet().getDataRows().get(1).getData().remove(5);
 		transformationResult.getDataSet().getDataRows().get(1).getData().remove(4);
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		long datasetId = assertDoesNotThrow(
 				() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
@@ -138,15 +135,12 @@ class DatabaseServiceTest extends DatabaseTest {
 				  configurations: []
 				""";
 
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, config, project),
 		                   "The configuration could not be stored!");
 
-		final UserEntity updatedUser = getTestUser();
-
-		final ProjectEntity updatedProject = updatedUser.getProject();
+		final ProjectEntity updatedProject = getTestProject();
 		assertNotNull(updatedProject, "The configuration has not been created!");
 		testConfiguration(updatedProject, config);
 	}
@@ -157,15 +151,12 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		storeConfiguration(config);
 
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 		final String updatedConfig = "Updated test config";
 		assertDoesNotThrow(() -> databaseService.storeConfiguration(CONFIGURATION_NAME, updatedConfig, project),
 		                   "The configuration could not be updated!");
 
-		final UserEntity updatedUser = getTestUser();
-
-		final ProjectEntity updatedProject = updatedUser.getProject();
+		final ProjectEntity updatedProject = getTestProject();
 		assertNotNull(updatedProject, "The configuration has not been created!");
 		testConfiguration(updatedProject, updatedConfig);
 	}
@@ -173,8 +164,7 @@ class DatabaseServiceTest extends DatabaseTest {
 	@Test
 	void exportDataSet() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 
@@ -186,8 +176,7 @@ class DatabaseServiceTest extends DatabaseTest {
 	@Test
 	void exportDataSetColumns() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 
@@ -231,8 +220,7 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		storeConfiguration(config);
 
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		final String exportedConfig = assertDoesNotThrow(() -> databaseService.exportConfiguration(CONFIGURATION_NAME, project),
 		                                                 "The configuration could not be exported!");
@@ -241,8 +229,7 @@ class DatabaseServiceTest extends DatabaseTest {
 
 	@Test
 	void exportConfigurationNoConfiguration() {
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 		final var error = assertThrows(BadConfigurationNameException.class,
 		                               () -> databaseService.exportConfiguration(CONFIGURATION_NAME, project),
 		                               "Configuration should not be present!");
@@ -253,8 +240,7 @@ class DatabaseServiceTest extends DatabaseTest {
 	void exportConfigurationInvalidName() {
 		final String invalidConfigName = "invalidConfigName";
 		final String config = "Test config";
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		storeConfiguration(config);
 
@@ -267,7 +253,7 @@ class DatabaseServiceTest extends DatabaseTest {
 	void countEntries() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
 		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
@@ -279,8 +265,7 @@ class DatabaseServiceTest extends DatabaseTest {
 	@Test
 	void countInvalidRows() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(true);
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
@@ -292,8 +277,7 @@ class DatabaseServiceTest extends DatabaseTest {
 	@Test
 	void existsTableTest() {
 		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = projectService.getProject(user);
+		final ProjectEntity project = getTestProject();
 
 		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
 		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
@@ -309,8 +293,8 @@ class DatabaseServiceTest extends DatabaseTest {
 	}
 
 	@Test
-	void markProcessOutdated() throws InternalApplicationConfigurationException {
-		ProjectEntity project =  projectService.createProject(123L);
+	void markProcessOutdated() {
+		ProjectEntity project = assertDoesNotThrow(() -> projectService.createProject(123L, null));
 
 		ExecutionStepEntity stage1 = project.getPipelines().get(0).getStageByIndex(0);
 		stage1.setStatus(StageStatus.FINISHED);

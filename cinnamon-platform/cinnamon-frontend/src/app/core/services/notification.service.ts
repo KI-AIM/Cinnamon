@@ -88,6 +88,15 @@ export class NotificationService {
     }
 
     /**
+     * Adds a notification with the type 'success'.
+     * @param message The message of the notification.
+     */
+    public addNotificationSuccess(message: string) {
+        const notification = new AppNotification(message, 'success');
+        this.addNotification(notification);
+    }
+
+    /**
      * Notifies about all notifications.
      * Latest notifications are at the back.
      */
@@ -198,6 +207,12 @@ export class AppNotification {
      * The time the notification was created.
      */
     public time: Date = new Date();
+
+    /**
+     * The user the notification belongs to.
+     * Null if the notification does not belong to a user.
+     */
+    public user: string | null = null;
 
     /**
      * The project the notification belongs to.

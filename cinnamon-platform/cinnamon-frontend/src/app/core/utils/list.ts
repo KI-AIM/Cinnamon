@@ -31,7 +31,7 @@ export class List<T> {
     }
 
     remove(value: T): void {
-        var index = this.items.indexOf(value, 0);
+        const index = this.items.indexOf(value, 0);
         if (index > -1) {
             this.items.splice(index, 1);
         }

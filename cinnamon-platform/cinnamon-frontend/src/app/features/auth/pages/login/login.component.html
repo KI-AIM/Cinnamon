@@ -1,21 +1,20 @@
 <div class="bg-white p-5 rounded border">
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="d-flex flex-column mb-3">
         <mat-form-field>
-            <mat-label>Project Name</mat-label>
-            <input type="text" formControlName="email" matInput autocomplete="username">
+            <mat-label>Username</mat-label>
+            <input type="text" formControlName="username" matInput autocomplete="username">
         </mat-form-field>
-        <mat-form-field>
-            <mat-label>Password</mat-label>
-            <input [type]="hidePassword ? 'password' : 'text'" formControlName="password" matInput
-                   autocomplete="current-password">
-            <mat-icon class="icon-enabled" (click)="hidePassword = !hidePassword; $event.stopPropagation();" matSuffix>
-                {{ hidePassword ? 'visibility_off' : 'visibility' }}
-            </mat-icon>
-        </mat-form-field>
-        <button mat-raised-button color="primary" [disabled]="!loginForm.valid" >Open</button>
+
+        <app-password-input label="Password" [control]="passwordControl">
+        </app-password-input>
+
+        <button mat-raised-button color="primary" [disabled]="!loginForm.valid">Login</button>
     </form>
-    <div style="display: flex; flex-direction: column;">
-        <div style="margin: auto;">Want to create a new project?</div>
-        <button mat-raised-button color="primary" (click)="navigateToRegister()">Create new Project</button>
-    </div>
+
+    @if ((isInvitationRequired$ | async) === false) {
+        <div style="display: flex; flex-direction: column;">
+            <div style="margin: auto;">Want to create a new account?</div>
+            <button mat-raised-button color="primary" (click)="navigateToRegister()">Create new Account</button>
+        </div>
+    }
 </div>

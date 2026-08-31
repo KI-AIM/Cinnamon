@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.configuration;
 
+import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -7,7 +8,9 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -17,6 +20,19 @@ import java.util.TreeMap;
 @ConfigurationProperties(prefix = "cinnamon")
 @Getter @Setter
 public class CinnamonConfiguration {
+
+	/**
+	 * Configuration of the initial administrator account.
+	 */
+	@NestedConfigurationProperty
+	private AdminConfiguration admin = new AdminConfiguration();
+
+	/**
+	 * Roles that are deleted when the users of a demo instance are reset.
+	 * A user is only deleted if all their roles are contained in this set,
+	 * so users with a role that is not listed here are kept.
+	 */
+	private Set<UserRole> demoInstanceDeletedRoles = new HashSet<>(Set.of(UserRole.ROLE_USER, UserRole.ROLE_API));
 
 	@NestedConfigurationProperty
 	private PasswordRequirementsConfiguration passwordRequirements = new PasswordRequirementsConfiguration();

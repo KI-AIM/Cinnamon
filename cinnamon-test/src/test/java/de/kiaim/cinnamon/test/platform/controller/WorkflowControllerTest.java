@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
 import de.kiaim.cinnamon.platform.model.dto.WorkflowInformation;
 import de.kiaim.cinnamon.platform.model.entity.DataProcessingEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.StepOutputEncoding;
+import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.service.ExternalConfigurationService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 
 import java.util.ArrayList;
@@ -32,7 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WithMockWebServer
-@WithUserDetails("test_user")
+@WithUserDetails(value = "test_user", setupBefore = TestExecutionEvent.TEST_EXECUTION)
 public class WorkflowControllerTest extends ControllerTest {
 
 	private static final int TEXT_ANON_PROCESS_INDEX = 0;
@@ -47,6 +49,8 @@ public class WorkflowControllerTest extends ControllerTest {
 
 	@BeforeEach
 	public void setup() {
+		getTestUser().addRole(UserRole.ROLE_API);
+
 		externalConfigurationService.setCachedAvailableAlgorithms("anonymization",
 		                                                          AlgorithmTestHelper.generateAvailableAlgorithms());
 		externalConfigurationService.setCachedAlgorithmDefinition("anonymization", "/algorithmA",
@@ -264,7 +268,7 @@ public class WorkflowControllerTest extends ControllerTest {
 	}
 
 	private void finish(String workflowId, int stageIndex, int processIndex, String nextAlgorithm) throws Exception {
-		var updateTestProject = getTestUser().getWorkflow(UUID.fromString(workflowId)).getProject();
+		var updateTestProject = getTestUser().getProject(UUID.fromString(workflowId));
 
 		var process = updateTestProject.getPipelines().get(0).getStageByIndex(stageIndex).getProcess(processIndex);
 		assertNotNull(process.getUuid(), "No UUID has been assigned to the process!");
@@ -288,7 +292,7 @@ public class WorkflowControllerTest extends ControllerTest {
 		}
 
 		// Send callback request
-		var r = multipart("/api/process/" + id + "/callback");
+		var r = multipart("/api/project/" + workflowId + "/process/" + id + "/callback");
 		for (var abc : process.getJob().getEndpoint().getOutputs()) {
 			if (abc.getEncoding() == StepOutputEncoding.DATA_SET) {
 				var anonymizationResult = new MockMultipartFile(abc.getPartName(), "additional.json",
@@ -313,7 +317,7 @@ public class WorkflowControllerTest extends ControllerTest {
 
 	private void deleteWorkflow(String workflowId) throws Exception {
 		var datasetIds = new ArrayList<Long>();
-		var project = getTestUser().getWorkflow(UUID.fromString(workflowId)).getProject();
+		var project = getTestUser().getProject(UUID.fromString(workflowId));
 
 		if (project.getOriginalData().getDataSet() != null) {
 			datasetIds.add(project.getOriginalData().getDataSet().getId());
@@ -334,8 +338,6 @@ public class WorkflowControllerTest extends ControllerTest {
 		       .andExpect(status().isOk());
 
 		// Test if cleanup was successful
-		var user = getTestUser();
-		assertTrue(user.getWorkflows().isEmpty(), "Workflow has not been deleted!");
 		assertFalse(projectRepository.existsById(projectId), "Project has not been deleted!");
 
 		for (var datasetId : datasetIds) {

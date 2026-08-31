@@ -19,7 +19,7 @@ export function getEnumIndexForString(enumObj: any, value: string | String): num
  * @returns Array<string>
  */
 export function getEnumKeysByValues(enumObj: any, values: number[]): Array<string> {
-    let keys: string[] = [];
+    const keys: string[] = [];
 
     values.forEach(value => {
         // Iterate over all keys in the enum object.

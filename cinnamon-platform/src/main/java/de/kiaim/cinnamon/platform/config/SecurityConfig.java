@@ -43,10 +43,19 @@ public class SecurityConfig {
 		            .authorizeHttpRequests(authz -> authz
 				            .requestMatchers(antMatcher("/api/doc"),
 				                             // TODO Implement proper security
-				                             antMatcher("/api/process/**/callback"),
+				                             antMatcher("/api/project/**/process/**/callback"),
 				                             antMatcher("/api/swagger-ui/**"),
-				                             antMatcher("/actuator/**"),
+				                             // Left open, so infrastructure health checks do not need credentials.
+				                             // The health details are only shown to authenticated ROLE_MONITORING
+				                             // users, see management.endpoint.health.* in the application.properties.
+				                             antMatcher("/actuator/health"),
+				                             antMatcher("/actuator/health/**"),
 				                             antMatcher("/api/user/register")).permitAll()
+				            .requestMatchers(antMatcher("/actuator/**")).hasRole("MONITORING")
+				            .requestMatchers(antMatcher("/api/workflow"),
+				                             antMatcher("/api/workflow/**")).hasRole("API")
+				            .requestMatchers(antMatcher("/api/admin"),
+				                             antMatcher("/api/admin/**")).hasRole("ADMIN")
 				            .requestMatchers(antMatcher("/api/**")).hasRole("USER")
 				            .requestMatchers(antMatcher("/**")).permitAll()
 				            .anyRequest().authenticated())

@@ -26,7 +26,7 @@ options:
       type: integer
       default_value: 100
       min_value: 1
-      max_value: $dataset.original.numberHoldOutRows
+      max_value: ${original.dataset.numberHoldOutRows}
   linkage:
     display_name: Infer risk of linking datasets
     description: Metrics that indicate if subsets of the synthetic dataset can be used for linkage.
@@ -38,7 +38,7 @@ options:
       type: integer
       default_value: 100
       min_value: 1
-      max_value: $dataset.original.numberHoldOutRows
+      max_value: ${original.dataset.numberHoldOutRows}
     - name: available_columns
       label: Columns known
       invert: unavailable_columns

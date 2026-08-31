@@ -18,9 +18,9 @@ public class ConfirmUserRequest {
 	/**
 	 * Username of the user.
 	 */
-	@NotBlank(message = "Email address is required!")
-	@Schema(description = "Email address of the user.", example = "mail@example.de")
-	private String email;
+	@NotBlank(message = "Username is required!")
+	@Schema(description = "Username of the user.", example = "john_doe")
+	private String username;
 
 	/**
 	 * Password of the user.

@@ -1,6 +1,5 @@
 import { Component, OnInit } from "@angular/core";
 import { Steps } from "@core/enums/steps";
-import { TitleService } from "@core/services/title-service.service";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { AlgorithmService, ConfigurationInfo } from "@shared/services/algorithm.service";
 import { Observable } from "rxjs";
@@ -24,12 +23,10 @@ export class RiskAssessmentConfigurationComponent implements OnInit {
 
     constructor(
         private readonly riskAssessmentService: RiskAssessmentService,
-        titleService: TitleService,
     ) {
-        titleService.setPageTitle("Risk Assessment");
     }
 
     public ngOnInit(): void {
-        this.configurationInfo$ = this.riskAssessmentService.fetchInfo();
+        this.configurationInfo$ = this.riskAssessmentService.getInfo();
     }
 }

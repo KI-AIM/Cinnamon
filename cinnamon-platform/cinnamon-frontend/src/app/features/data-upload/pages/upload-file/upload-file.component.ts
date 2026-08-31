@@ -6,7 +6,6 @@ import { Router } from "@angular/router";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
-import { TitleService } from "@core/services/title-service.service";
 import { FileService } from "@features/data-upload/services/file.service";
 import { Delimiter, LineEnding, QuoteChar } from "@shared/model/csv-file-configuration";
 import { DataConfigurationEstimation } from "@shared/model/data-configuration";
@@ -94,7 +93,6 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly appConfigService: AppConfigService,
-        private titleService: TitleService,
         private statusService: StatusService,
         private dataService: DataService,
         public dataConfigurationService: DataConfigurationService,
@@ -108,7 +106,6 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         private readonly formBuilder: FormBuilder,
         protected readonly platform: Platform,
     ) {
-        this.titleService.setPageTitle("Upload data");
         this.fileConfiguration = fileService.getFileConfiguration();
     }
 
@@ -240,7 +237,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         const config = this.dataSourceConfigurationForm.getRawValue();
         this.fileService.uploadDataSourceConfiguration(config).pipe(
             switchMap(() => this.statusService.updateNextStep(Steps.UPLOAD)),
-            switchMap(() => this.fileService.retrieveFile(this.fileConfiguration)),
+            switchMap(() => this.fileService.retrieveFile()),
             switchMap(() => this.fileService.estimateFileConfiguration()),
         ).subscribe({
             next: (value) => {
@@ -284,7 +281,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
             }
 
             if (dataSourceType == DataSourceType.FHIR_SERVER) {
-                const serverUrlControl = control.get('server')?.get('url')!;
+                const serverUrlControl = control.get('server')!.get('url')!;
                 const serverUrl = serverUrlControl.value as string;
 
                 const error = (serverUrl == null || serverUrl.trim().length === 0)
@@ -456,8 +453,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
     private navigateToNextStep() {
         this.loadingService.setLoadingStatus(false);
-        this.router.navigateByUrl("/dataConfiguration");
-        this.statusService.updateNextStep(Steps.DATA_CONFIG).subscribe();
+        this.stateManagementService.setAndRouteToStep(Steps.DATA_CONFIG).subscribe();
     }
 
     private handleError(err: any, message?: string) {

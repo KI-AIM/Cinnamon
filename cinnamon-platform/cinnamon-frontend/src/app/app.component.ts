@@ -6,9 +6,11 @@ import { AppNotification, NotificationService } from "@core/services/notificatio
 import { StatusService } from "@shared/services/status.service";
 import { TitleService } from './core/services/title-service.service';
 import { AppConfig, AppConfigService } from "./shared/services/app-config.service";
-import { Observable, switchMap } from "rxjs";
+import { Observable, switchMap, tap } from "rxjs";
 import { LockedInformation, LockedReason, StateManagementService } from "./core/services/state-management.service";
 import { ErrorHandlingService } from "./shared/services/error-handling.service";
+import {UserService} from "@shared/services/user.service";
+import { User, UserRole } from "@shared/model/user";
 
 @Component({
     selector: 'app-root',
@@ -31,11 +33,14 @@ import { ErrorHandlingService } from "./shared/services/error-handling.service";
 export class AppComponent implements OnInit {
     title = "cinnamon-frontend"
 
+    protected readonly LockedReason = LockedReason;
+    protected readonly UserRole = UserRole;
     protected readonly StatusService = StatusService;
 
     protected appConfig$: Observable<AppConfig>;
     protected latestNotification$: Observable<AppNotification | null>;
     protected locked$: Observable<LockedInformation>;
+    protected user$: Observable<User>;
 
     constructor(
         private readonly appConfigService: AppConfigService,
@@ -46,6 +51,7 @@ export class AppComponent implements OnInit {
         private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
         private titleService: TitleService,
+        private readonly userService: UserService,
     ) {
     }
 
@@ -53,6 +59,7 @@ export class AppComponent implements OnInit {
         this.appConfig$ = this.appConfigService.appConfig$;
         this.latestNotification$ = this.notificationService.latestNotification$();
         this.locked$ = this.stateManagementService.currentStepLocked$;
+        this.user$ = this.userService.user$;
     }
 
     getTitle(): String {
@@ -90,6 +97,4 @@ export class AppComponent implements OnInit {
             },
         });
     }
-
-    protected readonly LockedReason = LockedReason;
 }

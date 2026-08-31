@@ -39,18 +39,24 @@ public class HttpService {
 	 */
 	public RequestRuntimeException buildErrorResponse(final ResponseEntity<String> response) {
 		ExternalProcessResponse responseBody;
-		try {
-			responseBody = jsonMapper.readValue(response.getBody(), ExternalProcessResponse.class);
-		} catch (JsonProcessingException e) {
 
+		if (response.getBody() != null) {
 			try {
-				ErrorResponse errorResponse = jsonMapper.readValue(response.getBody(), ErrorResponse.class);
-				responseBody = new ExternalProcessResponse();
-				responseBody.setError(errorResponse.getErrorMessage());
-			} catch (JsonProcessingException e1) {
-				responseBody = new ExternalProcessResponse();
-				responseBody.setError(response.getBody());
+				responseBody = jsonMapper.readValue(response.getBody(), ExternalProcessResponse.class);
+			} catch (JsonProcessingException e) {
+
+				try {
+					ErrorResponse errorResponse = jsonMapper.readValue(response.getBody(), ErrorResponse.class);
+					responseBody = new ExternalProcessResponse();
+					responseBody.setError(errorResponse.getErrorMessage());
+				} catch (JsonProcessingException e1) {
+					responseBody = new ExternalProcessResponse();
+					responseBody.setError(response.getBody());
+				}
 			}
+		} else {
+			responseBody = new ExternalProcessResponse();
+			responseBody.setError("Request failed with status " + response.getStatusCode());
 		}
 
 		final ResponseEntity<ExternalProcessResponse> responseEntity = ResponseEntity.status(response.getStatusCode())

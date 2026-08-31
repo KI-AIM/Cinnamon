@@ -1,6 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { TechnicalEvaluationService } from "@features/technical-evaluation/services/technical-evaluation.service";
+import { ProjectService } from "@shared/services/project.service";
 import { BehaviorSubject, catchError, finalize, map, Observable, of, shareReplay, switchMap, tap } from "rxjs";
 import { environments } from "src/environments/environment";
 import {
@@ -21,13 +22,12 @@ import { AttributeStatistics, StatisticsValueTypes } from "../model/statistics";
 })
 export class ProjectConfigurationService {
 
-    private readonly baseUrl: string = environments.apiUrl + "/api/project";
-
     private _projectSettingsInit$: Observable<ProjectSettings> | null = null;
     private projectSettingsSubject: BehaviorSubject<ProjectSettings | null> = new BehaviorSubject<ProjectSettings | null>(null);
 
     constructor(
         private readonly http: HttpClient,
+        private readonly projectService: ProjectService,
         private readonly technicalEvaluationService: TechnicalEvaluationService,
     ) {
     }
@@ -60,19 +60,25 @@ export class ProjectConfigurationService {
 
     public setProjectSettings(value: ProjectSettings): Observable<void> {
         this.projectSettingsSubject!.next(value);
-        return this.putProjectSettings(value);
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.putProjectSettings(projectId, value)),
+        );
     }
 
     public getAllMetrics(attributeStatistics: AttributeStatistics): Array<[string, StatisticsValueTypes]> {
         return Object.entries(attributeStatistics.important_metrics).concat(Object.entries(attributeStatistics.details));
     }
 
-    private fetchProjectSettings(): Observable<ProjectSettings> {
-        return this.http.get<ProjectSettings>(this.baseUrl + "/configuration");
+    private baseUrl(projectId: string): string {
+        return `${environments.apiUrl}/api/project/${projectId}/configuration`;
     }
 
-    private putProjectSettings(projectSettings: ProjectSettings): Observable<void> {
-        return this.http.put<void>(this.baseUrl + "/configuration", projectSettings);
+    private fetchProjectSettings(projectId: string): Observable<ProjectSettings> {
+        return this.http.get<ProjectSettings>(this.baseUrl(projectId));
+    }
+
+    private putProjectSettings(projectId: string, projectSettings: ProjectSettings): Observable<void> {
+        return this.http.put<void>(this.baseUrl(projectId), projectSettings);
     }
 
     /**
@@ -84,7 +90,8 @@ export class ProjectConfigurationService {
      */
     private initProjectSettings$(): Observable<ProjectSettings> {
         if (this._projectSettingsInit$ == null) {
-            this._projectSettingsInit$ = this.fetchProjectSettings().pipe(
+            this._projectSettingsInit$ = this.projectService.projectIdRequiredOnce$.pipe(
+                switchMap(projectId => this.fetchProjectSettings(projectId)),
                 switchMap(value => {
                     return this.initMetricSettings$(value);
                 }),
@@ -119,7 +126,6 @@ export class ProjectConfigurationService {
             }),
             switchMap(value => {
                 // Importance can be missing if the settings were saved while fetching the metrics failed
-                console.log(value);
                if (value.metricConfiguration.userDefinedImportance &&
                    Object.keys(value.metricConfiguration.userDefinedImportance).length > 0) {
                    return of(value);

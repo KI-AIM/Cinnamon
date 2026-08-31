@@ -1,0 +1,92 @@
+@if (pageData$ | async; as pageData) {
+
+    <div class="vertical-boxes">
+
+        <div class="box">
+            <div class="box-header box-header-expanded">
+                <span class="box-header-icon icon-enabled"><mat-icon>group</mat-icon></span>
+                <span class="box-header-title">Users</span>
+            </div>
+
+            <mat-form-field class="w-100 hide-mat-error-gap">
+                <mat-label>Search Users</mat-label>
+                <input #usernameFilter matInput (keyup)="applyFilterEvent($event)" placeholder="Search by username">
+                @if (usernameFilter.value) {
+                    <mat-icon matSuffix (click)="usernameFilter.value=''; applyFilterValue('')">close</mat-icon>
+                }
+            </mat-form-field>
+
+            <table mat-table matSort matSortActive="username" matSortDirection="asc" [dataSource]="dataSource"
+                   class="user-table">
+
+                <!-- Real columns -->
+                <ng-container matColumnDef="username">
+                    <th mat-header-cell mat-sort-header *matHeaderCellDef>User</th>
+                    <td mat-cell *matCellDef="let row">
+                        <span>{{ row.username }}</span>
+                        @if (row.username === pageData.currentUser) {
+                            <span class="current-user"> (You)</span>
+                        }
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="roleUser">
+                    <th mat-header-cell *matHeaderCellDef>UI</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox color="primary" [checked]="row.roles.includes(UserRole.ROLE_USER)"
+                                      (change)="onRoleChange(row.username, UserRole.ROLE_USER, $event.source)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="roleApi">
+                    <th mat-header-cell *matHeaderCellDef>API</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox color="primary" [checked]="row.roles.includes(UserRole.ROLE_API)"
+                                      (change)="onRoleChange(row.username, UserRole.ROLE_API, $event.source)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="roleAdmin">
+                    <th mat-header-cell *matHeaderCellDef>Admin</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox color="primary" [checked]="row.roles.includes(UserRole.ROLE_ADMIN)"
+                                      (change)="onRoleChange(row.username, UserRole.ROLE_ADMIN, $event.source)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="roleMonitoring">
+                    <th mat-header-cell *matHeaderCellDef>Monitoring</th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox color="primary" [checked]="row.roles.includes(UserRole.ROLE_MONITORING)"
+                                      (change)="onRoleChange(row.username, UserRole.ROLE_MONITORING, $event.source)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
+
+                <!-- Second header row: actual columns -->
+                <tr mat-header-row *matHeaderRowDef="userTableColumns"></tr>
+
+                <!-- Data rows -->
+                <tr mat-row *matRowDef="let _; columns: userTableColumns;"></tr>
+
+            </table>
+
+            <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+
+        </div>
+
+        <div class="box">
+            <div class="box-header box-header-expanded">
+                <span class="box-header-icon icon-enabled"><mat-icon>mail</mat-icon></span>
+                <span class="box-header-title">Invitations</span>
+            </div>
+
+            <app-user-invitations></app-user-invitations>
+        </div>
+
+    </div>
+
+}

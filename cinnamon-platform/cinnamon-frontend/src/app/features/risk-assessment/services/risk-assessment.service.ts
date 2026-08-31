@@ -5,6 +5,7 @@ import { Algorithm } from "@shared/model/algorithm";
 import { ConfigurationRegisterData } from "@shared/model/configuration-register-data";
 import { AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
+import { ProjectService } from "@shared/services/project.service";
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +15,9 @@ export class RiskAssessmentService extends AlgorithmService {
     constructor(
         configurationService: ConfigurationService,
         http: HttpClient,
+        projectService: ProjectService,
     ) {
-        super(http, configurationService);
+        super(http, configurationService, projectService);
     }
 
     public override getConfigurationName(): string {

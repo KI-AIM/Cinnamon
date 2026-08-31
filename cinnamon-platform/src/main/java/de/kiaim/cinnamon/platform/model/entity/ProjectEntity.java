@@ -5,8 +5,10 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.lang.Nullable;
 
+import java.sql.Timestamp;
 import java.util.*;
 
 /**
@@ -29,6 +31,13 @@ public class ProjectEntity {
 	private Long id;
 
 	/**
+	 * ID of the project for external identification.
+	 */
+	@Column(nullable = false, unique = true)
+	@Setter
+	private UUID externalId;
+
+	/**
 	 * Seed for the random operations.
 	 */
 	@Column(nullable = false)
@@ -41,6 +50,13 @@ public class ProjectEntity {
 	@Column(nullable = false)
 	@Getter(AccessLevel.NONE)
 	private int randomCalls = 0;
+
+	/**
+	 * Timestamp when the workflow is marked for deletion.
+	 */
+	@Setter
+	@Nullable
+	private Timestamp expirationDate;
 
 	/**
 	 * Current status of the project.
@@ -79,19 +95,9 @@ public class ProjectEntity {
 
 	/**
 	 * User that owns this configuration and the corresponding data set.
-	 * Can be null if the project is part of a workflow.
 	 */
-	@OneToOne(mappedBy = "project", optional = false, orphanRemoval = false, cascade = CascadeType.PERSIST)
-	@Nullable
-	private UserEntity user = null;
-
-	/**
-	 * Workflow associated with this project.
-	 * Can be null if this project is not part of a workflow.
-	 */
-	@OneToOne(mappedBy = "project", cascade = CascadeType.PERSIST)
-	@Nullable
-	private WorkflowEntity workflow = null;
+	@ManyToOne(fetch = FetchType.EAGER)
+	private UserEntity user;
 
 	/**
 	 * Creates a new project with the given seed.
@@ -124,26 +130,11 @@ public class ProjectEntity {
 	public void setUser(@Nullable final UserEntity newUser) {
 		final UserEntity oldUser = this.user;
 		this.user = newUser;
-		if (oldUser != null && oldUser.getProject() == this) {
-			oldUser.setProject(null);
+		if (oldUser != null) {
+			oldUser.removeProject(this);
 		}
-		if (newUser != null && newUser.getProject() != this) {
-			newUser.setProject(this);
-		}
-	}
-
-	/**
-	 * Links the given workflow with this project.
-	 * @param newWorkflow The workflow to link.
-	 */
-	public void setWorkflow(@Nullable final WorkflowEntity newWorkflow) {
-		final WorkflowEntity oldWorkflow = this.workflow;
-		this.workflow = newWorkflow;
-		if (oldWorkflow != null && oldWorkflow.getProject() == this) {
-			oldWorkflow.setProject(null);
-		}
-		if (newWorkflow != null && newWorkflow.getProject() != this) {
-			newWorkflow.setProject(this);
+		if (newUser != null) {
+			newUser.addProject(this);
 		}
 	}
 

@@ -70,9 +70,9 @@ public class WorkflowController {
 			@ModelAttribute @Valid final WorkflowRequest workflowRequest,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
-		final UUID workflowId = workflowService.startWorkflow(requestUser.getEmail(), workflowRequest.getData(),
+		final UUID workflowId = workflowService.startWorkflow(requestUser.getUsername(), workflowRequest.getData(),
 		                                                      workflowRequest.getConfiguration());
-		return workflowService.getWorkflowStatus(requestUser.getEmail(), workflowId);
+		return workflowService.getWorkflowStatus(requestUser.getUsername(), workflowId);
 	}
 
 	@Operation(summary = "Get the status of a workflow.",
@@ -94,7 +94,7 @@ public class WorkflowController {
 			@AuthenticationPrincipal final UserEntity requestUser,
 			@Parameter(description = "The ID of the workflow.", required = true) @PathVariable final String workflowId
 	) throws ApiException {
-		return workflowService.getWorkflowStatus(requestUser.getEmail(), workflowId);
+		return workflowService.getWorkflowStatus(requestUser.getUsername(), workflowId);
 	}
 
 	@Operation(summary = "Deletes a workflow and returns the project export.",
@@ -117,6 +117,6 @@ public class WorkflowController {
 			@Parameter(description = "The ID of the workflow.", required = true) @PathVariable final String workflowId,
 			final HttpServletResponse response
 	) throws ApiException {
-		return workflowService.deleteWorkflow(requestUser.getEmail(), workflowId, response);
+		return workflowService.deleteWorkflow(requestUser.getUsername(), workflowId, response);
 	}
 }

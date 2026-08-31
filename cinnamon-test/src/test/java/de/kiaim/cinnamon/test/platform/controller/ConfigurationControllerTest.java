@@ -7,9 +7,6 @@ import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
-import de.kiaim.cinnamon.platform.model.entity.UserEntity;
-import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.ControllerTest;
 import de.kiaim.cinnamon.test.util.*;
 import mockwebserver3.MockResponse;
@@ -35,14 +32,11 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Autowired private CinnamonConfiguration cinnamonConfiguration;
 
-	@Autowired
-	ProjectService projectService;
-
 	private MockWebServer mockWebServer;
 
 	@Test
 	void info() throws Exception {
-		mockMvc.perform(get("/api/config/info")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/config/info")
 				                .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
 		       .andExpect(
@@ -51,19 +45,19 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void infoSkippedWithConfiguration() throws Exception {
-		mockMvc.perform(post("/api/config")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/config")
 				                .param("configurationName", CONFIGURATION_NAME)
 				                .param("url", "/start_synthetization_process/ctgan")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
-		mockMvc.perform(post("/api/process/configure")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/configure")
 				                .param("jobName", CONFIGURATION_NAME)
 				                .param("skip", "true")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
 
-		mockMvc.perform(get("/api/config/info")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/config/info")
 				                .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
 		       .andExpect(
@@ -72,7 +66,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void infoInvalidName() throws Exception {
-		mockMvc.perform(get("/api/config/info")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/config/info")
 				                .param("name", "invalid"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_1_2_1"))
@@ -83,15 +77,12 @@ class ConfigurationControllerTest extends ControllerTest {
 	void store() throws Exception {
 		final String config = AlgorithmTestHelper.generateAlgorithmConfigurationYaml();
 
-		mockMvc.perform(post("/api/config")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/config")
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
 				                .param("configuration", config))
 		       .andExpect(status().isOk());
 
-		final UserEntity user = getTestUser();
-		final ProjectEntity project = user.getProject();
-		assertNotNull(project, "The configuration has not been created!");
-		testConfiguration(project, config);
+		testConfiguration(testProject, config);
 	}
 
 	@Test
@@ -99,7 +90,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		final String configuration = "invalid";
 		var file = new MockMultipartFile("configuration", "file.yaml", "application/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_1_14_2"));
@@ -113,7 +104,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -140,7 +131,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
@@ -181,7 +172,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.json", "text/json", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -214,7 +205,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 		var file = new MockMultipartFile("configuration", "file.json", "text/json", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -239,7 +230,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		final var configuration = ProjectConfigurationTestHelper.generateProjectConfigurationAsYaml();
 		var file = new MockMultipartFile("configuration", "file.json", "text/json", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -275,7 +266,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		configuration = configuration.replace("\"testProject\"", "null");
 		var file = new MockMultipartFile("configuration", "file.json", "text/json", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -305,7 +296,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", config.getBytes());
 
-		mockMvc.perform(multipart("/api/config/import").file(file))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -335,7 +326,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", config.getBytes());
 
-		mockMvc.perform(multipart("/api/config/import").file(file))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -365,7 +356,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", config.getBytes());
 
-		mockMvc.perform(multipart("/api/config/import").file(file))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -399,7 +390,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", config.getBytes());
 
-		mockMvc.perform(multipart("/api/config/import").file(file))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -427,7 +418,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                """;
 
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", config.getBytes());
-		mockMvc.perform(multipart("/api/config/import").file(file))
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -450,7 +441,7 @@ class ConfigurationControllerTest extends ControllerTest {
 	@Test
 	public void importConfigurationsPipelinesConfiguration() throws Exception {
 		// Configuration must be available before importing the pipeline
-		mockMvc.perform(post("/api/config")
+		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/config")
 				                .param("configuration", AlgorithmTestHelper.generateAlgorithmConfigurationYaml())
 				                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
 		       .andExpect(status().isOk());
@@ -466,7 +457,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
@@ -502,7 +493,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
@@ -532,7 +523,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		ConfigurationImportParameters parameters = new ConfigurationImportParameters();
 		parameters.setAllowPartialImport(false);
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file)
 		                                      .param("importParameters", jsonMapper.writeValueAsString(parameters)))
 		       .andExpect(status().isBadRequest())
@@ -570,7 +561,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import").file(file))
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import").file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
 		                                 {
@@ -613,7 +604,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		ConfigurationImportParameters parameters = new ConfigurationImportParameters();
 		parameters.setConfigurationsToImport(Set.of("anonymization"));
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file)
 		                                      .param("importParameters", jsonMapper.writeValueAsString(parameters)))
 		       .andExpect(status().isOk())
@@ -654,7 +645,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
@@ -687,7 +678,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
@@ -731,7 +722,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
@@ -780,7 +771,7 @@ class ConfigurationControllerTest extends ControllerTest {
 		                             """;
 		var file = new MockMultipartFile("configuration", "file.yaml", "text/yaml", configuration.getBytes());
 
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/config/import")
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/project/" + testProject.getExternalId() + "/config/import")
 		                                      .file(file))
 		       .andExpect(status().isOk())
 		       .andExpect(content().json("""
@@ -820,7 +811,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 		storeConfiguration(config);
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/config")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("name", CONFIGURATION_NAME))
 		       .andExpect(status().isOk())
@@ -830,7 +821,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void loadProjectConfiguration() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/config")
 		                                      .param("name", ConfigurationFile.PROJECT_CONFIGURATION_KEY))
 		       .andExpect(status().isOk())
 		       .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
@@ -841,7 +832,7 @@ class ConfigurationControllerTest extends ControllerTest {
 	void loadDataConfiguration() throws Exception {
 		postData();
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/config")
 		                                      .param("name", ConfigurationFile.DATA_CONFIGURATION_KEY))
 		       .andExpect(status().isOk())
 		       .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
@@ -853,13 +844,11 @@ class ConfigurationControllerTest extends ControllerTest {
 		final String configName = cinnamonConfiguration.getPipeline().getStageList().get(0).getJobList().get(0)
 		                                               .getEndpoint().getConfiguration().getConfigurationName();
 
-		final ProjectEntity project = projectService.getProject(getTestUser());
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/config")
 		                                      .param("name", configName))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage(
-				       "No configuration in project '" + project.getId() + "' for name 'anonymization' found!"));
+				       "No configuration in project '" + testProject.getId() + "' for name 'anonymization' found!"));
 	}
 
 	@Test
@@ -876,7 +865,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 		storeConfiguration(config);
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/config")
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/config")
 		                                      .param("name", invalidConfigName))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorMessage("No configuration with name '" + invalidConfigName + "' registered!"));
@@ -884,14 +873,14 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void getAvailableAlgorithmsMissingParam() throws Exception {
-		mockMvc.perform(get("/api/config/algorithms"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/config/algorithms"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_3_2_1"));
 	}
 
 	@Test
 	void getAvailableAlgorithmsBlankParam() throws Exception {
-		mockMvc.perform(get("/api/config/algorithms")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/config/algorithms")
 				                .param("configurationName", " "))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_3_2_1"))
@@ -909,7 +898,7 @@ class ConfigurationControllerTest extends ControllerTest {
 				                      .body(AlgorithmTestHelper.generateAlgorithmDefinitionYaml())
 				                      .build());
 
-		mockMvc.perform(get("/api/config/algorithm")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/config/algorithm")
 				                .contentType(MediaType.APPLICATION_JSON_VALUE)
 				                .param("configurationName", CONFIGURATION_NAME)
 				                .param("definitionPath", "/algorithm"))
@@ -925,7 +914,7 @@ class ConfigurationControllerTest extends ControllerTest {
 
 	@Test
 	void getAlgorithmDefinitionMissingParam() throws Exception {
-		mockMvc.perform(get("/api/config/algorithm"))
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/config/algorithm"))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(errorCode("PLATFORM_3_2_1"));
 	}

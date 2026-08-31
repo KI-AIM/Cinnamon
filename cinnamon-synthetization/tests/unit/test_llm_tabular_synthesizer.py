@@ -188,7 +188,7 @@ def test_llm_tabular_uses_all_rows_for_unresolved_dataset_placeholder(monkeypatc
         lambda method, url, **kwargs: _DummyResponse({"models": [{"name": "llama3.1:8b"}]}),
     )
     synthesizer = _initialize_synthesizer(
-        _algorithm_config(profile_rows="$dataset.original.numberRows", num_samples=1)
+        _algorithm_config(profile_rows="${original.dataset.numberRows}", num_samples=1)
     )
 
     assert synthesizer._profile_rows_used == len(_dataset())

@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { NavigationEnd, Router } from "@angular/router";
-import { ProcessStatus } from "@core/enums/process-status";
+import { ProcessStatus, StageStatus } from "@core/enums/process-status";
 import { AnonymizationService } from "@features/anonymization/services/anonymization.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
 import { FileService } from "@features/data-upload/services/file.service";
@@ -11,12 +11,12 @@ import { TechnicalEvaluationService } from "@features/technical-evaluation/servi
 import { ExecutionStep, PipelineInformation } from "@shared/model/execution-step";
 import { Status } from "@shared/model/status";
 import { ConfigurationService } from "@shared/services/configuration.service";
+import { ProjectService } from "@shared/services/project.service";
 import { StatusService } from "@shared/services/status.service";
-import { UserService } from "@shared/services/user.service";
 import { plainToInstance } from "class-transformer";
 import {
     BehaviorSubject,
-    filter,
+    filter, from,
     interval,
     map,
     Observable,
@@ -24,7 +24,6 @@ import {
     shareReplay,
     Subscription,
     switchMap,
-    take,
     tap
 } from "rxjs";
 import { environments } from "src/environments/environment";
@@ -55,9 +54,9 @@ export class StateManagementService {
         protected readonly dataSetInfoService: DataSetInfoService,
         private readonly fileService: FileService,
         private readonly http: HttpClient,
+        private readonly projectService: ProjectService,
         private readonly riskAssessmentService: RiskAssessmentService,
         private readonly router: Router,
-        private readonly userService: UserService,
         private readonly statusService: StatusService,
         private readonly synthetizationService: SynthetizationService,
         private readonly technicalEvaluationService: TechnicalEvaluationService,
@@ -66,7 +65,7 @@ export class StateManagementService {
             filter(event => event instanceof NavigationEnd),
             map(event => {
                for (const step of Object.values(StepConfiguration)) {
-                   if (step.path === event.url) {
+                   if (event.url.endsWith(step.path)) {
                        return step
                    }
                }
@@ -77,15 +76,15 @@ export class StateManagementService {
         );
 
         this._pipelineObserver$ = interval(2000).pipe(
-            switchMap(() => this.fetchPipelineInformation()),
+            switchMap(() => this.fetchPipelineInformationForCurrentProject()),
             tap(value => this.doUpdatePipeline(value)),
         );
 
-        this.userService.logout$().subscribe(() => {
+        this.projectService.projectClosed$.subscribe(() => {
             this.clearCaches();
         });
 
-        if (this.userService.isAuthenticated()) {
+        if (this.projectService.project != null) {
             this.initPipeline();
         }
     }
@@ -138,7 +137,7 @@ export class StateManagementService {
                              if (stage.stageName === value.currentStep.stageName) {
                                  break;
                              } else {
-                                 if (stage.status !== ProcessStatus.FINISHED) {
+                                 if (stage.status !== StageStatus.FINISHED) {
                                      reasons.push(LockedReason.PREVIOUS_STAGE_NOT_FINISHED);
                                      break;
                                  }
@@ -199,7 +198,7 @@ export class StateManagementService {
 
         // Directly set the initialized flag to prevent calls during the request
         this.pipelineInitialized = true;
-        this.fetchPipelineInformation().subscribe({
+        this.fetchPipelineInformationForCurrentProject().subscribe({
             next: value => {
                 this.doUpdatePipeline(value);
             },
@@ -213,7 +212,7 @@ export class StateManagementService {
      * Updates the status of the entire pipeline.
      */
     public updatePipeline(): void {
-        this.fetchPipelineInformation().subscribe({
+        this.fetchPipelineInformationForCurrentProject().subscribe({
             next: value => {
                 this.doUpdatePipeline(value);
             },
@@ -238,7 +237,7 @@ export class StateManagementService {
                 current.stages[stageIndex] = stage;
                 this._pipelineSubject.next(current);
 
-                if (stage.status === ProcessStatus.SCHEDULED || stage.status === ProcessStatus.RUNNING) {
+                if (stage.status === StageStatus.RUNNING) {
                     current.currentStageIndex = stageIndex;
                 }
 
@@ -247,40 +246,58 @@ export class StateManagementService {
         }
     }
 
-    /**
-     * Fetches the state from the backend and routes to the current step.
-     */
-    public fetchAndRouteToCurrentStep() {
-        this.statusService.statusNonNull$.pipe(
-            take(1),
-        ).subscribe({
-            next: value => {
-                this.routeToCurrentStep(value);
-            }
-        });
+    public setAndRouteToStep(step: Steps): Observable<boolean> {
+        const isStepCompleted = this.statusService.isStepCompleted(step)
+        return of(isStepCompleted).pipe(
+            switchMap((isStepCompleted: boolean) => {
+                if (isStepCompleted) {
+                    return of(false);
+                } else {
+                    return this.statusService.updateNextStep(step);
+                }
+            }),
+            switchMap(() => this.projectService.projectIdRequiredOnce$),
+            switchMap(projectId => this.doRouteToStep(projectId, step)),
+        );
+    }
+
+    public routeToStep(step: Steps): Observable<boolean> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.doRouteToStep(projectId, step)),
+        );
     }
 
     /**
      * Routes to the page for the current step.
+     * @param projectId The id of the project.
      * @param status The current status of the application.
      */
-    public routeToCurrentStep(status: Status) {
-        for (let [a, b] of Object.entries(StepConfiguration)) {
-            if (a === status.currentStep.toString()) {
-                this.router.navigateByUrl(b.path);
-                return;
+    public routeToCurrentStep(projectId: string, status: Status): Observable<boolean> {
+        return this.doRouteToStep(projectId, status.currentStep);
+    }
+
+    private doRouteToStep(projectId: string, step: Steps): Observable<boolean> {
+        for (const [a, b] of Object.entries(StepConfiguration)) {
+            if (a === step.toString()) {
+                return from(this.router.navigateByUrl("/project/" + projectId + b.path));
             }
 
         }
-        this.router.navigateByUrl("/start");
+        return from(this.router.navigateByUrl("/project/" + projectId + "/start"));
+    }
+
+    private fetchPipelineInformationForCurrentProject(): Observable<PipelineInformation> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.fetchPipelineInformation(projectId)),
+        );
     }
 
     /**
      * Fetches the pipeline information from the backend.
      * @return The pipeline information.
      */
-    private fetchPipelineInformation(): Observable<PipelineInformation> {
-        return this.http.get<PipelineInformation>(environments.apiUrl + "/api/process").pipe(
+    private fetchPipelineInformation(projectId: string): Observable<PipelineInformation> {
+        return this.http.get<PipelineInformation>(environments.apiUrl + "/api/project/" + projectId + "/process").pipe(
             map(value => {
                 return plainToInstance(PipelineInformation, value);
             }),

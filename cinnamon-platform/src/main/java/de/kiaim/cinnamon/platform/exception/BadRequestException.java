@@ -90,9 +90,29 @@ public abstract class BadRequestException extends ApiException {
 	public static final String USER = "16";
 
 	/**
-	 * Error class code for {@link BadWorkflowException}.
+	 * Error class code for {@link BadProjectException}.
 	 */
 	public static final String WORKFLOW = "17";
+
+	/**
+	 * Error class code for {@link BadAppStateException}.
+	 */
+	public static final String APP_STATE = "18";
+
+	/**
+	 * Error class code for {@link BadMailSettingsException}.
+	 */
+	public static final String MAIL_SETTINGS = "19";
+
+	/**
+	 * Error class code for {@link BadEmailTemplateException}.
+	 */
+	public static final String EMAIL_TEMPLATE = "20";
+
+	/**
+	 * Error class code for {@link BadUserInvitationException}.
+	 */
+	public static final String USER_INVITATION = "21";
 
 	public BadRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);

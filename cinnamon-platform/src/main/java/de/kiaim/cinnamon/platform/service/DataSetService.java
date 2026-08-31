@@ -14,18 +14,10 @@ import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
 import de.kiaim.cinnamon.platform.model.dto.LoadDataRequest;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
-import de.kiaim.cinnamon.platform.model.enumeration.DataSetSourceSelector;
-import de.kiaim.cinnamon.platform.repository.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,70 +32,14 @@ import java.util.*;
 @Service
 public class DataSetService {
 
-	private final UserRepository userRepository;
-
 	private final CinnamonConfiguration cinnamonConfiguration;
 
 	private final StepService stepService;
 
 	@Autowired
-	public DataSetService(final UserRepository userRepository, final CinnamonConfiguration cinnamonConfiguration,
-	                      final StepService stepService) {
-		this.userRepository = userRepository;
+	public DataSetService(final CinnamonConfiguration cinnamonConfiguration, final StepService stepService) {
 		this.cinnamonConfiguration = cinnamonConfiguration;
 		this.stepService = stepService;
-	}
-
-	/**
-	 * Encodes the given data set using the DataConfiguration of the user
-	 * and the encoding configuration of the current request.
-	 * Replaces all null values with the configured encoding.
-	 *
-	 * @param dataSet DataSet to encode.
-	 * @return Encoded data set.
-	 */
-	public List<List<Object>> encodeDataRows(final DataSet dataSet) {
-		final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-		if (authentication == null) {
-			return dataSet.getData();
-		}
-
-		UserEntity user = (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		// User in security context has no data configuration
-		user = userRepository.findById(user.getUsername()).get();
-
-		final LoadDataRequest loadDataRequest = new LoadDataRequest();
-		Set<DataTransformationErrorEntity> transformationErrors = new HashSet<>();
-		Map<Integer, Integer> columnIndexMapping = new HashMap<>();
-
-		final RequestAttributes ra = RequestContextHolder.getRequestAttributes();
-		if (ra instanceof ServletRequestAttributes) {
-			final HttpServletRequest request = ((ServletRequestAttributes) ra).getRequest();
-			final DataSetSourceSelector selector = DataSetSourceSelector.valueOf(
-					request.getParameter("selector").trim().toUpperCase());
-			final String jobName = request.getParameter("jobName");
-
-			try {
-				final DataSetEntity dataSetEntity = getDataSetEntityOrThrow(user.getProject(), new DataSetSource(selector, jobName));
-				transformationErrors = dataSetEntity.getDataTransformationErrors();
-				columnIndexMapping = getColumnIndexMapping(dataSetEntity.getDataConfiguration(), loadDataRequest.getColumnNames());
-			} catch (BadStepNameException | BadDataSetIdException | BadColumnNameException |
-			         InternalApplicationConfigurationException | BadStateException | InternalInvalidStateException |
-			         InternalMissingHandlingException ignored) {
-			}
-
-			final String defaultNullEncoding = request.getParameter("defaultNullEncoding");
-			if (defaultNullEncoding != null) {
-				loadDataRequest.setDefaultNullEncoding(defaultNullEncoding);
-			}
-
-			loadDataRequest.setMissingValueEncoding(request.getParameter("missingValueEncoding"));
-			loadDataRequest.setFormatErrorEncoding(request.getParameter("formatErrorEncoding"));
-			loadDataRequest.setValueNotInRangeEncoding(request.getParameter("valueNotInRangeEncoding"));
-		}
-
-		return encodeDataRows(dataSet, transformationErrors, columnIndexMapping, loadDataRequest);
 	}
 
 	/**
@@ -167,8 +103,8 @@ public class DataSetService {
 		                                 ? defaultNullEncoding
 		                                 : loadDataRequest.getValueNotInRangeEncoding();
 
-		if (!defaultNullEncoding.equals("$null") || !missingValueEncoding.equals("$null") ||
-		    !formatErrorEncoding.equals("$null") || !valueNotInRangeEncoding.equals("$null")) {
+		if (!"$null".equals(defaultNullEncoding) || !"$null".equals(missingValueEncoding) ||
+		    !"$null".equals(formatErrorEncoding) || !"$null".equals(valueNotInRangeEncoding)) {
 
 			for (final DataTransformationErrorEntity transformationError : transformationErrors) {
 				if (!columnIndexMapping.isEmpty() && !columnIndexMapping.containsKey(transformationError.getColumnIndex())) {
@@ -383,10 +319,10 @@ public class DataSetService {
 	 */
 	@Nullable
 	private String encodeValue(final String encoding, final DataTransformationErrorEntity transformationError) {
-		if (encoding.equals("$null")) {
+		if ("$null".equals(encoding)) {
 			return null;
 		}
-		if (encoding.equals("$value")) {
+		if ("$value".equals(encoding)) {
 			return transformationError.getOriginalValue();
 		}
 		return encoding;

@@ -1,0 +1,89 @@
+<div class="suffix-padding" style="display: flex; flex-direction: column; gap: 0.5rem;">
+
+    @if (control.disabled) {
+        <mat-icon class="icon-disabled">add_circle</mat-icon>
+    } @else {
+        <mat-icon class="icon-enabled" (click)="openDialog($event, placeholderDialog)">add_circle</mat-icon>
+    }
+
+    @if (previewInput) {
+        @if (isPreviewEnabled) {
+            <mat-icon class="icon-enabled" (click)="togglePreview()">preview_off</mat-icon>
+        } @else {
+            <mat-icon class="icon-enabled" (click)="togglePreview()">preview</mat-icon>
+        }
+    }
+</div>
+
+<ng-template #placeholderDialog>
+    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Insert Placeholder</h2>
+    <mat-dialog-content class="mat-typography dialog-content">
+        <div class="vertical-boxes">
+            @for (category of categories; track category.name) {
+                <div class="box" style="min-width: fit-content;">
+                    <div class="box-name">{{ category.name }}</div>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Explanation</th>
+                            <th>Example</th>
+                            <th>Key</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            @for (placeholder of category.placeholders; track placeholder.placeholder) {
+                                <tr>
+                                    <td>{{ placeholder.name }}</td>
+                                    <td>{{ placeholder.description }}</td>
+                                    <td>{{ placeholder.example }}</td>
+                                    <td>{{ placeholder.placeholder }}</td>
+                                    <td>
+                                        <mat-icon class="icon-enabled"
+                                                  (click)="insertPlaceholder(placeholder.placeholder)">add_circle
+                                        </mat-icon>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            @for (category of formatting; track category.name) {
+                <div class="box" style="min-width: fit-content;">
+                    <div class="box-name">{{ category.name }}</div>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Explanation</th>
+                            <th>Example</th>
+                            <th>Key</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            @for (formatter of category.placeholders; track formatter.placeholder) {
+                                <tr>
+                                    <td>{{ formatter.name }}</td>
+                                    <td>{{ formatter.description }}</td>
+                                    <td>{{ formatter.example }}</td>
+                                    <td>{{ formatter.placeholder }}</td>
+                                    <td>
+                                        <mat-icon class="icon-enabled"
+                                                  (click)="insertFormatting(formatter.placeholder)">add_circle
+                                        </mat-icon>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+    </mat-dialog-actions>
+</ng-template>

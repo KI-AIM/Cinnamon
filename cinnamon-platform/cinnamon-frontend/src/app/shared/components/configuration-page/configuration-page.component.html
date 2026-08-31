@@ -260,7 +260,7 @@
 
     <ng-template #processActivation>
         <ng-container *ngFor="let process of configurationInfo.processes;">
-            <div *ngIf="isProcessAvailable(process.job, data.dataConfiguration)" class="d-flex">
+            <div *ngIf="configurationService.isProcessAvailable(process.job, data.dataConfiguration)" class="d-flex">
                 <mat-checkbox color="primary" [(ngModel)]="processEnabled[process.job]"
                               [disabled]="data.locked || !process.holdOutFulfilled || data.algorithms.length === 0"
                               (input)="onProcessToggle(process.job)">

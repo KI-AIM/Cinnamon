@@ -1,20 +1,20 @@
 package de.kiaim.cinnamon.test.model.serialization;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.serialization.mapper.CinnamonYamlMapper;
 import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DataSetTest {
 
-	static ObjectMapper jsonMapper;
-	static ObjectMapper yamlMapper;
+	static JsonMapper jsonMapper;
+	static YAMLMapper yamlMapper;
 
 	@BeforeAll
 	static void beforeAll() {
@@ -23,7 +23,7 @@ public class DataSetTest {
 	}
 
 	@Test
-	public void serializeJson() throws JsonProcessingException {
+	public void serializeJson() {
 		final DataSet dataSet = DataSetTestHelper.generateDataSet(true);
 		final String json = jsonMapper.writeValueAsString(dataSet);
 		final String expected = DataSetTestHelper.generateDataSetAsJson();
@@ -31,7 +31,7 @@ public class DataSetTest {
 	}
 
 	@Test
-	public void serializeYaml() throws JsonProcessingException {
+	public void serializeYaml() {
 		final DataSet dataSet = DataSetTestHelper.generateDataSet(true);
 		final String yaml = yamlMapper.writeValueAsString(dataSet);
 		final String expected = DataSetTestHelper.generateDataSetAsYaml();
@@ -39,7 +39,7 @@ public class DataSetTest {
 	}
 
 	@Test
-	public void deserializeJson() throws JsonProcessingException {
+	public void deserializeJson() {
 		final String json = DataSetTestHelper.generateDataSetAsJson();
 		final DataSet dataSet = jsonMapper.readValue(json, DataSet.class);
 		final DataSet expected = DataSetTestHelper.generateDataSet(true);
@@ -47,7 +47,7 @@ public class DataSetTest {
 	}
 
 	@Test
-	public void deserializeYaml() throws JsonProcessingException {
+	public void deserializeYaml() {
 		final String yaml = DataSetTestHelper.generateDataSetAsYaml();
 		final DataSet dataSet = yamlMapper.readValue(yaml, DataSet.class);
 		final DataSet expected = DataSetTestHelper.generateDataSet(true);

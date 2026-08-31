@@ -1,20 +1,20 @@
 package de.kiaim.cinnamon.test.model.serialization.mapper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.serialization.mapper.CinnamonYamlMapper;
 import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CinnamonYamlMapperTest {
 
-	static ObjectMapper jsonMapper;
-	static ObjectMapper yamlMapper;
+	static JsonMapper jsonMapper;
+	static YAMLMapper yamlMapper;
 
 	@BeforeAll
 	static void beforeAll() {
@@ -23,7 +23,7 @@ public class CinnamonYamlMapperTest {
 	}
 
 	@Test
-	public void serializeDataConfigurationJson() throws JsonProcessingException {
+	public void serializeDataConfigurationJson() {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 		final String json = jsonMapper.writeValueAsString(dataConfiguration);
 		final String expected = DataConfigurationTestHelper.generateDataConfigurationAsJson();
@@ -31,7 +31,7 @@ public class CinnamonYamlMapperTest {
 	}
 
 	@Test
-	public void serializeDataConfigurationYaml() throws JsonProcessingException {
+	public void serializeDataConfigurationYaml() {
 		final DataConfiguration dataConfiguration = DataConfigurationTestHelper.generateDataConfiguration();
 		final String yaml = yamlMapper.writeValueAsString(dataConfiguration);
 		final String expected = DataConfigurationTestHelper.generateDataConfigurationAsYaml();
@@ -39,7 +39,7 @@ public class CinnamonYamlMapperTest {
 	}
 
 	@Test
-	public void deserializeDataConfigurationJson() throws JsonProcessingException {
+	public void deserializeDataConfigurationJson() {
 		final String json = DataConfigurationTestHelper.generateDataConfigurationAsJson();
 		final DataConfiguration dataConfiguration = yamlMapper.readValue(json, DataConfiguration.class);
 		final DataConfiguration expected = DataConfigurationTestHelper.generateDataConfiguration();
@@ -47,7 +47,7 @@ public class CinnamonYamlMapperTest {
 	}
 
 	@Test
-	public void deserializeDataConfigurationYaml() throws JsonProcessingException {
+	public void deserializeDataConfigurationYaml() {
 		final String yaml = DataConfigurationTestHelper.generateDataConfigurationAsYaml();
 		final DataConfiguration dataConfiguration = yamlMapper.readValue(yaml, DataConfiguration.class);
 		final DataConfiguration expected = DataConfigurationTestHelper.generateDataConfiguration();

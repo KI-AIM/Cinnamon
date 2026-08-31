@@ -18,6 +18,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.jspecify.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,7 @@ import java.util.List;
 @EqualsAndHashCode
 @ToString
 @JsonDeserialize(using = ColumnConfigurationDeserializer.class)
-public class ColumnConfiguration {
+public class ColumnConfiguration implements Serializable {
 
     /**
      * The index of the column.

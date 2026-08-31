@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.jspecify.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Getter @Setter
 @EqualsAndHashCode
-public class MetricConfiguration {
+public class MetricConfiguration implements Serializable {
 
 	/**
 	 * Color scheme to be used for visualizations.

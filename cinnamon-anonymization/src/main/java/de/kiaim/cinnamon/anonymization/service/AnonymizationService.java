@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.anonymization.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.anonymization.config.AnonymizationConfig;
 import de.kiaim.cinnamon.anonymization.converter.FrontendAnonConfigConverter;
 import de.kiaim.cinnamon.anonymization.exception.AnonymizationException;
@@ -25,6 +24,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import reactor.util.retry.Retry;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -155,7 +155,7 @@ public class AnonymizationService {
 
         try {
             // Convert DataSet object to JSON
-            ObjectMapper jsonMapper = CinnamonJsonMapper.jsonMapper();
+            JsonMapper jsonMapper = CinnamonJsonMapper.jsonMapper();
             String anonymizedDatasetJson = jsonMapper.writeValueAsString(result);
 
             // Create Multipart request

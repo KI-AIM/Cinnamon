@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.platform.controller;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.service.ResponseService;
@@ -24,6 +22,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.exc.MismatchedInputException;
 
 import java.util.*;
 
@@ -206,12 +207,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			return null;
 		}
 
-		if (throwable.getCause() instanceof JsonMappingException jsonMappingException) {
+		if (throwable.getCause() instanceof DatabindException jsonMappingException) {
 			final var path = jsonMappingException.getPath();
 			var field = fieldName;
 			for (final var segment : path) {
-				if (segment.getFieldName() != null) {
-					field += (field.isEmpty() ? "" : ".") + segment.getFieldName();
+				if (segment.getPropertyName() != null) {
+					field += (field.isEmpty() ? "" : ".") + segment.getPropertyName();
 				} else {
 					field += "[" + segment.getIndex() + "]";
 				}

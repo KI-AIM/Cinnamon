@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
@@ -44,6 +42,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -80,7 +80,7 @@ public class DatabaseService {
 	private final FileConfigurationMapper fileConfigurationMapper;
 
 	private final DataschemeGenerator dataschemeGenerator;
-	private final ObjectMapper jsonMapper;
+	private final JsonMapper jsonMapper;
 
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
@@ -1872,7 +1872,7 @@ public class DatabaseService {
 
 		try {
 			return jsonMapper.readValue(json, DataConfiguration.class);
-		} catch (JsonProcessingException e) {
+		} catch (JacksonException e) {
 			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_DESERIALIZATION,
 			                              "Failed to export data configuration because of a failed deserialization!",
 			                              e);

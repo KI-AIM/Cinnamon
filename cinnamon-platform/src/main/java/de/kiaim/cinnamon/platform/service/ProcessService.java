@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.algorithms.Algorithm;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
@@ -56,6 +54,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import reactor.netty.http.client.HttpClient;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -86,8 +87,8 @@ public class ProcessService {
 	private final int port;
 	private final String contextPath;
 
-	private final ObjectMapper jsonMapper;
-	private final ObjectMapper yamlMapper;
+	private final JsonMapper jsonMapper;
+	private final YAMLMapper yamlMapper;
 
 	private final CinnamonConfiguration cinnamonConfiguration;
 
@@ -757,7 +758,7 @@ public class ProcessService {
 					abc.setCompleted("True");
 				}
 				externalProcess.setStatus(jsonMapper.writeValueAsString(synthStatus));
-			} catch (JsonProcessingException e) {
+			} catch (JacksonException e) {
 				log.warn("Failed to update detailed status!", e);
 			}
 		}
@@ -1294,7 +1295,7 @@ public class ProcessService {
 					return stepInputConfiguration.getFileName();
 				}
 			}).contentType(MediaType.APPLICATION_JSON);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			throw new InternalIOException(InternalIOException.DATA_SET_SERIALIZATION,
 			                              "Could not convert dataset to json!", e);
 		}
@@ -1323,7 +1324,7 @@ public class ProcessService {
 					return stepInputConfiguration.getDataConfigurationName() + ".yaml";
 				}
 			});
-		} catch (JsonProcessingException e) {
+		} catch (JacksonException e) {
 			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
 			                              "Failed to create the data configuration!", e);
 		}
@@ -1456,7 +1457,7 @@ public class ProcessService {
 		final ConfigurationFile configurationFile;
 		try {
 			configurationFile = yamlMapper.readValue(configuration, ConfigurationFile.class);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
 			                              "Failed to serialize configuration!", e);
 		}

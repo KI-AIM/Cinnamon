@@ -1,15 +1,16 @@
 package de.kiaim.cinnamon.platform.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ClientCodecConfigurer;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
+import org.springframework.http.codec.json.JacksonJsonDecoder;
+import org.springframework.http.codec.json.JacksonJsonEncoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * Configuration for a custom WebClient with support for JSON and YAML.
@@ -21,8 +22,8 @@ public class WebClientConfig {
 
 	@Bean(name = "multiFormatWebClient")
 	public WebClient yamlWebClient(final SerializationConfig serializationConfig) {
-		final ObjectMapper jsonMapper = serializationConfig.jsonMapper();
-		final ObjectMapper yamlMapper = serializationConfig.yamlMapper();
+		final JsonMapper jsonMapper = serializationConfig.jsonMapper();
+		final YAMLMapper yamlMapper = serializationConfig.yamlMapper();
 
 		final ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
 		                                                                .codecs(configurer -> configureYamlCodecs(
@@ -37,27 +38,27 @@ public class WebClientConfig {
 	}
 
 	private void configureYamlCodecs(final ClientCodecConfigurer configurer,
-	                                 final ObjectMapper jsonMapper,
-	                                 final ObjectMapper yamlMapper) {
+	                                 final JsonMapper jsonMapper,
+	                                 final YAMLMapper yamlMapper) {
 		configurer.customCodecs().register(
-				new Jackson2JsonDecoder(jsonMapper, MediaType.APPLICATION_JSON)
+				new JacksonJsonDecoder(jsonMapper, MediaType.APPLICATION_JSON)
 		);
 		configurer.customCodecs().register(
-				new Jackson2JsonEncoder(jsonMapper, MediaType.APPLICATION_JSON)
+				new JacksonJsonEncoder(jsonMapper, MediaType.APPLICATION_JSON)
 		);
 
 		configurer.customCodecs().register(
-				new Jackson2JsonDecoder(yamlMapper,
-				                        MediaType.APPLICATION_YAML,
-				                        MediaType.APPLICATION_OCTET_STREAM,
-				                        CustomMediaType.TEXT_YAML,
-				                        CustomMediaType.APPLICATION_X_YAML)
+				new YamlDecoder(yamlMapper,
+				                MediaType.APPLICATION_YAML,
+				                MediaType.APPLICATION_OCTET_STREAM,
+				                CustomMediaType.TEXT_YAML,
+				                CustomMediaType.APPLICATION_X_YAML)
 		);
 		configurer.customCodecs().register(
-				new Jackson2JsonEncoder(yamlMapper,
-				                        MediaType.APPLICATION_YAML,
-				                        CustomMediaType.TEXT_YAML,
-				                        CustomMediaType.APPLICATION_X_YAML)
+				new YamlEncoder(yamlMapper,
+				                MediaType.APPLICATION_YAML,
+				                CustomMediaType.TEXT_YAML,
+				                CustomMediaType.APPLICATION_X_YAML)
 		);
 	}
 }

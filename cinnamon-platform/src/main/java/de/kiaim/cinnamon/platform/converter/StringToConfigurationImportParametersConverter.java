@@ -1,11 +1,7 @@
 package de.kiaim.cinnamon.platform.converter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
-import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
-import lombok.SneakyThrows;
-import org.jspecify.annotations.Nullable;
-import org.springframework.core.convert.converter.Converter;
+import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,18 +11,8 @@ import org.springframework.stereotype.Component;
  * @author Daniel Preciado-Marquez
  */
 @Component
-public class StringToConfigurationImportParametersConverter implements Converter<String, ConfigurationImportParameters> {
-
-	private final ObjectMapper jsonMapper;
-
-	public StringToConfigurationImportParametersConverter() {
-		this.jsonMapper = CinnamonJsonMapper.jsonMapper();
-	}
-
-	@Override
-	@SneakyThrows
-	@Nullable
-	public ConfigurationImportParameters convert(final String source) {
-		return jsonMapper.readValue(source, ConfigurationImportParameters.class);
+public class StringToConfigurationImportParametersConverter extends CinnamonStringConverter<ConfigurationImportParameters> {
+	public StringToConfigurationImportParametersConverter(final SerializationConfig serializationConfig) {
+		super(ConfigurationImportParameters.class, serializationConfig);
 	}
 }

@@ -1,8 +1,5 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.ConfigurationPart;
@@ -26,6 +23,9 @@ import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class ConfigurationService {
 	 */
 	private final static List<String> CONFIGURATION_IMPORT_ORDER = List.of(ConfigurationFile.PIPELINE_CONFIGURATION_KEY);
 
-	private final ObjectMapper yamlMapper;
+	private final YAMLMapper yamlMapper;
 
 	private final Validator validator;
 
@@ -104,7 +104,7 @@ public class ConfigurationService {
 		final JsonNode yamlConfig;
 		try {
 			yamlConfig = yamlMapper.readTree(file.getInputStream());
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			throw new BadConfigurationFileException(BadConfigurationFileException.INVALID_YAML,
 			                                        "Invalid YAML file format", e);
 		} catch (final IOException e) {
@@ -141,7 +141,7 @@ public class ConfigurationService {
 
 			configurationName = entry.get().getKey();
 			part = entry.get().getValue();
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			throw new BadConfigurationFileException(BadConfigurationFileException.INVALID_YAML,
 			                                        "Failed to deserialize the configuration!",
 			                                        e);
@@ -280,7 +280,7 @@ public class ConfigurationService {
 				final var s = databaseService.exportConfiguration(configurationName, project);
 				try {
 					return yamlMapper.readValue(s, ExternalConfigurationWrapper.class);
-				} catch (final JsonProcessingException e) {
+				} catch (final JacksonException e) {
 					throw new InternalInvalidStateException(InternalInvalidStateException.INVALID_CONFIGURATION,
 					                                        "Failed to deserialize configuration from database!",
 					                                        e);
@@ -304,7 +304,7 @@ public class ConfigurationService {
 		final ProjectConfigurationDTO projectConfiguration;
 		try {
 			projectConfiguration = yamlMapper.treeToValue(config, ProjectConfigurationDTO.class);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.PROJECT_CONFIGURATION_DESERIALIZATION,
 					"Failed to serialize project configuration!", e);
@@ -345,7 +345,7 @@ public class ConfigurationService {
 			final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(
 					ConfigurationFile.DATA_CONFIGURATION_KEY, config);
 			dataConfiguration = yamlMapper.treeToValue(singleConfigNode, DataConfiguration.class);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.DATA_CONFIGURATION_DESERIALIZATION,
 					"Failed to serialize data configuration!", e);
@@ -372,7 +372,7 @@ public class ConfigurationService {
 		final DataSourceConfiguration dataSourceConfiguration;
 		try {
 			dataSourceConfiguration = yamlMapper.treeToValue(config, DataSourceConfiguration.class);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.DATA_SOURCE_CONFIGURATION_DESERIALIZATION,
 					"Failed to deserialize the data source configuration!", e);
@@ -409,7 +409,7 @@ public class ConfigurationService {
 		final FileConfiguration fileConfiguration;
 		try {
 			fileConfiguration = yamlMapper.treeToValue(config, FileConfiguration.class);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.FILE_CONFIGURATION_DESERIALIZATION,
 					"Failed to deserialize the file configuration!", e);
@@ -444,7 +444,7 @@ public class ConfigurationService {
 		final DatasetConfiguration datasetConfiguration;
 		try {
 			datasetConfiguration = yamlMapper.treeToValue(config, DatasetConfiguration.class);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.DATASET_CONFIGURATION_DESERIALIZATION,
 					"Failed to deserialize the dataset configuration!", e);
@@ -487,7 +487,7 @@ public class ConfigurationService {
 		final PipelinesConfigurationDTO pipelines;
 		try {
 			pipelines = yamlMapper.treeToValue(config, PipelinesConfigurationDTO.class);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			final ApiException cause = new BadConfigurationFileException(
 					BadConfigurationFileException.PIPELINES_CONFIGURATION_DESERIALIZATION,
 					"Failed to deserialize pipelines configuration!", e);
@@ -532,7 +532,7 @@ public class ConfigurationService {
 			final ConfigurationPart part;
 			try {
 				part = yamlMapper.treeToValue(config, ConfigurationPart.class);
-			} catch (final JsonProcessingException e) {
+			} catch (final JacksonException e) {
 				throw new BadConfigurationFileException(BadConfigurationFileException.CONFIGURATION_DESERIALIZATION,
 				                                        "Failed to parse the configuration tree!", e);
 			}
@@ -572,7 +572,7 @@ public class ConfigurationService {
 			final var tree = yamlMapper.valueToTree(part);
 			final JsonNode singleConfigNode = yamlMapper.createObjectNode().set(configName, tree);
 			databaseService.storeConfiguration(configName, yamlMapper.writeValueAsString(singleConfigNode), project);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
 			                              "Failed to serialize configuration!", e);
 		}
@@ -597,7 +597,7 @@ public class ConfigurationService {
 			if (part.getAlgorithm().getConfiguration().containsKey("synthesizer") &&
 			    part.getAlgorithm().getVersion() != null) {
 				// Old algorithm definitions of the synthetization module for backwards compatibility
-				part.getAlgorithm().setId(part.getAlgorithm().getConfiguration().get("synthesizer").asText());
+				part.getAlgorithm().setId(part.getAlgorithm().getConfiguration().get("synthesizer").asString());
 				return true;
 			}
 
@@ -610,7 +610,7 @@ public class ConfigurationService {
 			switch (configName) {
 				case "anonymization" -> {
 					if (part.getConfiguration().containsKey("privacyModels")) {
-						selector.setId(part.getConfiguration().get("privacyModels").path(0).path("name").asText());
+						selector.setId(part.getConfiguration().get("privacyModels").path(0).path("name").asString());
 					}
 					selector.setVersion(("1.0.0"));
 				}

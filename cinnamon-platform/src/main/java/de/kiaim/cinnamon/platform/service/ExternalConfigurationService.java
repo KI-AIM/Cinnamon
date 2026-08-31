@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmDefinition;
 import de.kiaim.cinnamon.model.configuration.algorithms.AvailableAlgorithms;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
@@ -15,6 +13,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.util.Collection;
 import java.util.Map;
@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class ExternalConfigurationService {
-	private final ObjectMapper yamlMapper;
+	private final YAMLMapper yamlMapper;
 	private final WebClient yamlWebClient;
 
 	private final ExternalServerInstanceService externalServerInstanceService;
@@ -348,8 +348,8 @@ public class ExternalConfigurationService {
 				}
 			}
 
-			if (entry.getValue().isTextual()) {
-				final var stringValue = entry.getValue().asText();
+			if (entry.getValue().isString()) {
+				final var stringValue = entry.getValue().asString();
 				final var resolvedValue = resourceSelectorService.getValueFromSelector(stringValue, project, null, null);
 				final JsonNode newValue = yamlMapper.valueToTree(resolvedValue);
 				entry.setValue(newValue);

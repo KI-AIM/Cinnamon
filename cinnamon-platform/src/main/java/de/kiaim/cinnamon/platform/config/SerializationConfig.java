@@ -1,21 +1,21 @@
 package de.kiaim.cinnamon.platform.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.serialization.mapper.CinnamonYamlMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 @Configuration
 public class SerializationConfig {
 
-//	@Bean
-	public ObjectMapper jsonMapper() {
+	public JsonMapper jsonMapper() {
 		return CinnamonJsonMapper.jsonMapper();
 	}
 
 	@Bean
-	public ObjectMapper yamlMapper() {
+	public YAMLMapper yamlMapper() {
 		return CinnamonYamlMapper.yamlMapper();
 	}
 }

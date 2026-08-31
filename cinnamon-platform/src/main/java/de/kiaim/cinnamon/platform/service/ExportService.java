@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.data.DataSet;
@@ -18,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,14 +38,14 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ExportService {
 
-	private final ObjectMapper yamlMapper;
+	private final YAMLMapper yamlMapper;
 
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final ResourceSelectorService resourceSelectorService;
 
 	public ExportService(
-			final ObjectMapper yamlMapper,
+			final YAMLMapper yamlMapper,
 			final DatabaseService databaseService,
 			final DataProcessorService dataProcessorService,
 			final ResourceSelectorService resourceSelectorService
@@ -370,10 +369,8 @@ public class ExportService {
 	 *
 	 * @param config The configuration to export.
 	 * @return The configuration string.
-	 * @throws JsonProcessingException If the configuration could not be serialized.
 	 */
-	private String getConfigurationString(final ConfigurationDTO config)
-			throws JsonProcessingException {
+	private String getConfigurationString(final ConfigurationDTO config){
 		if (!config.includesKey()) {
 			// Wrap the configuration in a parent
 			final Map<String, Object> parentMap = new HashMap<>();

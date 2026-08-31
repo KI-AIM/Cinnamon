@@ -1,25 +1,17 @@
 package de.kiaim.cinnamon.platform.converter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
-import lombok.SneakyThrows;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
+import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import org.springframework.stereotype.Component;
 
+/**
+ * Converts a string to a {@link FileConfiguration} in incoming requests.
+ *
+ * @author Daniel Preciado-Marquez
+ */
 @Component
-public class StringToFileConfigurationConverter implements Converter<String, FileConfiguration> {
-
-	private final ObjectMapper objectMapper;
-
-	@Autowired
-	public StringToFileConfigurationConverter(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
-	}
-
-	@SneakyThrows
-	@Override
-	public FileConfiguration convert(String value) {
-		return objectMapper.readValue(value, FileConfiguration.class);
+public class StringToFileConfigurationConverter extends CinnamonStringConverter<FileConfiguration> {
+	public StringToFileConfigurationConverter(final SerializationConfig serializationConfig) {
+		super(FileConfiguration.class, serializationConfig);
 	}
 }

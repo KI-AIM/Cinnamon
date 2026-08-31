@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.test.platform.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
@@ -22,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
+import tools.jackson.core.JacksonException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -165,7 +165,7 @@ public class WorkflowControllerTest extends ControllerTest {
 		Object expectedPipeline;
 		try {
 			expectedPipeline = jsonMapper.readValue(expectedJson, Object.class);
-		} catch (JsonProcessingException e) {
+		} catch (JacksonException e) {
 			throw new RuntimeException(e);
 		}
 
@@ -353,7 +353,7 @@ public class WorkflowControllerTest extends ControllerTest {
 				                    .build());
 	}
 
-	private void enqueueSynthStatusResponse() throws JsonProcessingException {
+	private void enqueueSynthStatusResponse() {
 		var synthStatus = new SynthetizationStatus();
 		var synthStepStatus = new SynthetizationStepStatus();
 		synthStepStatus.setStep("callback");

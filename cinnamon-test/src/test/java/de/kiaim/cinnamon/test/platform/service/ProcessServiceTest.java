@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.test.platform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
@@ -25,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 
@@ -48,7 +48,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 	@Autowired private HttpService httpService;
 	@Autowired private StepService stepService = mock(StepService.class);
 
-	private ObjectMapper jsonMapper = null;
+	private JsonMapper jsonMapper = null;
 	private MockWebServer mockBackEnd;
 
 	private ProcessService processService;

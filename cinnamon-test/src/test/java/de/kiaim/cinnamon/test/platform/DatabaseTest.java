@@ -23,6 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -89,7 +90,7 @@ public class DatabaseTest extends ContextRequiredTest {
 
 				if (activeDatabase == TestDatabaseExtension.TestDatabase.POSTGRES_CUSTOM) {
 					// Clean database to prevent issues with canceled tests
-					doCleanDatabase();
+					reportCleanupErrors(doCleanDatabase());
 				}
 			}
 
@@ -106,10 +107,16 @@ public class DatabaseTest extends ContextRequiredTest {
 	@AfterEach
 	protected void cleanDatabase() {
 		try {
-			transactionTemplate.executeWithoutResult(status -> doCleanDatabase());
+			reportCleanupErrors(doCleanDatabase());
 		} finally {
 			DataSourceUtils.releaseConnection(connection, dataSource);
 			connection = null;
+		}
+	}
+
+	private void reportCleanupErrors(final List<String> errors) {
+		if (!errors.isEmpty()) {
+			fail(String.join(System.lineSeparator(), errors));
 		}
 	}
 
@@ -157,19 +164,56 @@ public class DatabaseTest extends ContextRequiredTest {
 		}
 	}
 
-	private void doCleanDatabase() {
-		for (final UserEntity user : userRepository.findAll()) {
+	/**
+	 * Deletes the data of every user and drops any dataset tables left behind.
+	 * <p>
+	 * Deleting a single user's data runs in its own transaction, and dropping the dataset tables afterward runs in
+	 * another, separate transaction. Whenever no transaction is already active (e.g., for tests that opt out of the
+	 * surrounding test transaction via {@code Propagation.NOT_SUPPORTED}), each of these becomes an independent,
+	 * immediately-committing transaction. This matters because deleting one user's data can fail and mark its
+	 * transaction rollback-only. Without this separation, that failure would silently roll back the dataset table
+	 * cleanup too, even though it appeared to succeed, leaking tables into subsequent tests. Assertions about the
+	 * outcome are therefore never raised in here, only collected and returned, so that a failure never rolls back
+	 * cleanup work that already happened.
+	 *
+	 * @return A list of human-readable cleanup problems. Empty if cleanup was fully successful.
+	 */
+	private List<String> doCleanDatabase() {
+		final List<String> errors = new ArrayList<>(deleteAllUserData());
+		transactionTemplate.executeWithoutResult(status -> errors.addAll(cleanupDatabase()));
+		return errors;
+	}
+
+	private List<String> deleteAllUserData() {
+		final List<String> errors = new ArrayList<>();
+		final List<Long> userIds = new ArrayList<>();
+		userRepository.findAll().forEach(user -> userIds.add(user.getId()));
+
+		for (final Long userId : userIds) {
 			try {
-				userService.deleteUserData(user);
-			} catch (final InternalDataSetPersistenceException | InternalInvalidStateException e) {
-				fail(e);
+				// Each user gets their own transaction so that a failure for one user does not roll back the deletions
+				// already committed for the others.
+				transactionTemplate.executeWithoutResult(status -> {
+					final Optional<UserEntity> user = userRepository.findById(userId);
+					if (user.isEmpty()) {
+						return;
+					}
+
+					try {
+						userService.deleteUserData(user.get());
+					} catch (final InternalDataSetPersistenceException | InternalInvalidStateException e) {
+						throw new IllegalStateException(e);
+					}
+				});
+			} catch (final RuntimeException e) {
+				errors.add("Failed to delete data of user with id '" + userId + "': " + e.getMessage());
 			}
 		}
 
-		cleanupDatabase();
+		return errors;
 	}
 
-	private void cleanupDatabase() {
+	private List<String> cleanupDatabase() {
 		try {
 			if (isH2()) {
 				resetProjectSequenceH2();
@@ -178,11 +222,11 @@ public class DatabaseTest extends ContextRequiredTest {
 			} else {
 				throw new IllegalStateException("Unsupported test database");
 			}
-
-			dropDatasetTables();
 		} catch (SQLException e) {
-			fail(e);
+			return List.of("Failed to reset the project sequence: " + e.getMessage());
 		}
+
+		return dropDatasetTables();
 	}
 
 	private void resetProjectSequencePostgres() throws SQLException {
@@ -193,7 +237,7 @@ public class DatabaseTest extends ContextRequiredTest {
 		databaseService.executeStatement("ALTER SEQUENCE project_entity_seq RESTART WITH 2");
 	}
 
-	private void dropDatasetTables() {
+	private List<String> dropDatasetTables() {
 		final List<TableName> tableNames = jdbcTemplate.query(
 				"""
 						SELECT table_schema, table_name
@@ -218,8 +262,11 @@ public class DatabaseTest extends ContextRequiredTest {
 		}
 
 		if (!tableNames.isEmpty()) {
-			fail("Not all dataset tables have been dropped! In production, this would lead to orphaned data!");
+			return List.of("Not all dataset tables have been dropped! In production, this would lead to orphaned data! Dropped tables: " +
+			                tableNames);
 		}
+
+		return List.of();
 	}
 
 	private String quoteIdentifier(final String identifier) {

@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.test.platform;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
@@ -12,11 +11,14 @@ import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;
 import de.kiaim.cinnamon.test.util.ResourceHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.util.Map;
 import java.util.Set;
@@ -37,8 +39,8 @@ public class ControllerTest extends DatabaseTest {
 	@Autowired
 	protected SerializationConfig serializationConfig;
 
-	protected ObjectMapper yamlMapper = null;
-	protected ObjectMapper jsonMapper = null;
+	protected YAMLMapper yamlMapper = null;
+	protected JsonMapper jsonMapper = null;
 
 	@BeforeEach
 	protected void setUpMapper() {

@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.model.serialization.DataSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jspecify.annotations.Nullable;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
         examples = {"true", "\"2023-12-24\"", "\"2023-12-24 18:30:01\"", "4.2", "42", "\"Hello World!\""})
 @JsonDeserialize(using = DataDeserializer.class)
 @JsonSerialize(using = DataSerializer.class)
-public abstract class Data {
+public abstract class Data implements Serializable {
 
 	@Schema(hidden = true)
 	public abstract DataType getDataType();

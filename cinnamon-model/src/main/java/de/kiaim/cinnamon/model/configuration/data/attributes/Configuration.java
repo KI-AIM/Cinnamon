@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
+
 /**
  * Empty interface that all Data configurations
  * should implement in order to be dynamically
@@ -18,5 +20,5 @@ import io.swagger.v3.oas.annotations.media.Schema;
 		@JsonSubTypes.Type(StringPatternConfiguration.class),
 		@JsonSubTypes.Type(TextLanguageConfiguration.class),
 })
-public interface Configuration {
+public interface Configuration extends Serializable {
 }

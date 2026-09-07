@@ -1,11 +1,10 @@
 package de.kiaim.cinnamon.platform.converter;
 
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.lang.Nullable;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -43,7 +42,7 @@ public abstract class CinnamonStringConverter<T> implements Converter<String, T>
 	 * @return The converted object.
 	 */
 	@Nullable @Override
-	public T convert(@NonNull final String source) {
+	public T convert(final String source) {
 		try {
 			if (source.startsWith("{")) {
 				return jsonMapper.readValue(source, targetType);

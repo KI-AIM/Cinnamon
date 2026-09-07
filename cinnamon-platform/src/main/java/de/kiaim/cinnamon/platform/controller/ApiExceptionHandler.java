@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.util.Pair;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.*;
-import org.springframework.lang.Nullable;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -201,7 +201,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	 * @return Pair containing the field path and error message.
 	 */
 	@Nullable
-	private Pair<String, String> extractBestMessage(final Throwable throwable, final String fieldName) {
+	private Pair<String, String> extractBestMessage(final @Nullable Throwable throwable, final String fieldName) {
 		if (throwable == null) {
 			return null;
 		}

@@ -3,7 +3,7 @@ package de.kiaim.cinnamon.platform.model.entity;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class UserEntity implements UserDetails {
 
 	@Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Username of the user for authentication and identification.

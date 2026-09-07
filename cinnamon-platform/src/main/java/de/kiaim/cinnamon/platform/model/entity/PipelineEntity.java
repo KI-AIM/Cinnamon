@@ -6,7 +6,7 @@ import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ public class PipelineEntity {
 	@JsonIgnore
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Index of the pipeline within the project.

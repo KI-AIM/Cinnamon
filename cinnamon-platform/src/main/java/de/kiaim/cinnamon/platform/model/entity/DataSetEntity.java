@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -37,7 +37,7 @@ public class DataSetEntity extends ProcessOwner {
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(columnDefinition = "json")
 	@Setter
-	private DataConfiguration dataConfiguration;
+	private @Nullable DataConfiguration dataConfiguration;
 
 	/**
 	 * If the data has been stored into the extra table.
@@ -78,7 +78,7 @@ public class DataSetEntity extends ProcessOwner {
 	 */
 	@Convert(converter = StepListAttributeConverter.class)
 	@Setter
-	private List<Job> processed = new ArrayList<>();
+	private List<@Nullable Job> processed = new ArrayList<>();
 
 	/**
 	 * Process for calculating the statistics.
@@ -121,7 +121,7 @@ public class DataSetEntity extends ProcessOwner {
 		this.setJob(dataProcessing);
 	}
 
-	public Long getId() {
+	public @Nullable Long getId() {
 		return this.id;
 	}
 

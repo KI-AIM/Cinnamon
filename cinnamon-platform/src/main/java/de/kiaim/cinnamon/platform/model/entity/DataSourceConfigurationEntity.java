@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Entity class for the data source configuration.
@@ -24,7 +24,7 @@ public class DataSourceConfigurationEntity {
 	 */
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Source of the file.

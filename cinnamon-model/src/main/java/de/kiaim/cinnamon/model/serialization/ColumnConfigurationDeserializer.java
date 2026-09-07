@@ -148,7 +148,7 @@ public class ColumnConfigurationDeserializer extends ValueDeserializer<ColumnCon
 					} catch (DataBuildingException e) {
 						try (JsonParser parser = configurationNode.traverse(jsonParser.objectReadContext())) {
 							throw new DataBuildingJsonException(
-									"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because the data could not be built!",
+									"Could not convert 'minValue' and 'maxValue' of RangeConfiguration because of an invalid format!",
 									parser.currentLocation(), e);
 						}
 					}

@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
+import org.jspecify.annotations.Nullable;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 
@@ -21,7 +22,7 @@ import org.mapstruct.MappingConstants;
 )
 public abstract class FileConfigurationMapper {
 
-	public FileConfiguration toDto(FileConfigurationEntity entity) {
+	public @Nullable FileConfiguration toDto(@Nullable FileConfigurationEntity entity) {
 		if (entity == null) {
 			return null;
 		}
@@ -40,7 +41,7 @@ public abstract class FileConfigurationMapper {
 		return dto;
 	}
 
-	public FileConfigurationEntity toEntity(FileConfiguration configuration) {
+	public @Nullable FileConfigurationEntity toEntity(@Nullable FileConfiguration configuration) {
 		if (configuration == null) {
 			return null;
 		}

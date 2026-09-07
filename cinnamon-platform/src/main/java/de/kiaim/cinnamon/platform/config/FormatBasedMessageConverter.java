@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.config;
 
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
@@ -50,7 +51,7 @@ public class FormatBasedMessageConverter extends AbstractHttpMessageConverter<Ob
 	}
 
 	@Override
-	protected boolean canWrite(final MediaType mediaType) {
+	protected boolean canWrite(@Nullable final MediaType mediaType) {
 		if (mediaType != null && mediaType.includes(MediaType.APPLICATION_JSON)) {
 			final String path = request.getRequestURI();
 			if (path.startsWith(openApiPath)) {
@@ -86,7 +87,7 @@ public class FormatBasedMessageConverter extends AbstractHttpMessageConverter<Ob
 		objectMapper.writeValue(outputMessage.getBody(), o);
 	}
 
-	private ObjectMapper getObjectMapper(final MediaType mediaType) {
+	private ObjectMapper getObjectMapper(@Nullable final MediaType mediaType) {
 		return supportedMediaTypes.getOrDefault(mediaType, supportedMediaTypes.get(CustomMediaType.APPLICATION_X_YAML));
 	}
 }

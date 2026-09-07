@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.platform.model.enumeration;
 
 import de.kiaim.cinnamon.platform.exception.BadStepNameException;
 import lombok.Getter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Steps of a project where the backend is involved.

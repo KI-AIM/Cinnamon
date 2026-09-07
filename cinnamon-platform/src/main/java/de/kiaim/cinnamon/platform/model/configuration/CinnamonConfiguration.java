@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.model.configuration;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.stereotype.Component;
@@ -67,7 +68,7 @@ public class CinnamonConfiguration {
 
 	private Map<Integer, ExternalEndpoint> externalServerEndpoints = new HashMap<>();
 
-	private Integer statisticsEndpoint;
+	private @Nullable Integer statisticsEndpoint;
 
 	@NestedConfigurationProperty
 	private PipelineConfiguration pipeline = new PipelineConfiguration();

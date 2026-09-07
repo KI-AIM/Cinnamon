@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.SupportedLanguage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class EmailTemplateItemEntity {
 	 * Database ID of the email template item.
 	 */
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Language of the email template item.
@@ -54,5 +55,5 @@ public class EmailTemplateItemEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "email_template_id", nullable = false)
-	private EmailTemplateEntity emailTemplate;
+	private @Nullable EmailTemplateEntity emailTemplate;
 }

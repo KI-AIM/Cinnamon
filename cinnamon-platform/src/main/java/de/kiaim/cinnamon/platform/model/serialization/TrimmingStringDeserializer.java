@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model.serialization;
 
+import org.jspecify.annotations.Nullable;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.deser.std.StdScalarDeserializer;
@@ -16,7 +17,7 @@ public class TrimmingStringDeserializer extends StdScalarDeserializer<String> {
 	}
 
 	@Override
-	public String deserialize(final JsonParser p, final DeserializationContext ctxt) {
+	public @Nullable String deserialize(final JsonParser p, final DeserializationContext ctxt) {
 		final String value = p.getValueAsString();
 		return value != null ? value.trim() : null;
 	}

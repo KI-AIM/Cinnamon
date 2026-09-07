@@ -3,7 +3,6 @@ package de.kiaim.cinnamon.platform.converter;
 
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSourceSelector;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class StringToDataSetSourceSelectorConverter implements Converter<String, DataSetSourceSelector> {
 
-	@Nullable @Override
+	@Override
 	public DataSetSourceSelector convert(final String source) {
 		return DataSetSourceSelector.valueOf(source.trim().toUpperCase());
 	}

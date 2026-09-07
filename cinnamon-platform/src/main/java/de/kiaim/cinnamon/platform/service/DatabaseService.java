@@ -375,7 +375,7 @@ public class DatabaseService {
 	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
 	 */
 	@Transactional
-	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file)
+	public FileInformation storeFile(final ProjectEntity project, @Nullable final MultipartFile file)
 			throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalIOException,
 					       InternalMissingHandlingException {
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());

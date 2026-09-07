@@ -5,7 +5,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import de.kiaim.cinnamon.platform.model.enumeration.UserRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.sql.Timestamp;
 import java.util.HashSet;

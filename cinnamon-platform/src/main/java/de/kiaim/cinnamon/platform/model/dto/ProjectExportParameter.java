@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.model.dto;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import lombok.*;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,5 +43,5 @@ public class ProjectExportParameter {
 	 *     <li>original.['file' | 'dataset' | 'statistics']</li>
 	 * </ul>
 	 */
-	private List<String> resources = new ArrayList<>();
+	private @Nullable List<String> resources = new ArrayList<>();
 }

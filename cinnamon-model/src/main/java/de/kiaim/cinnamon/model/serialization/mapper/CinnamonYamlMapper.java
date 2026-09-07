@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.model.serialization.mapper;
 
+import tools.jackson.databind.cfg.ConstructorDetector;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -16,6 +17,7 @@ public abstract class CinnamonYamlMapper {
 		                 .disable(YAMLWriteFeature.WRITE_DOC_START_MARKER)
 		                 .disable(YAMLWriteFeature.USE_NATIVE_TYPE_ID)
 		                 .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+		                 .constructorDetector(ConstructorDetector.DEFAULT.withAllowImplicitWithDefaultConstructor(false))
 		                 .build();
 	}
 

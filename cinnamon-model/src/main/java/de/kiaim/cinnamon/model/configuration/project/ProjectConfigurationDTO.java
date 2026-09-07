@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.model.configuration.project;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,6 +19,7 @@ import org.jspecify.annotations.Nullable;
  * @author Daniel Preciado-Marquez
  */
 @Schema(description = "Configurations for the project.")
+@JsonPropertyOrder({"projectName", "contactMail", "contactUrl", "reportCreator", "metricConfiguration"})
 @Getter @Setter
 @EqualsAndHashCode
 public class ProjectConfigurationDTO implements ConfigurationDTO {

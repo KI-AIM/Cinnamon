@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.model.configuration.data.file;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.validation.FileConfigurationSet;
@@ -15,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 
 @Schema(description = "Metadata describing the type of the uploaded data.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"fileType", "csvFileConfiguration", "xlsxFileConfiguration", "fhirFileConfiguration"})
 @FileConfigurationSet
 @Getter
 @Setter

@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.model.configuration.data.attributes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
@@ -29,6 +30,7 @@ import java.util.List;
  */
 @Schema(description = "Configuration of a single column in the data set.")
 @DateFormatProvidedConstraint @ScaleApplicableToType
+@JsonPropertyOrder({"index", "name", "type", "scale", "configurations"})
 @NoArgsConstructor @AllArgsConstructor
 @Getter @Setter
 @EqualsAndHashCode

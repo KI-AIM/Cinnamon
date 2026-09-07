@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.platform.service.UserService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.extern.log4j.Log4j2;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -69,7 +70,7 @@ public class AdminAccountInitializer implements ApplicationRunner {
 	 * @param password The configured password.
 	 * @throws IllegalStateException If the password is not set or does not meet the requirements.
 	 */
-	private void validatePassword(final String username, final String password) {
+	private void validatePassword(final String username, @Nullable final String password) {
 		if (password == null || password.isBlank()) {
 			throw new IllegalStateException(
 					"The initial administrator '" + username + "' is configured without a password. " +

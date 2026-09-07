@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.model.serialization.mapper;
 
+import tools.jackson.databind.cfg.ConstructorDetector;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -9,6 +10,7 @@ public abstract class CinnamonJsonMapper {
 	public static JsonMapper jsonMapper() {
 		return JsonMapper.builder()
 		                 .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+		                 .constructorDetector(ConstructorDetector.DEFAULT.withAllowImplicitWithDefaultConstructor(false))
 		                 .build();
 	}
 

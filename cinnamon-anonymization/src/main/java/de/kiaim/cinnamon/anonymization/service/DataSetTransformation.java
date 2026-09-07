@@ -12,6 +12,7 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.data.StringData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -33,8 +34,8 @@ public class DataSetTransformation {
 //    function : add dataset vertically (not needed, but nice to have for processing stream data)
 //    TODO : develop with unit test, each function should have at least one test where it works
 //      and one test intended to fail
-    private final DataSet dataSet;
-    private final List<DataSet> dataSets;
+    private final @Nullable DataSet dataSet;
+    private final @Nullable List<DataSet> dataSets;
 
     public DataSetTransformation(DataSet dataSet) {
         this.dataSet = dataSet;

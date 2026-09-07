@@ -29,6 +29,6 @@ public class PipelineConfigurationDTO {
 	 */
 	@Schema(description = "Set of jobs to be executed in the pipeline.")
 	@NotNull @Valid
-	private final List<JobConfigurationDTO> jobs = new ArrayList<>();
+	private List<JobConfigurationDTO> jobs = new ArrayList<>();
 
 }

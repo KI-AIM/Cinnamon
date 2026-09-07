@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.ConstraintViolation;
 import lombok.AllArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
  * @author Daniel Preciado-Marquez
  */
 @Schema(description = "Import summary for all configurations contained in a file.")
+@JsonPropertyOrder({"parameters", "status", "configurationImportSummaries"})
 @RequiredArgsConstructor
 @Getter @Setter
 public class ConfigurationImportSummary {

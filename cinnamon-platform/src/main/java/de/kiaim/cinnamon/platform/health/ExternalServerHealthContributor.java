@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import org.springframework.boot.health.contributor.CompositeHealthContributor;
 import org.springframework.boot.health.contributor.HealthContributor;
 import org.springframework.boot.health.contributor.HealthContributors;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +31,7 @@ public class ExternalServerHealthContributor implements CompositeHealthContribut
 	}
 
 	@Override
-	public HealthContributor getContributor(final String name) {
+	public @Nullable HealthContributor getContributor(final String name) {
 		return healthContributors.get(name);
 	}
 

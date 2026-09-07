@@ -7,7 +7,7 @@ import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.DateFormatPreset;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -366,7 +366,7 @@ public class ResourceSelectorService {
 		return statistics;
 	}
 
-	private Object handleInvitation(final String[] parts, final int nextPart,
+	private @Nullable Object handleInvitation(final String[] parts, final int nextPart,
 	                                @Nullable final UserInvitationEntity invitation,
 	                                @Nullable final String invitationUrl) {
 		if (invitation == null) {

@@ -8,7 +8,7 @@ import de.kiaim.cinnamon.platform.model.entity.BackgroundProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.ExternalProcessEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.regex.Pattern;

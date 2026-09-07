@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -22,7 +23,7 @@ public class WorkflowRequest {
 	 * Allowed to be null if the data is fetched from a server.
 	 */
 	@Schema(description = "File containing the data to be anonymized.", requiredMode = Schema.RequiredMode.REQUIRED)
-	private MultipartFile data;
+	private @Nullable MultipartFile data;
 
 	/**
 	 * Configuration file containing the anonymization rules.

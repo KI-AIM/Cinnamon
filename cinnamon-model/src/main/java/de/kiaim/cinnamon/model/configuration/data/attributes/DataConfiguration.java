@@ -85,8 +85,7 @@ public class DataConfiguration implements ConfigurationDTO, Serializable {
 			        """)
 	@NotNull(message = "The column configurations must be present!")
 	@UniqueColumnNamesConstraint
-	@Valid
-	List<ColumnConfiguration> configurations;
+	List<@Valid ColumnConfiguration> configurations;
 
 	/**
 	 * Adds a ColumnConfiguration to the list

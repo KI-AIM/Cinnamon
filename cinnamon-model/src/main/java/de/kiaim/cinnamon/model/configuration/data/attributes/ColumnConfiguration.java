@@ -86,8 +86,7 @@ public class ColumnConfiguration implements Serializable {
                     example = "[{\"name\": \"DateFormatConfiguration\", \"dataFormatter\": \"yyyy-MM-dd\"}]",
              anyOf = {DateFormatConfiguration.class, DateTimeFormatConfiguration.class, RangeConfiguration.class,
                      StringPatternConfiguration.class, TextLanguageConfiguration.class}))
-    @Valid
-    List<Configuration> configurations = new ArrayList<>();
+    List<@Valid Configuration> configurations = new ArrayList<>();
 
     /**
      * Adds a new configuration to the column configuration

@@ -45,6 +45,6 @@ public class MetricConfiguration implements Serializable {
 	 * Contains the metrics provided by the statistics endpoint.
 	 */
 	@Schema(description = "Map of user-defined metric importance. Contains the metrics provided by the statistics endpoint.")
-	private final Map<String, MetricImportance> userDefinedImportance = new HashMap<>();
+	private Map<String, MetricImportance> userDefinedImportance = new HashMap<>();
 
 }

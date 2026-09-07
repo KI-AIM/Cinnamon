@@ -30,7 +30,7 @@ public class PipelinesConfigurationDTO implements ConfigurationDTO {
 	 */
 	@Schema(description = "List of pipelines to be configured.")
 	@NotNull @Size(min = 1, message = "At least one pipeline must be provided") @Valid
-	private final List<PipelineConfigurationDTO> pipelines = new ArrayList<>();
+	private List<PipelineConfigurationDTO> pipelines = new ArrayList<>();
 
 	/**
 	 * {@inheritDoc}

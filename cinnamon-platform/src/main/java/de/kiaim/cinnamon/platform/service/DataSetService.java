@@ -16,7 +16,7 @@ import de.kiaim.cinnamon.platform.model.dto.LoadDataRequest;
 import de.kiaim.cinnamon.platform.model.enumeration.DataSetSelector;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

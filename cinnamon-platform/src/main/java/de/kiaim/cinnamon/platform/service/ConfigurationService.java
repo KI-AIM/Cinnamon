@@ -20,6 +20,7 @@ import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -89,7 +90,7 @@ public class ConfigurationService {
 	@Transactional(rollbackFor = {BadConfigurationFileException.class})
 	public ConfigurationImportSummary importConfigurations(
 			final ProjectEntity project,
-			final MultipartFile file,
+			@Nullable final MultipartFile file,
 			final ConfigurationImportParameters parameters
 	) throws BadConfigurationFileException {
 		if (file == null) {

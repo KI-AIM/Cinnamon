@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -1880,7 +1880,7 @@ public class DatabaseService {
 	}
 
 	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector,
-	                                 final List<String> columnNames, final Collection<Integer> columnIndices,
+	                                 final List<String> columnNames, @Nullable final Collection<Integer> columnIndices,
 	                                 final HoldOutSelector holdOutSelector, final boolean pagination,
 	                                 final int startRow, final int pageSize, final boolean exportRowIndexColumn) {
 		final List<String> quotedColumnNames = columnNames.stream().map(this::quoteColumnName)

@@ -7,7 +7,7 @@ import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpMethod;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 

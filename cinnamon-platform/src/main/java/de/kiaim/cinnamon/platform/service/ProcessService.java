@@ -40,7 +40,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -1330,7 +1330,7 @@ public class ProcessService {
 		}
 	}
 
-	public void setProcessError(final BackgroundProcessEntity process, final String message) {
+	public void setProcessError(final BackgroundProcessEntity process, @Nullable final String message) {
 		log.debug("Aborted process '{}' due to an error", process.getUuid());
 		process.setExternalProcessStatus(ProcessStatus.ERROR);
 		process.setServerInstance(null);
@@ -1346,7 +1346,7 @@ public class ProcessService {
 		}
 	}
 
-	private void setProcessError(final ExecutionStepEntity executionStep, final String message) {
+	private void setProcessError(final ExecutionStepEntity executionStep, @Nullable final String message) {
 		final var currentProcess = executionStep.getCurrentProcess();
 		if (currentProcess != null) {
 			currentProcess.setExternalProcessStatus(ProcessStatus.ERROR);

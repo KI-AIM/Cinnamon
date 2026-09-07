@@ -3,7 +3,7 @@ package de.kiaim.cinnamon.platform.model.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Entity for saving the content and the metadata of a file.
@@ -16,7 +16,7 @@ public class FileEntity {
 	 */
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Name of the file.

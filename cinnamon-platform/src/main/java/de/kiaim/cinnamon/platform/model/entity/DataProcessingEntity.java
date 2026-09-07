@@ -3,7 +3,7 @@ package de.kiaim.cinnamon.platform.model.entity;
 import de.kiaim.cinnamon.platform.model.enumeration.StepType;
 import jakarta.persistence.*;
 import lombok.Getter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Entity for steps of the type {@link StepType#DATA_PROCESSING}.

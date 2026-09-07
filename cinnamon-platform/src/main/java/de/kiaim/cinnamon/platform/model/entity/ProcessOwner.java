@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Entity for process owner.
@@ -20,7 +21,7 @@ public abstract class ProcessOwner {
 	 */
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "process_owner_seq")
-	protected Long id;
+	protected @Nullable Long id;
 
 	/**
 	 * Returns the corresponding project.

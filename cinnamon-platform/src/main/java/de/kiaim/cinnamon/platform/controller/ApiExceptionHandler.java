@@ -22,7 +22,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import tools.jackson.databind.DatabindException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
 import tools.jackson.databind.exc.MismatchedInputException;
 
@@ -207,7 +207,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			return null;
 		}
 
-		if (throwable.getCause() instanceof DatabindException jsonMappingException) {
+		if (throwable.getCause() instanceof JacksonException jsonMappingException) {
 			final var path = jsonMappingException.getPath();
 			var field = fieldName;
 			for (final var segment : path) {

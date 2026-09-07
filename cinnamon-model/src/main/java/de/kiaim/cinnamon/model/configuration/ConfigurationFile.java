@@ -117,6 +117,5 @@ public class ConfigurationFile {
 	 */
 	@Schema(description = "Configurations for external modules.")
 	@JsonAnyGetter @JsonAnySetter
-	@Valid
-	private Map<String, ConfigurationPart> parts = new HashMap<>();
+	private Map<String, @Valid ConfigurationPart> parts = new HashMap<>();
 }

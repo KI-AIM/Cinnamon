@@ -48,6 +48,7 @@ public class CinnamonInfo {
 	 * Whether an invitation is required to register a new user.
 	 */
 	@Schema(description = "Whether an invitation is required to register a new user.")
+	@JsonProperty("isInvitationRequired")
 	private final boolean isInvitationRequired;
 
 	/**

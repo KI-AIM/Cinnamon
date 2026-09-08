@@ -5,7 +5,7 @@ description: Guidance for building or restyling Angular UI in cinnamon-frontend 
 
 # Cinnamon frontend design
 
-`cinnamon-frontend` (Angular 19 + Angular Material + Bootstrap 5 + ngx-echarts) has a consistent
+`cinnamon-frontend` (Angular 20 + Angular Material + Bootstrap 5 + ngx-echarts) has a consistent
 visual language, but it was never written down — it lives only in the existing code. This skill
 is that write-up. The goal when adding new UI is to make it look like it was written by the same
 person who wrote the rest of the app, not to introduce a new pattern that happens to also work.
@@ -20,7 +20,7 @@ These aren't style preferences, they're enforced by `angular.json` schematics de
 the rest of the codebase does — deviating breaks consistency immediately and is easy to spot in review:
 
 - **NgModule components, not standalone.** `angular.json` sets `"standalone": false` as the default
-  for generated components/directives/pipes, and every existing component follows it. Angular 19
+  for generated components/directives/pipes, and every existing component follows it. Angular
   defaults to standalone components — don't let that default win here. New components must be
   declared in an existing `NgModule` (usually `shared.module.ts` or the owning feature module).
 - **`.less` stylesheets, not `.scss`.** Also an `angular.json` schematics default. The only `.scss`

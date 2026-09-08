@@ -31,6 +31,9 @@ public class WebConfig implements WebMvcConfigurer {
 		registry.addMapping("/**")
 		        .allowedHeaders("*")
 		        .allowedMethods("GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS")
-		        .allowedOrigins(corsAllowedOrigins);
+		        .allowedOrigins(corsAllowedOrigins)
+		        // Needed so the browser both accepts the XSRF-TOKEN cookie set by the backend and sends it
+		        // back on cross-origin requests (e.g. the Angular dev server on a different port).
+		        .allowCredentials(true);
 	}
 }

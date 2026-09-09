@@ -11,6 +11,11 @@ services:
         build:
             context: ./cinnamon-synthetization
             dockerfile: Dockerfile
+    cinnamon-text-extraction:
+        image: ghcr.io/ki-aim/cinnamon-text-extraction:latest
+        build:
+            context: ./cinnamon-text-extraction
+            dockerfile: Dockerfile
     cinnamon-evaluation:
         image: ghcr.io/ki-aim/cinnamon-evaluation:latest
         build:

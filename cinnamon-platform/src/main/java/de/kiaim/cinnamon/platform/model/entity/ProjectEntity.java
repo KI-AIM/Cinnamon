@@ -1,12 +1,15 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.lang.Nullable;
+import org.hibernate.annotations.Type;
 
 import java.sql.Timestamp;
 import java.util.*;
@@ -92,6 +95,27 @@ public class ProjectEntity {
 	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	@OrderBy("pipelineIndex")
 	private final List<PipelineEntity> pipelines = new ArrayList<>();
+
+	@Type(JsonType.class)
+	@Column(columnDefinition = "json")
+	@Setter
+	@Nullable
+	private JsonNode textExtractionConfiguration;
+
+	@Type(JsonType.class)
+	@Column(columnDefinition = "json")
+	@Setter
+	@Nullable
+	private JsonNode textExtractionResult;
+
+	@Column(nullable = false, columnDefinition = "varchar(255) default 'NOT_STARTED'")
+	@Setter
+	private String textExtractionStatus = "NOT_STARTED";
+
+	@Column(columnDefinition = "text")
+	@Setter
+	@Nullable
+	private String textExtractionError;
 
 	/**
 	 * User that owns this configuration and the corresponding data set.

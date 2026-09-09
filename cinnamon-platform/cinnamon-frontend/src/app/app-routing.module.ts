@@ -15,6 +15,7 @@ import { StartpageComponent } from './features/start/pages/startpage/startpage.c
 import { UploadFileComponent } from './features/data-upload/pages/upload-file/upload-file.component';
 import { DataConfigurationComponent } from './features/data-upload/pages/data-configuration/data-configuration.component';
 import { DataValidationComponent } from './features/data-upload/pages/data-validation/data-validation.component';
+import { DataExtractionComponent } from './features/data-upload/pages/data-extraction/data-extraction.component';
 import {LoginComponent} from "./features/auth/pages/login/login.component";
 import {RegisterComponent} from "./features/auth/pages/register/register.component";
 import { AuthGuard } from './core/guards/auth.guard';
@@ -67,6 +68,7 @@ const routes: Routes = [
             {path: 'upload', component: UploadFileComponent},
             {path: 'dataConfiguration', component: DataConfigurationComponent},
             {path: 'dataValidation', component: DataValidationComponent},
+            {path: 'dataExtraction', component: DataExtractionComponent},
             {path: 'anonymizationConfiguration', component: AnonymizationConfigurationComponent},
             {path: 'synthetizationConfiguration', component: SynthetizationConfigurationComponent},
             {path: 'execution', component: ExecutionComponent},

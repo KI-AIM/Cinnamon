@@ -6,7 +6,9 @@ import { StateManagementService } from "@core/services/state-management.service"
 import { ProjectExportComponent } from "@shared/components/project-export/project-export.component";
 import { NavigationKey } from "@shared/model/navigation";
 import { StatusService } from "@shared/services/status.service";
-import { combineLatest, Observable } from "rxjs";
+import { DataConfiguration, hasTextColumns } from "@shared/model/data-configuration";
+import { DataConfigurationService } from "@shared/services/data-configuration.service";
+import { catchError, combineLatest, map, Observable, of, switchMap } from "rxjs";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
 import { UserService } from 'src/app/shared/services/user.service';
 import { AdminPageConfiguration } from '../../enums/admin-pages';
@@ -34,10 +36,12 @@ export class NavigationComponent implements OnInit{
     protected pageData$: Observable<{
         navigationKey: NavigationKey,
         openStep: StepDefinition | null,
+        showDataExtraction: boolean,
     }>;
 
     constructor(
         private readonly dialog: MatDialog,
+        private readonly dataConfigurationService: DataConfigurationService,
         private readonly navigationService: NavigationService,
         protected readonly stateManagementService: StateManagementService,
         protected statusService: StatusService,
@@ -45,10 +49,33 @@ export class NavigationComponent implements OnInit{
     ) { }
 
     public ngOnInit(): void {
+        const showDataExtraction$ = this.statusService.statusNonNull$.pipe(
+            switchMap(status => {
+                if (StepConfiguration[status.currentStep].index < StepConfiguration[Steps.DATA_EXTRACTION].index) {
+                    return of(false);
+                }
+
+                return this.dataConfigurationService.downloadDataConfigurationAsJson().pipe(
+                    map((dataConfiguration: DataConfiguration) => hasTextColumns(dataConfiguration)),
+                    catchError(() => of(false)),
+                );
+            }),
+        );
+
         this.pageData$ = combineLatest({
             navigationKey: this.navigationService.navigationKey$,
             openStep: this.stateManagementService.currentStep$,
-        });
+        }).pipe(
+            switchMap(pageData => {
+                if (pageData.navigationKey !== NavigationKey.PROJECT) {
+                    return of({...pageData, showDataExtraction: false});
+                }
+
+                return showDataExtraction$.pipe(
+                    map(showDataExtraction => ({...pageData, showDataExtraction})),
+                );
+            }),
+        );
     }
 
     indexOrderAsc = (akv: KeyValue<string, any>, bkv: KeyValue<string, any>): number => {

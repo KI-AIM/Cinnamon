@@ -52,6 +52,7 @@ __pycache__/
 **/*.py[cod]
 *$py.class
 **/*$py.class
+*.egg-info/
 /venv/
 /env/
 /ENV/

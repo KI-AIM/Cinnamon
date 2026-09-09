@@ -24,6 +24,8 @@ public interface ProjectRepository extends CrudRepository<ProjectEntity, Long> {
 	 */
 	List<ProjectEntity> findAllByExpirationDateBefore(Timestamp expirationDate);
 
+	List<ProjectEntity> findAllByTextExtractionStatus(String status);
+
 	long countByExternalId(UUID workflowId);
 
 	@Query(value = "SELECT data_configuration from project_entity where id = :id", nativeQuery = true)

@@ -3,7 +3,7 @@
         <mat-paginator id="tableHeader" [length]="total" [pageSizeOptions]="[10, 50, 100]" showFirstLastButtons
             aria-label="Select page of periodic elements">
         </mat-paginator>
-        <div>
+        <div *ngIf="staticRows === null">
             <ng-container *ngIf="!hideHoldOutSplit">
                 <ng-container *ngIf="(dataSetInfo$ | async) as dataSetInfo">
                     <mat-form-field *ngIf="dataSetInfo.hasHoldOutSplit" class="me-2">

@@ -10,6 +10,7 @@ import { UploadFileComponent } from "./pages/upload-file/upload-file.component";
 import { RouterModule } from "@angular/router";
 import { FileService } from "./services/file.service";
 import { DataValidationComponent } from "./pages/data-validation/data-validation.component";
+import { DataExtractionComponent } from "./pages/data-extraction/data-extraction.component";
 import { DateformatComponent } from "./components/configurationSettings/dateformat/dateformat.component";
 import { DatetimeformatComponent } from "./components/configurationSettings/datetimeformat/datetimeformat.component";
 import { StringpatternComponent } from "./components/configurationSettings/stringpattern/stringpattern.component";
@@ -35,6 +36,7 @@ import { NgxEchartsModule } from "ngx-echarts";
 		DataConfigurationComponent,
 		UploadFileComponent,
 		DataValidationComponent,
+		DataExtractionComponent,
 		DateformatComponent,
 		DatetimeformatComponent,
 		StringpatternComponent,

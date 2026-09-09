@@ -27,6 +27,11 @@ public class BadArgumentException extends BadRequestException {
 	 */
 	public static final String INVALID_INVITATION_ID = "4";
 
+	/**
+	 * Exception code for an invalid text extraction configuration.
+	 */
+	public static final String INVALID_EXTRACTION_CONFIGURATION = "5";
+
 	public BadArgumentException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

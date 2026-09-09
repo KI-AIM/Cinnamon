@@ -2,9 +2,11 @@ package de.kiaim.cinnamon.test.platform.service;
 
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.data.StringData;
+import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
@@ -29,6 +31,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -97,6 +100,60 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		assertFalse(existsTable(dataSetId), "Table should be deleted!");
 		assertFalse(dataSetEntity.isStoredData(), "Flag that the data is stored should be false!");
+	}
+
+	@Test
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void appendExtractedColumnsExpandsObjectRows() {
+		final TransformationResult transformationResult = TransformationResultTestHelper.generateTransformationResult(false);
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, testProject));
+		final DataSetEntity dataSetEntity = getTestProject().getOriginalData().getDataSet();
+		final List<ColumnConfiguration> columns = List.of(new ColumnConfiguration(
+				0, "procedure", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()));
+		final Map<Integer, List<Data>> values = Map.of(
+				0, List.of(new StringData("Procedure A")),
+				1, List.of(new StringData("Procedure B")),
+				2, List.of(new StringData("Procedure C"))
+		);
+		final Map<Integer, Integer> sourceRows = Map.of(0, 0, 1, 0, 2, 1);
+
+		assertDoesNotThrow(() -> databaseService.appendExtractedColumns(
+				dataSetEntity, columns, values, sourceRows));
+		final DataSet expanded = assertDoesNotThrow(() -> databaseService.exportDataSet(
+				dataSetEntity, new ArrayList<>(), HoldOutSelector.ALL));
+
+		assertEquals(3, expanded.getDataRows().size());
+		assertEquals("Hello World!", expanded.getDataRows().get(0).getData().get(5).getValue());
+		assertEquals("Hello World!", expanded.getDataRows().get(1).getData().get(5).getValue());
+		assertEquals("Bye World!", expanded.getDataRows().get(2).getData().get(5).getValue());
+		assertEquals(List.of("Procedure A", "Procedure B", "Procedure C"), expanded.getDataRows().stream()
+				.map(row -> row.getData().get(6).getValue()).toList());
+	}
+
+	@Test
+	@DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+	void storesProcessingResultAfterColumnsWereExtracted() {
+		final TransformationResult original = TransformationResultTestHelper.generateTransformationResult(false);
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(original, testProject));
+		final DataSetEntity originalDataSet = getTestProject().getOriginalData().getDataSet();
+		final List<ColumnConfiguration> columns = List.of(new ColumnConfiguration(
+				0, "procedure", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()));
+
+		assertDoesNotThrow(() -> databaseService.appendExtractedColumns(
+				originalDataSet,
+				columns,
+				Map.of(0, List.of(new StringData("Procedure A")), 1, List.of(new StringData("Procedure B"))),
+				Map.of(0, 0, 1, 1)));
+
+		final DataSet extracted = assertDoesNotThrow(() -> databaseService.exportDataSet(
+				originalDataSet, new ArrayList<>(), HoldOutSelector.ALL));
+		final DataProcessingEntity process = (DataProcessingEntity) getTestProject().getPipelines().get(0)
+		                                                                 .getStageByIndex(0).getProcess(0);
+
+		assertDoesNotThrow(() -> databaseService.storeTransformationResult(
+				new TransformationResult(extracted, new ArrayList<>()), process, List.of(process.getJob())));
+		assertNotNull(process.getDataSet());
+		assertTrue(process.getDataSet().isStoredData());
 	}
 
 	@Test

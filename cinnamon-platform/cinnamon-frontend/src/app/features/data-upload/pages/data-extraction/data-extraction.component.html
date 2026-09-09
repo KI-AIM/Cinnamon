@@ -1,0 +1,234 @@
+<ng-container *ngIf="pageData$ | async as pageData">
+    <ng-container *ngIf="pageData.status.mode === Mode.STANDARD">
+        <app-workstep-list confirmLabel="Continue" [locked]="pageData.locked.isLocked"
+                           [invalid]="extractionEnabled && !result" [numberSteps]="5"
+                           [step]="Steps.DATA_EXTRACTION" (confirm)="continue()">
+            <app-workstep-item header="Select whether to run information extraction"
+                               [locked]="pageData.locked.isLocked" [stepIndex]="0">
+                <ng-container *ngTemplateOutlet="activation"></ng-container>
+            </app-workstep-item>
+            <app-workstep-item header="Upload a configuration if available"
+                               [locked]="pageData.locked.isLocked" [stepIndex]="1" [skip]="!extractionEnabled">
+                <ng-container *ngTemplateOutlet="configurationUploadContent"></ng-container>
+            </app-workstep-item>
+            <app-workstep-item header="LLM and Source Column"
+                               [locked]="pageData.locked.isLocked" [stepIndex]="2" [skip]="!extractionEnabled"
+                               [invalid]="form.get('profile')?.invalid || form.get('source_column')?.invalid">
+                <ng-container *ngTemplateOutlet="extractionSetup"></ng-container>
+            </app-workstep-item>
+            <app-workstep-item header="Extraction Configuration"
+                               [locked]="pageData.locked.isLocked" [stepIndex]="3" [skip]="!extractionEnabled"
+                               [invalid]="fields.length === 0 || form.get('fields')?.invalid">
+                <ng-container *ngTemplateOutlet="extractionConfiguration"></ng-container>
+            </app-workstep-item>
+            <app-workstep-item header="Extracted Data" [locked]="pageData.locked.isLocked"
+                               [loading]="saving" [stepIndex]="4" [skip]="!extractionEnabled" [invalid]="!result"
+                               [showInvalidMessage]="false">
+                <ng-container *ngTemplateOutlet="extractedData"></ng-container>
+            </app-workstep-item>
+        </app-workstep-list>
+    </ng-container>
+
+    <ng-container *ngIf="pageData.status.mode === Mode.EXPERT">
+        <app-workstep-box header="Process Activation">
+            <ng-container *ngTemplateOutlet="activation"></ng-container>
+        </app-workstep-box>
+        <app-workstep-box header="Configuration Upload">
+            <ng-container *ngTemplateOutlet="configurationUploadContent"></ng-container>
+        </app-workstep-box>
+        <app-workstep-box header="LLM and Source Column">
+            <ng-container *ngTemplateOutlet="extractionSetup"></ng-container>
+        </app-workstep-box>
+        <app-workstep-box header="Extraction Configuration">
+            <ng-container *ngTemplateOutlet="extractionConfiguration"></ng-container>
+        </app-workstep-box>
+        <app-workstep-box header="Extracted Data">
+            <ng-container *ngTemplateOutlet="extractedData"></ng-container>
+            <button mat-raised-button color="primary" class="mt-3"
+                    [disabled]="saving || (extractionEnabled && !result)" (click)="continue()">
+                Continue
+            </button>
+        </app-workstep-box>
+    </ng-container>
+
+    <ng-template #activation>
+        <mat-checkbox color="primary" [checked]="extractionEnabled"
+                      [disabled]="pageData.locked.isLocked || saving"
+                      (change)="setExtractionEnabled($event.checked)">
+            Run information extraction
+        </mat-checkbox>
+    </ng-template>
+
+    <ng-template #configurationUploadContent>
+        <p>Upload an existing text extraction configuration.</p>
+        <app-file-upload #configurationUpload accept=".yml,.yaml"
+                         [disabled]="pageData.locked.isLocked || saving || !extractionEnabled"
+                         (input)="uploadConfiguration($event)"></app-file-upload>
+    </ng-template>
+
+    <ng-template #extractionSetup>
+        <form [formGroup]="form">
+            <p>Select the language model and the single free-text column used for extraction.</p>
+            <mat-form-field class="w-100">
+                <mat-label>LLM Profile</mat-label>
+                <mat-select formControlName="profile">
+                    <mat-option *ngFor="let profile of profiles$ | async" [value]="profile.name">
+                        {{ profile.name }} ({{ profile.model_name }})
+                    </mat-option>
+                </mat-select>
+                <mat-error>Please select an LLM profile.</mat-error>
+            </mat-form-field>
+            <mat-form-field class="w-100">
+                <mat-label>Source Text Column</mat-label>
+                <mat-select formControlName="source_column">
+                    <mat-option *ngFor="let column of textColumns$ | async" [value]="column">{{ column }}</mat-option>
+                </mat-select>
+                <mat-error>Please select one source text column.</mat-error>
+            </mat-form-field>
+        </form>
+        <p *ngIf="profilesLoadingFailed" class="cinnamon-error">The LLM profiles could not be loaded.</p>
+    </ng-template>
+
+    <ng-template #extractionConfiguration>
+        <form [formGroup]="form">
+            <div formArrayName="fields">
+                <div *ngFor="let field of fields.controls; let index = index" [formGroupName]="index"
+                     class="extraction-field mb-3">
+                    <div class="extraction-field-row">
+                        <mat-form-field>
+                            <mat-label>Field Name</mat-label>
+                            <input matInput formControlName="name">
+                            <mat-error>Invalid name.</mat-error>
+                        </mat-form-field>
+                        <mat-form-field>
+                            <mat-label>Type</mat-label>
+                            <mat-select formControlName="type">
+                                <mat-option *ngFor="let type of extractionTypes" [value]="type.value">{{ type.label }}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <mat-form-field class="flex-grow-1">
+                            <mat-label>Description</mat-label>
+                            <input matInput formControlName="description">
+                            <mat-error>Description required.</mat-error>
+                        </mat-form-field>
+                        <mat-form-field class="flex-grow-1" *ngIf="field.get('type')?.value === 'string'">
+                            <mat-label>Allowed Values (optional)</mat-label>
+                            <input matInput formControlName="allowed_values" placeholder="low, medium, high">
+                            <mat-hint>Comma-separated.</mat-hint>
+                        </mat-form-field>
+                        <ng-container *ngIf="isRangeType(field.get('type')?.value)">
+                            <mat-form-field>
+                                <mat-label>Minimum (optional)</mat-label>
+                                <input matInput type="number" formControlName="min_value">
+                            </mat-form-field>
+                            <mat-form-field>
+                                <mat-label>Maximum (optional)</mat-label>
+                                <input matInput type="number" formControlName="max_value">
+                            </mat-form-field>
+                        </ng-container>
+                        <mat-form-field *ngIf="field.get('type')?.value === 'date' || field.get('type')?.value === 'date_time'">
+                            <mat-label>{{ field.get('type')?.value === 'date' ? 'Date Format' : 'Date & Time Format' }}</mat-label>
+                            <input matInput formControlName="format"
+                                   [placeholder]="field.get('type')?.value === 'date' ? 'yyyy-MM-dd' : &quot;yyyy-MM-dd'T'HH:mm:ss&quot;">
+                            <mat-error>Format required.</mat-error>
+                        </mat-form-field>
+                        <button mat-icon-button type="button" aria-label="Remove extraction field" (click)="removeField(index)">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </div>
+
+                    <div *ngIf="isStructuredType(field.get('type')?.value)" formArrayName="fields"
+                         class="object-fields border rounded p-3 ms-4">
+                        <div class="mb-2">
+                            <strong>Object Fields</strong>
+                            <span class="ms-2 text-muted">Each extracted object becomes one table row.</span>
+                        </div>
+                        <div *ngFor="let nestedField of nestedFields(field).controls; let nestedIndex = index"
+                             [formGroupName]="nestedIndex" class="extraction-field-row mb-2">
+                            <mat-form-field>
+                                <mat-label>Attribute Name</mat-label>
+                                <input matInput formControlName="name">
+                                <mat-error>Invalid name.</mat-error>
+                            </mat-form-field>
+                            <mat-form-field>
+                                <mat-label>Type</mat-label>
+                                <mat-select formControlName="type">
+                                    <mat-option *ngFor="let type of primitiveExtractionTypes" [value]="type.value">{{ type.label }}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                            <mat-form-field class="flex-grow-1">
+                                <mat-label>Description</mat-label>
+                                <input matInput formControlName="description">
+                                <mat-error>Description required.</mat-error>
+                            </mat-form-field>
+                            <mat-form-field class="flex-grow-1" *ngIf="nestedField.get('type')?.value === 'string'">
+                                <mat-label>Allowed Values (optional)</mat-label>
+                                <input matInput formControlName="allowed_values" placeholder="left, right">
+                                <mat-hint>Comma-separated.</mat-hint>
+                            </mat-form-field>
+                            <ng-container *ngIf="isRangeType(nestedField.get('type')?.value)">
+                                <mat-form-field>
+                                    <mat-label>Minimum (optional)</mat-label>
+                                    <input matInput type="number" formControlName="min_value">
+                                </mat-form-field>
+                                <mat-form-field>
+                                    <mat-label>Maximum (optional)</mat-label>
+                                    <input matInput type="number" formControlName="max_value">
+                                </mat-form-field>
+                            </ng-container>
+                            <mat-form-field *ngIf="nestedField.get('type')?.value === 'date' || nestedField.get('type')?.value === 'date_time'">
+                                <mat-label>{{ nestedField.get('type')?.value === 'date' ? 'Date Format' : 'Date & Time Format' }}</mat-label>
+                                <input matInput formControlName="format"
+                                       [placeholder]="nestedField.get('type')?.value === 'date' ? 'yyyy-MM-dd' : &quot;yyyy-MM-dd'T'HH:mm:ss&quot;">
+                                <mat-error>Format required.</mat-error>
+                            </mat-form-field>
+                            <button mat-icon-button type="button" aria-label="Remove object field"
+                                    (click)="removeNestedField(field, nestedIndex)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </div>
+                        <button mat-stroked-button type="button" (click)="addNestedField(field)">
+                            <mat-icon>add</mat-icon>
+                            Add Object Field
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <button mat-stroked-button type="button" class="mb-3" (click)="addField()">
+                <mat-icon>add</mat-icon>
+                Add Field
+            </button>
+        </form>
+        <p *ngIf="fields.length === 0" class="cinnamon-error">Add at least one extraction field.</p>
+    </ng-template>
+
+    <ng-template #extractedData>
+        <mat-form-field class="format-select">
+            <mat-label>Table Format</mat-label>
+            <mat-select [value]="wideFormat" [disabled]="!extractionEnabled || saving || pageData.locked.isLocked"
+                        (selectionChange)="setWideFormat($event.value)">
+                <mat-option [value]="true">Wide format</mat-option>
+                <mat-option [value]="false">Long format</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <div class="mb-3">
+            <button mat-raised-button color="primary"
+                    [disabled]="!extractionEnabled || saving || form.invalid || pageData.locked.isLocked"
+                    (click)="extract()">
+                {{ saving ? 'Extracting...' : 'Extract Data' }}
+            </button>
+        </div>
+        <p *ngIf="extractionFailed" class="cinnamon-error">
+            The text extraction could not be completed<span *ngIf="extractionError">: {{ extractionError }}</span>.
+        </p>
+        <ng-container *ngIf="result as table">
+            <div class="extraction-table">
+                <app-data-table [staticColumns]="table.columns" [staticRows]="table.rows"></app-data-table>
+            </div>
+            <button mat-stroked-button type="button" class="mt-3" (click)="downloadCsv()">
+                <mat-icon>download</mat-icon>
+                Download CSV
+            </button>
+        </ng-container>
+    </ng-template>
+</ng-container>

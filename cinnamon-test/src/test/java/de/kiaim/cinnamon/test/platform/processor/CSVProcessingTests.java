@@ -42,6 +42,11 @@ public class CSVProcessingTests {
 	CsvProcessor csvProcessor;
 
 	@Test
+	void normalizeColumnNamesRemovesUtf8Bom() {
+		assertEquals(List.of("document_text"), csvProcessor.normalizeColumnNames(new String[]{"\uFEFFdocument text"}));
+	}
+
+	@Test
 	void estimateFileConfigurationRecordSeparatorCR() {
 		String csvData = "id,name,deathdate,smoker,price\r650390,Tonisha Swift,1975-05-08,no,303.23 €";
 		final LobWrapperEntity lobWrapper = new LobWrapperEntity(csvData);

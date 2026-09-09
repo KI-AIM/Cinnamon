@@ -15,4 +15,13 @@ describe("DataConfiguration", () => {
 
 		expect(hasTextColumns(dataConfiguration)).toBeTrue();
 	});
+
+	it("should reject structured-only configurations as text configurations", () => {
+		const dataConfiguration = new DataConfiguration();
+		const stringColumn = new ColumnConfiguration();
+		stringColumn.type = DataType.STRING;
+		dataConfiguration.configurations = [stringColumn];
+
+		expect(hasTextColumns(dataConfiguration)).toBeFalse();
+	});
 });

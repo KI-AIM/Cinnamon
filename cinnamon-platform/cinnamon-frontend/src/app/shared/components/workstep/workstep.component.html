@@ -1,6 +1,6 @@
 <div class="cinnamon-confirm-div">
 
-    <div class="cinnamon-workstep-error" *ngIf="!locked && !valid">
+    <div class="cinnamon-workstep-error" *ngIf="showInvalidMessage && !locked && !valid">
         The step is not completed or contains errors.
     </div>
 

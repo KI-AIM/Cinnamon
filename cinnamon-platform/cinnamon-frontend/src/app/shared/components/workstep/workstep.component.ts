@@ -13,6 +13,7 @@ export class WorkstepComponent {
     @Input() public loading: boolean = false;
     @Input() public locked!: boolean;
     @Input() public valid: boolean = true;
+    @Input() public showInvalidMessage: boolean = true;
 
     @Input() public altConfirm: string | null = null;
     @Input() public altConfirmValid: boolean = true;

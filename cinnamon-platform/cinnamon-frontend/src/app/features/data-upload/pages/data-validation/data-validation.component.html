@@ -3,11 +3,11 @@
 
         <app-workstep-list confirmLabel="Continue with the current dataset and data configuration"
                            [locked]="pageData.locked.isLocked" [numberSteps]="3" [step]="Steps.VALIDATION"
-                           (confirm)="confirmData()">
-            <app-workstep-item header="View the imported dataset" [locked]="pageData.locked.isLocked" [stepIndex]="0">
+                           (confirm)="confirmData(pageData.dataConfiguration)">
+            <app-workstep-item header="View the complete dataset" [locked]="pageData.locked.isLocked" [stepIndex]="0">
                 <p>
-                    The transformation of the data for your configuration was successful. You can inspect the result
-                    below. <br/><br/>
+                    The data import and, where configured, text extraction were successful. You can inspect the
+                    complete dataset including the source text and extracted columns below. <br/><br/>
 
                     Lines that are marked in red contain at least one value that could not be transformed with your
                     configuration.
@@ -71,14 +71,14 @@
                 results of the following steps.
             </div>
 
-            <button mat-raised-button color="primary" class="my-2" (click)="confirmData()"
+            <button mat-raised-button color="primary" class="my-2" (click)="confirmData(pageData.dataConfiguration)"
                     [disabled]="pageData.locked.isLocked">
                 Continue
                 <mat-icon>arrow_forward</mat-icon>
             </button>
         </app-workstep-box>
 
-        <app-workstep-box header="Data Upload Result" toggleable>
+        <app-workstep-box header="Complete Dataset" toggleable>
             Lines that are marked in red contain at least one value that could not be transformed with your
             configuration.
             The faulty column is marked in a deeper tone of red.

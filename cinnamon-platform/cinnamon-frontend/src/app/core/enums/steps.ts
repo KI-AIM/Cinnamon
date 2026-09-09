@@ -2,6 +2,7 @@ export enum Steps {
     WELCOME = "WELCOME",
     UPLOAD = "UPLOAD",
     DATA_CONFIG = "DATA_CONFIG",
+    DATA_EXTRACTION = "DATA_EXTRACTION",
     VALIDATION = "VALIDATION",
     ANONYMIZATION = "ANONYMIZATION",
     SYNTHETIZATION = "SYNTHETIZATION",
@@ -58,6 +59,15 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
 		enum: Steps.VALIDATION,
 		dependsOn: Steps.DATA_CONFIG,
         lockedAfter: Steps.VALIDATION,
+		index: 4,
+	},
+	DATA_EXTRACTION: {
+		path: "/dataExtraction",
+		id: "navLinkDataExtraction",
+		text: "Data Extraction",
+		enum: Steps.DATA_EXTRACTION,
+		dependsOn: Steps.DATA_CONFIG,
+		lockedAfter: Steps.VALIDATION,
 		index: 3,
 	},
 	ANONYMIZATION: {
@@ -67,7 +77,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
 		enum: Steps.ANONYMIZATION,
 		dependsOn: Steps.VALIDATION,
         lockedAfter: Steps.EXECUTION,
-		index: 4,
+		index: 5,
 	},
     SYNTHETIZATION: {
         path: "/synthetizationConfiguration",
@@ -76,7 +86,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
         enum: Steps.SYNTHETIZATION,
         dependsOn: Steps.ANONYMIZATION,
         lockedAfter: Steps.EXECUTION,
-        index: 5,
+        index: 6,
     },
     EXECUTION: {
         path: "/execution",
@@ -85,7 +95,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
         enum: Steps.EXECUTION,
         dependsOn: Steps.SYNTHETIZATION,
         lockedAfter: Steps.EXECUTION,
-        index: 6,
+        index: 7,
         stageName: "execution",
     },
     TECHNICAL_EVALUATION : {
@@ -95,7 +105,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
         enum: Steps.TECHNICAL_EVALUATION,
         dependsOn: Steps.EXECUTION,
         lockedAfter: Steps.EVALUATION,
-        index: 7,
+        index: 8,
     },
     RISK_EVALUATION : {
         path: "/riskEvaluationConfiguration",
@@ -104,7 +114,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
         enum: Steps.RISK_EVALUATION,
         dependsOn: Steps.TECHNICAL_EVALUATION,
         lockedAfter: Steps.EVALUATION,
-        index: 8,
+        index: 9,
     },
     EVALUATION : {
         path: "/evaluation",
@@ -113,7 +123,7 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
         enum: Steps.EVALUATION,
         dependsOn: Steps.RISK_EVALUATION,
         lockedAfter: Steps.EVALUATION,
-        index: 9,
+        index: 10,
         stageName: "evaluation",
     },
     REPORT: {
@@ -123,6 +133,6 @@ export const StepConfiguration: Record<Steps, StepDefinition> = {
         enum: Steps.REPORT,
         dependsOn: Steps.EVALUATION,
         lockedAfter: null,
-        index: 10,
+        index: 11,
     }
 };

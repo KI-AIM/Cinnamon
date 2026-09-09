@@ -1,6 +1,7 @@
 networks:
     data-management-network:
     synthetization-network:
+    text-extraction-network:
     anonymization-network:
     evaluation-network:
 
@@ -32,6 +33,7 @@ services:
         networks:
             - data-management-network
             - synthetization-network
+            - text-extraction-network
             - anonymization-network
             - evaluation-network
         environment:
@@ -55,6 +57,7 @@ services:
             CINNAMON.EXTERNAL-HOST.anonymization-host.URL: http://cinnamon-anonymization
             CINNAMON.EXTERNAL-HOST.text-anonymization-host.URL: http://cinnamon-text-anonymization
             CINNAMON.EXTERNAL-HOST.synthetization-host.URL: http://cinnamon-synthetization
+            CINNAMON.EXTERNAL-HOST.text-extraction-host.URL: http://cinnamon-text-extraction:5070
             CINNAMON.EXTERNAL-HOST.technical-evaluation-host.URL: http://cinnamon-evaluation
             CINNAMON.EXTERNAL-HOST.risk-assessment-host.URL: http://cinnamon-risk-assessment
 
@@ -106,6 +109,19 @@ services:
             CINNAMON_LLM_TEMPERATURE: ${CINNAMON_LLM_TEMPERATURE:-}
             CINNAMON_LLM_TOP_P: ${CINNAMON_LLM_TOP_P:-}
             CINNAMON_LLM_MAX_TOKENS: ${CINNAMON_LLM_MAX_TOKENS:-}
+    cinnamon-text-extraction:
+        image: ghcr.io/ki-aim/cinnamon-text-extraction:latest
+        container_name: cinnamon-text-extraction
+        restart: unless-stopped
+        ports:
+            - "127.0.0.1:5070:5070"
+        networks:
+            - text-extraction-network
+        env_file:
+            - .env
+        environment:
+            TEXT_EXTRACTION_LLM_TIMEOUT_SECONDS: ${TEXT_EXTRACTION_LLM_TIMEOUT_SECONDS:-1800}
+            TEXT_EXTRACTION_REQUEST_TIMEOUT_SECONDS: ${TEXT_EXTRACTION_REQUEST_TIMEOUT_SECONDS:-21600}
     cinnamon-evaluation:
         image: ghcr.io/ki-aim/cinnamon-evaluation:latest
         container_name: cinnamon-evaluation

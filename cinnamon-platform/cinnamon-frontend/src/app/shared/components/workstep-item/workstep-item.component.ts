@@ -13,6 +13,7 @@ export class WorkstepItemComponent {
     @Input({transform: booleanAttribute}) public invalid: boolean = false;
     @Input({transform: booleanAttribute}) public loading: boolean = false;
     @Input({transform: booleanAttribute}) public locked: boolean = false;
+    @Input({transform: booleanAttribute}) public showInvalidMessage: boolean = true;
     @Input() public header!: string;
 
     @Input() public altConfirm: string | null = null;

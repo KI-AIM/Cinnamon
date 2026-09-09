@@ -12,6 +12,11 @@ public class BadDataTypeException extends BadRequestException {
 	 */
 	public static final String UNDEFINED_NOT_ALLOWED = "1";
 
+	/**
+	 * Exception code for a text extraction source column that is not free text.
+	 */
+	public static final String TEXT_REQUIRED = "2";
+
 	public BadDataTypeException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

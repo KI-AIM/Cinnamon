@@ -41,7 +41,9 @@ public class ExportServiceTest extends DatabaseTest {
 	@Autowired UserService userService;
 
 	@Test
-	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalIOException {
+	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException,
+			BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalIOException,
+			InternalApplicationConfigurationException, InternalInvalidStateException {
 		// Preparation
 		final var project = assertDoesNotThrow(() -> userService.createProject(getTestUser(), null, null));
 		projectService.updateProjectConfiguration(project, ProjectConfigurationTestHelper.generateProjectConfigurationDTO());

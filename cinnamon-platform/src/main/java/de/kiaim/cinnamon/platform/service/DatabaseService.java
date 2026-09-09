@@ -633,21 +633,25 @@ public class DatabaseService {
 	 * @param processed            The steps that created the data set.
 	 * @throws BadDataConfigurationException       If the data configuration is not valid.
 	 * @throws BadDataSetIdException               If the data has already been confirmed.
-	 * @throws BadStateException                   If the file for the dataset has not been selected.
+	 * @throws BadStateException                   If the input data set does not exist.
+	 * @throws InternalApplicationConfigurationException If the process input is not configured.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
+	 * @throws InternalInvalidStateException       If the configured process input cannot be resolved.
 	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
+	 * @throws InternalMissingHandlingException    If no handling exists for the process input selector.
 	 */
 	@Transactional
 	public void storeTransformationResult(final TransformationResult transformationResult,
 	                                      final DataProcessingEntity dataProcessingEntity,
 	                                      final List<Job> processed)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
-		final ProjectEntity project = dataProcessingEntity.getExecutionStep().getPipeline().getProject();
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException,
+			       InternalApplicationConfigurationException, InternalDataSetPersistenceException,
+			       InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
 
-		// Test configuration
-		checkFile(project, dataConfiguration);
+		// Processing results must match their input dataset, which may have been extended after the file upload.
+		checkInputDataSet(dataProcessingEntity, dataConfiguration);
 
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(dataProcessingEntity.getDataSet());
@@ -664,6 +668,22 @@ public class DatabaseService {
 		storeDataSet(dataSet, dataSetEntity);
 
 		log.debug("Stored transformation result for job {}", dataProcessingEntity.getJob().getName());
+	}
+
+	private void checkInputDataSet(final DataProcessingEntity dataProcessingEntity,
+	                               final DataConfiguration dataConfiguration)
+			throws BadDataConfigurationException, BadStateException, InternalApplicationConfigurationException,
+			       InternalInvalidStateException, InternalMissingHandlingException {
+		final int inputAttributes = dataSetService.getDataSet(dataProcessingEntity)
+		                                              .getDataConfiguration()
+		                                              .getConfigurations()
+		                                              .size();
+		if (dataConfiguration.getConfigurations().size() != inputAttributes) {
+			throw new BadDataConfigurationException(BadDataConfigurationException.INVALID_NUMBER_OF_ATTRIBUTES,
+			                                        "Input dataset contains " + inputAttributes +
+			                                        " attributes, but the result data configuration contains " +
+			                                        dataConfiguration.getConfigurations().size() + " attributes!");
+		}
 	}
 
 	/**
@@ -1179,6 +1199,220 @@ public class DatabaseService {
 		log.debug("Confirmed original dataset");
 
 		projectRepository.save(project);
+	}
+
+	/**
+	 * Adds extracted columns to an unconfirmed original dataset. If several extracted rows reference the same source
+	 * row, original values are retained only for its first output row. Hold-out assignments are preserved and new
+	 * consecutive row indices are assigned.
+	 */
+	@Transactional
+	public DataConfiguration appendExtractedColumns(final DataSetEntity dataSetEntity,
+	                                                final List<ColumnConfiguration> columns,
+	                                                final Map<Integer, List<Data>> values,
+	                                                final Map<Integer, Integer> sourceRows)
+			throws BadArgumentException, InternalDataSetPersistenceException, InternalIOException {
+		final DataConfiguration configuration = getDetachedDataConfiguration(dataSetEntity);
+		final Set<String> names = new HashSet<>(configuration.getColumnNames());
+		names.add(DataschemeGenerator.HOLD_OUT_FLAG_NAME);
+		names.add(DataschemeGenerator.ROW_INDEX_NAME);
+		for (final ColumnConfiguration column : columns) {
+			if (!names.add(column.getName())) {
+				throw new BadArgumentException(BadArgumentException.INVALID_EXTRACTION_CONFIGURATION,
+				                               "The extraction field '" + column.getName() + "' already exists in the dataset.");
+			}
+		}
+		if (!values.keySet().equals(sourceRows.keySet())) {
+			throw new BadArgumentException(BadArgumentException.INVALID_EXTRACTION_CONFIGURATION,
+			                               "The extracted rows do not match their source rows.");
+		}
+		for (final List<Data> row : values.values()) {
+			if (row.size() != columns.size()) {
+				throw new BadArgumentException(BadArgumentException.INVALID_EXTRACTION_CONFIGURATION,
+				                               "An extracted row has an invalid number of values.");
+			}
+		}
+		final int sourceRowCount = countEntries(dataSetEntity.getId());
+		if (new HashSet<>(sourceRows.values()).size() != sourceRowCount ||
+		    sourceRows.values().stream().anyMatch(index -> index < 0 || index >= sourceRowCount)) {
+			throw new BadArgumentException(BadArgumentException.INVALID_EXTRACTION_CONFIGURATION,
+			                               "The extracted source rows do not match the dataset.");
+		}
+		final boolean expandsRows = values.size() != sourceRowCount ||
+		                            sourceRows.entrySet().stream().anyMatch(row -> !row.getKey().equals(row.getValue()));
+		if (expandsRows) {
+			for (int rowIndex = 0; rowIndex < values.size(); rowIndex++) {
+				if (!values.containsKey(rowIndex)) {
+					throw new BadArgumentException(BadArgumentException.INVALID_EXTRACTION_CONFIGURATION,
+					                               "Expanded extraction rows must have consecutive indices.");
+				}
+			}
+		}
+
+		final String tableName = getTableName(dataSetEntity.getId());
+		final String additions = columns.stream()
+		                                .map(column -> "ADD COLUMN " + quoteColumnName(column.getName()) + " " +
+		                                               sqlType(column.getType()))
+		                                .collect(Collectors.joining(","));
+		try {
+			executeStatement("ALTER TABLE " + tableName + " " + additions);
+			if (expandsRows) {
+				replaceRowsWithExtractedValues(tableName, configuration, columns, values, sourceRows);
+			} else {
+				updateExtractedValues(tableName, columns, values);
+			}
+		} catch (final SQLException exception) {
+			throw new InternalDataSetPersistenceException(
+					InternalDataSetPersistenceException.DATA_SET_STORE,
+					"The extracted columns could not be persisted.", exception);
+		}
+
+		for (final ColumnConfiguration column : columns) {
+			column.setIndex(configuration.getConfigurations().size());
+			configuration.addColumnConfiguration(column);
+		}
+		if (expandsRows) {
+			remapTransformationErrors(dataSetEntity, sourceRows);
+		}
+		dataSetEntity.setDataConfiguration(configuration);
+		// Projects that reached extraction in the previous workflow were already confirmed at this point.
+		dataSetEntity.setConfirmedData(false);
+		dataSetEntity.getStatisticsProcess().reset();
+		dataSetRepository.save(dataSetEntity);
+		return configuration;
+	}
+
+	/** Restores the uploaded dataset before applying its extraction result in another table format. */
+	@Transactional
+	public DataConfiguration restoreBeforeTextExtraction(final ProjectEntity project,
+	                                                     final List<String> extractedColumnNames)
+			throws ApiException {
+		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
+		final DataConfiguration configuration = getDetachedDataConfiguration(dataSet);
+		final List<ColumnConfiguration> configuredColumns = configuration.getConfigurations();
+		final int originalColumnCount = configuredColumns.size() - extractedColumnNames.size();
+		if (originalColumnCount < 0 ||
+		    !configuredColumns.subList(originalColumnCount, configuredColumns.size()).stream()
+		                      .map(ColumnConfiguration::getName).toList().equals(extractedColumnNames)) {
+			throw new BadArgumentException(BadArgumentException.INVALID_EXTRACTION_CONFIGURATION,
+			                               "The previously applied extraction columns could not be identified.");
+		}
+
+		configuration.setConfigurations(new ArrayList<>(configuredColumns.subList(0, originalColumnCount)));
+		for (int index = 0; index < configuration.getConfigurations().size(); index++) {
+			configuration.getConfigurations().get(index).setIndex(index);
+		}
+		dataSet.setDataConfiguration(configuration);
+		dataSetRepository.save(dataSet);
+
+		// Re-reading the retained upload also removes rows introduced by the long representation.
+		storeOriginalDataset(project);
+		return exportOriginalDataConfiguration(project);
+	}
+
+	private void updateExtractedValues(final String tableName, final List<ColumnConfiguration> columns,
+	                                   final Map<Integer, List<Data>> values) throws SQLException {
+		final String assignments = columns.stream()
+		                                  .map(column -> quoteColumnName(column.getName()) + " = ?")
+		                                  .collect(Collectors.joining(","));
+		try (final PreparedStatement statement = connection.prepareStatement(
+				"UPDATE " + tableName + " SET " + assignments + " WHERE " +
+				quoteColumnName(DataschemeGenerator.ROW_INDEX_NAME) + " = ?")) {
+			for (final Map.Entry<Integer, List<Data>> row : values.entrySet()) {
+				for (int index = 0; index < row.getValue().size(); index++) {
+					statement.setObject(index + 1, row.getValue().get(index).getValue());
+				}
+				statement.setInt(columns.size() + 1, row.getKey());
+				statement.addBatch();
+			}
+			statement.executeBatch();
+		}
+	}
+
+	private void replaceRowsWithExtractedValues(final String tableName, final DataConfiguration configuration,
+	                                            final List<ColumnConfiguration> columns,
+	                                            final Map<Integer, List<Data>> values,
+	                                            final Map<Integer, Integer> sourceRows) throws SQLException {
+		final List<String> insertColumns = new ArrayList<>(configuration.getColumnNames());
+		insertColumns.add(DataschemeGenerator.HOLD_OUT_FLAG_NAME);
+		insertColumns.add(DataschemeGenerator.ROW_INDEX_NAME);
+		insertColumns.addAll(columns.stream().map(ColumnConfiguration::getName).toList());
+		final String originalValues = configuration.getColumnNames().stream()
+		                                           .map(column -> "CASE WHEN ? THEN " + quoteColumnName(column) +
+		                                                          " ELSE NULL END")
+		                                           .collect(Collectors.joining(",")) + "," +
+		                              quoteColumnName(DataschemeGenerator.HOLD_OUT_FLAG_NAME);
+		final String extractedPlaceholders = columns.stream().map(column -> "?")
+		                                                    .collect(Collectors.joining(","));
+		final String sql = "INSERT INTO " + tableName + " (" +
+		                   insertColumns.stream().map(this::quoteColumnName).collect(Collectors.joining(",")) +
+		                   ") SELECT " + originalValues + ",?," + extractedPlaceholders +
+		                   " FROM " + tableName + " WHERE " +
+		                   quoteColumnName(DataschemeGenerator.ROW_INDEX_NAME) + " = ?";
+		try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+			final Set<Integer> copiedSourceRows = new HashSet<>();
+			for (int rowIndex = 0; rowIndex < values.size(); rowIndex++) {
+				int parameterIndex = 1;
+				final boolean firstOutputForSource = copiedSourceRows.add(sourceRows.get(rowIndex));
+				for (int index = 0; index < configuration.getColumnNames().size(); index++) {
+					statement.setBoolean(parameterIndex++, firstOutputForSource);
+				}
+				statement.setInt(parameterIndex++, -rowIndex - 1);
+				final List<Data> rowValues = values.get(rowIndex);
+				for (int columnIndex = 0; columnIndex < rowValues.size(); columnIndex++) {
+					statement.setObject(parameterIndex++, rowValues.get(columnIndex).getValue());
+				}
+				statement.setInt(parameterIndex, sourceRows.get(rowIndex));
+				statement.addBatch();
+			}
+			for (final int count : statement.executeBatch()) {
+				if (count == 0) {
+					throw new SQLException("An extraction source row does not exist.");
+				}
+			}
+		}
+		try (final Statement statement = connection.createStatement()) {
+			statement.executeUpdate("DELETE FROM " + tableName + " WHERE " +
+			                        quoteColumnName(DataschemeGenerator.ROW_INDEX_NAME) + " >= 0");
+			statement.executeUpdate("UPDATE " + tableName + " SET " +
+			                        quoteColumnName(DataschemeGenerator.ROW_INDEX_NAME) + " = -" +
+			                        quoteColumnName(DataschemeGenerator.ROW_INDEX_NAME) + " - 1");
+		}
+	}
+
+	private void remapTransformationErrors(final DataSetEntity dataSetEntity,
+	                                       final Map<Integer, Integer> sourceRows) {
+		final Map<Integer, List<Integer>> outputRowsBySource = new HashMap<>();
+		sourceRows.forEach((output, source) -> outputRowsBySource
+				.computeIfAbsent(source, ignored -> new ArrayList<>()).add(output));
+		outputRowsBySource.values().forEach(rows -> rows.sort(Integer::compareTo));
+		for (final DataTransformationErrorEntity error : new ArrayList<>(dataSetEntity.getDataTransformationErrors())) {
+			final List<Integer> outputRows = outputRowsBySource.get(error.getRowIndex());
+			if (outputRows == null || outputRows.isEmpty()) {
+				continue;
+			}
+			error.setRowIndex(outputRows.get(0));
+			for (int index = 1; index < outputRows.size(); index++) {
+				final DataTransformationErrorEntity copy = new DataTransformationErrorEntity();
+				copy.setRowIndex(outputRows.get(index));
+				copy.setColumnIndex(error.getColumnIndex());
+				copy.setErrorType(error.getErrorType());
+				copy.setOriginalValue(error.getOriginalValue());
+				dataSetEntity.addDataRowTransformationError(copy);
+			}
+		}
+	}
+
+	private String sqlType(final DataType dataType) {
+		return switch (dataType) {
+			case BOOLEAN -> "boolean";
+			case DATE -> "date";
+			case DATE_TIME -> "timestamp";
+			case DECIMAL -> "numeric";
+			case INTEGER -> "integer";
+			case STRING, TEXT -> "character varying";
+			case UNDEFINED -> throw new IllegalArgumentException("Undefined columns cannot be stored.");
+		};
 	}
 
 	/**

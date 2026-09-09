@@ -53,6 +53,12 @@ public abstract class CommonDataProcessor implements DataProcessor {
 	 * @return Estimation if the first row is a header row.
 	 */
 	protected boolean estimateHasHeader(final List<String> first, final List<String> second) {
+		if (first.size() == 1 && second.size() == 1 &&
+		    estimateColumnConfigurationFromSample(first.get(0)).getType() == DataType.STRING &&
+		    estimateColumnConfigurationFromSample(second.get(0)).getType() == DataType.TEXT) {
+			return true;
+		}
+
 		// Check if the first row contains many attribute names
 		int matchingAttributeNames = 0;
 		for (final var head : first) {
@@ -205,7 +211,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
      * @return The normalize column names.
      */
     public List<String> normalizeColumnNames(final String[] columnNames) {
-        return Arrays.stream(columnNames).map(columnName -> columnName.replace(" ", "_")).toList();
+        return Arrays.stream(columnNames).map(columnName -> columnName.replace("\uFEFF", "").replace(" ", "_")).toList();
     }
 
     /**

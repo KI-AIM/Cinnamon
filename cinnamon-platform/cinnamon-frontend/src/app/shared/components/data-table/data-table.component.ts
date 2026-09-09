@@ -24,6 +24,8 @@ export class DataTableComponent implements OnInit, AfterViewInit {
     @Input() public sourceProcess: string | null = null;
     @Input() public columnIndex: number | null = null;
     @Input() public hideHoldOutSplit: boolean = false;
+    @Input() public staticColumns: string[] | null = null;
+    @Input() public staticRows: Array<Record<string, unknown>> | null = null;
 
     protected readonly HoldOutSelector = HoldOutSelector;
 
@@ -47,10 +49,24 @@ export class DataTableComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit() {
-        this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo(this.getSource());
+        if (this.staticRows === null) {
+            this.dataSetInfo$ = this.dataSetInfoService.getDataSetInfo(this.getSource());
+        }
     }
 
     ngAfterViewInit() {
+        if (this.staticRows !== null) {
+            this.displayedColumns = ['position', ...(this.staticColumns ?? []).filter(column => column !== 'row_index')];
+            this.total = this.staticRows.length;
+            this.dataSource = new MatTableDataSource<TableElement>(this.staticRows.map((row, index) => ({
+                ...row,
+                position: Number(row['row_index'] ?? index),
+                errorsInRow: [],
+            })));
+            this.dataSource.paginator = this.paginator;
+            return;
+        }
+
         this.dataSource.paginator = this.paginator;
 
         this.dataConfigurationService.downloadDataConfigurationAsJson().subscribe(

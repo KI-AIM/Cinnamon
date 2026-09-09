@@ -38,7 +38,7 @@ import {
     tap
 } from "rxjs";
 import { Steps } from 'src/app/core/enums/steps';
-import { DataConfiguration } from 'src/app/shared/model/data-configuration';
+import { DataConfiguration, hasTextColumns } from 'src/app/shared/model/data-configuration';
 import { FileType } from 'src/app/shared/model/file-configuration';
 import { DataConfigurationService } from 'src/app/shared/services/data-configuration.service';
 import { DataService } from 'src/app/shared/services/data.service';
@@ -171,6 +171,7 @@ export class DataConfigurationComponent implements OnInit {
 
     confirmConfiguration() {
         const config = plainToInstance(DataConfiguration, this.attributeConfigurationForm.getRawValue());
+        const nextStep = hasTextColumns(config) ? Steps.DATA_EXTRACTION : Steps.VALIDATION;
         this.loadingService.setLoadingStatus(true);
         this.configuration.setDataConfiguration(config);
         this.dataService.storeData(config).pipe(
@@ -182,10 +183,10 @@ export class DataConfigurationComponent implements OnInit {
                 }
             }),
             switchMap(() => {
-                return this.statusService.updateNextStep(Steps.VALIDATION);
+                return this.statusService.updateNextStep(nextStep);
             }),
         ).subscribe({
-            next: () => this.handleUpload(),
+            next: () => this.handleUpload(nextStep),
             error: (e) => this.handleError(e),
         });
     }
@@ -198,11 +199,11 @@ export class DataConfigurationComponent implements OnInit {
         });
     }
 
-    private handleUpload() {
+    private handleUpload(nextStep: Steps) {
         this.loadingService.setLoadingStatus(false);
         this.dataSetInfoService.invalidateCache();
 
-        this.stateManagementService.setAndRouteToStep(Steps.VALIDATION).subscribe();
+        this.stateManagementService.setAndRouteToStep(nextStep).subscribe();
     }
 
     private handleError(error: HttpErrorResponse) {

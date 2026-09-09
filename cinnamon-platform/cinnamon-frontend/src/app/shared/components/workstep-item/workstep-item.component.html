@@ -14,6 +14,7 @@
         <ng-content></ng-content>
 
         <app-workstep [loading]="loading" [locked]="locked" [stepIndex]="stepIndex" [valid]="!invalid"
+                      [showInvalidMessage]="showInvalidMessage"
                       [altConfirm]="altConfirm" [altConfirmValid]="altConfirmValid" [altConfirmAll]="altConfirmAll"
                       (confirm)="confirm.emit($event)" (confirmAlt)="confirmAlt.emit($event)"></app-workstep>
     </ng-template>

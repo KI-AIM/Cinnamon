@@ -111,6 +111,7 @@ export class ConfigurationFormComponent implements OnChanges, OnInit {
     }
 
     public ngOnChanges(changes: SimpleChanges): void {
+        // This fixes that the anonymization attribute configuration is not toggled by the free text anonymization
         if (changes['disabled'] || changes['processEnabled'] || changes['processJob']) {
             this.updateProcessConfigurationState();
         }
@@ -389,17 +390,6 @@ export class ConfigurationFormComponent implements OnChanges, OnInit {
                 control.enable({emitEvent: false});
             }
             this.rootGroup?.setGroupDisabled(name, algorithmDisabled);
-        }
-
-        for (const config of additionalConfigs) {
-            const disabled = this.additionalConfigurationDisabled(config);
-            const control = this.form.controls[config.formGroupName];
-            if (disabled) {
-                control.disable({emitEvent: false});
-            } else {
-                control.enable({emitEvent: false});
-            }
-            this.rootGroup?.setAdditionalConfigDisabled(config.formGroupName, disabled);
         }
     }
 

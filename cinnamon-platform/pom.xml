@@ -244,7 +244,7 @@
 				</executions>
 				<configuration>
 					<workingDirectory>cinnamon-frontend</workingDirectory>
-					<nodeVersion>v22.14.0</nodeVersion>
+					<nodeVersion>v22.23.2</nodeVersion>
 					<npmVersion>10.9.2</npmVersion>
                     <skip>${skip.frontend}</skip>
 				</configuration>

@@ -1,5 +1,5 @@
 import { animate, style, transition, trigger } from "@angular/animations";
-import { Component, OnInit, TemplateRef } from '@angular/core';
+import { Component, OnInit, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { Steps } from "@core/enums/steps";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
@@ -18,6 +18,7 @@ import { User, UserRole } from "@shared/model/user";
     styleUrls: ['./app.component.less'],
     providers: [],
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     animations: [
         trigger('slideInFromTop', [
             transition(':enter', [

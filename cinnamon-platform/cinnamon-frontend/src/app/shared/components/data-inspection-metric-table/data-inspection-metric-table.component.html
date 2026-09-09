@@ -10,7 +10,7 @@
             <th>Value</th>
             <th></th>
         </tr>
-        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData?.filter?.filterText:tableData?.filter?.importance | metricSorter:tableData?.sort?.direction:tableData?.sort?.column">
+        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:$safeNavigationMigration(tableData?.filter?.filterText):$safeNavigationMigration(tableData?.filter?.importance) | metricSorter:$safeNavigationMigration(tableData?.sort?.direction):$safeNavigationMigration(tableData?.sort?.column)">
             <ng-container *ngTemplateOutlet="metric; context: {data: metricData}">
             </ng-container>
         </ng-container>
@@ -27,7 +27,7 @@
             <th *ngIf="showInfo"></th>
         </tr>
 
-        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:tableData?.filter?.filterText:tableData?.filter?.importance | metricSorter:tableData?.sort?.direction:tableData?.sort?.column">
+        <ng-container *ngFor="let metricData of metrics | injectMetricImportance:pageData.projectSettings.metricConfiguration | metricFilter:$safeNavigationMigration(tableData?.filter?.filterText):$safeNavigationMigration(tableData?.filter?.importance) | metricSorter:$safeNavigationMigration(tableData?.sort?.direction):$safeNavigationMigration(tableData?.sort?.column)">
             <ng-container *ngTemplateOutlet="metricComparison; context: {data: metricData, mc: pageData.projectSettings.metricConfiguration}">
             </ng-container>
         </ng-container>
@@ -100,7 +100,7 @@
     </ng-template>
 
     <ng-template #sortColumn let-name="name" let-type="type" let-item="item">
-        <th (click)="sort(tableData?.sort, type)" style="min-width: 6rem;">
+        <th (click)="sort($safeNavigationMigration(tableData?.sort), type)" style="min-width: 6rem;">
             <div style="display: flex">
                 <span>{{ name }}</span>
                 <span *ngIf="item"><ng-container *ngTemplateOutlet="item"></ng-container></span>

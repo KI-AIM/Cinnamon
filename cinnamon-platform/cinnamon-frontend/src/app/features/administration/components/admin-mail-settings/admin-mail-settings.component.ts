@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from "@angular/forms";
 import { TitleService } from "@core/services/title-service.service";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
@@ -17,6 +17,7 @@ import { map, Observable, tap } from "rxjs";
     selector: 'app-admin-mail-settings',
     standalone: false,
     templateUrl: './admin-mail-settings.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './admin-mail-settings.component.less'
 })
 export class AdminMailSettingsComponent implements OnInit {

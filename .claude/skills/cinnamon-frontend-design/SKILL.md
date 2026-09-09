@@ -5,7 +5,7 @@ description: Guidance for building or restyling Angular UI in cinnamon-frontend 
 
 # Cinnamon frontend design
 
-`cinnamon-frontend` (Angular 20 + Angular Material + Bootstrap 5 + ngx-echarts) has a consistent
+`cinnamon-frontend` (Angular 22 + Angular Material + Bootstrap 5 + ngx-echarts) has a consistent
 visual language, but it was never written down — it lives only in the existing code. This skill
 is that write-up. The goal when adding new UI is to make it look like it was written by the same
 person who wrote the rest of the app, not to introduce a new pattern that happens to also work.

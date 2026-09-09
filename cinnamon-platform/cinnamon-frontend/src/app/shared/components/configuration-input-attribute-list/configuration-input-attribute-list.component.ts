@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Observable } from "rxjs";
 import { DataConfiguration } from "../../model/data-configuration";
 import { DataConfigurationService } from "../../services/data-configuration.service";
@@ -9,6 +9,7 @@ import { ConfigurationInputDefinition } from "../../model/configuration-input-de
     selector: 'app-configuration-input-attribute-list',
     templateUrl: './configuration-input-attribute-list.component.html',
     styleUrls: ['./configuration-input-attribute-list.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationInputAttributeListComponent implements OnInit {

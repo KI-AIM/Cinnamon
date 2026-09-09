@@ -1,15 +1,16 @@
 import {
-    ChangeDetectorRef,
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    OnInit,
-    Output,
-    QueryList,
-    ViewChild,
-    ViewChildren,
-    SimpleChanges
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  QueryList,
+  ViewChild,
+  ViewChildren,
+  SimpleChanges,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ValidatorFn, Validators } from "@angular/forms";
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
@@ -36,6 +37,7 @@ import { ConfigurationService } from "../../services/configuration.service";
     selector: 'app-configuration-form',
     templateUrl: './configuration-form.component.html',
     styleUrls: ['./configuration-form.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationFormComponent implements OnChanges, OnInit {

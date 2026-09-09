@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { WorkstepService } from "../../services/workstep.service";
 
@@ -6,6 +6,7 @@ import { WorkstepService } from "../../services/workstep.service";
     selector: 'app-workstep',
     templateUrl: './workstep.component.html',
     styleUrl: './workstep.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class WorkstepComponent {

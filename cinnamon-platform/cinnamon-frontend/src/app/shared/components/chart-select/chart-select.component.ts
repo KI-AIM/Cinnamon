@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 import {MatSelectChange} from "@angular/material/select";
 import { GraphType } from "src/app/shared/model/statistics";
 import { DataType } from "../../model/data-type";
@@ -7,6 +7,7 @@ import { DataType } from "../../model/data-type";
     selector: 'app-chart-select',
     templateUrl: './chart-select.component.html',
     styleUrls: ['./chart-select.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ChartSelectComponent {

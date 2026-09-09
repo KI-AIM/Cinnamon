@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { NotificationService } from "@core/services/notification.service";
@@ -15,6 +15,7 @@ import { environments } from "src/environments/environment";
     selector: 'app-user-invitation-form',
     standalone: false,
     templateUrl: './user-invitation-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './user-invitation-form.component.less'
 })
 export class UserInvitationFormComponent implements OnInit {

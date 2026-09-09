@@ -1,4 +1,4 @@
-import { Component, Input } from "@angular/core";
+import { Component, Input, ChangeDetectionStrategy } from "@angular/core";
 import { EChartsCoreOption } from "echarts/core";
 import { ChartComponent, Entries } from "../chart/chart.component";
 import { ColumnConfiguration } from "../../model/column-configuration";
@@ -9,6 +9,7 @@ import "echarts-wordcloud";
     selector: "app-chart-wordcloud",
     templateUrl: "../chart/chart.component.html",
     styleUrls: ["../chart/chart.component.less"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ChartWordcloudComponent extends ChartComponent {

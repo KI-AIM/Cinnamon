@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ColumnConfiguration } from "@shared/model/column-configuration";
 import { ChartComponent, Entries } from "../chart/chart.component";
 import { DensityPlotData, StatisticsData } from "../../model/statistics";
@@ -10,6 +10,7 @@ import { EChartsCoreOption } from "echarts/core";
     selector: 'app-chart-calendar',
     templateUrl: '../chart/chart.component.html',
     styleUrls: ['../chart/chart.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ChartCalendarComponent extends ChartComponent {

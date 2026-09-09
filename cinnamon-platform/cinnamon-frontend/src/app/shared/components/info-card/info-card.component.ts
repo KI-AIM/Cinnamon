@@ -1,9 +1,10 @@
-import { Component, EventEmitter, Input, Output, } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'app-info-card',
     templateUrl: './info-card.component.html',
     styleUrls: ['./info-card.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class InfoCardComponent {

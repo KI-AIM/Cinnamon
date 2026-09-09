@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef } from '@angular/core';
+import { Component, Input, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 import { MatDialog } from "@angular/material/dialog";
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
@@ -7,6 +7,7 @@ import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
     selector: 'app-configuration-input-array',
     templateUrl: './configuration-input-array.component.html',
     styleUrls: ['./configuration-input-array.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationInputArrayComponent {

@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, Input, TemplateRef } from '@angular/core';
+import { booleanAttribute, Component, Input, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { AdminService } from "@shared/services/admin.service";
@@ -55,6 +55,7 @@ interface PlaceholderCategory {
     selector: 'app-placeholder-input',
     standalone: false,
     templateUrl: './placeholder-input.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './placeholder-input.component.less'
 })
 export class PlaceholderInputComponent {

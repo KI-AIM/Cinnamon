@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { MatSelect, MatSelectChange } from "@angular/material/select";
 import { Algorithm } from "../../model/algorithm";
 
@@ -6,6 +6,7 @@ import { Algorithm } from "../../model/algorithm";
     selector: 'app-configuration-selection',
     templateUrl: './configuration-selection.component.html',
     styleUrls: ['./configuration-selection.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationSelectionComponent {

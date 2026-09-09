@@ -1,7 +1,7 @@
 import { Platform } from "@angular/cdk/platform";
 import { AsyncPipe, DecimalPipe, KeyValuePipe, LowerCasePipe, NgForOf, NgIf, NgOptimizedImage } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
-import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { Component, ElementRef, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { MatButton } from "@angular/material/button";
 import { ProcessStatus } from "@core/enums/process-status";
 import { StateManagementService } from "@core/services/state-management.service";
@@ -59,6 +59,7 @@ import { environments } from "src/environments/environment";
         NgOptimizedImage,
     ],
     templateUrl: './report.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './report.component.less'
 })
 export class ReportComponent implements OnInit {

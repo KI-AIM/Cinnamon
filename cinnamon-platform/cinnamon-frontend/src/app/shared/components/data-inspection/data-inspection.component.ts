@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ProcessStatus } from "@core/enums/process-status";
 import {
     catchError,
@@ -22,6 +22,7 @@ import { StatisticsService } from "../../services/statistics.service";
     selector: 'app-data-inspection',
     templateUrl: './data-inspection.component.html',
     styleUrls: ['./data-inspection.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DataInspectionComponent implements OnInit, OnDestroy {

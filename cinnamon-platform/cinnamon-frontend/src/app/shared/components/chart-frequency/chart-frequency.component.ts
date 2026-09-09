@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import { ColumnConfiguration } from "@shared/model/column-configuration";
 import {HistogramPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
@@ -9,6 +9,7 @@ import { DataType } from "../../model/data-type";
     selector: 'app-chart-frequency',
     templateUrl: '../chart/chart.component.html',
     styleUrls: ['../chart/chart.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ChartFrequencyComponent extends ChartComponent {

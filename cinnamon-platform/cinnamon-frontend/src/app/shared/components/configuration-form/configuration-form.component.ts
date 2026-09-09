@@ -381,14 +381,22 @@ export class ConfigurationFormComponent implements OnChanges, OnInit {
             }
 
             const control = this.form.controls[name];
-            algorithmDisabled ? control.disable({emitEvent: false}) : control.enable({emitEvent: false});
+            if (algorithmDisabled) {
+                control.disable({emitEvent: false});
+            } else {
+                control.enable({emitEvent: false});
+            }
             this.rootGroup?.setGroupDisabled(name, algorithmDisabled);
         }
 
         for (const config of additionalConfigs) {
             const disabled = this.additionalConfigurationDisabled(config);
             const control = this.form.controls[config.formGroupName];
-            disabled ? control.disable({emitEvent: false}) : control.enable({emitEvent: false});
+            if (disabled) {
+                control.disable({emitEvent: false});
+            } else {
+                control.enable({emitEvent: false});
+            }
             this.rootGroup?.setAdditionalConfigDisabled(config.formGroupName, disabled);
         }
     }

@@ -139,7 +139,7 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
             group.setDisabled(disabled);
         }
         for (const group of this.options ?? []) {
-            group.setDisabled(disabled);
+            group.setDisabled(disabled || !group.isActive);
         }
     }
 
@@ -147,7 +147,7 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
     public setGroupDisabled(groupName: string, disabled: boolean): void {
         for (const group of [...(this.configurations ?? []), ...(this.options ?? [])]) {
             if (group.fromGroupName === groupName) {
-                group.setDisabled(disabled);
+                group.setDisabled(disabled || !group.isActive);
                 return;
             }
         }

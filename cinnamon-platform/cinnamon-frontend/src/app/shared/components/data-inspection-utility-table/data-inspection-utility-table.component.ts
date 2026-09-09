@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ProjectSettings } from "@shared/model/project-settings";
 import { UtilityData, UtilityStatisticsData } from "@shared/model/statistics";
 import { ProjectConfigurationService } from "@shared/services/project-configuration.service";
@@ -9,6 +9,7 @@ import { combineLatest, map, Observable } from "rxjs";
   selector: 'app-data-inspection-utility-table',
   standalone: false,
   templateUrl: './data-inspection-utility-table.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './data-inspection-utility-table.component.less'
 })
 export class DataInspectionUtilityTableComponent implements OnInit {

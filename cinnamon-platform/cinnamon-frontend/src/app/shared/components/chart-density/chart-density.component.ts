@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import { DensityPlotData, StatisticsData } from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
 import {ColumnConfiguration} from "../../model/column-configuration";
@@ -8,6 +8,7 @@ import { EChartsCoreOption } from "echarts/core";
     selector: 'app-chart-density',
     templateUrl: '../chart/chart.component.html',
     styleUrls: ['../chart/chart.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ChartDensityComponent extends ChartComponent {

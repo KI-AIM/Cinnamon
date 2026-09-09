@@ -1,14 +1,15 @@
 import {
-    AfterViewInit,
-    Component,
-    ComponentRef,
-    Input,
-    OnChanges,
-    QueryList,
-    SimpleChanges,
-    ViewChild,
-    ViewChildren,
-    ViewContainerRef
+  AfterViewInit,
+  Component,
+  ComponentRef,
+  Input,
+  OnChanges,
+  QueryList,
+  SimpleChanges,
+  ViewChild,
+  ViewChildren,
+  ViewContainerRef,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
 import { ConfigurationGroupDefinition, VisualizationType } from "../../model/configuration-group-definition";
@@ -24,6 +25,7 @@ import { AdditionalConfig, ConfigurationAdditionalConfigs } from "../../model/co
     selector: 'app-configuration-group',
     templateUrl: './configuration-group.component.html',
     styleUrls: ['./configuration-group.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {

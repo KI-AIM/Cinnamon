@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
 import { ColumnConfiguration } from 'src/app/shared/model/column-configuration';
 import { DataConfiguration } from 'src/app/shared/model/data-configuration';
@@ -13,6 +13,7 @@ import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
     selector: 'app-anonymization-attribute-configuration',
     templateUrl: './anonymization-attribute-configuration.component.html',
     styleUrls: ['./anonymization-attribute-configuration.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AnonymizationAttributeConfigurationComponent implements OnChanges, OnInit, OnDestroy, AdditionalConfigurationGroup {

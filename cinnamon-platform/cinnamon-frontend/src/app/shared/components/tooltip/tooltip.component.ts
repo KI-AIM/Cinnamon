@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Custom tooltip that allows HTML content.
@@ -10,6 +10,7 @@ import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
   selector: 'app-tooltip',
   standalone: false,
   templateUrl: './tooltip.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './tooltip.component.less'
 })
 export class TooltipComponent implements OnInit {

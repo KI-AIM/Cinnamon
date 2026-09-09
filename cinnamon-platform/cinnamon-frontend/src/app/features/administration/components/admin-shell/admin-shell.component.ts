@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { NavigationService } from "@core/services/navigation.service";
 import { NavigationKey } from "@shared/model/navigation";
 
@@ -11,6 +11,7 @@ import { NavigationKey } from "@shared/model/navigation";
 @Component({
     selector: 'app-admin-shell',
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './admin-shell.component.html',
 })
 export class AdminShellComponent {

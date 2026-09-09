@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSort } from "@angular/material/sort";
@@ -19,6 +19,7 @@ import { combineLatest, Observable, of, tap } from "rxjs";
     selector: 'app-admin-users',
     standalone: false,
     templateUrl: './admin-users.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './admin-users.component.less'
 })
 export class AdminUsersComponent implements OnInit {

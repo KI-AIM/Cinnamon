@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { AfterViewInit, Component, OnInit, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, Component, OnInit, QueryList, TemplateRef, ViewChild, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
 import { HoldOutSelector } from "@core/enums/hold-out-selector";
@@ -24,6 +24,7 @@ import { environments } from "src/environments/environment";
   selector: 'app-project-export',
   standalone: false,
   templateUrl: './project-export.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './project-export.component.less'
 })
 export class ProjectExportComponent implements OnInit, AfterViewInit {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ChangeDetectionStrategy } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
@@ -16,6 +16,7 @@ interface LoginForm {
     selector: "app-login",
     templateUrl: "./login.component.html",
     styleUrls: ["./login.component.less"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LoginComponent implements OnInit {

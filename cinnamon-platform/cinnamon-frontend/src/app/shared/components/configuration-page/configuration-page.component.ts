@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, TemplateRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup } from "@angular/forms";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
@@ -43,6 +43,7 @@ import { ConfigurationSelectionComponent } from "../configuration-selection/conf
     selector: 'app-configuration-page',
     templateUrl: './configuration-page.component.html',
     styleUrls: ['./configuration-page.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationPageComponent implements OnInit {

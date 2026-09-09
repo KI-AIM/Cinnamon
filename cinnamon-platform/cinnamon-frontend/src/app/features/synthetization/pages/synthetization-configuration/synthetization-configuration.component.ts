@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Steps } from "@core/enums/steps";
 import { ProjectService } from "@shared/services/project.service";
 import { AlgorithmService, ConfigurationInfo } from "../../../../shared/services/algorithm.service";
@@ -34,6 +34,7 @@ import { ConfigurationInputDefinition } from "../../../../shared/model/configura
             useExisting: SynthetizationService
         },
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SynthetizationConfigurationComponent implements OnInit, OnDestroy {

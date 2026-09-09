@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from "@angular/forms";
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
@@ -19,6 +19,7 @@ import { Observable } from "rxjs";
     selector: 'app-mail-templates',
     standalone: false,
     templateUrl: './mail-templates.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './mail-templates.component.less'
 })
 export class MailTemplatesComponent implements OnInit {

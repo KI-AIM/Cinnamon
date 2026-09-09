@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef } from '@angular/core';
+import { Component, Input, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { PasswordRequirements } from "@shared/services/app-config.service";
@@ -7,6 +7,7 @@ import { PasswordRequirements } from "@shared/services/app-config.service";
     selector: 'app-password-input',
     standalone: false,
     templateUrl: './password-input.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './password-input.component.less'
 })
 export class PasswordInputComponent {

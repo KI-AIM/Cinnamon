@@ -1,4 +1,4 @@
-import { Component, OnInit, TemplateRef } from '@angular/core';
+import { Component, OnInit, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import {combineLatest, filter, map, Observable, switchMap} from "rxjs";
@@ -14,6 +14,7 @@ import {User} from "@shared/model/user";
   selector: 'app-notification-center',
   standalone: false,
   templateUrl: './notification-center.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './notification-center.component.less'
 })
 export class NotificationCenterComponent implements OnInit {

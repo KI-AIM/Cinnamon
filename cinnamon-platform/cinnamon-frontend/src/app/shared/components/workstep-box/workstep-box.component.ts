@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, Input } from '@angular/core';
+import { booleanAttribute, Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Component for wrapping a workstep.
@@ -10,6 +10,7 @@ import { booleanAttribute, Component, Input } from '@angular/core';
     selector: 'app-workstep-box',
     templateUrl: './workstep-box.component.html',
     styleUrl: './workstep-box.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false,
 })
 export class WorkstepBoxComponent {

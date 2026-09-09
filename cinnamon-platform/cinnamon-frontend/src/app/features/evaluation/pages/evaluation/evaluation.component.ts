@@ -1,4 +1,4 @@
-import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { Component, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { ProcessStatus, StageStatus } from "@core/enums/process-status";
 import { Steps } from "@core/enums/steps";
@@ -16,6 +16,7 @@ import { EvaluationService } from "../../services/evaluation.service";
     selector: 'app-evaluation',
     templateUrl: './evaluation.component.html',
     styleUrls: ['./evaluation.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class EvaluationComponent implements OnInit {

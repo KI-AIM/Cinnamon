@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { AlgorithmDefinition } from '../../../../shared/model/algorithm-definition';
 import { ConfigurationInputDefinition } from '../../../../shared/model/configuration-input-definition';
@@ -7,6 +7,7 @@ import { ConfigurationInputDefinition } from '../../../../shared/model/configura
     selector: 'app-ht-configuration',
     templateUrl: './ht-configuration.component.html',
     styleUrls: ['./ht-configuration.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false,
 })
 export class HtConfigurationComponent {

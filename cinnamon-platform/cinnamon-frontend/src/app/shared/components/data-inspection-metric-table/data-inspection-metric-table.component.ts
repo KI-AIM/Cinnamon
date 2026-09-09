@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MetricTableData, MetricTableFilterData, MetricTableSortData, SortType } from "@shared/model/metric-table-data";
 import { ProjectSettings } from "@shared/model/project-settings";
 import { AttributeStatistics, StatisticsData, StatisticsValues, StatisticsValueTypes } from "@shared/model/statistics";
@@ -15,6 +15,7 @@ import { combineLatest, Observable } from "rxjs";
   selector: 'app-data-inspection-metric-table',
   standalone: false,
   templateUrl: './data-inspection-metric-table.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './data-inspection-metric-table.component.less'
 })
 export class DataInspectionMetricTableComponent implements OnInit {

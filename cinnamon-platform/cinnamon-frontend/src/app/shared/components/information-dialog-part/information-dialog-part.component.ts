@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Section of the information dialog.
@@ -10,6 +10,7 @@ import { Component, Input, OnInit } from '@angular/core';
   selector: 'info-part',
   standalone: false,
   templateUrl: './information-dialog-part.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './information-dialog-part.component.less'
 })
 export class InformationDialogPartComponent implements OnInit {

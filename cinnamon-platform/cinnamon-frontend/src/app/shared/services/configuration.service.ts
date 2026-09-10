@@ -252,6 +252,16 @@ export class ConfigurationService {
      * @return Observable of the import result.
      */
     public uploadAllConfigurations(file: Blob, includedConfigurations: Array<string> | null): Observable<ConfigurationImportSummary> {
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.doUploadAllConfigurations(file, includedConfigurations, projectId))
+        );
+    }
+
+    private doUploadAllConfigurations(
+        file: Blob,
+        includedConfigurations: Array<string> | null,
+        projectId: string
+    ): Observable<ConfigurationImportSummary> {
         const formData = new FormData();
         formData.append("configuration", file);
         formData.append("importParameters", JSON.stringify({
@@ -261,8 +271,8 @@ export class ConfigurationService {
 
         // TODO currently there is always just one configuration imported.
         //  If multiple configurations are uploaded, handling for PARTIAL_ERROR must be implemented.
-        return this.httpClient
-            .post<ConfigurationImportSummary>(`${environments.apiUrl}/api/config/import`, formData)
+        const url = `${environments.apiUrl}/api/project/${projectId}/config/import`;
+        return this.httpClient.post<ConfigurationImportSummary>(url, formData)
             .pipe(
                 switchMap((summary) => {
                     if (summary.status === 'ERROR') {

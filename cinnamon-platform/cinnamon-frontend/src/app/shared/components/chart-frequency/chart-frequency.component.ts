@@ -38,7 +38,7 @@ export class ChartFrequencyComponent extends ChartComponent {
 
             const allValues: number[] = value.frequencies.map(val => val.value);
 
-            let displayed: Array<{ value: number, itemStyle: { color: string } }> = [];
+            let displayed: Array<{ value: number, itemStyle: { color: string } }>;
             if (this.limit && allValues.length > this.limit) {
                 displayed = value.frequencies.slice(0, this.limit).map(val => {
                     return {

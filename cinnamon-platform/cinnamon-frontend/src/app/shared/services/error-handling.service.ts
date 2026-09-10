@@ -35,6 +35,12 @@ export class ErrorHandlingService {
             return;
         }
 
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+            // The redirect to the login page (and the "Session expired" notification) is handled
+            // centrally by AuthInterceptor for every request, so there is nothing left to do here.
+            return;
+        }
+
         let errorMessage = null;
 
         if (error instanceof Error) {
@@ -65,9 +71,6 @@ export class ErrorHandlingService {
                     return "Cinnamon is currently unavailable. Please try again later.";
                 }
 
-            } else if (response.status === 401) {
-                this.userService.logout('expired');
-                return "Session expired. Please log in again.";
             } else if (response.status === 504) {
                 return "The API at " + response.url + " could not be reached";
             }

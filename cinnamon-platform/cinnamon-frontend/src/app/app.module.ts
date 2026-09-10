@@ -22,6 +22,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatButtonModule } from "@angular/material/button";
 import { UserService } from './shared/services/user.service';
 import { XhrInterceptor } from './core/interceptor/xhr.interceptor';
+import { AuthInterceptor } from './core/interceptor/auth.interceptor';
 import { MatIconModule } from '@angular/material/icon';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './features/auth/auth.module';
@@ -82,6 +83,7 @@ import { UserCenterComponent } from '@core/components/user-center/user-center.co
         DataService,
         DataConfigurationService,
         { provide: HTTP_INTERCEPTORS, useClass: XhrInterceptor, multi: true },
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
         provideHttpClient(withXhr(), withInterceptorsFromDi()),
     ],
     bootstrap: [AppComponent]

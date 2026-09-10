@@ -13,7 +13,7 @@ import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -117,6 +117,5 @@ public class ConfigurationFile {
 	 */
 	@Schema(description = "Configurations for external modules.")
 	@JsonAnyGetter @JsonAnySetter
-	@Valid
-	private Map<String, ConfigurationPart> parts = new HashMap<>();
+	private Map<String, @Valid ConfigurationPart> parts = new HashMap<>();
 }

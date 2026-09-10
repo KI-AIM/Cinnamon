@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ChangeDetectionStrategy } from "@angular/core";
 import { Mode } from "@core/enums/mode";
 import { Steps } from "@core/enums/steps";
 import { LockedInformation, StateManagementService } from "@core/services/state-management.service";
@@ -15,6 +15,7 @@ import { combineLatest, Observable } from "rxjs";
     selector: "app-data-validation",
     templateUrl: "./data-validation.component.html",
     styleUrls: ["./data-validation.component.less"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DataValidationComponent implements OnInit {

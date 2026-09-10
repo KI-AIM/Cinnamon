@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {
     MetricTableType
 } from "@shared/components/data-inspection-metric-table/data-inspection-metric-table.component";
@@ -19,6 +19,7 @@ import { MetricTableData } from "../../model/metric-table-data";
     selector: 'app-data-inspection-attribute-details',
     templateUrl: './data-inspection-attribute-details.component.html',
     styleUrls: ['./data-inspection-attribute-details.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DataInspectionAttributeDetailsComponent implements OnInit {

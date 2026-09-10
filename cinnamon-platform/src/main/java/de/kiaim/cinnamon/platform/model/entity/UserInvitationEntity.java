@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.sql.Timestamp;
 import java.util.HashSet;
@@ -28,7 +28,7 @@ public class UserInvitationEntity {
 	 */
 	@Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Setter(AccessLevel.NONE)
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * External ID of the invitation.

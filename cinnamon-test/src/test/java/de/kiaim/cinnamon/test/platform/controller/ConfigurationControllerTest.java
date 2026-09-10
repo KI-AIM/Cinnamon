@@ -338,8 +338,9 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 	configurationImportSummaries:  [{
 		                                 		configurationName: 'dataSource',
 		                                 		status: 'ERROR',
-		                                 		errorCode: 'PLATFORM_1_14_6',
-		                                 		errorMessage: 'Failed to deserialize the data source configuration!'
+		                                 		errorCode: 'PLATFORM_3_2_1',
+		                                 		errorMessage: 'Validation failed. See validation errors for more details.',
+		                                 		validationErrors: {dataSourceType: ["Data source type must be present."]}
 		                                 	}]
 		                                 }
 		                                 """));

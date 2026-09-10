@@ -83,7 +83,7 @@ public class ExternalServerHealthIndicatorTest extends ContextRequiredTest {
 
 	@Test
 	public void testHealthDownNoConnection() throws IOException {
-		mockBackEnd.shutdown();
+		mockBackEnd.close();
 
 		var indicator = new ExternalServerHealthIndicator(cinnamonConfiguration.getExternalServer().get("anonymization-server"));
 		var health = indicator.health();

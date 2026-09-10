@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,13 +19,21 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @ToString
 public class RangeConfiguration implements Configuration {
+	/**
+	 * Can be null if no data type is known yet to convert the raw min value to.
+	 */
 	@Schema(description = "Minimum value.", example = "0", requiredMode = Schema.RequiredMode.REQUIRED,
 	        oneOf = {LocalDate.class, LocalDateTime.class, Float.class, Integer.class})
 	@NotNull(message = "The min value must not be empty!")
+	@Nullable
 	private final Data minValue;
 
+	/**
+	 * Can be null if no data type is known yet to convert the raw max value to.
+	 */
 	@Schema(description = "Maximum value.", example = "100", requiredMode = Schema.RequiredMode.REQUIRED,
 	        oneOf = {LocalDate.class, LocalDateTime.class, Float.class, Integer.class})
 	@NotNull(message = "The max value must not be empty!")
+	@Nullable
 	private final Data maxValue;
 }

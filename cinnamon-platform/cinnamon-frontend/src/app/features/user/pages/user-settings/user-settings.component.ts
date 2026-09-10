@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from "@angular/forms";
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
@@ -12,6 +12,7 @@ import { Observable, tap } from "rxjs";
   selector: 'app-user-settings',
   standalone: false,
   templateUrl: './user-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './user-settings.component.less'
 })
 export class UserSettingsComponent implements OnInit {

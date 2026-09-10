@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { WorkstepService } from "../../services/workstep.service";
 import { Subscription } from "rxjs";
 import { MatExpansionPanel } from "@angular/material/expansion";
@@ -7,6 +7,7 @@ import { MatExpansionPanel } from "@angular/material/expansion";
     selector: 'app-workstep-title',
     templateUrl: './workstep-title.component.html',
     styleUrl: './workstep-title.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false,
 })
 export class WorkstepTitleComponent implements OnInit, OnDestroy {

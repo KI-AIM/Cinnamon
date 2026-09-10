@@ -1,13 +1,14 @@
 package de.kiaim.cinnamon.model.data;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.serialization.DataDeserializer;
 import de.kiaim.cinnamon.model.serialization.DataSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
         examples = {"true", "\"2023-12-24\"", "\"2023-12-24 18:30:01\"", "4.2", "42", "\"Hello World!\""})
 @JsonDeserialize(using = DataDeserializer.class)
 @JsonSerialize(using = DataSerializer.class)
-public abstract class Data {
+public abstract class Data implements Serializable {
 
 	@Schema(hidden = true)
 	public abstract DataType getDataType();

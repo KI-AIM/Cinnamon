@@ -4,14 +4,14 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestInstancePostProcessor;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.io.ClassPathResource;
 import org.testcontainers.DockerClientFactory;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -26,7 +26,7 @@ public class TestDatabaseExtension implements BeforeAllCallback, AfterAllCallbac
 	private static final String APPLICATION_TEST_PROPERTIES = "application-test.properties";
 	private static final StandardEnvironment ENVIRONMENT = createEnvironment();
 
-	private static PostgreSQLContainer<?> postgres;
+	private static PostgreSQLContainer postgres;
 	private static boolean initialized = false;
 	private static TestDatabase activeDatabase;
 
@@ -125,7 +125,7 @@ public class TestDatabaseExtension implements BeforeAllCallback, AfterAllCallbac
 		}
 
 		if (postgres == null) {
-			postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+			postgres = new PostgreSQLContainer("postgres:16-alpine");
 			postgres.start();
 		}
 

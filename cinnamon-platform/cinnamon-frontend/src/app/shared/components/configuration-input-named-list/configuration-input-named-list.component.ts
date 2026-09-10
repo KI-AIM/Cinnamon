@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { SynthetizationService } from "../../../features/synthetization/services/synthetization.service";
@@ -9,6 +9,7 @@ import { ErrorHandlingService } from "../../services/error-handling.service";
     selector: 'app-configuration-input-named-list',
     templateUrl: './configuration-input-named-list.component.html',
     styleUrls: ['./configuration-input-named-list.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationInputNamedListComponent {

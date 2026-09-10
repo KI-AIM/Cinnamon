@@ -126,7 +126,7 @@
                     <ng-container *ngIf="getFreeTextAlgorithmGroup() as freeTextAlgorithmForm">
                         <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms, data.dataConfiguration) | async as freeTextDefinition">
                             <app-configuration-group [form]="freeTextAlgorithmForm" [fromGroupName]="''"
-                                                     [group]="freeTextDefinition" [disabled]="data.locked || !oneEnabled"
+                                                     [group]="freeTextDefinition" [disabled]="data.locked"
                                                      [isOption]="false">
                             </app-configuration-group>
                         </ng-container>

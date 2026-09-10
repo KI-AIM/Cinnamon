@@ -41,6 +41,7 @@ module.exports = defineConfig([
       // components, control-flow syntax) unrelated to the change at hand.
       "@angular-eslint/prefer-inject": "off",
       "@angular-eslint/prefer-standalone": "off",
+      "@angular-eslint/prefer-on-push-component-change-detection": "off",
       "@angular-eslint/no-output-on-prefix": "warn",
       "@angular-eslint/no-output-native": "warn",
       "@typescript-eslint/no-explicit-any": "warn",

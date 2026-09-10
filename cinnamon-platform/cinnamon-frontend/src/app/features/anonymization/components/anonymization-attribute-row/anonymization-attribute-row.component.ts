@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { List } from 'src/app/core/utils/list';
 import { AttributeProtection, } from 'src/app/shared/model/anonymization-attribute-config';
@@ -13,6 +13,7 @@ import {
     selector: 'app-anonymization-attribute-row',
     templateUrl: './anonymization-attribute-row.component.html',
     styleUrls: ['./anonymization-attribute-row.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AnonymizationAttributeRowComponent implements OnInit, OnChanges {

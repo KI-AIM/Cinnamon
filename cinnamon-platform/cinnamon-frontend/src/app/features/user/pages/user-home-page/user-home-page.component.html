@@ -28,7 +28,7 @@
                     <th mat-header-cell *matHeaderCellDef>Status</th>
                     <td mat-cell *matCellDef="let project">
                         <div class="d-flex gap-1">
-                            @for (status of project.stageStatuses; track status) {
+                            @for (status of project.stageStatuses; track $index) {
                                 <span class="status" [ngClass]="status">
                                     <span>{{ status.replace("_", " ") }}</span>
                                 </span>

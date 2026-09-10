@@ -10,6 +10,29 @@
     z-index: 10;
 }
 
+.slide-in-from-top {
+    animation: slide-fade 300ms ease-in;
+}
+
+@keyframes slide-fade {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.slide-out-to-top {
+    transform: translateY(-100%);
+    opacity: 0;
+    transition:
+        transform 300ms ease-out,
+        opacity 300ms ease-out;
+}
+
 .title-actions {
     right: 0;
     margin-right: 1rem;

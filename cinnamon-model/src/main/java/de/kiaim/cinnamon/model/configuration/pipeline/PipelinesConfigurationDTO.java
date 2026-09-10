@@ -29,8 +29,8 @@ public class PipelinesConfigurationDTO implements ConfigurationDTO {
 	 * Currently, only one pipeline is supported.
 	 */
 	@Schema(description = "List of pipelines to be configured.")
-	@NotNull @Size(min = 1, message = "At least one pipeline must be provided") @Valid
-	private final List<PipelineConfigurationDTO> pipelines = new ArrayList<>();
+	@NotNull @Size(min = 1, message = "At least one pipeline must be provided")
+	private List<@Valid PipelineConfigurationDTO> pipelines = new ArrayList<>();
 
 	/**
 	 * {@inheritDoc}

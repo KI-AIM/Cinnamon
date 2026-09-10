@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.platform.model.configuration.ExternalConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Converter a {@link ExternalConfiguration} to a string and back when persisting the configuration in the database.
@@ -24,7 +25,7 @@ public class ExternalConfigurationAttributeConverter implements AttributeConvert
 		return attribute.getConfigurationName();
 	}
 
-	@Override public ExternalConfiguration convertToEntityAttribute(final String dbData) {
+	@Override public @Nullable ExternalConfiguration convertToEntityAttribute(final String dbData) {
 		return cinnamonConfiguration.getExternalConfiguration().get(dbData);
 	}
 }

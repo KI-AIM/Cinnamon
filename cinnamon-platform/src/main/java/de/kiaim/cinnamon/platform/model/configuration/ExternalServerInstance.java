@@ -2,7 +2,7 @@ package de.kiaim.cinnamon.platform.model.configuration;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Defines one instance of an external server.

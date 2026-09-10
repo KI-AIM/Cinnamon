@@ -1,16 +1,20 @@
 package de.kiaim.cinnamon.platform.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.spring.CustomMediaType;
 import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.AbstractHttpMessageConverter;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.InvalidDefinitionException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -47,7 +51,7 @@ public class FormatBasedMessageConverter extends AbstractHttpMessageConverter<Ob
 	}
 
 	@Override
-	protected boolean canWrite(final MediaType mediaType) {
+	protected boolean canWrite(@Nullable final MediaType mediaType) {
 		if (mediaType != null && mediaType.includes(MediaType.APPLICATION_JSON)) {
 			final String path = request.getRequestURI();
 			if (path.startsWith(openApiPath)) {
@@ -63,7 +67,16 @@ public class FormatBasedMessageConverter extends AbstractHttpMessageConverter<Ob
 			throws IOException, HttpMessageNotReadableException {
 		final MediaType mediaType = inputMessage.getHeaders().getContentType();
 		final ObjectMapper objectMapper = getObjectMapper(mediaType);
-		return objectMapper.readValue(inputMessage.getBody(), clazz);
+		try {
+			return objectMapper.readValue(inputMessage.getBody(), clazz);
+		} catch (final InvalidDefinitionException ex) {
+			throw new HttpMessageConversionException("Type definition error: " + ex.getType(), ex);
+		} catch (final JacksonException ex) {
+			// Jackson 3 exceptions are unchecked and no longer extend IOException, so they are not
+			// wrapped into a HttpMessageNotReadableException by the caller. Wrap them here instead.
+			throw new HttpMessageNotReadableException("JSON parse error: " + ex.getOriginalMessage(), ex,
+			                                          inputMessage);
+		}
 	}
 
 	@Override
@@ -74,7 +87,7 @@ public class FormatBasedMessageConverter extends AbstractHttpMessageConverter<Ob
 		objectMapper.writeValue(outputMessage.getBody(), o);
 	}
 
-	private ObjectMapper getObjectMapper(final MediaType mediaType) {
+	private ObjectMapper getObjectMapper(@Nullable final MediaType mediaType) {
 		return supportedMediaTypes.getOrDefault(mediaType, supportedMediaTypes.get(CustomMediaType.APPLICATION_X_YAML));
 	}
 }

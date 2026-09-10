@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup } from "@angular/forms";
 import { Steps } from "@core/enums/steps";
 import {
@@ -32,6 +32,7 @@ import { hasStructuredColumns, hasTextColumns } from '@shared/model/data-configu
             useExisting: AnonymizationService
         },
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AnonymizationConfigurationComponent implements OnInit {

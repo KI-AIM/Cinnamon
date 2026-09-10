@@ -1,5 +1,5 @@
 import { Platform } from "@angular/cdk/platform";
-import { Component, OnDestroy, OnInit, TemplateRef, ViewChild } from "@angular/core";
+import { Component, OnDestroy, OnInit, TemplateRef, ViewChild, ChangeDetectionStrategy } from "@angular/core";
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, ValidatorFn, Validators } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { Router } from "@angular/router";
@@ -31,6 +31,7 @@ import { combineLatest, Observable, switchMap, take, tap } from "rxjs";
     selector: "app-upload-file",
     templateUrl: "./upload-file.component.html",
     styleUrls: ["./upload-file.component.less"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false,
 })
 export class UploadFileComponent implements OnInit, OnDestroy {

@@ -156,7 +156,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	public void write(final OutputStream outputStream, final DataSet dataset) throws InternalIOException {
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
 		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
-				dataset.getDataConfiguration().getColumnNames().toArray(new String[0])).build();
+				dataset.getDataConfiguration().getColumnNames().toArray(new String[0])).get();
 
 		try {
 			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
@@ -197,7 +197,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 		                        .setDelimiter(csvFileConfiguration.getColumnSeparator())
 		                        .setRecordSeparator(csvFileConfiguration.getLineSeparator())
 		                        .setQuote(csvFileConfiguration.getQuoteChar())
-		                        .build();
+		                        .get();
 	}
 
 	/**

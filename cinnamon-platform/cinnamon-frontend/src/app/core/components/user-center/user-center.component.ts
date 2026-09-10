@@ -1,4 +1,4 @@
-import {Component, OnInit, TemplateRef} from '@angular/core';
+import {Component, OnInit, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {UserService} from "@shared/services/user.service";
 import {Observable} from "rxjs";
@@ -8,6 +8,7 @@ import {User} from "@shared/model/user";
   selector: 'app-user-center',
   standalone: false,
   templateUrl: './user-center.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './user-center.component.less'
 })
 export class UserCenterComponent implements OnInit {

@@ -12,6 +12,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.Named;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public abstract class ExternalProcessMapper {
 	}
 
 	@Named("processSteps")
-	protected List<String> toProcessed(ExternalProcessEntity entity) throws InternalApplicationConfigurationException, InternalInvalidStateException, InternalMissingHandlingException {
+	protected @Nullable List<String> toProcessed(ExternalProcessEntity entity) throws InternalApplicationConfigurationException, InternalInvalidStateException, InternalMissingHandlingException {
 		List<Job> jobs = null;
 		if (entity instanceof DataProcessingEntity dataProcessing) {
 			jobs = dataProcessing.getDataSet() != null ? dataProcessing.getDataSet().getProcessed() : null;

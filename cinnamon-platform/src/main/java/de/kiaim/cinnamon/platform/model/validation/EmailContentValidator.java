@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.model.validation;
 import de.kiaim.cinnamon.platform.model.dto.UserInvitationRequest;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Validates that the request specifies a valid email.
@@ -14,7 +15,7 @@ import jakarta.validation.ConstraintValidatorContext;
 public class EmailContentValidator implements ConstraintValidator<EmailContent, UserInvitationRequest> {
 
 	@Override
-	public boolean isValid(UserInvitationRequest value, ConstraintValidatorContext context) {
+	public boolean isValid(@Nullable UserInvitationRequest value, ConstraintValidatorContext context) {
 		if (value == null) {
 			return true; // Consider null as valid, use @NotNull for null check
 		}

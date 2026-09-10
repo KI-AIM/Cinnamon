@@ -6,7 +6,7 @@ import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationComponentStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStepStatus;
@@ -42,6 +42,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +114,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
-		assertEquals("/api/anonymization/process/" + id + "/status", recordedRequest.getPath());
+		assertEquals("/api/anonymization/process/" + id + "/status", recordedRequest.getUrl().encodedPath());
 	}
 
 	@Test
@@ -238,10 +239,10 @@ public class ProcessControllerTest extends ControllerTest {
 		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
 		assertNotNull(recordedRequest, "No request has been sent to the server!");
 		assertEquals("POST", recordedRequest.getMethod());
-		assertEquals("/algorithmA", recordedRequest.getPath());
+		assertEquals("/algorithmA", recordedRequest.getUrl().encodedPath());
 
 		// Transform request into ServletRequest so FileUpload can parse it
-		final byte[] body = recordedRequest.getBody().readByteArray();
+		final byte[] body = recordedRequest.getBody().toByteArray();
 		final var request = new MockHttpServletRequest();
 		request.setContent(body);
 		request.setContentType(recordedRequest.getHeaders().get("Content-Type"));
@@ -258,15 +259,15 @@ public class ProcessControllerTest extends ControllerTest {
 		// Test request content
 		for (final DiskFileItem fileItem : fileItems) {
 			if (fileItem.getFieldName().equals("data")) {
-				assertEquals(DataSetTestHelper.generateDataSetAsJson(false), fileItem.getString(),
-				             "Unexpected content of data!");
+				assertEquals(DataSetTestHelper.generateDataSetAsJson(false),
+				             fileItem.getString(Charset.defaultCharset()), "Unexpected content of data!");
 			} else if (fileItem.getFieldName().equals("session_key")) {
-				assertEquals(id, fileItem.getString(), "Unexpected session key!");
+				assertEquals(id, fileItem.getString(Charset.defaultCharset()), "Unexpected session key!");
 			} else if (fileItem.getFieldName().equals("callback")) {
-				assertEquals(callbackUrl, fileItem.getString(), "Unexpected callback URL!");
+				assertEquals(callbackUrl, fileItem.getString(Charset.defaultCharset()), "Unexpected callback URL!");
 			} else if (fileItem.getFieldName().equals("anonymizationConfig")) {
-				assertEquals(AlgorithmTestHelper.generateAlgorithmConfigurationJson(), fileItem.getString(),
-				             "Unexpected anonymization config!");
+				assertEquals(AlgorithmTestHelper.generateAlgorithmConfigurationJson(),
+				             fileItem.getString(Charset.defaultCharset()), "Unexpected anonymization config!");
 			} else {
 				fail("Unexpected field: " + fileItem.getFieldName());
 			}
@@ -299,7 +300,7 @@ public class ProcessControllerTest extends ControllerTest {
 		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
 		assertNotNull(recordedRequest, "No request has been sent to the server!");
 		assertEquals("GET", recordedRequest.getMethod());
-		assertEquals("/api/anonymization/process/" + id + "/status", recordedRequest.getPath());
+		assertEquals("/api/anonymization/process/" + id + "/status", recordedRequest.getUrl().encodedPath());
 	}
 
 	private void finish1() throws Exception {
@@ -331,7 +332,7 @@ public class ProcessControllerTest extends ControllerTest {
 		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
 		assertNotNull(recordedRequest, "No request has been sent to the server!");
 		assertEquals("POST", recordedRequest.getMethod());
-		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getPath());
+		assertEquals("/start_synthetization_process/ctgan", recordedRequest.getUrl().encodedPath());
 
 		// Test state changes
 		process = getTestProcess(ANON_JOB);
@@ -380,7 +381,7 @@ public class ProcessControllerTest extends ControllerTest {
 		       .andExpect(jsonPath(stageProcessPath(SYNTH_JOB) + ".processSteps").value(nullValue()));
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
-		assertEquals("/get_status/" + id, recordedRequest.getPath());
+		assertEquals("/get_status/" + id, recordedRequest.getUrl().encodedPath());
 	}
 
 	private void finish2() throws Exception {
@@ -738,7 +739,7 @@ public class ProcessControllerTest extends ControllerTest {
 
 		// Send callback request with error
 		ErrorRequest errorResponse = new ErrorRequest("about:blank", "SYNTH_1_2_3", "An error occurred!", "An error occurred!");
-		var errorJson = JsonMapper.jsonMapper().writeValueAsString(errorResponse);
+		var errorJson = CinnamonJsonMapper.jsonMapper().writeValueAsString(errorResponse);
 		final MockMultipartFile resultData = new MockMultipartFile("error", "exception_message.txt",
 		                                                           MediaType.APPLICATION_JSON_VALUE,
 		                                                           errorJson.getBytes());
@@ -747,7 +748,7 @@ public class ProcessControllerTest extends ControllerTest {
 				                .andExpect(status().isOk());
 		var recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("POST", recordedRequest.getMethod());
-		assertEquals("/algorithmA", recordedRequest.getPath());
+		assertEquals("/algorithmA", recordedRequest.getUrl().encodedPath());
 
 		// Test state changes
 		var process = getTestProcess(ANON_JOB);

@@ -1,13 +1,13 @@
 package de.kiaim.cinnamon.platform.converter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.lang.Nullable;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * Base class for converting JSON and YAML strings from multipart/form-data requests.
@@ -19,8 +19,8 @@ public abstract class CinnamonStringConverter<T> implements Converter<String, T>
 
 	private final Class<T> targetType;
 
-	private final ObjectMapper jsonMapper;
-	private final ObjectMapper yamlMapper;
+	private final JsonMapper jsonMapper;
+	private final YAMLMapper yamlMapper;
 
 	/**
 	 * Constructor.
@@ -42,7 +42,7 @@ public abstract class CinnamonStringConverter<T> implements Converter<String, T>
 	 * @return The converted object.
 	 */
 	@Nullable @Override
-	public T convert(@NonNull final String source) {
+	public T convert(final String source) {
 		try {
 			if (source.startsWith("{")) {
 				return jsonMapper.readValue(source, targetType);
@@ -50,7 +50,7 @@ public abstract class CinnamonStringConverter<T> implements Converter<String, T>
 				return yamlMapper.readValue(source, targetType);
 			}
 
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			throw new ConversionFailedException(
 					TypeDescriptor.valueOf(String.class),
 					TypeDescriptor.valueOf(targetType),

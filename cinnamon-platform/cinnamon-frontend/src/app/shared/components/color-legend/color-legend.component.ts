@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {StatisticsService} from "../../services/statistics.service";
 import { Observable } from "rxjs";
 import { ProjectSettings } from "../../model/project-settings";
@@ -8,6 +8,7 @@ import { ProjectConfigurationService } from "../../services/project-configuratio
     selector: 'app-color-legend',
     templateUrl: './color-legend.component.html',
     styleUrls: ['./color-legend.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ColorLegendComponent {

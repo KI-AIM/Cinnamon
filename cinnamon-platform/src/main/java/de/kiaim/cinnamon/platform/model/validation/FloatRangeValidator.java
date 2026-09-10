@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.model.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Validates min and max values for floats.
@@ -20,7 +21,7 @@ public class FloatRangeValidator implements ConstraintValidator<FloatRange, Floa
 		max = constraintAnnotation.max();
 	}
 
-	@Override public boolean isValid(Float value, ConstraintValidatorContext context) {
+	@Override public boolean isValid(@Nullable Float value, ConstraintValidatorContext context) {
 		if (value == null) {
 			return true;
 		}

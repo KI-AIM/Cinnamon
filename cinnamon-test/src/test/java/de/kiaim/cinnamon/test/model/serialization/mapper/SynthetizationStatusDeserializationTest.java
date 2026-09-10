@@ -1,11 +1,10 @@
 package de.kiaim.cinnamon.test.model.serialization.mapper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,15 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SynthetizationStatusDeserializationTest {
 
-	private static ObjectMapper jsonMapper;
+	private static JsonMapper jsonMapper;
 
 	@BeforeAll
 	static void beforeAll() {
-		jsonMapper = JsonMapper.jsonMapper();
+		jsonMapper = CinnamonJsonMapper.jsonMapper();
 	}
 
 	@Test
-	public void deserializeExtendedSynthetizationStatus() throws JsonProcessingException {
+	public void deserializeExtendedSynthetizationStatus() {
 		final String json = """
 				{
 				  "session_key": "session-1",
@@ -70,7 +69,7 @@ public class SynthetizationStatusDeserializationTest {
 	}
 
 	@Test
-	public void deserializeSynthetizationStatusWithNullCollections() throws JsonProcessingException {
+	public void deserializeSynthetizationStatusWithNullCollections() {
 		final String json = """
 				{
 				  "components": null,

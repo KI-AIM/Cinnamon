@@ -365,7 +365,7 @@ export class StatisticsService {
         //     }
         // }
 
-        let numberValue = '';
+        let numberValue: string;
         if (value === 0) {
             numberValue = '0';
         } else {
@@ -374,9 +374,9 @@ export class StatisticsService {
                 numberValue = value.toExponential(max)
             } else if (min && abs < Math.pow(10, -min)) {
                 numberValue = value.toExponential(min)
+            } else {
+                numberValue = value.toLocaleString(undefined, {maximumFractionDigits});
             }
-
-            numberValue = value.toLocaleString(undefined, {maximumFractionDigits});
         }
 
         if (options.unit) {

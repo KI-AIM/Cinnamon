@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.model;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -13,6 +14,7 @@ import java.util.List;
  * Class for storing an entry of the original input data that could not be transformed successfully.
  */
 @Schema(description = "Represents a invalid row in the data set.")
+@JsonPropertyOrder({"index", "dataTransformationErrors"})
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode

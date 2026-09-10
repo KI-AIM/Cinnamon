@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup } from "@angular/forms";
 import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
 import { Algorithm, isTextOnlySynthesizer, supportsFreeTextData } from "@shared/model/algorithm";
@@ -9,6 +9,7 @@ import { TextSynthesisConfigurationService } from "../../services/text-synthesis
 @Component({
     selector: 'app-text-synthesis-configuration',
     templateUrl: './text-synthesis-configuration.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false,
 })
 export class TextSynthesisConfigurationComponent implements AdditionalConfigurationGroup, OnInit {

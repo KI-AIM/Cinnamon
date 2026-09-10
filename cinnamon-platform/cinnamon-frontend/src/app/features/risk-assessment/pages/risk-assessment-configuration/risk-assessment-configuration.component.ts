@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ChangeDetectionStrategy } from "@angular/core";
 import { Steps } from "@core/enums/steps";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { AlgorithmService, ConfigurationInfo } from "@shared/services/algorithm.service";
@@ -14,6 +14,7 @@ import { Observable } from "rxjs";
             useExisting: RiskAssessmentService
         },
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class RiskAssessmentConfigurationComponent implements OnInit {

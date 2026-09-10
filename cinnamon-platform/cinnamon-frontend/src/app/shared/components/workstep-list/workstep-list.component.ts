@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { booleanAttribute, Component, EventEmitter, Input, OnDestroy, OnInit, Output, ChangeDetectionStrategy } from '@angular/core';
 import { Steps } from "@core/enums/steps";
 import { StatusService } from "@shared/services/status.service";
 import { WorkstepService } from "@shared/services/workstep.service";
@@ -7,6 +7,7 @@ import { WorkstepService } from "@shared/services/workstep.service";
     selector: 'app-workstep-list',
     standalone: false,
     templateUrl: './workstep-list.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './workstep-list.component.less',
 })
 export class WorkstepListComponent implements OnInit, OnDestroy {

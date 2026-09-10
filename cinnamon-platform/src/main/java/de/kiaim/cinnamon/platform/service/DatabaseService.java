@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
@@ -40,10 +38,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -80,7 +80,7 @@ public class DatabaseService {
 	private final FileConfigurationMapper fileConfigurationMapper;
 
 	private final DataschemeGenerator dataschemeGenerator;
-	private final ObjectMapper jsonMapper;
+	private final JsonMapper jsonMapper;
 
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
@@ -375,7 +375,7 @@ public class DatabaseService {
 	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
 	 */
 	@Transactional
-	public FileInformation storeFile(final ProjectEntity project, final MultipartFile file)
+	public FileInformation storeFile(final ProjectEntity project, @Nullable final MultipartFile file)
 			throws BadDataSetIdException, BadFileException, InternalDataSetPersistenceException, InternalIOException,
 					       InternalMissingHandlingException {
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
@@ -1872,7 +1872,7 @@ public class DatabaseService {
 
 		try {
 			return jsonMapper.readValue(json, DataConfiguration.class);
-		} catch (JsonProcessingException e) {
+		} catch (JacksonException e) {
 			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_DESERIALIZATION,
 			                              "Failed to export data configuration because of a failed deserialization!",
 			                              e);
@@ -1880,7 +1880,7 @@ public class DatabaseService {
 	}
 
 	private String createSelectQuery(final Long dataSetId, final RowSelector rowSelector,
-	                                 final List<String> columnNames, final Collection<Integer> columnIndices,
+	                                 final List<String> columnNames, @Nullable final Collection<Integer> columnIndices,
 	                                 final HoldOutSelector holdOutSelector, final boolean pagination,
 	                                 final int startRow, final int pageSize, final boolean exportRowIndexColumn) {
 		final List<String> quotedColumnNames = columnNames.stream().map(this::quoteColumnName)

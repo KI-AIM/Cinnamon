@@ -9,8 +9,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.MDC;
-import org.springframework.lang.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -108,7 +108,7 @@ public class ProjectLogContextFilter extends OncePerRequestFilter {
 		return project != null;
 	}
 
-	private UUID extractProcessIdFromCallbackPath(@Nullable final String requestUri) {
+	private @Nullable UUID extractProcessIdFromCallbackPath(@Nullable final String requestUri) {
 		if (requestUri == null || !requestUri.startsWith(CALLBACK_PATH_PREFIX) || !requestUri.endsWith(CALLBACK_PATH_SUFFIX)) {
 			return null;
 		}

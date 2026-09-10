@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import { ColumnConfiguration } from "@shared/model/column-configuration";
 import {HistogramPlotData, StatisticsData} from "../../model/statistics";
 import {ChartComponent, Entries} from "../chart/chart.component";
@@ -9,6 +9,7 @@ import { DataType } from "../../model/data-type";
     selector: 'app-chart-frequency',
     templateUrl: '../chart/chart.component.html',
     styleUrls: ['../chart/chart.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ChartFrequencyComponent extends ChartComponent {
@@ -37,7 +38,7 @@ export class ChartFrequencyComponent extends ChartComponent {
 
             const allValues: number[] = value.frequencies.map(val => val.value);
 
-            let displayed: Array<{ value: number, itemStyle: { color: string } }> = [];
+            let displayed: Array<{ value: number, itemStyle: { color: string } }>;
             if (this.limit && allValues.length > this.limit) {
                 displayed = value.frequencies.slice(0, this.limit).map(val => {
                     return {

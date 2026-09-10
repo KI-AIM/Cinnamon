@@ -200,12 +200,11 @@ export class PlaceholderInputComponent {
         const placeholderStart = value.lastIndexOf('${', start);
         const placeholderEnd = value.indexOf('}', start);
 
-        if (placeholderStart === -1 || placeholderEnd === -1 || placeholderStart >= start || placeholderEnd <= end) {
+        if (placeholderStart === -1 || placeholderEnd === -1 || placeholderStart >= start || placeholderEnd < end) {
             return;
         }
 
         const placeholderContent = value.substring(placeholderStart + 2, placeholderEnd);
-        console.log(placeholderContent);
 
         // Find the end position for inserting the formatting, take default values in consideration
         const defaultValueIndex = placeholderContent.indexOf(':');

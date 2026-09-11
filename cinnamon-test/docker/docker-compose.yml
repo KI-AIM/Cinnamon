@@ -1,0 +1,34 @@
+# Standalone Postgres for local development.
+#
+# Starts a single Postgres container holding two databases:
+#   - PG_DATABASE (default cinnamon_db) - dev database, used when running
+#     cinnamon-platform locally (see application-dev.properties.example)
+#   - cinnamon_test_db - used by the cinnamon-test suite (see
+#     src/test/resources/application-test.properties, cinnamon.test.database=postgres_custom)
+#
+# Usage: cd cinnamon-test/docker && docker-compose up -d
+#
+# This is an alternative to the TestContainers/H2 options for cinnamon-test and to
+# running the full stack via the root docker-compose.yml; don't run both against the
+# same port 5432 at once.
+services:
+    cinnamon-test-db:
+        image: postgres:16.2-alpine
+        container_name: cinnamon-test-db
+        restart: unless-stopped
+        ports:
+            - "127.0.0.1:5432:5432"
+        environment:
+            # Has to match spring.datasource.* in cinnamon-platform's application.properties
+            # / application-dev.properties(.example) for the dev database
+            - POSTGRES_DB=${PG_DATABASE:-cinnamon_db}
+            - POSTGRES_USER=${PG_USERNAME:-cinnamon_user}
+            - POSTGRES_PASSWORD=${PG_PASSWORD:-changeme}
+        volumes:
+            - ./init-db:/docker-entrypoint-initdb.d
+#            - ./volumes/cinnamon-test-db/data:/var/lib/postgresql/data
+        healthcheck:
+            test: "pg_isready -U ${PG_USERNAME:-cinnamon_user} -d ${PG_DATABASE:-cinnamon_db}"
+            interval: 10s
+            timeout: 5s
+            retries: 5

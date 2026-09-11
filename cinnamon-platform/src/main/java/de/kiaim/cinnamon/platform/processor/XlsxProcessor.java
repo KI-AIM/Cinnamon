@@ -86,12 +86,17 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor 
 	 * {@inheritDoc}
 	 */
 	@Override
-    public int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) throws InternalIOException {
-        List<List<String>> rows = getRecords(data, null);
-        return rows.size();
-    }
+	public List<String> getAttributeNames(InputStream data, FileConfigurationEntity fileConfiguration)
+			throws InternalIOException {
+		final var xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
+		if (Boolean.TRUE.equals(xlsxFileConfiguration.getHasHeader())) {
+			return getFirstRow(data);
+		} else {
+			return List.of();
+		}
+	}
 
-    /**
+	/**
      * {@inheritDoc}
      */
     @Override
@@ -367,5 +372,30 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor 
 		config.setHasHeader(hasHeader);
 
 		return config;
+	}
+
+	/**
+	 * Returns the raw values of the first row in the file.
+	 *
+	 * @param data The XLSX content.
+	 * @return The first row.
+	 * @throws InternalIOException If reading the XLSX file failed.
+	 */
+	private List<String> getFirstRow(final InputStream data) throws InternalIOException {
+		final List<String> records = new ArrayList<>();
+
+		try (final InputStream is = data; final ReadableWorkbook wb = new ReadableWorkbook(is)) {
+			final Sheet sheet = wb.getFirstSheet();
+
+			try (Stream<Row> rows = sheet.openStream()) {
+				rows.findFirst().ifPresent(r -> {
+					r.stream().forEach(c -> records.add(c.getRawValue()));
+				});
+			}
+		} catch (final IOException e) {
+			throw new InternalIOException(InternalIOException.XLSX_READING, "Failed to read the XLSX file", e);
+		}
+
+		return records;
 	}
 }

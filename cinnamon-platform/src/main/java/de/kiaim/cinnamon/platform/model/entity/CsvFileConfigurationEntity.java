@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.model.entity;
 
 import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
@@ -20,25 +21,25 @@ public class CsvFileConfigurationEntity extends FileConfigurationEntity {
 	/**
 	 * String used for separating columns.
 	 */
-	@Nullable
+	@Column(nullable = false)
 	private String columnSeparator;
 
 	/**
 	 * String used for separating columns.
 	 */
-	@Nullable
+	@Column(nullable = false)
 	private String lineSeparator;
 
 	/**
 	 * Quote char for escaping values.
 	 */
-	@Nullable
+	@Column(nullable = false)
 	private Character quoteChar;
 
 	/**
 	 * If the first row of the file should be treated as the header row.
 	 */
-	@Nullable
+	@Column(nullable = false)
 	private Boolean hasHeader;
 
 	public CsvFileConfigurationEntity() {

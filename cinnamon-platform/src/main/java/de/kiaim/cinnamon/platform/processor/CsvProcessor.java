@@ -76,10 +76,14 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int getNumberColumns(final InputStream data,
-	                            final FileConfigurationEntity fileConfiguration) throws InternalIOException {
-		final List<String> firstRow = getFirstRow(data, fileConfiguration);
-		return firstRow.size();
+	public List<String> getAttributeNames(InputStream data, FileConfigurationEntity fileConfiguration)
+			throws InternalIOException {
+		final var csvFileConfiguration = (CsvFileConfigurationEntity) fileConfiguration;
+		if (csvFileConfiguration.getHasHeader()) {
+			return getFirstRow(data, fileConfiguration);
+		} else {
+			return List.of();
+		}
 	}
 
 	/**

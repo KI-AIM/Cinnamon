@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.kiaim.cinnamon.platform.model.entity.admin.ImportConfigurationEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,10 @@ public class OriginalDataEntity {
 	@OneToOne(optional = true, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	@JoinColumn(name = "file_id", referencedColumnName = "id")
 	private final FileEntity file = new FileEntity();
+
+	@OneToOne(optional = false, fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+	@JoinColumn(name = "import_configuration_id", referencedColumnName = "id")
+	private final ImportConfigurationEntity importConfiguration = new ImportConfigurationEntity();
 
 	/**
 	 * Configuration for the dataset.

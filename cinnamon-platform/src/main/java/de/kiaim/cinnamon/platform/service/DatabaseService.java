@@ -2,13 +2,13 @@ package de.kiaim.cinnamon.platform.service;
 
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.ImportConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.*;
-import de.kiaim.cinnamon.model.enumeration.DataSourceType;
-import de.kiaim.cinnamon.model.enumeration.DataType;
-import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
-import de.kiaim.cinnamon.model.enumeration.StageStatus;
+import de.kiaim.cinnamon.model.dto.AttributeMatchingResult;
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
+import de.kiaim.cinnamon.model.enumeration.*;
 import de.kiaim.cinnamon.platform.exception.*;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
@@ -19,7 +19,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.mapper.DataSourceConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.DatasetConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.FileConfigurationMapper;
-import de.kiaim.cinnamon.platform.processor.FhirProcessor;
+import de.kiaim.cinnamon.platform.model.mapper.ImportConfigurationMapper;
 import de.kiaim.cinnamon.platform.repository.DataProcessingRepository;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.repository.DataTransformationErrorRepository;
@@ -78,6 +78,7 @@ public class DatabaseService {
 	private final DatasetConfigurationMapper datasetConfigurationMapper;
 	private final DataSourceConfigurationMapper dataSourceConfigurationMapper;
 	private final FileConfigurationMapper fileConfigurationMapper;
+	private final ImportConfigurationMapper importConfigurationMapper;
 
 	private final DataschemeGenerator dataschemeGenerator;
 	private final JsonMapper jsonMapper;
@@ -85,7 +86,6 @@ public class DatabaseService {
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSourceProcessorService dataSourceProcessorService;
-	private final FhirProcessor fhirProcessor;
 	private final StepService stepService;
 
 	@Autowired
@@ -96,11 +96,11 @@ public class DatabaseService {
 	                       final DatasetConfigurationMapper datasetConfigurationMapper,
 	                       final DataSourceConfigurationMapper dataSourceConfigurationMapper,
 	                       final FileConfigurationMapper fileConfigurationMapper,
+	                       final ImportConfigurationMapper importConfigurationMapper,
 	                       final DataschemeGenerator dataschemeGenerator,
 	                       final DataSetService dataSetService,
 	                       final DataProcessorService dataProcessorService,
 	                       final DataSourceProcessorService dataSourceProcessorService,
-	                       final FhirProcessor fhirProcessor,
 	                       final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.dataProcessingRepository = dataProcessingRepository;
@@ -111,11 +111,11 @@ public class DatabaseService {
 		this.datasetConfigurationMapper = datasetConfigurationMapper;
 		this.dataSourceConfigurationMapper = dataSourceConfigurationMapper;
 		this.fileConfigurationMapper = fileConfigurationMapper;
+		this.importConfigurationMapper = importConfigurationMapper;
 		this.dataschemeGenerator = dataschemeGenerator;
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSourceProcessorService = dataSourceProcessorService;
-		this.fhirProcessor = fhirProcessor;
 		this.stepService = stepService;
 	}
 
@@ -201,6 +201,46 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Stores the given import configuration and associates it with the original data of the given project.
+	 *
+	 * @param project                The project of which the import configuration should be stored.
+	 * @param importConfigurationDTO The import configuration to be stored.
+	 * @throws BadDataSetIdException If the dataset is already stored.
+	 */
+	@Transactional
+	public void storeImportConfiguration(
+			final ProjectEntity project,
+			final ImportConfigurationDTO importConfigurationDTO
+	) throws BadDataSetIdException {
+		throwIfStored(project.getOriginalData().getDataSet());
+
+		final var entity = project.getOriginalData().getImportConfiguration();
+		importConfigurationMapper.updateEntity(entity, importConfigurationDTO);
+
+		var dataConfiguration = new DataConfiguration();
+		dataConfiguration.setConfigurations(importConfigurationDTO.getAttributes());
+		storeOriginalDataConfiguration(dataConfiguration, project);
+	}
+
+	/**
+	 * Exports a DTO of the import configuration of the original data of the given project.
+	 *
+	 * @param project The project of which the import configuration should be exported.
+	 * @return The exported DTO.
+	 *
+	 * @throws BadStateException If the import configuration is not available.
+	 * @throws InternalIOException If writing the configuration failed.
+	 */
+	@Transactional(readOnly = true)
+	public ImportConfigurationDTO exportImportConfiguration(final ProjectEntity project)
+			throws BadStateException, InternalIOException {
+		final var entity = project.getOriginalData().getImportConfiguration();
+		final var dto = importConfigurationMapper.toDto(entity);
+		dto.setAttributes(exportOriginalDataConfiguration(project).getConfigurations());
+		return dto;
+	}
+
+	/**
 	 * Stores the given dataset configuration and associates it with the dataset of the original data of the given project.
 	 * This is only allowed if no dataset is stored.
 	 *
@@ -271,8 +311,8 @@ public class DatabaseService {
 
 		// Update the file-related properties
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
-		final int numberOfAttributes = dataProcessor.getNumberColumns(file.getLobStream(), fileConfiguration);
-		fileEntity.setNumberOfAttributes(numberOfAttributes);
+		final var attributeNames = dataProcessor.getAttributeNames(file.getLobStream(), fileConfiguration);
+		fileEntity.setAttributeNames(attributeNames);
 	}
 
 	/**
@@ -502,6 +542,132 @@ public class DatabaseService {
 		return estimation;
 	}
 
+
+	/**
+	 * Update the import configuration using the currently stored file and file configuration.
+	 * The attributes will be matched based on the defined matching strategy.
+	 * Depending on the strategy for handling unmatched attributes, the attributes will be added or removed from the import configuration.
+	 *
+	 * @param project
+	 */
+	@Transactional
+	protected void updateImportConfiguration(final ProjectEntity project) throws BadDataConfigurationException, InternalMissingHandlingException, InternalIOException {
+		// Check if the file and the file configuration are available
+		final FileEntity fileEntity = project.getOriginalData().getFile();
+		final LobWrapperEntity file = fileEntity.getFile();
+		if (file == null) {
+			return;
+		}
+		final FileConfigurationEntity fileConfiguration = fileEntity.getFileConfiguration();
+		if (fileConfiguration == null) {
+			return;
+		}
+
+		if (project.getOriginalData().getDataSet() == null) {
+			return;
+		}
+
+		final Set<AttributeMatchingResult> configOnlyErrors = new HashSet<>();
+		final Set<AttributeMatchingResult> dataOnlyErrors = new HashSet<>();
+
+		// Match attributes
+		var importConfiguration = project.getOriginalData().getImportConfiguration();
+		var attributesInData = project.getOriginalData().getFile().getAttributeNames();
+		var dataConfiguration = project.getOriginalData().getDataSet().getDataConfiguration();
+
+		if (attributesInData == null || dataConfiguration == null) {
+			return;
+		}
+
+		switch (importConfiguration.getAttributeMatching()) {
+			case INDEX -> {
+				for (int i = 0; i < dataConfiguration.getConfigurations().size(); i++) {
+					var columnConfig = dataConfiguration.getConfigurations().get(i);
+					var index = columnConfig.getIndex();
+
+					if (index < attributesInData.size()) {
+						// Attribute is in the data, update the name in the configuration
+						columnConfig.setName(attributesInData.get(index));
+					} else {
+						// No attribute in the data for this index, mark as config only
+						configOnlyErrors.add(new AttributeMatchingResult(index, null, AttributeMatchOutcome.CONFIG_ONLY));
+					}
+				}
+
+				if (attributesInData.size() > dataConfiguration.getConfigurations().size()) {
+					// There are attributes in the data that are not in the configuration
+					for (int i = dataConfiguration.getConfigurations().size(); i < attributesInData.size(); i++) {
+						dataOnlyErrors.add(new AttributeMatchingResult(i, null, AttributeMatchOutcome.DATA_ONLY));
+					}
+				}
+			}
+			case NAME -> {
+				Map<String, ColumnConfiguration> nameToConfig = dataConfiguration.getConfigurations().stream().collect(
+						Collectors.toMap(ColumnConfiguration::getName, c -> c));
+
+				for (int i = 0; i < attributesInData.size(); i++) {
+					String attributeName = attributesInData.get(i);
+					if (nameToConfig.containsKey(attributeName)) {
+						// Attribute is in the configuration, update the index
+						ColumnConfiguration columnConfig = nameToConfig.get(attributeName);
+						columnConfig.setIndex(i);
+					} else {
+						// No configuration for this attribute, mark as data only
+						dataOnlyErrors.add(
+								new AttributeMatchingResult(null, attributeName, AttributeMatchOutcome.DATA_ONLY));
+					}
+				}
+
+				for (ColumnConfiguration columnConfig : dataConfiguration.getConfigurations()) {
+					if (!attributesInData.contains(columnConfig.getName())) {
+						// Configuration has no matching attribute in the data
+						configOnlyErrors.add(new AttributeMatchingResult(null, columnConfig.getName(),
+						                                                 AttributeMatchOutcome.CONFIG_ONLY));
+					}
+				}
+			}
+		}
+
+		Set<AttributeMatchingResult> errors = new HashSet<>();
+		switch (importConfiguration.getHandleConfigOnly()) {
+			case ERROR -> errors.addAll(configOnlyErrors);
+			case IGNORE -> {
+				for (AttributeMatchingResult result : configOnlyErrors) {
+					dataConfiguration.getConfigurations().removeIf(
+							c -> c.getName().equals(result.getName()) || c.getIndex().equals(result.getIndex()));
+				}
+			}
+		}
+
+		switch (importConfiguration.getHandleDataOnly()) {
+			case ERROR -> errors.addAll(dataOnlyErrors);
+			case ESTIMATE_CONFIG -> {
+				// TODO estimate only attributes that are missing
+				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
+				DataConfigurationEstimation estimation = dataProcessor.estimateDataConfiguration(file.getLobStream(),
+				                                                                                 fileConfiguration,
+				                                                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+				for (final var dataOnlyError : dataOnlyErrors) {
+					for (final var estimatedAttribute: estimation.getDataConfiguration().getConfigurations()) {
+						if (Objects.equals(dataOnlyError.getName(), estimatedAttribute.getName())
+						    || Objects.equals(dataOnlyError.getIndex(), estimatedAttribute.getIndex())) {
+							dataConfiguration.getConfigurations().add(estimatedAttribute);
+							break;
+						}
+					}
+				}
+			}
+			case REMOVE_ATTRIBUTE -> { }
+		}
+
+		if (!errors.isEmpty()) {
+			var errorDetails = new ErrorDetails().withAttributeMismatches(errors);
+			throw new BadDataConfigurationException(BadDataConfigurationException.UNDEFINED_DATA_TYPE,
+			                                        "Attribute matching between the data and the configuration failed.",
+			                                        errorDetails);
+		}
+	}
+
 	/**
 	 * Update the dataset of the original data with the currently stored configurations and file.
 	 * This is only allowed if the dataset is not confirmed yet.
@@ -594,12 +760,11 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data set is already stored.
 	 * @throws BadStateException                   If no file for the original data has been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored.
-	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
 	 */
 	@Transactional
 	public Long storeOriginalTransformationResult(final TransformationResult transformationResult,
 	                                              final ProjectEntity project)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
 
@@ -635,13 +800,12 @@ public class DatabaseService {
 	 * @throws BadDataSetIdException               If the data has already been confirmed.
 	 * @throws BadStateException                   If the file for the dataset has not been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
-	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
 	 */
 	@Transactional
 	public void storeTransformationResult(final TransformationResult transformationResult,
 	                                      final DataProcessingEntity dataProcessingEntity,
 	                                      final List<Job> processed)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException {
 		final ProjectEntity project = dataProcessingEntity.getExecutionStep().getPipeline().getProject();
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
@@ -1339,7 +1503,7 @@ public class DatabaseService {
 	@Transactional
 	public void deleteOriginalData(final ProjectEntity project) throws InternalDataSetPersistenceException {
 		project.getOriginalData().getFile().setName(null);
-		project.getOriginalData().getFile().setNumberOfAttributes(0);
+		project.getOriginalData().getFile().setAttributeNames(null);
 		project.getOriginalData().getFile().setFileConfiguration(null);
 		project.getOriginalData().getFile().setCompatibility(null);
 		project.getOriginalData().getFile().setFile(null);
@@ -1666,7 +1830,7 @@ public class DatabaseService {
 	}
 
 	private void checkFile(final ProjectEntity project, final DataConfiguration dataConfiguration
-	) throws BadStateException, BadDataConfigurationException, InternalIOException {
+	) throws BadStateException, BadDataConfigurationException {
 		// Check if the file and the file configuration are available
 		final FileEntity fileEntity = project.getOriginalData().getFile();
 		final LobWrapperEntity file = fileEntity.getFile();
@@ -1690,8 +1854,7 @@ public class DatabaseService {
 		// Validate that column names match the paths of the FHIR bundle
 		final FileType fileType = fileConfiguration.getFileType();
 		if (fileType == FileType.FHIR) {
-			final List<String> expectedColumns = fhirProcessor.getAttributeNames(file.getLobStream(),
-			                                                                     fileConfiguration);
+			final List<String> expectedColumns = fileEntity.getAttributeNames();
 
 			for (int i = 0; i < fileEntity.getNumberOfAttributes(); i++) {
 				final String columnName = dataConfiguration.getConfigurations().get(i).getName();

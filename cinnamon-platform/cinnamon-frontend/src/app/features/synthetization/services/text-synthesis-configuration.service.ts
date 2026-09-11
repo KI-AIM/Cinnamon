@@ -11,6 +11,8 @@ import { DataConfiguration } from "@shared/model/data-configuration";
     providedIn: 'root',
 })
 export class TextSynthesisConfigurationService {
+    private readonly initialAlgorithms = new WeakMap<FormGroup, any>();
+
     public readonly formGroupName = "text_synthesis_configuration";
 
     constructor(
@@ -36,7 +38,8 @@ export class TextSynthesisConfigurationService {
             return;
         }
 
-        const currentValues = algorithmGroup.getRawValue();
+        const currentValues = {...this.initialAlgorithms.get(algorithmGroup), ...algorithmGroup.getRawValue()};
+        this.initialAlgorithms.delete(algorithmGroup);
         this.syncGroupFromDefinition(
             algorithmGroup,
             definition,
@@ -50,13 +53,15 @@ export class TextSynthesisConfigurationService {
     public createGroup(config: any, disabled: boolean): FormGroup {
         const algorithm = config?.synthetization_configuration?.algorithm ?? {};
 
-        return this.formBuilder.group({
+        const group = this.formBuilder.group({
             synthetization_configuration: this.formBuilder.group({
                 algorithm: this.formBuilder.group({
                     synthesizer: new FormControl({value: algorithm.synthesizer ?? "", disabled}, [Validators.required]),
                 }),
             }),
         });
+        this.initialAlgorithms.set(group.get("synthetization_configuration.algorithm") as FormGroup, algorithm);
+        return group;
     }
 
     private syncGroupFromDefinition(

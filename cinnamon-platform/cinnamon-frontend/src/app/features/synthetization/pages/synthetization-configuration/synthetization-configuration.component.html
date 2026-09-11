@@ -1,8 +1,8 @@
 <app-configuration-page *ngIf="configurationInfo$ | async as configInfo" [configurationInfo]="configInfo"
-                        [configurationInfo]="configInfo"
                         [step]="Steps.SYNTHETIZATION"
                         [additionalConfigs]="additionalConfigs"
-                        [intermediateStep]="htStep">
+                        [intermediateStep]="htStep"
+                        [intermediateStepInvalid]="useHyperparameterTuning && (!htFormGroup || htFormGroup.invalid)">
 </app-configuration-page>
 
 <ng-template #htStep>

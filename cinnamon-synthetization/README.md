@@ -20,6 +20,75 @@ For LLM-based workflows, the module supports:
 - text-only enrichment of already synthesized structured rows
 - selectable LLM profiles loaded from environment variables
 
+## Structured data and free text
+
+Datasets with structured columns (including columns added by text extraction) first use a
+structured synthesizer: CTGAN, TVAE, ARF, DDPM, RTVAE, Bayesian Network, or the structured
+LLM synthesizer. Their existing model, fitting, sampling, and supported Optuna tuning
+settings apply unchanged. Optuna tuning is supported for the six classical synthesizers;
+its sampler, pruner, trial count, and timeout are configurable in the frontend.
+
+For datasets that also contain TEXT columns, select a second method: mixed-data paraphrase,
+indirect-identifier rewrite, or embedding/attribute nearest neighbors. This stage generates
+one text per synthetic row and per TEXT column, preserving structured values, missingness,
+row order, and row count exactly. For embedding nearest-neighbor synthesis, its Number of Samples
+sets the total output count and overrides the structured sampling count before generation.
+This may exceed the source dataset size. Other text methods use the structured sampling count.
+Text-only datasets continue to use their existing text-only methods.
+
+Synthetic structured values are ground truth. Prompts require every non-missing fact in the
+text as an exact `column: value` entry, embedded in sentences or a compact factual section
+alongside the narrative. The response validator checks these entries and retries incomplete
+responses; exhausted retries fail the job rather than export incomplete text. This checks
+literal coverage, not semantic consistency of the entire narrative. Prompts separately
+require the narrative to agree with all ground-truth facts. Reference texts may contribute
+additional information when consistent with those facts. Identifier-rewrite rules apply to
+additional reference details, never to the synthetic structured values.
+
+Nearest-neighbor queries use the synthetic structured facts. The existing embedding settings
+and similarity weights remain available; set text similarity weight to `0` and structured
+similarity weight to `1` for attribute-only retrieval.
+
+The frontend saves both stages in one configuration. Existing direct mixed-data configurations
+must be reconfigured by selecting a structured synthesizer first. API example:
+
+```yaml
+synthetization_configuration:
+  algorithm:
+    id: ctgan
+    synthesizer: ctgan
+    model_parameter:
+      number_of_layers: 2
+      number_of_units_in_layers: 128
+    model_fitting:
+      epochs: 100
+      batch_size: 100
+    sampling:
+      num_samples: 100
+    hyperparameter_tuning:
+      enabled: false
+      sampler: tpe
+      pruner: median
+      n_trials: 10
+      timeout_minutes: 30
+  text_synthesis_configuration:
+    synthetization_configuration:
+      algorithm:
+        synthesizer: llm_mixed_data_embedding_nearest_neighbor_synthesis
+        llm_profile:
+          llm_profile: Your configured profile name
+        model_parameter:
+          few_shot_examples: 3
+          text_similarity_weight: 0
+          structured_similarity_weight: 1
+        sampling:
+          temperature: 0.2
+          top_p: 0.9
+```
+
+For two-stage jobs, the serialized model contains `structured_synthesis` (the structured
+model bytes) and `text_synthesis` (a mapping from TEXT column names to model bytes).
+
 ## Project Structure
 
 - `app.py`

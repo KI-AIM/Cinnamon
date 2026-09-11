@@ -7,6 +7,7 @@ from copy import deepcopy
 from functools import lru_cache
 from multiprocessing import get_context
 
+import cloudpickle
 import pandas as pd
 import requests
 import yaml
@@ -503,6 +504,7 @@ def run_synthesizer_stage(
     fill_text_with_pending=True,
     session_key=None,
     status_component_name=None,
+    preserve_structured_values=False,
 ):
     stage_init_time = time.time()
     stage_algorithm = stage_algorithm_config.get("synthetization_configuration", {}).get("algorithm", {})
@@ -536,21 +538,24 @@ def run_synthesizer_stage(
                 remaining_time=str(remaining_time) if step == "sampling" else None,
             )
 
-    pre_processed_data, all_missing_values_column = pre_process_dataframe(
-        input_data.copy(),
-        stage_attribute_config['configurations'],
-        replace_text_with_pending=replace_text_with_pending,
-    )
-    print(f"[{stage_label}] Input data preprocessed.")
-
-    pre_processed_reference_data = None
-    if reference_data is not None:
-        pre_processed_reference_data, _ = pre_process_dataframe(
-            reference_data.copy(),
+    if preserve_structured_values:
+        # The text stage consumes the final structured output without imputing or rounding it again.
+        pre_processed_data = input_data.copy()
+        pre_processed_reference_data = reference_data.copy() if reference_data is not None else None
+        all_missing_values_column = []
+    else:
+        pre_processed_data, all_missing_values_column = pre_process_dataframe(
+            input_data.copy(),
             stage_attribute_config['configurations'],
-            replace_text_with_pending=False,
+            replace_text_with_pending=replace_text_with_pending,
         )
-        print(f"[{stage_label}] Reference data preprocessed.")
+        pre_processed_reference_data = None
+        if reference_data is not None:
+            pre_processed_reference_data, _ = pre_process_dataframe(
+                reference_data.copy(),
+                stage_attribute_config['configurations'],
+                replace_text_with_pending=False,
+            )
 
     if tuning_enabled:
         tuning_metadata = synthesizer_tuning_metadata.get(synthesizer_name, {})
@@ -731,12 +736,13 @@ def run_synthesizer_stage(
         sample_duration = time.time() - sample_time
         print(f"[{stage_label}] Data sampled.")
 
-    samples = post_process_dataframe(
-        samples,
-        stage_attribute_config['configurations'],
-        all_missing_values_column,
-        fill_text_with_pending=fill_text_with_pending,
-    )
+    if not preserve_structured_values:
+        samples = post_process_dataframe(
+            samples,
+            stage_attribute_config['configurations'],
+            all_missing_values_column,
+            fill_text_with_pending=fill_text_with_pending,
+        )
     print(f"[{stage_label}] Data post-processed.")
 
     synthesizer_model = synthesizer_class.get_model()
@@ -848,52 +854,102 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         final_samples = None
         final_model = None
 
-        # 1) Selected synthesizer handles mixed rows directly without a separate structured synthesizer.
-        if data_modality == PROCESSING_MODALITY_MIXED:
-            print("Pipeline mode: direct mixed-data synthesis.")
-            announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
-            mixed_input = order_dataframe_by_config(data.copy(), attribute_config.get("configurations", []))
-            mixed_algorithm_config = build_text_synthesis_algorithm_config(
-                algorithm_config,
-                synthesizer_name,
-                len(mixed_input),
+        if structured_configs:
+            if data_modality != PROCESSING_MODALITY_STRUCTURED_ONLY:
+                raise ValueError(
+                    "Structured columns require a structured synthesizer first. Select CTGAN, TVAE, "
+                    "ARF or another structured synthesizer, then configure text_synthesis_configuration."
+                )
+            text_config = (
+                algorithm_config.get("synthetization_configuration", {}).get("text_synthesis_configuration")
+                or algorithm_config.get("text_synthesis_configuration")
+                or {}
             )
+            text_name = text_config.get("synthetization_configuration", {}).get("algorithm", {}).get("synthesizer")
+            if text_configs and (
+                text_name not in synthesizer_classes
+                or get_data_modality(text_name) != PROCESSING_MODALITY_MIXED
+            ):
+                raise ValueError("Select a mixed-data free-text synthesizer in text_synthesis_configuration.")
 
-            final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
-                stage_label="MIXED_SYNTHESIS",
+            structured_algorithm_config = algorithm_config
+            if text_configs and text_name == "llm_mixed_data_embedding_nearest_neighbor_synthesis":
+                requested_samples = text_config["synthetization_configuration"]["algorithm"].get("sampling", {}).get("num_samples")
+                if requested_samples is not None:
+                    if (isinstance(requested_samples, bool)
+                            or not str(requested_samples).strip().isdigit()
+                            or int(requested_samples) <= 0):
+                        raise ValueError("Nearest-neighbor num_samples must be a positive integer.")
+                    structured_algorithm_config = deepcopy(algorithm_config)
+                    structured_algorithm_config["synthetization_configuration"]["algorithm"].setdefault(
+                        "sampling", {},
+                    )["num_samples"] = int(requested_samples)
+
+            print("Pipeline mode: structured synthesis followed by text generation." if text_configs
+                  else "Pipeline mode: single-stage synthesis.")
+            structured_names = [cfg["name"] for cfg in structured_configs]
+            structured_attribute_config = {**attribute_config, "configurations": structured_configs}
+            announce_component_synthesis(file_path_status, "structured_synthesis", synthesizer_name)
+            final_samples, structured_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                stage_label="STRUCTURED_SYNTHESIS",
                 synthesizer_name=synthesizer_name,
-                stage_attribute_config=attribute_config,
-                stage_algorithm_config=mixed_algorithm_config,
-                input_data=mixed_input,
-                reference_data=text_reference_data,
+                stage_attribute_config=structured_attribute_config,
+                stage_algorithm_config=structured_algorithm_config,
+                input_data=data[structured_names],
                 file_path_status=file_path_status,
-                replace_text_with_pending=False,
-                fill_text_with_pending=False,
                 session_key=session_key,
-                status_component_name="llm_synthesis",
+                status_component_name="structured_synthesis",
             )
+            final_samples = final_samples.reset_index(drop=True)
+            final_model = structured_model
             total_init_duration += init_duration
             total_fit_duration += fit_duration
             total_sample_duration += sample_duration
-            update_pipeline_totals(
-                file_path_status,
-                total_init_duration,
-                total_fit_duration,
-                total_sample_duration,
-                completed=True,
-            )
+            update_pipeline_totals(file_path_status, total_init_duration, total_fit_duration,
+                                   total_sample_duration, completed=not text_configs)
 
-        # 2) Selected synthesizer rewrites a TEXT-only dataset directly.
-        elif data_modality == PROCESSING_MODALITY_TEXT_ONLY:
+            text_models = {}
+            for text_column_config in text_configs:
+                text_column = text_column_config["name"]
+                stage_configs = structured_configs + [text_column_config]
+                stage_columns = structured_names + [text_column]
+                text_input = final_samples.reindex(columns=stage_columns)
+                text_algorithm_config = build_text_synthesis_algorithm_config(text_config, text_name, len(text_input))
+                # Every generated structured row receives one text; tuning runs in the structured stage.
+                text_algorithm = text_algorithm_config["synthetization_configuration"]["algorithm"]
+                text_algorithm["sampling"]["num_samples"] = len(text_input)
+                text_algorithm.pop("hyperparameter_tuning", None)
+                announce_component_synthesis(file_path_status, "llm_synthesis", text_name)
+                text_samples, text_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                    stage_label="TEXT_SYNTHESIS",
+                    synthesizer_name=text_name,
+                    stage_attribute_config={**attribute_config, "configurations": stage_configs},
+                    stage_algorithm_config=text_algorithm_config,
+                    input_data=text_input,
+                    reference_data=text_reference_data.reindex(columns=stage_columns),
+                    file_path_status=file_path_status,
+                    replace_text_with_pending=False,
+                    fill_text_with_pending=False,
+                    preserve_structured_values=True,
+                    session_key=session_key,
+                    status_component_name="llm_synthesis",
+                )
+                if len(text_samples) != len(final_samples):
+                    raise ValueError("Text synthesis must return exactly one text per structured row.")
+                if not text_samples[structured_names].reset_index(drop=True).equals(final_samples[structured_names]):
+                    raise ValueError("Text synthesis changed the structured ground truth.")
+                final_samples[text_column] = text_samples[text_column].reset_index(drop=True)
+                text_models[text_column] = text_model
+                total_init_duration += init_duration
+                total_fit_duration += fit_duration
+                total_sample_duration += sample_duration
+            if text_models:
+                final_model = cloudpickle.dumps({"structured_synthesis": structured_model, "text_synthesis": text_models})
+        elif text_configs and data_modality == PROCESSING_MODALITY_TEXT_ONLY:
             print("Pipeline mode: text-only synthesis.")
             announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
             text_input = order_dataframe_by_config(data.copy(), attribute_config.get("configurations", []))
-            text_algorithm_config = build_text_synthesis_algorithm_config(
-                algorithm_config,
-                synthesizer_name,
-                len(text_input),
-            )
-
+            text_algorithm_config = build_text_synthesis_algorithm_config(algorithm_config, synthesizer_name, len(text_input))
             final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
                 stage_label="TEXT_SYNTHESIS",
                 synthesizer_name=synthesizer_name,
@@ -910,48 +966,8 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             total_init_duration += init_duration
             total_fit_duration += fit_duration
             total_sample_duration += sample_duration
-            update_pipeline_totals(
-                file_path_status,
-                total_init_duration,
-                total_fit_duration,
-                total_sample_duration,
-                completed=True,
-            )
-
-        # Structured-only synthesizers cannot process datasets containing free text.
-        elif text_configs and data_modality == PROCESSING_MODALITY_STRUCTURED_ONLY:
-            raise ValueError(
-                f"Synthesizer '{synthesizer_name}' only supports structured data, but the dataset "
-                "contains TEXT columns. Select a mixed-data synthesizer instead."
-            )
-
-        # 3) Selected synthesizer handles structured data directly in one stage.
         else:
-            print("Pipeline mode: single-stage synthesis.")
-            announce_component_synthesis(file_path_status, "structured_synthesis", synthesizer_name)
-            final_samples, final_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
-                stage_label="SINGLE_STAGE",
-                synthesizer_name=synthesizer_name,
-                stage_attribute_config=attribute_config,
-                stage_algorithm_config=algorithm_config,
-                input_data=data,
-                reference_data=None,
-                file_path_status=file_path_status,
-                replace_text_with_pending=True,
-                fill_text_with_pending=True,
-                session_key=session_key,
-                status_component_name="structured_synthesis",
-            )
-            total_init_duration += init_duration
-            total_fit_duration += fit_duration
-            total_sample_duration += sample_duration
-            update_pipeline_totals(
-                file_path_status,
-                total_init_duration,
-                total_fit_duration,
-                total_sample_duration,
-                completed=True,
-            )
+            raise ValueError("Select a text-only synthesizer for a dataset containing only TEXT columns.")
 
         if final_samples is None or final_model is None:
             raise RuntimeError("Pipeline did not produce synthetic data and model output.")

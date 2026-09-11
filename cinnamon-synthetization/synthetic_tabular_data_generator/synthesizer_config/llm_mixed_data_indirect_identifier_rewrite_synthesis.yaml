@@ -2,7 +2,7 @@ name: llm_mixed_data_indirect_identifier_rewrite_synthesis
 version: "0.1"
 type: cross-sectional
 display_name: LLM Mixed-data Indirect Identifier Rewrite Synthesis
-description: Rewrite one TEXT column to reduce direct and indirect identifiability, then align structured values with the rewritten text using statistical column profiles.
+description: Generate text from synthetic structured ground truth while generalizing additional reference identifiers. Every structured fact remains unchanged and must occur in the text.
 URL: /start_synthetization_process/llm_mixed_data_indirect_identifier_rewrite_synthesis
 processing_capabilities:
   data_modality: mixed
@@ -19,19 +19,19 @@ configurations:
         values: []
         mandatory: true
   model_parameter:
-    display_name: Statistical Profile Parameters
-    description: Configure how many reference rows are sampled to calculate the structured column profiles.
+    display_name: Reference Parameters
+    description: Configure the reference pool used for text style and additional context.
     parameters:
       - name: profile_rows
         type: integer
-        label: Profile Rows
-        description: Number of rows used for profile calculation. Values above the available dataset size are capped automatically.
+        label: Reference Rows
+        description: Number of rows in the reference pool. Values above the available dataset size are capped automatically.
         default_value: ${original.dataset.numberRows}
         min_value: 1
         max_value: 1000000
   model_fitting:
     display_name: Prompt Configuration
-    description: Configure how strongly indirect identifiers should be generalized. Direct identifiers are always removed or replaced.
+    description: Configure how strongly indirect identifiers should be generalized. Identifier rules apply to reference details only; synthetic structured values remain fixed.
     parameters:
       - name: indirect_identifier_level
         type: string
@@ -48,20 +48,13 @@ configurations:
         multiline: true
         rows: 5
         label: Domain Context
-        description: Optional domain context used in both LLM steps.
+        description: Optional domain context used for text generation.
         default_value: ""
         mandatory: false
   sampling:
     display_name: Sampling
-    description: Configure how many input rows are processed and how deterministic the LLM output should be.
+    description: Configure LLM decoding. One text is generated for every row from the structured synthesizer.
     parameters:
-      - name: num_samples
-        type: integer
-        label: Number of Samples
-        description: Number of input rows to process. Cannot exceed the number of provided rows.
-        default_value: ${original.dataset.numberRows}
-        min_value: 1
-        max_value: ${original.dataset.numberRows}
       - name: temperature
         type: float
         label: Temperature

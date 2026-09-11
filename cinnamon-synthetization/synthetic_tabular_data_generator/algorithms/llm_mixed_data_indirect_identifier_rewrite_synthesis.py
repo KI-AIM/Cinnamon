@@ -16,7 +16,7 @@ class LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer(
     LlmMixedDataParaphraseSynthesisSynthesizer,
     LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer,
 ):
-    """De-identify one TEXT column, then align the structured columns with it."""
+    """Rewrite reference identifiers while preserving synthetic structured ground truth."""
 
     def __init__(
         self,
@@ -36,7 +36,17 @@ class LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer(
     def _initialize_synthesizer(self) -> None:
         if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration must be initialized before synthesizer setup.")
-        self._initialize_llm_backend(mode="mixed_data_indirect_identifier_rewrite_consistency")
+        self._initialize_llm_backend(mode="mixed_data_indirect_identifier_rewrite")
+
+    def _build_prompt_prefix(self) -> str:
+        return LlmMixedDataParaphraseSynthesisSynthesizer._build_prompt_prefix(self) + (
+            "Identifier handling applies ONLY to additional reference details absent from the ground truth.\n"
+            "Replace reference identifiers covered by structured columns with the exact synthetic values.\n"
+            "The following category actions must never remove, replace or generalize REQUIRED FACTS.\n"
+            f"Selected anonymization level: {self._indirect_identifier_level.upper()}\n"
+            f"{self._build_phi_category_block()}"
+            f"{self._build_ipi_category_block()}"
+        )
 
     def _load_model(self, filepath: str) -> "LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer":
         with open(filepath, "rb") as file:

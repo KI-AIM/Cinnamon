@@ -23,7 +23,7 @@ import { ConfigurationAdditionalConfigs } from '../../model/configuration-additi
 import {
     DataConfiguration,
     isMixedDataConfiguration,
-    isStructuredOnlyDataConfiguration,
+    hasStructuredColumns,
     isTextOnlyDataConfiguration,
 } from "../../model/data-configuration";
 import { AlgorithmService, ConfigData, ConfigurationInfo } from "../../services/algorithm.service";
@@ -66,6 +66,7 @@ export class ConfigurationPageComponent implements OnInit {
      * hyperparameter-tuning controls; defaults to null on every other page.
      */
     @Input() public intermediateStep: TemplateRef<any> | null = null;
+    @Input() public intermediateStepInvalid = false;
 
     /**
      * When true, the Algorithm Configuration box still renders but its body is
@@ -121,7 +122,7 @@ export class ConfigurationPageComponent implements OnInit {
     protected selectedAlgorithm: Algorithm | null = null;
     protected currentAlgorithms: Algorithm[] = [];
     protected currentDataConfiguration: DataConfiguration | null = null;
-    private freeTextDefinitionCache: Map<string, Observable<AlgorithmDefinition>> = new Map<string, Observable<AlgorithmDefinition>>();
+    private freeTextDefinitionCache = new WeakMap<FormGroup, {name: string, definition$: Observable<AlgorithmDefinition>}>();
 
     protected get configurationProcessJob(): string | null {
         switch (this.algorithmService.getConfigurationName()) {
@@ -207,6 +208,11 @@ export class ConfigurationPageComponent implements OnInit {
             return false;
         }
 
+        if (this.currentDataConfiguration && this.shouldShowIntermediateStep(this.currentDataConfiguration)
+            && this.intermediateStepInvalid) {
+            return true;
+        }
+
         if (this.getEffectiveSelectedAlgorithm() == null) {
             return true;
         }
@@ -249,9 +255,6 @@ export class ConfigurationPageComponent implements OnInit {
         if (isTextOnlyDataConfiguration(dataConfiguration)) {
             return this.getTextOnlyAlgorithms(algorithms);
         }
-        if (isMixedDataConfiguration(dataConfiguration)) {
-            return this.getFreeTextAlgorithms(algorithms);
-        }
         return this.getStructuredAlgorithms(algorithms);
     }
 
@@ -273,7 +276,7 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected getNumberSteps(dataConfiguration: DataConfiguration): number {
-        return 4;
+        return this.shouldShowFreeTextSteps(dataConfiguration) ? 6 : 4;
     }
 
     protected getTotalStepCount(dataConfiguration: DataConfiguration): number {
@@ -297,11 +300,11 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected shouldShowIntermediateStep(dataConfiguration: DataConfiguration): boolean {
-        return this.intermediateStep != null && isStructuredOnlyDataConfiguration(dataConfiguration);
+        return this.intermediateStep != null && hasStructuredColumns(dataConfiguration);
     }
 
     protected shouldShowFreeTextSteps(dataConfiguration: DataConfiguration): boolean {
-        return false;
+        return this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration);
     }
 
     protected getFreeTextAlgorithmDefinition(
@@ -314,37 +317,32 @@ export class ConfigurationPageComponent implements OnInit {
             return of(null);
         }
 
-        let definition$ = this.freeTextDefinitionCache.get(selectedAlgorithm.name);
-        if (!definition$) {
-            definition$ = this.algorithmService.getAlgorithmDefinition(selectedAlgorithm).pipe(
-                shareReplay(1),
-            );
-            this.freeTextDefinitionCache.set(selectedAlgorithm.name, definition$);
+        const rootForm = this.forms?.form;
+        if (!rootForm) {
+            return of(null);
         }
-
-        return definition$.pipe(
+        const cached = this.freeTextDefinitionCache.get(rootForm);
+        if (cached && cached.name === selectedName) {
+            return cached.definition$;
+        }
+        const definition$ = this.algorithmService.getAlgorithmDefinition(selectedAlgorithm).pipe(
             tap(definition => {
-                const disabled = this.forms?.form?.get(
+                const disabled = rootForm.get(
                     "text_synthesis_configuration.synthetization_configuration.algorithm.synthesizer",
                 )?.disabled ?? false;
-                if (this.forms?.form) {
-                    this.textSynthesisConfigurationService.syncFormWithDefinition(
-                        this.forms.form,
-                        definition,
-                        dataConfiguration,
-                        disabled,
-                    );
-                }
+                this.textSynthesisConfigurationService.syncFormWithDefinition(
+                    rootForm, definition, dataConfiguration, disabled,
+                );
             }),
+            shareReplay({bufferSize: 1, refCount: true}),
         );
+        this.freeTextDefinitionCache.set(rootForm, {name: selectedName, definition$});
+        return definition$;
     }
 
     protected getSelectionStepHeader(dataConfiguration: DataConfiguration): string {
         if (this.isSynthetizationConfiguration && isTextOnlyDataConfiguration(dataConfiguration)) {
             return "Select the free-text synthesizer";
-        }
-        if (this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration)) {
-            return "Select the mixed-data synthesizer";
         }
         if (this.isSynthetizationConfiguration) {
             return "Select the structured synthesizer";
@@ -355,9 +353,6 @@ export class ConfigurationPageComponent implements OnInit {
     protected getConfigurationStepHeader(dataConfiguration: DataConfiguration): string {
         if (this.isSynthetizationConfiguration && isTextOnlyDataConfiguration(dataConfiguration)) {
             return "Configure the free-text synthesizer";
-        }
-        if (this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration)) {
-            return "Configure the mixed-data synthesizer";
         }
         if (this.isSynthetizationConfiguration) {
             return "Configure the structured synthesizer";

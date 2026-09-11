@@ -2,7 +2,7 @@ name: llm_mixed_data_embedding_nearest_neighbor_synthesis
 version: "0.1"
 type: cross-sectional
 display_name: LLM Mixed-data Embedding Nearest-neighbor Synthesis
-description: Generate TEXT from weighted free-text and structured nearest neighbors, then align structured values with the generated text using statistical profiles.
+description: Retrieve reference texts using synthetic structured facts and weighted embedding or attribute similarity. Generate text containing every ground-truth fact and optional consistent reference details.
 URL: /start_synthetization_process/llm_mixed_data_embedding_nearest_neighbor_synthesis
 processing_capabilities:
   data_modality: mixed
@@ -20,12 +20,12 @@ configurations:
         mandatory: true
   model_parameter:
     display_name: Retrieval and Profile Parameters
-    description: Configure text embeddings, mixed-data similarity weighting, nearest neighbors, and structured profiles.
+    description: Configure text embeddings, mixed-data similarity weighting, nearest neighbors, and structured similarity ranges.
     parameters:
       - name: profile_rows
         type: integer
         label: Profile Rows
-        description: Number of reference rows used for structured profiles. Values above the available dataset size are capped automatically.
+        description: Number of reference rows used for structured similarity ranges. Values above the available dataset size are capped automatically.
         default_value: ${original.dataset.numberRows}
         min_value: 1
         max_value: 1000000
@@ -39,7 +39,7 @@ configurations:
       - name: embedding_provider
         type: string
         label: Embedding Provider
-        description: Encode free text with sparse BM25 or an Ollama embedding profile.
+        description: Encode the synthetic structured facts and reference texts with sparse BM25 or an Ollama embedding profile.
         default_value: bm25
         values:
           - bm25
@@ -67,7 +67,7 @@ configurations:
       - name: text_similarity_weight
         type: float
         label: Free-text Similarity Weight
-        description: Relative contribution of embedding-based free-text similarity to the combined nearest-neighbor score.
+        description: Relative contribution of similarity between synthetic structured facts and reference text embeddings. Set to zero for attribute-only nearest neighbors.
         default_value: 0.7
         min_value: 0.0
         max_value: 1.0
@@ -85,24 +85,24 @@ configurations:
         default_value: true
   model_fitting:
     display_name: Prompt Configuration
-    description: Configure optional domain context for text generation and structured consistency correction.
+    description: Configure optional domain context for text generation from fixed structured ground truth.
     parameters:
       - name: user_prompt_domain_context
         type: string
         multiline: true
         rows: 5
         label: Domain Context
-        description: Optional domain context used in both LLM phases.
+        description: Optional domain context used for text generation.
         default_value: ""
         mandatory: false
   sampling:
     display_name: Sampling
-    description: Configure the number of generated mixed rows and LLM decoding behavior.
+    description: Configure the total number of synthetic records and LLM decoding.
     parameters:
       - name: num_samples
         type: integer
         label: Number of Samples
-        description: Number of rows to generate. Source rows are sampled with replacement when this exceeds the input row count.
+        description: Total number of synthetic records to generate, including beyond the source dataset size. Overrides the structured sampling count so every text receives a newly synthesized structured row.
         default_value: ${original.dataset.numberRows}
         min_value: 1
         max_value: 1000000

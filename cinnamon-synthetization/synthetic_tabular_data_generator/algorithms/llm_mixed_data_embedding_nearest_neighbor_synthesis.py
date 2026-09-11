@@ -7,7 +7,6 @@ import cloudpickle
 import pandas as pd
 
 from data_processing.utils import (
-    FAILED_TEXT_GENERATION,
     MISSING_VALUE_STRING,
     get_date_format,
     parse_to_unix,
@@ -27,9 +26,7 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
     LlmMixedDataParaphraseSynthesisSynthesizer,
     LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
 ):
-    """Generate text from mixed nearest neighbors, then align structured values with it."""
-
-    _blank_structured_consistency_input = True
+    """Retrieve references for synthetic structured rows and generate matching text."""
 
     def __init__(
         self,
@@ -69,7 +66,7 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
     def _initialize_synthesizer(self) -> None:
         if self._fitting_kwargs is None:
             raise ValueError("Anonymization configuration must be initialized before synthesizer setup.")
-        self._initialize_llm_backend(mode="mixed_data_embedding_nearest_neighbor_consistency")
+        self._initialize_llm_backend(mode="mixed_data_embedding_nearest_neighbor")
 
     def _fit(self) -> None:
         LlmMixedDataParaphraseSynthesisSynthesizer._fit(self)
@@ -91,42 +88,18 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
         ]
         self._reference_vectors = [None] * len(self._reference_rows)
 
-    def _sample(self) -> pd.DataFrame:
-        if self.dataset is None or self._llm_client is None:
-            raise ValueError("Synthesizer is not initialized for LLM sampling.")
-
-        source = self.dataset.copy().reset_index(drop=True)
-        num_samples = self._resolve_num_samples(len(source), allow_exceed_default=True)
-        source = source.sample(n=num_samples, replace=num_samples > len(source)).reset_index(drop=True)
-        rows = source.to_dict(orient="records")
-        total = len(rows)
-        self._sample_start_time = pd.Timestamp.utcnow().timestamp()
-        self._reset_generation_counters()
-
-        generated_rows = []
-        for row_index, base_row in enumerate(rows):
-            rewritten_text = self._rewrite_row(base_row, row_index, total)
-            rewritten_row = {**base_row, **rewritten_text}
-            if rewritten_text[self._text_columns[0]] in {MISSING_VALUE_STRING, FAILED_TEXT_GENERATION}:
-                generated_rows.append(self._coerce_mixed_row(rewritten_row, base_row))
-            else:
-                generated_rows.append(self._align_structured_row(rewritten_row, base_row, row_index, total))
-            self.report_remaining_time(self._sample_start_time, len(generated_rows), total)
-
-        columns = [config["name"] for config in self._ordered_column_configs]
-        return pd.DataFrame(generated_rows, columns=columns)
-
-    def _build_rewrite_prompt(self, base_row: Dict[str, Any]) -> str:
-        return LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer._build_rewrite_prompt(self, base_row)
+    def _build_prompt_prefix(self) -> str:
+        return super()._build_prompt_prefix() + (
+            "- Use nearest-neighbor reference texts to construct a coherent new case around the fixed ground truth.\n"
+            "- Vary wording and narrative structure while keeping every required fact unchanged.\n\n"
+        )
 
     def _neighbor_examples(self, base_row: Dict[str, Any]) -> list[str]:
         if self._few_shot_examples <= 0 or not self._reference_rows or not self._reference_vectors:
             return []
 
         text_column = self._text_columns[0]
-        query_text = self.coerce_text(base_row.get(text_column))
-        if query_text == MISSING_VALUE_STRING:
-            return []
+        query_text = "; ".join(self._required_facts(base_row))
 
         query_vector = self._encode_query(query_text) if self._text_similarity_weight > 0 else None
         scored_examples: list[tuple[float, str]] = []
@@ -134,7 +107,7 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
             reference_text = self.coerce_text(row.get(text_column))
             if reference_text == MISSING_VALUE_STRING:
                 continue
-            if self._exclude_self_match and reference_text == query_text:
+            if self._exclude_self_match and reference_text == self.coerce_text(base_row.get(text_column)):
                 continue
 
             text_similarity = (
@@ -159,9 +132,11 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
             name = config["name"]
             column_type = str(config.get("type", "STRING")).upper()
             if column_type in {"INTEGER", "DECIMAL", "DATE"}:
-                profile = self._column_profiles.get(name, {})
-                maximum = self.to_float(profile.get("max"))
-                minimum = self.to_float(profile.get("min"))
+                reference = self._profile_data
+                values = [self._normalize_structured_similarity_value(config, value) for value in reference[name]]
+                values = [value for value in values if value is not None]
+                maximum = max(values) if values else None
+                minimum = min(values) if values else None
                 value_range = (maximum - minimum) if maximum is not None and minimum is not None else 1.0
                 max_distance = max(abs(value_range), 1.0)
                 base_function = self._linear_similarity(max_distance)

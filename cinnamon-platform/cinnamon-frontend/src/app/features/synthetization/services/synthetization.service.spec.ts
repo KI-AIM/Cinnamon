@@ -88,4 +88,28 @@ describe('SynthetizationService', () => {
       },
     });
   });
+  for (const name of ['ctgan', 'tvae', 'arf', 'ddpm', 'rtvae', 'bayesian_network']) {
+    it(`round-trips ${name} parameters, tuning and the text method`, () => {
+      const algorithm = {name, type: 'cross-sectional', version: '0.1'} as any;
+      (service as any)._algorithms = [algorithm];
+      const tuning = {enabled: true, sampler: 'grid', pruner: 'none', n_trials: 2, timeout_minutes: 5};
+      service.setHyperparameterConfig(tuning);
+      const values = {
+        model_parameter: {number_of_layers: 3},
+        model_fitting: {epochs: 17, batch_size: 32},
+        sampling: {num_samples: 123},
+        text_synthesis_configuration: {synthetization_configuration: {algorithm: {
+          synthesizer: 'llm_mixed_data_embedding_nearest_neighbor_synthesis',
+          model_parameter: {few_shot_examples: 5, structured_similarity_weight: 1, text_similarity_weight: 0},
+          sampling: {temperature: 0.4},
+        }}},
+      };
+      const serialized = service.createConfiguration(values, algorithm);
+      const restored = service.readConfiguration(serialized, 'synthetization_configuration');
+      expect(restored.config).toEqual(values);
+      expect(restored.selectedAlgorithm).toEqual(algorithm);
+      expect(service.getHyperparameterConfig()).toEqual(tuning);
+    });
+  }
+
 });

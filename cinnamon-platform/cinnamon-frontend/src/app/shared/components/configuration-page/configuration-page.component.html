@@ -1,7 +1,7 @@
 <ng-container *ngIf="pageData$ | async as data">
     <ng-container *ngIf="data.status.mode === Mode.STANDARD">
 
-        <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked" [numberSteps]="getNumberSteps(data.dataConfiguration)"
+        <app-workstep-list confirmLabel="Confirm configuration" [locked]="data.locked"
                            [numberSteps]="getTotalStepCount(data.dataConfiguration)"
                            [step]="step" [invalid]="submitInvalid"
                            (confirm)="submit()">
@@ -33,7 +33,7 @@
 
             <!-- Hyperparameter Tuning (optional, injected by the parent page) -->
             <app-workstep-item *ngIf="shouldShowIntermediateStep(data.dataConfiguration)" header="Configure hyperparameter tuning"
-                               [locked]="data.locked" [stepIndex]="3">
+                               [locked]="data.locked" [stepIndex]="3" [invalid]="intermediateStepInvalid">
                 <ng-container *ngTemplateOutlet="intermediateStep"></ng-container>
             </app-workstep-item>
 
@@ -97,7 +97,7 @@
             <ng-container *ngIf="shouldShowFreeTextSteps(data.dataConfiguration)">
                 <!-- Free-text Selection -->
                 <app-workstep-item header="Select the free-text synthesizer" [locked]="data.locked"
-                                   [stepIndex]="getFreeTextSelectionStepIndex(data.dataConfiguration)" [skip]="!hasFreeTextConfiguration"
+                                   [stepIndex]="getFreeTextSelectionStepIndex(data.dataConfiguration)"
                                    [invalid]="freeTextSelectionInvalid">
                     <ng-container *ngIf="forms?.form as rootForm">
                         <div [formGroup]="rootForm">
@@ -121,7 +121,7 @@
 
                 <!-- Free-text Configuration -->
                 <app-workstep-item header="Configure the free-text synthesizer" [locked]="data.locked"
-                                   [stepIndex]="getFreeTextConfigurationStepIndex(data.dataConfiguration)" [skip]="!hasFreeTextConfiguration"
+                                   [stepIndex]="getFreeTextConfigurationStepIndex(data.dataConfiguration)"
                                    [invalid]="freeTextConfigurationInvalid">
                     <ng-container *ngIf="getFreeTextAlgorithmGroup() as freeTextAlgorithmForm">
                         <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms, data.dataConfiguration) | async as freeTextDefinition">
@@ -158,7 +158,7 @@
             </app-configuration-selection>
         </app-workstep-box>
 
-        <app-workstep-box *ngIf="shouldShowIntermediateStep(data.dataConfiguration)" header="Hyperparameter Tuning">
+        <app-workstep-box *ngIf="shouldShowIntermediateStep(data.dataConfiguration)" header="Hyperparameter Tuning" [invalid]="intermediateStepInvalid">
             <ng-container *ngTemplateOutlet="intermediateStep"></ng-container>
         </app-workstep-box>
 
@@ -217,9 +217,9 @@
             </ng-template>
         </app-workstep-box>
 
-        <ng-container *ngIf="shouldShowFreeTextSteps(data.dataConfiguration) && hasFreeTextConfiguration && forms?.form as rootForm">
+        <ng-container *ngIf="shouldShowFreeTextSteps(data.dataConfiguration)">
             <app-workstep-box header="Free-Text Synthesizer Selection" [invalid]="freeTextSelectionInvalid">
-                <div [formGroup]="rootForm">
+                <div *ngIf="forms?.form as rootForm" [formGroup]="rootForm">
                     <div formGroupName="text_synthesis_configuration">
                         <div formGroupName="synthetization_configuration">
                             <div formGroupName="algorithm">

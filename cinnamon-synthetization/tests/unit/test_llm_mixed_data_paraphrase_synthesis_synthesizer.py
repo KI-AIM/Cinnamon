@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-import requests
+import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -46,229 +46,129 @@ class _DummyResponse:
         return self._payload
 
 
-def test_mixed_paraphrase_rewrites_text_then_aligns_structured_values(monkeypatch):
+SYNTHESIZERS = [
+    LlmMixedDataParaphraseSynthesisSynthesizer,
+    LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
+    LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
+]
+
+
+def _initialize(monkeypatch, cls, dataset, reference, configs, responses, model_params=None):
     _set_llm_env(monkeypatch)
     prompts = []
+    responses = iter(responses)
 
     def fake_request(method, url, **kwargs):
         if method == "GET":
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-        if method == "POST":
-            prompt = kwargs["json"]["prompt"]
-            prompts.append(prompt)
-            if len(prompts) == 1:
-                return _DummyResponse(
-                    {"response": json.dumps({"row": {"note": "Der 83-jährige Patient wurde entlassen."}})}
-                )
-            return _DummyResponse(
-                {
-                    "response": json.dumps(
-                        {"row": {"age": 83, "group": "A", "note": "must be ignored"}}
-                    )
-                }
-            )
-        raise AssertionError(f"Unexpected request: {method} {url}")
+        prompts.append(kwargs["json"]["prompt"])
+        return _DummyResponse({"response": json.dumps({"row": next(responses)})})
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    attribute_config = {
-        "configurations": [
-            {"index": 0, "name": "age", "type": "INTEGER"},
-            {"index": 1, "name": "group", "type": "STRING"},
-            {"index": 2, "name": "note", "type": "TEXT"},
-        ]
-    }
-    algorithm_config = {
-        "synthetization_configuration": {
-            "algorithm": {
-                "llm_profile": {"llm_profile": "Test Profile"},
-                "model_parameter": {"profile_rows": 50},
-                "model_fitting": {},
-                "sampling": {"num_samples": 1, "temperature": 0.2, "top_p": 0.9},
-            }
-        }
-    }
-    dataset = pd.DataFrame([{"age": 80, "group": "A", "note": "Entlassung des 83-jährigen Patienten."}])
-    reference = pd.DataFrame([{"age": 83, "group": "A", "note": "Referenztext"}])
-
-    synthesizer = LlmMixedDataParaphraseSynthesisSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
-    synthesizer.initialize_attribute_configuration(attribute_config)
+    synthesizer = cls()
+    synthesizer.initialize_anonymization_configuration({
+        "synthetization_configuration": {"algorithm": {
+            "llm_profile": {"llm_profile": "Test Profile"},
+            "model_parameter": model_params or {},
+            "model_fitting": {"indirect_identifier_level": "high"},
+            # A stale text-stage count must never resample or truncate synthetic structured rows.
+            "sampling": {"num_samples": 99, "temperature": 0.2, "top_p": 0.9},
+        }},
+    })
+    synthesizer.initialize_attribute_configuration({"configurations": configs})
     synthesizer.initialize_dataset(dataset)
     synthesizer.initialize_reference_dataset(reference)
     synthesizer.initialize_synthesizer()
     synthesizer.fit()
+    return synthesizer, prompts
 
-    sample = synthesizer.sample()
 
-    assert sample.to_dict(orient="records") == [
-        {"age": 83, "group": "A", "note": "Der 83-jährige Patient wurde entlassen."}
-    ]
+@pytest.mark.parametrize("cls", SYNTHESIZERS)
+def test_mixed_methods_preserve_ground_truth_and_generate_missing_text(monkeypatch, cls):
+    dataset = pd.DataFrame({
+        "age": pd.Series([80, 42], dtype="Int64"),
+        "group": ["A", "B"],
+        "note": [None, "note"],
+    })
+    reference = pd.DataFrame([{"age": 83, "group": "C", "note": "Gardening was discussed."}])
+    configs = [{"name": "age", "type": "INTEGER"}, {"name": "group", "type": "STRING"},
+               {"name": "note", "type": "TEXT"}]
+    texts = ["Gardening was discussed. age: 80; group: A.", "Routine visit. age: 42; group: B."]
+    synthesizer, prompts = _initialize(monkeypatch, cls, dataset, reference, configs,
+                                      [{"age": 999, "group": "wrong", "note": text} for text in texts])
+    result = synthesizer.sample()
+    pd.testing.assert_frame_equal(result[["age", "group"]], dataset[["age", "group"]])
+    assert result["note"].tolist() == texts
     assert len(prompts) == 2
-    assert '"age"' not in prompts[0]
-    assert "Statistical profiles were calculated from 1 of 1 reference rows." in prompts[1]
-    assert '"age": 80' in prompts[1]
-    assert '"note": "Der 83-jährige Patient wurde entlassen."' in prompts[1]
+    assert all('"age"' in prompt and "STRUCTURED GROUND TRUTH" in prompt for prompt in prompts)
+    assert all("Additional information absent from the structured schema" in prompt for prompt in prompts)
+    assert "Gardening was discussed." in prompts[0]
+    if cls is LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer:
+        assert "Selected anonymization level: HIGH" in prompts[0]
+        assert "ONLY to additional reference details absent from the ground truth" in prompts[0]
+        assert "NAME: Person names" in prompts[0]
 
 
-def test_mixed_indirect_identifier_rewrite_then_aligns_structured_values(monkeypatch):
-    _set_llm_env(monkeypatch)
-    prompts = []
-
-    def fake_request(method, url, **kwargs):
-        if method == "GET":
-            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
-        prompt = kwargs["json"]["prompt"]
-        prompts.append(prompt)
-        if len(prompts) == 1:
-            return _DummyResponse(
-                {"response": json.dumps({"row": {"note": "Der etwa 80-jährige Patient wurde entlassen."}})}
-            )
-        return _DummyResponse(
-            {"response": json.dumps({"row": {"age": 80, "note": "must be ignored"}})}
-        )
-
-    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-
-    attribute_config = {
-        "configurations": [
-            {"index": 0, "name": "age", "type": "INTEGER"},
-            {"index": 1, "name": "note", "type": "TEXT"},
-        ]
-    }
-    algorithm_config = {
-        "synthetization_configuration": {
-            "algorithm": {
-                "llm_profile": {"llm_profile": "Test Profile"},
-                "model_parameter": {"profile_rows": 100},
-                "model_fitting": {"indirect_identifier_level": "high"},
-                "sampling": {"num_samples": 1, "temperature": 0.2, "top_p": 0.9},
-            }
-        }
-    }
-    dataset = pd.DataFrame([{"age": 83, "note": "Der 83-jährige Max Mustermann wurde entlassen."}])
-    reference = pd.DataFrame([{"age": 80, "note": "Referenztext"}])
-
-    synthesizer = LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
-    synthesizer.initialize_attribute_configuration(attribute_config)
-    synthesizer.initialize_dataset(dataset)
-    synthesizer.initialize_reference_dataset(reference)
-    synthesizer.initialize_synthesizer()
-    synthesizer.fit()
-
-    sample = synthesizer.sample()
-
-    assert sample.to_dict(orient="records") == [
-        {"age": 80, "note": "Der etwa 80-jährige Patient wurde entlassen."}
-    ]
+def test_mixed_retries_incomplete_text_without_returning_it(monkeypatch):
+    dataset = pd.DataFrame([{"age": 8, "note": None}])
+    configs = [{"name": "age", "type": "INTEGER"}, {"name": "note", "type": "TEXT"}]
+    synth, prompts = _initialize(monkeypatch, SYNTHESIZERS[0], dataset, dataset, configs,
+                                [{"note": "age: 80"}, {"note": "Follow-up. age: 8."}])
+    assert synth.sample()["note"].tolist() == ["Follow-up. age: 8."]
     assert len(prompts) == 2
-    assert "expert clinical de-identification rewriter" in prompts[0]
-    assert "selected anonymization level: HIGH" in prompts[0]
-    assert "NAME: Person names, initials, aliases, usernames, or handles" in prompts[0]
-    assert "Action: Replace span with [NAME]." in prompts[0]
-    assert "APPEARANCE: Person or infant weight, height, body traits or changes" in prompts[0]
-    assert "Strongly abstract or plausibly replace distinctive appearance." in prompts[0]
-    assert "Redact detected values of this category" not in prompts[0]
-    assert '"age"' not in prompts[0]
-    assert "Statistical profiles were calculated from 1 of 1 reference rows." in prompts[1]
-    assert '"note": "Der etwa 80-jährige Patient wurde entlassen."' in prompts[1]
 
 
-def test_mixed_embedding_combines_structured_similarity_and_generates_extra_rows(monkeypatch):
-    _set_llm_env(monkeypatch)
-    prompts = []
+def test_mixed_fails_if_llm_never_covers_all_facts(monkeypatch):
+    dataset = pd.DataFrame([{"age": 8, "note": None}])
+    configs = [{"name": "age", "type": "INTEGER"}, {"name": "note", "type": "TEXT"}]
+    synth, _ = _initialize(monkeypatch, SYNTHESIZERS[0], dataset, dataset, configs,
+                           [{"note": "No facts."}, {"note": "age: 8.5"}])
+    with pytest.raises(RuntimeError, match="ground truth"):
+        synth.sample()
 
-    def fake_request(method, url, **kwargs):
-        if method == "GET":
-            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
 
-        prompt = kwargs["json"]["prompt"]
-        prompts.append(prompt)
-        if "SOURCE ROW" in prompt:
-            assert '"age"' not in prompt.split("SOURCE ROW", 1)[1].split("NEAREST-NEIGHBOR", 1)[0]
-            assert "Gardening was discussed during an otherwise routine visit." in prompt
-            assert "Hypertension required urgent medication adjustment." not in prompt
-            return _DummyResponse(
-                {"response": json.dumps({"row": {"note": "A new clinically plausible report."}})}
-            )
-        return _DummyResponse(
-            {"response": json.dumps({"row": {"age": 45, "visit_date": "02.01.2024", "note": "ignored"}})}
-        )
+def test_nearest_neighbors_query_synthetic_attributes_without_source_text(monkeypatch):
+    configs = [{"name": "age", "type": "INTEGER"},
+               {"name": "visit_date", "type": "DATE", "configurations": [{"dateFormatter": "dd.MM.yyyy"}]},
+               {"name": "note", "type": "TEXT"}]
+    dataset = pd.DataFrame([{"age": 80, "visit_date": "02.01.2024", "note": None}])
+    reference = pd.DataFrame([
+        {"age": 20, "visit_date": "01.01.2010", "note": "Hypertension treatment."},
+        {"age": 80, "visit_date": "02.01.2024", "note": "Gardening was discussed."},
+    ])
+    synth, prompts = _initialize(monkeypatch, SYNTHESIZERS[2], dataset, reference, configs,
+        [{"note": "Gardening. age: 80; visit_date: 02.01.2024."}],
+        {"few_shot_examples": 1, "text_similarity_weight": 0, "structured_similarity_weight": 1})
+    result = synth.sample()
+    assert len(result) == 1
+    assert result["visit_date"].tolist() == ["02.01.2024"]
+    assert "Gardening was discussed." in prompts[0]
+    assert "Hypertension treatment." not in prompts[0]
 
-    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
 
-    date_config = {
-        "index": 1,
-        "name": "visit_date",
-        "type": "DATE",
-        "configurations": [{"dateFormatter": "dd.MM.yyyy"}],
-    }
-    attribute_config = {
-        "configurations": [
-            {"index": 0, "name": "age", "type": "INTEGER"},
-            date_config,
-            {"index": 2, "name": "note", "type": "TEXT"},
-        ]
-    }
-    algorithm_config = {
-        "synthetization_configuration": {
-            "algorithm": {
-                "llm_profile": {"llm_profile": "Test Profile"},
-                "model_parameter": {
-                    "profile_rows": 99,
-                    "few_shot_examples": 1,
-                    "embedding_provider": "bm25",
-                    "similarity_function": "sparse_cosine",
-                    "exclude_self_match": True,
-                    "text_similarity_weight": 0.0,
-                    "structured_similarity_weight": 1.0,
-                },
-                "model_fitting": {},
-                "sampling": {"num_samples": 3, "temperature": 0.8, "top_p": 0.95},
-            }
-        }
-    }
-    source_date = int(pd.Timestamp("2024-01-02").timestamp())
-    old_date = int(pd.Timestamp("2010-01-01").timestamp())
-    dataset = pd.DataFrame([{"age": 80, "visit_date": source_date, "note": "Hypertension follow-up."}])
-    reference = pd.DataFrame(
-        [
-            {
-                "age": 20,
-                "visit_date": old_date,
-                "note": "Hypertension required urgent medication adjustment.",
-            },
-            {
-                "age": 80,
-                "visit_date": source_date,
-                "note": "Gardening was discussed during an otherwise routine visit.",
-            },
-        ]
-    )
+def test_embedding_query_uses_structured_facts(monkeypatch):
+    dataset = pd.DataFrame([{"diagnosis": "Asthma", "note": None}])
+    reference = pd.DataFrame([{"diagnosis": "Asthma", "note": "Asthma follow-up."},
+                              {"diagnosis": "Fracture", "note": "Fracture follow-up."}])
+    configs = [{"name": "diagnosis", "type": "STRING"}, {"name": "note", "type": "TEXT"}]
+    synth, prompts = _initialize(monkeypatch, SYNTHESIZERS[2], dataset, reference, configs,
+        [{"note": "Routine review. diagnosis: Asthma."}],
+        {"few_shot_examples": 1, "text_similarity_weight": 1, "structured_similarity_weight": 0})
+    synth.sample()
+    assert "Asthma follow-up." in prompts[0]
+    assert "Fracture follow-up." not in prompts[0]
 
-    synthesizer = LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer()
-    synthesizer.initialize_anonymization_configuration(algorithm_config)
-    synthesizer.initialize_attribute_configuration(attribute_config)
-    synthesizer.initialize_dataset(dataset)
-    synthesizer.initialize_reference_dataset(reference)
-    synthesizer.initialize_synthesizer()
-    synthesizer.fit()
 
-    sample = synthesizer.sample()
-
-    assert len(sample) == 3
-    assert sample["age"].tolist() == [45, 45, 45]
-    assert sample["note"].tolist() == ["A new clinically plausible report."] * 3
-    assert len(prompts) == 6
-    assert all(
-        "Statistical profiles were calculated from 2 of 2 reference rows." in prompt
-        for prompt in prompts
-        if "STRUCTURED OUTPUT TEMPLATE WITH REWRITTEN TEXT" in prompt
-    )
-    assert all(
-        '"age": null' in prompt and '"visit_date": null' in prompt
-        for prompt in prompts
-        if "STRUCTURED OUTPUT TEMPLATE WITH REWRITTEN TEXT" in prompt
-    )
-    assert synthesizer._normalize_structured_similarity_value(date_config, "02.01.2024") == source_date
+def test_ground_truth_preserves_missing_false_zero_dates_and_decimals(monkeypatch):
+    dataset = pd.DataFrame([{"age": 0, "active": False, "weight": 65.125,
+                             "visit_date": "02.01.2024", "unknown": pd.NA, "note": None}])
+    configs = [{"name": name, "type": kind} for name, kind in
+               [("age", "INTEGER"), ("active", "BOOLEAN"), ("weight", "DECIMAL"),
+                ("visit_date", "DATE"), ("unknown", "INTEGER"), ("note", "TEXT")]]
+    configs[3]["configurations"] = [{"dateFormatter": "dd.MM.yyyy"}]
+    text = "age: 0; active: false; weight: 65.125; visit_date: 02.01.2024."
+    synth, prompts = _initialize(monkeypatch, SYNTHESIZERS[0], dataset, dataset, configs, [{"note": text}])
+    result = synth.sample()
+    pd.testing.assert_frame_equal(result.drop(columns="note"), dataset.drop(columns="note"))
+    assert result["note"].tolist() == [text]
+    assert '"unknown": null' in prompts[0]

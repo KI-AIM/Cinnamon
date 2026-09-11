@@ -86,7 +86,7 @@ synthesizer_classes = {
         'type': 'cross-sectional',
         'class': LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
         'display_name': 'LLM Mixed-data Embedding Nearest-neighbor Synthesis',
-        'description': 'Generate TEXT from weighted free-text and structured nearest neighbors, then align structured values with the generated text using statistical profiles.',
+        'description': 'Retrieve reference texts using synthetic structured facts and weighted embedding or attribute similarity. Generate text containing every ground-truth fact and optional consistent reference details.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_embedding_nearest_neighbor_synthesis.yaml'
     },
     'llm_mixed_data_indirect_identifier_rewrite_synthesis': {
@@ -94,7 +94,7 @@ synthesizer_classes = {
         'type': 'cross-sectional',
         'class': LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
         'display_name': 'LLM Mixed-data Indirect Identifier Rewrite Synthesis',
-        'description': 'Rewrite one TEXT column to reduce direct and indirect identifiability, then align structured values with the rewritten text using statistical column profiles.',
+        'description': 'Generate text from synthetic structured ground truth while generalizing additional reference identifiers. Every structured fact remains unchanged and must occur in the text.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_indirect_identifier_rewrite_synthesis.yaml'
     },
     'llm_mixed_data_paraphrase_synthesis': {
@@ -102,7 +102,7 @@ synthesizer_classes = {
         'type': 'cross-sectional',
         'class': LlmMixedDataParaphraseSynthesisSynthesizer,
         'display_name': 'LLM Mixed-data Paraphrase Synthesis',
-        'description': 'Paraphrase one TEXT column and then align the structured values with the rewritten text in a second LLM call using statistical column profiles.',
+        'description': 'Generate text by paraphrasing reference context around synthetic structured ground truth. Every structured fact must occur in the text; structured values remain unchanged.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_paraphrase_synthesis.yaml'
     },
     'llm_text_only_paraphrase_synthesis': {

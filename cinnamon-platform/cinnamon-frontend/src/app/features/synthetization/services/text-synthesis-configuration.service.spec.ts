@@ -47,13 +47,13 @@ describe("TextSynthesisConfigurationService", () => {
                         llm_profile: "Local Ollama",
                     },
                     model_parameter: {
-                        few_shot_rows: 2,
+                        few_shot_examples: 2,
                         similarity_strategy: "Attributes",
                         knowledge_source_type: "NOT_IMPLEMENTED",
                     },
                     model_fitting: {
                         user_prompt_domain_context: "",
-                        allow_structured_corrections: true,
+                        exclude_self_match: true,
                     },
                     sampling: {
                         temperature: 0.3,
@@ -67,10 +67,10 @@ describe("TextSynthesisConfigurationService", () => {
 
         const algorithmGroup = root.get("text_synthesis_configuration.synthetization_configuration.algorithm") as any;
         expect(algorithmGroup.get("llm_profile.llm_profile")?.value).toBe("Local Ollama");
-        expect(algorithmGroup.get("model_parameter.few_shot_rows")?.value).toBe(2);
+        expect(algorithmGroup.get("model_parameter.few_shot_examples")?.value).toBe(2);
         expect(algorithmGroup.get("model_parameter.similarity_strategy")?.value).toBe("Attributes");
         expect(algorithmGroup.get("model_parameter.knowledge_source_type")).toBeNull();
-        expect(algorithmGroup.get("model_fitting.allow_structured_corrections")?.value).toBeTrue();
+        expect(algorithmGroup.get("model_fitting.exclude_self_match")?.value).toBeTrue();
         expect(algorithmGroup.get("sampling.temperature")?.value).toBe(0.3);
     });
 
@@ -117,7 +117,7 @@ function createDefinition(): AlgorithmDefinition {
                 description: "",
                 parameters: [
                     {
-                        name: "few_shot_rows",
+                        name: "few_shot_examples",
                         type: ConfigurationInputType.INTEGER,
                         label: "Few-Shot Rows",
                         description: "",
@@ -164,9 +164,9 @@ function createDefinition(): AlgorithmDefinition {
                         switch: null,
                     },
                     {
-                        name: "allow_structured_corrections",
+                        name: "exclude_self_match",
                         type: ConfigurationInputType.BOOLEAN,
-                        label: "Allow Structured Corrections",
+                        label: "Exclude Identical Source Text",
                         description: "",
                         default_value: true,
                         mandatory: true,

@@ -4,6 +4,7 @@ import types
 from pathlib import Path
 
 import yaml
+import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -593,8 +594,8 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
     monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
-    data = app_module.pd.DataFrame([{"age": 50, "note": "[TEXT_PENDING_LLM]"}])
-    original_data = app_module.pd.DataFrame([{"age": 70, "note": "original note"}])
+    data = app_module.pd.DataFrame([{"note": "[TEXT_PENDING_LLM]"}])
+    original_data = app_module.pd.DataFrame([{"note": "original note"}])
     session_key = "text-reference-original-data"
     status_path = _status_file_path(session_key)
     _delete_status_file(session_key)
@@ -603,7 +604,7 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
     result = app_module.synthesize_data(
         "llm_text_synth",
         str(status_path),
-        _text_attribute_config(),
+        {"configurations": [{"name": "note", "type": "TEXT", "index": 0}]},
         _algorithm_config(),
         data,
         original_data,
@@ -619,65 +620,17 @@ def test_synthesize_data_uses_original_data_as_text_reference_dataset(monkeypatc
     _delete_status_file(session_key)
 
 
-def test_synthesize_data_runs_mixed_llm_without_structured_synthesis(monkeypatch):
-    captured_calls = []
-
-    class DummyResponse:
-        status_code = 200
-
-        @staticmethod
-        def raise_for_status():
-            return None
-
-    def fake_run_synthesizer_stage(**kwargs):
-        captured_calls.append(kwargs)
-        return kwargs["input_data"].copy(), b"model", 0.1, 0.2, 0.3
-
-    monkeypatch.setattr(
-        app_module,
-        "synthesizer_classes",
-        {
-            "llm_mixed": {"class": object},
-        },
-    )
-    monkeypatch.setattr(
-        app_module,
-        "get_data_modality",
-        lambda _name: "mixed",
-    )
-    monkeypatch.setattr(
-        app_module,
-        "load_text_synthesis_defaults",
-        lambda _name: {"llm_profile": {}, "model_parameter": {}, "model_fitting": {}, "sampling": {}},
-    )
-    monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
-    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
-
-    data = app_module.pd.DataFrame([{"age": 80, "note": "83-year-old patient"}])
-    session_key = "direct-mixed-synthesis"
-    status_path = _status_file_path(session_key)
-    _delete_status_file(session_key)
-    initialize_status_file(str(status_path), session_key, "llm_mixed")
-
+def test_synthesize_data_rejects_legacy_direct_mixed_synthesis(monkeypatch, tmp_path):
+    monkeypatch.setattr(app_module, "synthesizer_classes", {"llm_mixed": {"class": object}})
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _: "mixed")
+    errors = []
+    monkeypatch.setattr(app_module, "send_callback_error", lambda *args: errors.append(args))
     result = app_module.synthesize_data(
-        "llm_mixed",
-        str(status_path),
-        _text_attribute_config(),
-        _algorithm_config(),
-        data,
-        None,
-        "http://callback.local/test",
-        session_key,
+        "llm_mixed", str(tmp_path / "status.yaml"), _text_attribute_config(), _algorithm_config(),
+        app_module.pd.DataFrame([{"age": 80, "note": "Source"}]), None, "http://callback", "test",
     )
-
-    assert result["status_code"] == 200
-    assert len(captured_calls) == 1
-    assert captured_calls[0]["stage_label"] == "MIXED_SYNTHESIS"
-    assert captured_calls[0]["replace_text_with_pending"] is False
-    assert captured_calls[0]["input_data"].equals(data)
-    assert captured_calls[0]["reference_data"].equals(data)
-
-    _delete_status_file(session_key)
+    assert result["status_code"] == 500
+    assert "structured synthesizer first" in errors[0][2]
 
 
 def test_synthesize_data_marks_llm_component_before_text_stage_starts(monkeypatch):
@@ -711,7 +664,7 @@ def test_synthesize_data_marks_llm_component_before_text_stage_starts(monkeypatc
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
     monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
-    data = app_module.pd.DataFrame([{"age": 50, "note": "input note"}])
+    data = app_module.pd.DataFrame([{"note": "input note"}])
     session_key = "text-component-visible-early"
     status_path = _status_file_path(session_key)
     _delete_status_file(session_key)
@@ -720,7 +673,7 @@ def test_synthesize_data_marks_llm_component_before_text_stage_starts(monkeypatc
     result = app_module.synthesize_data(
         "llm_text_synth",
         str(status_path),
-        _text_attribute_config(),
+        {"configurations": [{"name": "note", "type": "TEXT", "index": 0}]},
         _algorithm_config(),
         data,
         None,
@@ -764,7 +717,7 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
     monkeypatch.setattr(app_module, "run_synthesizer_stage", fake_run_synthesizer_stage)
     monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: DummyResponse())
 
-    data = app_module.pd.DataFrame([{"age": 50, "note": "input note"}])
+    data = app_module.pd.DataFrame([{"note": "input note"}])
     session_key = "text-reference-fallback-data"
     status_path = _status_file_path(session_key)
     _delete_status_file(session_key)
@@ -773,7 +726,7 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
     result = app_module.synthesize_data(
         "llm_text_synth",
         str(status_path),
-        _text_attribute_config(),
+        {"configurations": [{"name": "note", "type": "TEXT", "index": 0}]},
         _algorithm_config(),
         data,
         None,
@@ -789,7 +742,7 @@ def test_synthesize_data_falls_back_to_input_data_when_original_data_is_missing(
     _delete_status_file(session_key)
 
 
-def test_synthesize_data_rejects_structured_synthesizer_for_text_columns(monkeypatch):
+def test_synthesize_data_requires_text_method_for_mixed_data(monkeypatch):
     captured_calls = []
 
     class DummyResponse:
@@ -987,3 +940,117 @@ def test_build_text_synthesis_algorithm_config_preserves_num_samples_for_direct_
     algorithm = config["synthetization_configuration"]["algorithm"]
     assert algorithm["sampling"]["num_samples"] == 2
     assert algorithm["sampling"]["temperature"] == 0.8
+
+
+@pytest.mark.parametrize("structured_name", ["ctgan", "tvae", "arf", "ddpm", "rtvae", "bayesian_network", "llm_tabular"])
+@pytest.mark.parametrize("with_original", [False, True])
+@pytest.mark.parametrize("text_samples", [None, 6])
+def test_structured_then_text_pipeline_preserves_config_rows_and_models(monkeypatch, tmp_path, structured_name, with_original, text_samples):
+    import cloudpickle
+    import pandas as pd
+
+    calls, callbacks = [], []
+    text_name = "llm_mixed_data_embedding_nearest_neighbor_synthesis"
+    monkeypatch.setattr(app_module, "synthesizer_classes", {structured_name: {}, text_name: {}})
+    monkeypatch.setattr(app_module, "get_data_modality", lambda name: "mixed" if name == text_name else "structured_only")
+    monkeypatch.setattr(app_module, "send_callback_error", lambda *args: pytest.fail(str(args)))
+    count = text_samples or 3
+    synthetic = pd.DataFrame({"age": pd.Series(([65, 42, None] * 2)[:count], dtype="Int64")})
+
+    def run_stage(**kwargs):
+        calls.append(kwargs)
+        if kwargs["stage_label"] == "STRUCTURED_SYNTHESIS":
+            assert list(kwargs["input_data"].columns) == ["age"]
+            assert kwargs["stage_algorithm_config"]["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] == count
+            return synthetic.copy(), b"structured-model", 1, 2, 3
+        pd.testing.assert_frame_equal(kwargs["input_data"][["age"]], synthetic)
+        assert kwargs["preserve_structured_values"] is True
+        assert kwargs["input_data"].iloc[:, -1].isna().all()
+        result = kwargs["input_data"].copy()
+        result[result.columns[-1]] = [f"Text {i}" for i in range(count)]
+        return result, b"text-model", 1, 2, 3
+
+    monkeypatch.setattr(app_module, "run_synthesizer_stage", run_stage)
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: (
+        callbacks.append(kwargs) or types.SimpleNamespace(status_code=200, raise_for_status=lambda: None)))
+    attrs = {"configurations": [{"name": "note", "type": "TEXT", "index": 0},
+                                {"name": "age", "type": "INTEGER", "index": 1},
+                                {"name": "report", "type": "TEXT", "index": 2}]}
+    data = pd.DataFrame([{"age": 80, "note": "Input", "report": "Report"}])
+    original = pd.DataFrame([{"age": 90, "note": "Original", "report": "Original report"}]) if with_original else None
+    config = {"synthetization_configuration": {
+        "algorithm": {"synthesizer": structured_name, "model_parameter": {"number_of_layers": 3},
+                      "model_fitting": {"epochs": 17}, "sampling": {"num_samples": 3},
+                      "hyperparameter_tuning": {"enabled": structured_name != "llm_tabular", "n_trials": 2,
+                                                "sampler": "grid", "pruner": "none", "timeout_minutes": 5}},
+        "text_synthesis_configuration": {"synthetization_configuration": {"algorithm": {
+            "synthesizer": text_name, "model_parameter": {"few_shot_examples": 5},
+            "sampling": {"num_samples": text_samples, "temperature": 0.4},
+        }}},
+    }}
+    status = tmp_path / "status.yaml"
+    initialize_status_file(str(status), "pipeline", structured_name)
+    result = app_module.synthesize_data(structured_name, str(status), attrs, config, data, original,
+                                        "http://callback", "pipeline")
+    assert result["status_code"] == 200
+    assert len(calls) == 3
+    original_algorithm = config["synthetization_configuration"]["algorithm"]
+    executed_algorithm = calls[0]["stage_algorithm_config"]["synthetization_configuration"]["algorithm"]
+    assert executed_algorithm == {**original_algorithm, "sampling": {"num_samples": count}}
+    assert original_algorithm["sampling"]["num_samples"] == 3
+    for call in calls[1:]:
+        algorithm = call["stage_algorithm_config"]["synthetization_configuration"]["algorithm"]
+        assert algorithm["sampling"]["num_samples"] == count
+        assert algorithm["sampling"]["temperature"] == 0.4
+        assert algorithm["model_parameter"]["few_shot_examples"] == 5
+        assert "hyperparameter_tuning" not in algorithm
+        pd.testing.assert_frame_equal(call["reference_data"],
+            (original if original is not None else data)[list(call["input_data"].columns)])
+    files = callbacks[0]["files"]
+    output = pd.read_csv(files["synthetic_data"][1])
+    assert len(output) == count
+    assert list(output.columns) == ["note", "age", "report"]
+    assert output["age"].iloc[:2].tolist() == [65, 42]
+    assert pd.isna(output["age"].iloc[2])
+    model = cloudpickle.load(files["model"][1])
+    assert model == {"structured_synthesis": b"structured-model",
+                     "text_synthesis": {"note": b"text-model", "report": b"text-model"}}
+    assert config["synthetization_configuration"]["text_synthesis_configuration"]["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] == text_samples
+
+
+def test_text_stage_preserves_final_structured_values_without_preprocessing(monkeypatch, tmp_path):
+    import pandas as pd
+    from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synthesis import (
+        LlmMixedDataParaphraseSynthesisSynthesizer,
+    )
+
+    text = "age: 0; active: false; weight: 65.125; visit_date: 02.01.2024."
+
+    class LocalTextSynthesizer(LlmMixedDataParaphraseSynthesisSynthesizer):
+        def _initialize_anonymization_configuration(self, config):
+            self._fitting_kwargs = {"max_retries": 1}
+
+        def _initialize_synthesizer(self):
+            self._llm_client = types.SimpleNamespace(generate_text=lambda _: '{"row": {"note": "' + text + '"}}')
+
+    def forbid_preprocessing(*args, **kwargs):
+        pytest.fail("The text stage must not impute, round, or drop ground-truth data")
+
+    monkeypatch.setattr(app_module, "synthesizer_classes", {"local_text": {"class": LocalTextSynthesizer}})
+    monkeypatch.setattr(app_module, "pre_process_dataframe", forbid_preprocessing)
+    monkeypatch.setattr(app_module, "post_process_dataframe", forbid_preprocessing)
+    source = pd.DataFrame({"age": pd.Series([0], dtype="Int64"), "active": [False], "weight": [65.125],
+                           "visit_date": ["02.01.2024"], "unknown": pd.Series([None], dtype="Int64"), "note": [None]})
+    attrs = {"configurations": [{"name": name, "type": kind} for name, kind in
+             [("age", "INTEGER"), ("active", "BOOLEAN"), ("weight", "DECIMAL"),
+              ("visit_date", "DATE"), ("unknown", "INTEGER"), ("note", "TEXT")]]}
+    attrs["configurations"][3]["configurations"] = [{"dateFormatter": "dd.MM.yyyy"}]
+    status = tmp_path / "status.yaml"
+    initialize_status_file(str(status), "text-stage", "local_text")
+    samples, *_ = app_module.run_synthesizer_stage(
+        stage_label="TEXT_SYNTHESIS", synthesizer_name="local_text", stage_attribute_config=attrs,
+        stage_algorithm_config={}, input_data=source, reference_data=source,
+        file_path_status=str(status), preserve_structured_values=True,
+    )
+    pd.testing.assert_frame_equal(samples.drop(columns="note"), source.drop(columns="note"))
+    assert samples["note"].tolist() == [text]

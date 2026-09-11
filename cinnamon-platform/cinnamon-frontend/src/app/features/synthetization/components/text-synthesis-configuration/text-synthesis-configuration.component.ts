@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { FormGroup } from "@angular/forms";
 import { AdditionalConfigurationGroup } from "@shared/interfaces/AdditionalConfigurationGroup";
-import { Algorithm, isTextOnlySynthesizer, supportsFreeTextData } from "@shared/model/algorithm";
+import { Algorithm, isMixedDataSynthesizer, supportsFreeTextData } from "@shared/model/algorithm";
 import { AlgorithmService } from "@shared/services/algorithm.service";
 import { map, Observable } from "rxjs";
 import { TextSynthesisConfigurationService } from "../../services/text-synthesis-configuration.service";
@@ -26,7 +26,7 @@ export class TextSynthesisConfigurationComponent implements AdditionalConfigurat
     public ngOnInit(): void {
         this.textSynthesizerAlgorithms$ = this.algorithmService.algorithms.pipe(
             map(algorithms => algorithms.filter(algorithm => {
-                return supportsFreeTextData(algorithm) && isTextOnlySynthesizer(algorithm);
+                return supportsFreeTextData(algorithm) && isMixedDataSynthesizer(algorithm);
             })),
         );
     }

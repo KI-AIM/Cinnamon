@@ -16,7 +16,10 @@ Running the tests requires a database to be set up.
 For this multiple options are available:
 
 - PostgreSQL database running on localhost (user and database have to be created manually and configured in the
-  `spring.datasource.url` property in the [application-test.properties](src/test/resources/application-test.properties))
+  `spring.datasource.url` property in the [application-test.properties](src/test/resources/application-test.properties)) -
+  a [docker-compose.yml](docker/docker-compose.yml) is provided to start such a database via
+  `cd docker && docker-compose up -d`; it also creates the dev database used when running cinnamon-platform locally
+  (see `application-dev.properties.example`)
 - PostgreSQL database with TestContainers (docker must be installed and running)
 - H2 in-memory database (no need to set up anything)
 

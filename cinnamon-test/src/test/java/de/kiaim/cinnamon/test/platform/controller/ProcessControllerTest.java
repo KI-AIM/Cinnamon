@@ -766,7 +766,7 @@ public class ProcessControllerTest extends ControllerTest {
 		String id = setupAndStartProcess();
 
 		// Send callback request with error JSON
-		ErrorDetails errorDetails = new ErrorDetails("config", null, null, null);
+		ErrorDetails errorDetails = new ErrorDetails("config", null, null, null, null);
 		ErrorRequest errorRequest = new ErrorRequest("about:blank", "TEST_123", "Process failed", errorDetails);
 
 		mockMvc.perform(post("/api/project/" + testProject.getExternalId() + "/process/" + id + "/callback")

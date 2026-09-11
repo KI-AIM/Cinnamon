@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.kiaim.cinnamon.model.configuration.ConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.enumeration.DataType;
+import de.kiaim.cinnamon.model.validation.UniqueColumnIndexConstraint;
 import de.kiaim.cinnamon.model.validation.UniqueColumnNamesConstraint;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -84,6 +85,7 @@ public class DataConfiguration implements ConfigurationDTO, Serializable {
 			            pattern: .*
 			        """)
 	@NotNull(message = "The column configurations must be present!")
+	@UniqueColumnIndexConstraint
 	@UniqueColumnNamesConstraint
 	List<@Valid ColumnConfiguration> configurations;
 

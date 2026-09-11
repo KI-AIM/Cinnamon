@@ -2,8 +2,10 @@ package de.kiaim.cinnamon.model.configuration;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.ImportConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
@@ -54,6 +56,12 @@ public class ConfigurationFile {
 	public static final String FILE_CONFIGURATION_KEY = "file";
 
 	/**
+	 * Key for the import configuration (see {@link ImportConfigurationDTO}).
+	 * Matches the name of the field {@link #getImport_()}.
+	 */
+	public static final String IMPORT_CONFIGURATION_KEY = "import";
+
+	/**
 	 * Key for the dataset configuration (see {@link FileConfiguration}).
 	 */
 	public static final String DATASET_CONFIGURATION_KEY = "dataset";
@@ -95,6 +103,15 @@ public class ConfigurationFile {
 	@Valid
 	@Nullable
 	private DataConfiguration attributes;
+
+	/**
+	 * Configuration of the import process.
+	 */
+	@Schema(description = "Configuration of the import process.")
+	@JsonProperty(IMPORT_CONFIGURATION_KEY)
+	@Valid
+	@Nullable
+	private ImportConfigurationDTO import_;
 
 	/**
 	 * Configuration of dataset properties not related to a single attribute.

@@ -83,21 +83,26 @@ public class FhirProcessor implements DataProcessor {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Returns the column names containing the FHIR paths from the bundle of the specified resource.
+	 *
+	 * @param data              The FHIR bundle.
+	 * @param fileConfiguration The file configuration.
+	 * @return List of column names.
+	 * @throws InternalIOException If reading the FHIR bundle failed.
 	 */
 	@Override
-	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration
-	) throws InternalIOException {
+	public List<String> getAttributeNames(final InputStream data,
+	                                      final FileConfigurationEntity fileConfiguration) throws InternalIOException {
 		final FhirFileConfigurationEntity fhirFileConfiguration = (FhirFileConfigurationEntity) fileConfiguration;
 		if (fhirFileConfiguration.getResourceType() == null) {
 			// The resource type can be null after the estimation
-			return 0;
+			return List.of();
 		}
 
 		final CSVFormat csvFormat = buildCsvFormat();
 		final String csvString = getCsvString(data, fhirFileConfiguration, csvFormat);
 		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
-		return csvProcessor.getNumberColumns(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
+		return csvProcessor.getAttributeNames(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
 	}
 
 	/**
@@ -135,22 +140,6 @@ public class FhirProcessor implements DataProcessor {
 	 */
 	@Override
 	public void write(OutputStream outputStream, DataSet dataset) {
-	}
-
-	/**
-	 * Returns the column names containing the FHIR paths from the bundle of the specified resource.
-	 *
-	 * @param data              The FHIR bundle.
-	 * @param fileConfiguration The file configuration.
-	 * @return List of column names.
-	 * @throws InternalIOException If reading the FHIR bundle failed.
-	 */
-	public List<String> getAttributeNames(final InputStream data,
-	                                      final FileConfigurationEntity fileConfiguration) throws InternalIOException {
-		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, (FhirFileConfigurationEntity) fileConfiguration, csvFormat);
-		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
-		return csvProcessor.getFirstRow(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
 	}
 
 	/**

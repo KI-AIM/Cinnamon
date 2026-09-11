@@ -15,6 +15,7 @@ import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 public interface DataProcessor {
 
@@ -47,16 +48,17 @@ public interface DataProcessor {
 			throws InternalIOException;
 
 	/**
-	 * Returns the number of columns in the given data.
+	 * Returns a list of attribute names in the given data.
+	 * If the file has a natural order of the attributes, the names should be returned in that order.
 	 * This method might be called directly after the estimation.
-	 * Implementations must be able to handle the value returned by {@link #estimateFileConfiguration(LobWrapperEntity, FileCompatibilityEntity)}.
+	 * Implementations must be able to handle the value returned by {@link #estimateFileConfiguration
 	 *
 	 * @param data              The raw data InputStream
 	 * @param fileConfiguration Configuration describing the format of the data.
 	 * @return The number of columns in the data.
 	 * @throws InternalIOException If reading the data failed.
 	 */
-	int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) throws InternalIOException;
+	List<String> getAttributeNames(InputStream data, FileConfigurationEntity fileConfiguration) throws InternalIOException;
 
 	/**
 	 * Receives data from the frontend, converts it to

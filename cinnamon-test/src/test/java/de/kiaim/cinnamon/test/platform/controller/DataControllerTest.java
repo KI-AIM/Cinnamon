@@ -438,6 +438,42 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	@Test
+	void storeConfigDuplicateName() throws Exception {
+		postFile();
+
+		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		var name = configuration.getConfigurations().get(0).getName();
+		configuration.getConfigurations().get(1).setName(name);
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
+				                .param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("configuration.configurations[0].name", "All column names must be unique!"))
+		       .andExpect(validationError("configuration.configurations[1].name", "All column names must be unique!"));
+	}
+
+	@Test
+	void storeConfigDuplicateIndex() throws Exception {
+		postFile();
+
+		var configuration = DataConfigurationTestHelper.generateDataConfiguration();
+		var index = configuration.getConfigurations().get(0).getIndex();
+		configuration.getConfigurations().get(1).setIndex(index);
+		var string = jsonMapper.writeValueAsString(configuration);
+
+		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
+				                .param("configuration", string))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(errorMessage("Request validation failed"))
+		       .andExpect(errorCode(ApiException.assembleErrorCode("3", "2", "1")))
+		       .andExpect(validationError("configuration.configurations[0].index", "All column indices must be unique!"))
+		       .andExpect(validationError("configuration.configurations[1].index", "All column indices must be unique!"));
+	}
+
+	@Test
 	void storeConfigInvalidFhirColumns() throws Exception {
 		postFhirFile();
 		estimateDataConfiguration();

@@ -24,4 +24,11 @@ public class ErrorDetails {
 
 	@Nullable
 	private ConfigurationImportSummary configurationImportSummary;
+
+	/**
+	 * If the error is related to a data configuration mismatch, this field contains the details of the mismatches.
+	 */
+	@Schema(description = "If the error is related to a data configuration mismatch, this field contains the details of the mismatches.")
+	@Nullable
+	private Set<AttributeMatchingResult> attributeMismatches;
 }

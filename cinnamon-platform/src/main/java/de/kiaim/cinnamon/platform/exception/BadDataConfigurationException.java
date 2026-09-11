@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.platform.exception;
 
+import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 
 /**
@@ -22,8 +23,17 @@ public class BadDataConfigurationException extends BadRequestException {
 	 */
 	public static final String FHIR_ATTRIBUTE_MISMATCH = "3";
 
+	/**
+	 * Exception code for attribute mismatches between the data and the configuration.
+	 */
+	public static final String ATTRIBUTE_MISMATCH = "4";
+
 	public BadDataConfigurationException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
+	}
+
+	public BadDataConfigurationException(final String exceptionCode, final String message, final ErrorDetails details) {
+		super(exceptionCode, message, details);
 	}
 
 	@Override

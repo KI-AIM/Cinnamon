@@ -1,9 +1,13 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Entity for saving the content and the metadata of a file.
@@ -31,11 +35,14 @@ public class FileEntity {
 	private FileCompatibilityEntity compatibility = null;
 
 	/**
-	 * Number of attributes in the file.
+	 * Names of the attributes in the file.
+	 * Null if the file or the file configuration has not been set.
 	 */
-	@Column(nullable = false)
-	@Getter @Setter
-	private int numberOfAttributes = 0;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "json")
+    @Getter @Setter
+	@Nullable
+	private List<String> attributeNames = null;
 
 	/**
 	 * Configuration for retrieving the data from the data source.
@@ -60,4 +67,11 @@ public class FileEntity {
 	@Getter @Setter
 	@Nullable
 	private LobWrapperEntity file = null;
+
+	public int getNumberOfAttributes() {
+		if (attributeNames == null) {
+			return 0;
+		}
+		return attributeNames.size();
+	}
 }

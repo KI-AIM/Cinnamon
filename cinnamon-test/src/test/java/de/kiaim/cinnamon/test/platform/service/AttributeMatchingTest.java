@@ -4,10 +4,17 @@ import de.kiaim.cinnamon.model.configuration.data.ImportConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.enumeration.*;
 import de.kiaim.cinnamon.platform.exception.ApiException;
+import de.kiaim.cinnamon.platform.exception.BadConfigurationFileException;
 import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
+import de.kiaim.cinnamon.platform.exception.BadDataSetIdException;
 import de.kiaim.cinnamon.platform.model.dto.AttributeImportOverview;
+import de.kiaim.cinnamon.platform.model.dto.AttributeMatchingRequest;
+import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
+import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
+import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
+import de.kiaim.cinnamon.platform.service.ConfigurationService;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
@@ -23,6 +30,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,6 +48,9 @@ class AttributeMatchingTest extends DatabaseTest {
 
 	@Autowired
 	ProjectService projectService;
+
+	@Autowired
+	ConfigurationService configurationService;
 
 	@BeforeEach
 	public void setUp() throws IOException, ApiException {
@@ -190,6 +201,185 @@ class AttributeMatchingTest extends DatabaseTest {
 
 		final AttributeImportOverview overview = databaseService.getAttributeImportOverview(getTestProject());
 		assertEquals(ALL_COLUMNS, names(overview.getImportConfiguration().getAttributes()));
+	}
+
+	@Test
+	void missingAttributesContainSuggestion() throws ApiException {
+		final List<ColumnConfiguration> attributes = estimatedAttributes();
+		attributes.remove(3);
+
+		databaseService.storeImportConfiguration(testProject, importConfiguration(
+				attributes, AttributeMatchingStrategy.NAME, HandleConfigOnlyStrategy.ERROR,
+				HandleDataOnlyStrategy.REMOVE_ATTRIBUTE));
+
+		final var missing = databaseService.getAttributeImportOverview(getTestProject()).getDataOnlyAttributes();
+		assertEquals(1, missing.size());
+		assertEquals(3, missing.get(0).getIndex());
+		assertNotNull(missing.get(0).getSuggestedConfiguration());
+		assertEquals(DataType.DECIMAL, missing.get(0).getSuggestedConfiguration().getType());
+		assertNotNull(missing.get(0).getConfidence());
+	}
+
+	@Test
+	void storeAttributeMatching() throws ApiException {
+		final List<ColumnConfiguration> attributes = estimatedAttributes();
+		final ColumnConfiguration removed = attributes.remove(4);
+		final ColumnConfiguration ignored = new ColumnConfiguration(9, "ignored", DataType.STRING, DataScale.NOMINAL,
+		                                                            new ArrayList<>());
+		// Order must not matter
+		attributes.add(0, attributes.remove(2));
+
+		final AttributeMatchingRequest request = new AttributeMatchingRequest();
+		request.setAttributes(attributes);
+		request.setUnmatchedAttributes(List.of(ignored));
+
+		final AttributeImportOverview overview = databaseService.storeAttributeMatching(testProject, request);
+		assertEquals(List.of(0, 1, 2, 3, 5), indices(overview.getImportConfiguration().getAttributes()));
+		assertEquals(List.of("ignored"), names(overview.getConfigOnlyAttributes()));
+		assertEquals(1, overview.getDataOnlyAttributes().size());
+		assertEquals(removed.getIndex(), overview.getDataOnlyAttributes().get(0).getIndex());
+
+		// Persisted
+		final AttributeImportOverview reloaded = databaseService.getAttributeImportOverview(getTestProject());
+		assertEquals(List.of(0, 1, 2, 3, 5), indices(reloaded.getImportConfiguration().getAttributes()));
+		assertEquals(List.of("ignored"), names(reloaded.getConfigOnlyAttributes()));
+	}
+
+	@Test
+	void storeAttributeMatchingIndexOutOfRange() {
+		final List<ColumnConfiguration> attributes = estimatedAttributes();
+		attributes.add(new ColumnConfiguration(6, "extra", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()));
+
+		final AttributeMatchingRequest request = new AttributeMatchingRequest();
+		request.setAttributes(attributes);
+
+		final var exception = assertThrows(BadDataConfigurationException.class,
+		                                   () -> databaseService.storeAttributeMatching(testProject, request));
+		assertEquals(ApiException.assembleErrorCode(ApiException.BAD_REQUEST,
+		                                            BadDataConfigurationException.DATA_CONFIGURATION,
+		                                            BadDataConfigurationException.ATTRIBUTE_MISMATCH),
+		             exception.getErrorCode());
+	}
+
+	@Test
+	void storeAttributeMatchingConfirmed() throws ApiException {
+		final ProjectEntity project = getTestProject();
+		final var dataSet = new DataSetEntity(project.getOriginalData());
+		dataSet.setConfirmedData(true);
+
+		final AttributeMatchingRequest request = new AttributeMatchingRequest();
+		request.setAttributes(estimatedAttributes());
+
+		assertThrows(BadDataSetIdException.class, () -> databaseService.storeAttributeMatching(project, request));
+	}
+
+	@Test
+	void importDataConfigurationFromFileMatchesAttributes() throws ApiException {
+		// Same as the upload page: only the data configuration of the file is imported
+		final String configuration = """
+				configurations:
+				- index: 0
+				  name: "column0_boolean"
+				  type: "BOOLEAN"
+				  scale: "NOMINAL"
+				  configurations: []
+				- index: 1
+				  name: "unknown_a"
+				  type: "STRING"
+				  scale: "NOMINAL"
+				  configurations: []
+				- index: 2
+				  name: "unknown_b"
+				  type: "INTEGER"
+				  scale: "INTERVAL"
+				  configurations: []
+				""";
+		final ConfigurationImportParameters parameters = new ConfigurationImportParameters();
+		parameters.setConfigurationsToImport(Set.of("configurations"));
+
+		configurationService.importConfigurations(getTestProject(), new MockMultipartFile(
+				"configuration", "config.yaml", "text/yaml", configuration.getBytes(StandardCharsets.UTF_8)), parameters);
+
+		final AttributeImportOverview overview = databaseService.getAttributeImportOverview(getTestProject());
+		assertEquals(List.of("column0_boolean"), names(overview.getImportConfiguration().getAttributes()));
+		assertEquals(List.of("unknown_a", "unknown_b"), names(overview.getConfigOnlyAttributes()));
+		assertEquals(5, overview.getDataOnlyAttributes().size());
+	}
+
+	@Test
+	void importImportConfigurationFromFile() throws ApiException {
+		final String configuration = """
+				import:
+				  attributeMatching: "NAME"
+				  handleConfigOnly: "IGNORE"
+				  handleDataOnly: "REMOVE_ATTRIBUTE"
+				  attributes:
+				  - index: 0
+				    name: "column0_boolean"
+				    type: "BOOLEAN"
+				    scale: "NOMINAL"
+				    configurations: []
+				  - index: 1
+				    name: "unknown_a"
+				    type: "STRING"
+				    scale: "NOMINAL"
+				    configurations: []
+				""";
+
+		importConfigurationFile(configuration, "import");
+
+		final AttributeImportOverview overview = databaseService.getAttributeImportOverview(getTestProject());
+		assertEquals(List.of("column0_boolean"), names(overview.getImportConfiguration().getAttributes()));
+		assertEquals(List.of("unknown_a"), names(overview.getConfigOnlyAttributes()));
+		assertEquals(5, overview.getDataOnlyAttributes().size());
+	}
+
+	@Test
+	void importLegacyDataConfigurationWhenSelectingImport() throws ApiException {
+		final String configuration = """
+				configurations:
+				- index: 0
+				  name: "column0_boolean"
+				  type: "BOOLEAN"
+				  scale: "NOMINAL"
+				  configurations: []
+				""";
+
+		final var summary = importConfigurationFile(configuration, "import");
+
+		assertEquals(ConfigurationImportSummary.ConfigurationImportStatus.SUCCESS, summary.getStatus());
+		final AttributeImportOverview overview = databaseService.getAttributeImportOverview(getTestProject());
+		assertEquals(List.of("column0_boolean"), names(overview.getImportConfiguration().getAttributes()));
+	}
+
+	@Test
+	void importFileWithImportAndLegacyDataConfiguration() {
+		final String configuration = """
+				configurations:
+				- index: 0
+				  name: "column0_boolean"
+				  type: "BOOLEAN"
+				  scale: "NOMINAL"
+				  configurations: []
+				import:
+				  attributes: []
+				""";
+
+		final var exception = assertThrows(BadConfigurationFileException.class,
+		                                   () -> importConfigurationFile(configuration, "import"));
+		assertEquals(ApiException.assembleErrorCode(ApiException.BAD_REQUEST,
+		                                            BadConfigurationFileException.CONFIGURATION_FILE,
+		                                            BadConfigurationFileException.DUPLICATE_DATA_CONFIGURATION),
+		             exception.getErrorCode());
+	}
+
+	private ConfigurationImportSummary importConfigurationFile(final String configuration,
+	                                                           final String configurationToImport)
+			throws BadConfigurationFileException {
+		final ConfigurationImportParameters parameters = new ConfigurationImportParameters();
+		parameters.setConfigurationsToImport(Set.of(configurationToImport));
+		return configurationService.importConfigurations(getTestProject(), new MockMultipartFile(
+				"configuration", "config.yaml", "text/yaml", configuration.getBytes(StandardCharsets.UTF_8)), parameters);
 	}
 
 	private List<ColumnConfiguration> estimatedAttributes() {

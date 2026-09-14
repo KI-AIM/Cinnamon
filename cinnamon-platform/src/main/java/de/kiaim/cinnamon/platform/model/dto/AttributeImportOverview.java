@@ -2,7 +2,6 @@ package de.kiaim.cinnamon.platform.model.dto;
 
 import de.kiaim.cinnamon.model.configuration.data.ImportConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
-import de.kiaim.cinnamon.model.dto.AttributeMatchingResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,5 +35,5 @@ public class AttributeImportOverview {
 	 * Attributes that are only present in the data and are missing a configuration.
 	 */
 	@Schema(description = "Attributes that are only present in the data and are missing a configuration.")
-	private final List<AttributeMatchingResult> dataOnlyAttributes;
+	private final List<MissingAttribute> dataOnlyAttributes;
 }

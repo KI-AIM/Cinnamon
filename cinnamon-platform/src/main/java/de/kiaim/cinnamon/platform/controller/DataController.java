@@ -280,6 +280,33 @@ public class DataController {
 		return databaseService.getAttributeImportOverview(projectEntity);
 	}
 
+	@Operation(summary = "Replaces the matching between the attribute configurations and the data.",
+	           description = "Stores the configurations of the attributes matched to the data and the ignored " +
+	                         "attributes. Attributes of the data can be missing. Deletes the stored dataset if it is " +
+	                         "not confirmed.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Successfully stored the matching. Returns the new attribute matching overview.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = AttributeImportOverview.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "The matching is invalid or the dataset is already confirmed.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
+	@PutMapping(value = "/configuration/matching",
+	            consumes = MediaType.APPLICATION_JSON_VALUE,
+	            produces = MediaType.APPLICATION_JSON_VALUE)
+	public AttributeImportOverview storeAttributeMatching(
+			@PathVariable final String projectId,
+			@RequestBody @Valid final AttributeMatchingRequest request,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
+		return databaseService.storeAttributeMatching(projectEntity, request);
+	}
+
 	@Operation(summary = "Estimates the data configuration of a given data set.",
 	           description = "Estimates the data configuration of a given data set.")
 	@ApiResponses(value = {

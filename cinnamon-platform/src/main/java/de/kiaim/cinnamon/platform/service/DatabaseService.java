@@ -245,6 +245,40 @@ public class DatabaseService {
 	}
 
 	/**
+	 * Imports the given data configuration, e.g., from a configuration file, for the original data of the given project.
+	 * In contrast to {@link #storeOriginalDataConfiguration(DataConfiguration, ProjectEntity)}, the attributes are
+	 * matched against the data using the stored import configuration, see {@link #matchAttributes(ProjectEntity)}.
+	 * Mismatches do not cause an error, so they can be resolved by the user.
+	 * Replaces previously unmatched attributes.
+	 *
+	 * @param dataConfiguration The data configuration to import.
+	 * @param project           The project.
+	 * @throws BadDataSetIdException            If the dataset is already stored.
+	 * @throws InternalIOException              If reading the file failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
+	 */
+	@Transactional
+	public void importOriginalDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project)
+			throws BadDataSetIdException, InternalIOException, InternalMissingHandlingException {
+		throwIfStored(project.getOriginalData().getDataSet());
+
+		project.getOriginalData().getImportConfiguration().setUnmatchedAttributes(null);
+		if (project.getOriginalData().getDataSet() == null) {
+			new DataSetEntity(project.getOriginalData());
+		}
+		final DataConfiguration copy = new DataConfiguration();
+		copy.setConfigurations(dataConfiguration.getConfigurations() == null
+		                       ? new ArrayList<>()
+		                       : new ArrayList<>(dataConfiguration.getConfigurations()));
+		project.getOriginalData().getDataSet().setDataConfiguration(copy);
+
+		matchAttributes(project);
+
+		projectRepository.save(project);
+		log.debug("Imported original data configuration");
+	}
+
+	/**
 	 * Exports a DTO of the import configuration of the original data of the given project.
 	 *
 	 * @param project The project of which the import configuration should be exported.
@@ -264,21 +298,120 @@ public class DatabaseService {
 
 	/**
 	 * Creates an overview of the attribute matching of the original data of the given project.
+	 * Contains estimated configurations for attributes only present in the data.
 	 *
 	 * @param project The project.
 	 * @return The overview.
-	 * @throws BadStateException   If the data configuration is not available.
-	 * @throws InternalIOException If writing the configuration failed.
+	 * @throws BadStateException                If the data configuration is not available.
+	 * @throws InternalIOException              If reading the file or writing the configuration failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
 	 */
 	@Transactional(readOnly = true)
 	public AttributeImportOverview getAttributeImportOverview(final ProjectEntity project)
-			throws BadStateException, InternalIOException {
+			throws BadStateException, InternalIOException, InternalMissingHandlingException {
 		final var unmatchedAttributes = project.getOriginalData().getImportConfiguration().getUnmatchedAttributes();
 		return new AttributeImportOverview(exportImportConfiguration(project),
 		                                   unmatchedAttributes == null
 		                                   ? List.of()
 		                                   : unmatchedAttributes.getConfigurations(),
-		                                   getDataOnlyAttributes(project));
+		                                   getMissingAttributes(project));
+	}
+
+	/**
+	 * Replaces the attribute matching of the original data with the given attributes.
+	 * The matched attributes are not required to cover all attributes in the data, so drafts can be stored.
+	 * Deletes the stored dataset if it is not confirmed.
+	 *
+	 * @param project The project.
+	 * @param request The matched and unmatched attributes.
+	 * @return The new overview.
+	 * @throws BadDataConfigurationException       If a matched attribute does not refer to an attribute in the data.
+	 * @throws BadDataSetIdException               If the dataset is already confirmed.
+	 * @throws BadStateException                   If the file is not available.
+	 * @throws InternalDataSetPersistenceException If deleting the stored dataset failed.
+	 * @throws InternalIOException                 If reading the file failed.
+	 * @throws InternalMissingHandlingException    If no processor for the file type of the file could be found.
+	 */
+	@Transactional
+	public AttributeImportOverview storeAttributeMatching(final ProjectEntity project,
+	                                                      final AttributeMatchingRequest request)
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException,
+					       InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
+		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
+
+		final List<String> attributesInData = project.getOriginalData().getFile().getAttributeNames();
+		if (attributesInData == null) {
+			throw new BadStateException(BadStateException.NO_DATASET_FILE,
+			                            "Matching attributes requires the file for the dataset to be selected!");
+		}
+
+		for (final ColumnConfiguration attribute : request.getAttributes()) {
+			final Integer index = attribute.getIndex();
+			if (index == null || index < 0 || index >= attributesInData.size()) {
+				throw new BadDataConfigurationException(BadDataConfigurationException.ATTRIBUTE_MISMATCH,
+				                                        "Attribute '" + attribute.getName() +
+				                                        "' does not refer to an attribute in the data!");
+			}
+		}
+
+		final List<ColumnConfiguration> matched = new ArrayList<>(request.getAttributes());
+		matched.sort(Comparator.comparing(ColumnConfiguration::getIndex));
+		final DataConfiguration dataConfiguration = new DataConfiguration();
+		dataConfiguration.setConfigurations(matched);
+		if (project.getOriginalData().getDataSet() == null) {
+			new DataSetEntity(project.getOriginalData());
+		}
+		project.getOriginalData().getDataSet().setDataConfiguration(dataConfiguration);
+
+		final DataConfiguration unmatchedAttributes = new DataConfiguration();
+		unmatchedAttributes.setConfigurations(new ArrayList<>(request.getUnmatchedAttributes()));
+		project.getOriginalData().getImportConfiguration().setUnmatchedAttributes(unmatchedAttributes);
+
+		projectRepository.save(project);
+		log.debug("Stored attribute matching");
+
+		return getAttributeImportOverview(project);
+	}
+
+	/**
+	 * Determines the attributes in the data that are not covered by the data configuration
+	 * and estimates a configuration for them.
+	 *
+	 * @param project The project.
+	 * @return The missing attributes, empty if the file or the data configuration is not available.
+	 * @throws InternalIOException              If reading the file failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
+	 */
+	private List<MissingAttribute> getMissingAttributes(final ProjectEntity project)
+			throws InternalIOException, InternalMissingHandlingException {
+		final List<AttributeMatchingResult> dataOnly = getDataOnlyAttributes(project);
+		if (dataOnly.isEmpty()) {
+			return List.of();
+		}
+
+		// Estimation is only possible for the whole file
+		final FileEntity fileEntity = project.getOriginalData().getFile();
+		final LobWrapperEntity file = fileEntity.getFile();
+		final FileConfigurationEntity fileConfiguration = fileEntity.getFileConfiguration();
+		DataConfigurationEstimation estimation = null;
+		if (file != null && fileConfiguration != null) {
+			final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
+			estimation = dataProcessor.estimateDataConfiguration(file.getLobStream(), fileConfiguration,
+			                                                     DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+		}
+
+		final List<MissingAttribute> missingAttributes = new ArrayList<>();
+		for (final AttributeMatchingResult attribute : dataOnly) {
+			final int index = attribute.getIndex();
+			ColumnConfiguration suggestion = null;
+			Float confidence = null;
+			if (estimation != null && index < estimation.getDataConfiguration().getConfigurations().size()) {
+				suggestion = estimation.getDataConfiguration().getConfigurations().get(index);
+				confidence = estimation.getConfidences()[index];
+			}
+			missingAttributes.add(new MissingAttribute(index, attribute.getName(), suggestion, confidence));
+		}
+		return missingAttributes;
 	}
 
 	/**

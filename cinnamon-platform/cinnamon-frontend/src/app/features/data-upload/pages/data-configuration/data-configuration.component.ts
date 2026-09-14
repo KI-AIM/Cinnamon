@@ -14,11 +14,14 @@ import { LockedInformation, StateManagementService } from "@core/services/state-
 import { noSpaceValidator } from "@shared/directives/no-space-validator.directive";
 import { ConfigurationInputDefinition } from "@shared/model/configuration-input-definition";
 import { ConfigurationInputType } from "@shared/model/configuration-input-type";
+import { AttributeImportOverview, MissingAttribute } from "@shared/model/attribute-import-overview";
+import { ColumnConfiguration } from "@shared/model/column-configuration";
 import { DataScale, DataScaleMetadata } from "@shared/model/data-scale";
 import { DataSetInfo } from "@shared/model/data-set-info";
 import { DataType } from "@shared/model/data-type";
 import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
 import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
+import { FileInformation } from "@shared/model/file-information";
 import { RangeConfiguration } from "@shared/model/range-configuration";
 import { Status } from "@shared/model/status";
 import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
@@ -62,13 +65,29 @@ export class DataConfigurationComponent implements OnInit {
 
     protected isAdvanceConfigurationExpanded: boolean = false;
 
+    /**
+     * Attributes only present in the configuration, they are ignored.
+     */
+    protected configOnlyAttributes: ColumnConfiguration[] = [];
+    /**
+     * Attributes only present in the data, they must be configured before confirming.
+     */
+    protected dataOnlyAttributes: MissingAttribute[] = [];
+
     protected pageData$: Observable<{
         dataConfiguration: DataConfiguration,
         dataSetInfo: DataSetInfo | null,
+        fileInformation: FileInformation,
         fileType: FileType | null,
         locked: LockedInformation,
         status: Status,
     }>
+
+    /**
+     * Confidences of the estimated configurations of added attributes indexed by the attribute index.
+     */
+    private suggestionConfidences = new Map<number, number>();
+    private fileType: FileType | null = null;
 
     @ViewChildren('attributeConfiguration') attributeConfigurations: QueryList<AttributeConfigurationComponent>;
 
@@ -105,6 +124,7 @@ export class DataConfigurationComponent implements OnInit {
                     return of(null);
                 }),
             ),
+            fileInformation: this.fileService.fileInfo$,
             fileType: this.fileService.fileInfo$.pipe(
                 map(fileInformation => fileInformation.type),
             ),
@@ -117,8 +137,15 @@ export class DataConfigurationComponent implements OnInit {
             status: this.statusService.statusNonNull$,
         }).pipe(
             switchMap(value => {
-                return this.configuration.dataConfiguration$.pipe(
+                return this.configuration.attributeMatching$.pipe(
+                    map(overview => {
+                        this.initAttributeMatching(overview);
+                        const dataConfiguration = new DataConfiguration();
+                        dataConfiguration.configurations = overview.importConfiguration.attributes;
+                        return dataConfiguration;
+                    }),
                     tap(dataConfiguration => {
+                        this.fileType = value.fileType;
                         if (this.configuration.localDataConfiguration !== null) {
                             this.attributeConfigurationForm = this.createAttributeConfigurationForm(this.configuration.localDataConfiguration, value.fileType);
                         } else {
@@ -156,25 +183,85 @@ export class DataConfigurationComponent implements OnInit {
         return this.dataSetConfigurationForm ? this.dataSetConfigurationForm.invalid : true;
     }
 
+    protected get isAttributeConfigurationInvalid(): boolean {
+        return this.attributeConfigurationForm.invalid || this.dataOnlyAttributes.length > 0;
+    }
+
     protected get isInvalid(): boolean {
-        return this.attributeConfigurationForm.invalid || this.isDataSetConfigurationFormInvalid;
+        return this.isAttributeConfigurationInvalid || this.isDataSetConfigurationFormInvalid;
     }
 
     /**
      * Returns the confidence of the estimation for the attribute with the given index.
-     * @param attributeIndex The index of the attribute.
+     * @param attributeIndex The index of the attribute in the data.
      * @return The confidence.
      * @protected
      */
     protected getConfidence(attributeIndex: number): number | null {
-        return this.configuration.confidence ? this.configuration.confidence[attributeIndex] : null;
+        if (this.configuration.confidence && attributeIndex < this.configuration.confidence.length) {
+            return this.configuration.confidence[attributeIndex];
+        }
+        return this.suggestionConfidences.get(attributeIndex) ?? null;
+    }
+
+    /**
+     * Adds the configuration for an attribute only present in the data.
+     * Uses the estimated configuration if available.
+     * @param attribute The missing attribute.
+     */
+    protected addDataOnlyAttribute(attribute: MissingAttribute): void {
+        const columnConfiguration = attribute.suggestedConfiguration
+            ? plainToInstance(ColumnConfiguration, structuredClone(attribute.suggestedConfiguration))
+            : Object.assign(new ColumnConfiguration(), {type: DataType.UNDEFINED, configurations: []});
+        columnConfiguration.index = attribute.index;
+        columnConfiguration.name = this.getAttributeName(attribute);
+
+        if (attribute.confidence !== null) {
+            this.suggestionConfidences.set(attribute.index, attribute.confidence);
+        }
+
+        this.removeDataOnlyAttribute(attribute);
+        this.insertColumnConfiguration(columnConfiguration);
+    }
+
+    /**
+     * Uses the configuration of an ignored attribute for an attribute only present in the data.
+     * @param configOnly The ignored attribute configuration.
+     * @param dataOnly The attribute in the data.
+     */
+    protected assignConfigOnlyAttribute(configOnly: ColumnConfiguration, dataOnly: MissingAttribute): void {
+        const columnConfiguration = plainToInstance(ColumnConfiguration, structuredClone(configOnly));
+        columnConfiguration.index = dataOnly.index;
+        if (dataOnly.name !== "") {
+            columnConfiguration.name = dataOnly.name;
+        }
+
+        this.removeConfigOnlyAttribute(configOnly);
+        this.removeDataOnlyAttribute(dataOnly);
+        this.insertColumnConfiguration(columnConfiguration);
+    }
+
+    /**
+     * Discards an ignored attribute configuration.
+     * @param attribute The ignored attribute.
+     */
+    protected removeConfigOnlyAttribute(attribute: ColumnConfiguration): void {
+        this.configOnlyAttributes = this.configOnlyAttributes.filter(a => a !== attribute);
+        this.configuration.localConfigOnlyAttributes = this.configOnlyAttributes;
+    }
+
+    /**
+     * Returns the display name of an attribute in the data.
+     */
+    protected getAttributeName(attribute: MissingAttribute): string {
+        return attribute.name !== "" ? attribute.name : 'column_' + attribute.index;
     }
 
     confirmConfiguration() {
         const config = plainToInstance(DataConfiguration, this.attributeConfigurationForm.getRawValue());
         this.loadingService.setLoadingStatus(true);
-        this.configuration.setDataConfiguration(config);
-        this.dataService.storeData(config).pipe(
+        this.configuration.storeAttributeMatching(config.configurations, this.configOnlyAttributes).pipe(
+            switchMap(() => this.dataService.storeData(config)),
             switchMap(id => {
                 if (this.createHoldOutSplit) {
                     return this.dataService.createHoldOutSplit(this.holdOutSplitPercentage);
@@ -192,11 +279,40 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     private setEmptyColumnNames(dataConfiguration: DataConfiguration) {
-        dataConfiguration.configurations.forEach((column, index) => {
+        dataConfiguration.configurations.forEach(column => {
             if (column.name === undefined || column.name === null || column.name == "") {
-                column.name = 'column_' + index;
+                column.name = 'column_' + column.index;
             }
         });
+    }
+
+    /**
+     * Initializes the lists of unmatched attributes from the local state or the given overview.
+     */
+    private initAttributeMatching(overview: AttributeImportOverview): void {
+        this.configOnlyAttributes = this.configuration.localConfigOnlyAttributes ?? overview.configOnlyAttributes;
+        this.dataOnlyAttributes = this.configuration.localDataOnlyAttributes ?? overview.dataOnlyAttributes;
+    }
+
+    private removeDataOnlyAttribute(attribute: MissingAttribute): void {
+        this.dataOnlyAttributes = this.dataOnlyAttributes.filter(a => a !== attribute);
+        this.configuration.localDataOnlyAttributes = this.dataOnlyAttributes;
+    }
+
+    /**
+     * Inserts the form for the given column configuration, so the forms stay ordered by the attribute index.
+     */
+    private insertColumnConfiguration(columnConfiguration: ColumnConfiguration): void {
+        const formArray = this.attributeConfigurationForm.controls['configurations'] as FormArray;
+        let position = formArray.controls.findIndex(c => c.get('index')!.value > columnConfiguration.index);
+        if (position === -1) {
+            position = formArray.length;
+        }
+
+        const group = this.createColumnConfigurationForm(columnConfiguration, this.fileType);
+        group.markAllAsTouched();
+        formArray.insert(position, group);
+        this.checkUniqueColumnNames();
     }
 
     private handleUpload() {
@@ -256,95 +372,96 @@ export class DataConfigurationComponent implements OnInit {
     }
 
     private createAttributeConfigurationForm(dataConfiguration: DataConfiguration, fileType: FileType | null): FormGroup {
-        const formArray: any[] = [];
-        dataConfiguration.configurations.forEach(columnConfiguration => {
-            const addConfigs = [];
-
-            for (const addConfig of columnConfiguration.configurations) {
-                if (addConfig.getName() === "DateFormatConfiguration") {
-                    const dateFormatConfiguration = addConfig as DateFormatConfiguration;
-                    addConfigs.push(
-                        this.formBuilder.group({
-                            name: ["DateFormatConfiguration"],
-                            dateFormatter: [{
-                                value: dateFormatConfiguration.dateFormatter,
-                                disabled: this.locked
-                            }, {validators: [Validators.required]}],
-                        })
-                    );
-                } else if (addConfig.getName() === "DateTimeFormatConfiguration") {
-                    const dateTimeFormatConfiguration = addConfig as DateTimeFormatConfiguration;
-                    addConfigs.push(
-                        this.formBuilder.group({
-                            name: ["DateTimeFormatConfiguration"],
-                            dateTimeFormatter: [{
-                                value: dateTimeFormatConfiguration.dateTimeFormatter,
-                                disabled: this.locked
-                            }, {
-                                validators: [Validators.required]
-                            }],
-                        })
-                    );
-                } else if (addConfig.getName() === "RangeConfiguration") {
-                    const rangeConfiguration = addConfig as RangeConfiguration;
-                    addConfigs.push(
-                        this.formBuilder.group({
-                            name: ["RangeConfiguration"],
-                            minValue: [{value: rangeConfiguration.minValue, disabled: this.locked}, {
-                                validators: [Validators.required]
-                            }],
-                            maxValue: [{value: rangeConfiguration.maxValue, disabled: this.locked}, {
-                                validators: [Validators.required]
-                            }],
-                        })
-                    );
-                } else if (addConfig.getName() === "StringPatternConfiguration") {
-                    const stringPatternConfiguration = addConfig as StringPatternConfiguration;
-                    addConfigs.push(
-                        this.formBuilder.group({
-                            name: ["StringPatternConfiguration"],
-                            pattern: [{value: stringPatternConfiguration.pattern, disabled: this.locked}, {
-                                validators: [Validators.required]
-                            }],
-                        })
-                    );
-                } else if (addConfig.getName() === "TextLanguageConfiguration") {
-                    const textLanguageConfiguration = addConfig as TextLanguageConfiguration;
-                    addConfigs.push(
-                        this.formBuilder.group({
-                            name: ["TextLanguageConfiguration"],
-                            language: [{
-                                value: textLanguageConfiguration.language,
-                                disabled: this.locked
-                            }, {
-                                validators: [Validators.required]
-                            }],
-                        })
-                    );
-                }
-            }
-
-            const columnGroup = this.formBuilder.group({
-                index: [columnConfiguration.index],
-                name: [{value: columnConfiguration.name, disabled: this.locked || fileType === FileType.FHIR}, {
-                    validators: [Validators.required, noSpaceValidator()]
-                }],
-                type: [{
-                    value: columnConfiguration.type, disabled: this.locked
-                }, {
-                    validators: [Validators.required, this.dataTypeNotUndefined]
-                }],
-                scale: [{value: columnConfiguration.scale, disabled: this.locked}, {
-                    disabled: this.locked,
-                    validators: [Validators.required]
-                }],
-                configurations: this.formBuilder.array(addConfigs),
-            }, {validators: [this.validateScale(), this.validateDateFormat()]});
-
-            formArray.push(columnGroup);
-        });
-
+        const formArray = dataConfiguration.configurations.map(
+            columnConfiguration => this.createColumnConfigurationForm(columnConfiguration, fileType));
         return this.formBuilder.group({configurations: this.formBuilder.array(formArray)});
+    }
+
+    private createColumnConfigurationForm(columnConfiguration: ColumnConfiguration, fileType: FileType | null): FormGroup {
+        const addConfigs = [];
+
+        for (const addConfig of columnConfiguration.configurations) {
+            if (addConfig.getName() === "DateFormatConfiguration") {
+                const dateFormatConfiguration = addConfig as DateFormatConfiguration;
+                addConfigs.push(
+                    this.formBuilder.group({
+                        name: ["DateFormatConfiguration"],
+                        dateFormatter: [{
+                            value: dateFormatConfiguration.dateFormatter,
+                            disabled: this.locked
+                        }, {validators: [Validators.required]}],
+                    })
+                );
+            } else if (addConfig.getName() === "DateTimeFormatConfiguration") {
+                const dateTimeFormatConfiguration = addConfig as DateTimeFormatConfiguration;
+                addConfigs.push(
+                    this.formBuilder.group({
+                        name: ["DateTimeFormatConfiguration"],
+                        dateTimeFormatter: [{
+                            value: dateTimeFormatConfiguration.dateTimeFormatter,
+                            disabled: this.locked
+                        }, {
+                            validators: [Validators.required]
+                        }],
+                    })
+                );
+            } else if (addConfig.getName() === "RangeConfiguration") {
+                const rangeConfiguration = addConfig as RangeConfiguration;
+                addConfigs.push(
+                    this.formBuilder.group({
+                        name: ["RangeConfiguration"],
+                        minValue: [{value: rangeConfiguration.minValue, disabled: this.locked}, {
+                            validators: [Validators.required]
+                        }],
+                        maxValue: [{value: rangeConfiguration.maxValue, disabled: this.locked}, {
+                            validators: [Validators.required]
+                        }],
+                    })
+                );
+            } else if (addConfig.getName() === "StringPatternConfiguration") {
+                const stringPatternConfiguration = addConfig as StringPatternConfiguration;
+                addConfigs.push(
+                    this.formBuilder.group({
+                        name: ["StringPatternConfiguration"],
+                        pattern: [{value: stringPatternConfiguration.pattern, disabled: this.locked}, {
+                            validators: [Validators.required]
+                        }],
+                    })
+                );
+            } else if (addConfig.getName() === "TextLanguageConfiguration") {
+                const textLanguageConfiguration = addConfig as TextLanguageConfiguration;
+                addConfigs.push(
+                    this.formBuilder.group({
+                        name: ["TextLanguageConfiguration"],
+                        language: [{
+                            value: textLanguageConfiguration.language,
+                            disabled: this.locked
+                        }, {
+                            validators: [Validators.required]
+                        }],
+                    })
+                );
+            }
+        }
+
+        const columnGroup = this.formBuilder.group({
+            index: [columnConfiguration.index],
+            name: [{value: columnConfiguration.name, disabled: this.locked || fileType === FileType.FHIR}, {
+                validators: [Validators.required, noSpaceValidator()]
+            }],
+            type: [{
+                value: columnConfiguration.type, disabled: this.locked
+            }, {
+                validators: [Validators.required, this.dataTypeNotUndefined]
+            }],
+            scale: [{value: columnConfiguration.scale, disabled: this.locked}, {
+                disabled: this.locked,
+                validators: [Validators.required]
+            }],
+            configurations: this.formBuilder.array(addConfigs),
+        }, {validators: [this.validateScale(), this.validateDateFormat()]});
+
+        return columnGroup;
     }
 
     /**

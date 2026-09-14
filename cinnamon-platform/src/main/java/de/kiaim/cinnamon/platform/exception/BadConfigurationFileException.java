@@ -77,6 +77,11 @@ public class BadConfigurationFileException extends BadRequestException {
 	 */
 	public static final String IMPORT_CONFIGURATION_DESERIALIZATION = "14";
 
+	/**
+	 * The file contains both the import configuration and the legacy data configuration.
+	 */
+	public static final String DUPLICATE_DATA_CONFIGURATION = "15";
+
 	public BadConfigurationFileException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

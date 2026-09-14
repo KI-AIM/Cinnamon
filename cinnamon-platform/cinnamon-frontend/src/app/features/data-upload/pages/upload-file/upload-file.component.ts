@@ -361,7 +361,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                     });
                 } else {
                     // Use data configuration from the selected file
-                    this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.CONFIGURATION_NAME]).subscribe(
+                    // Also imports the legacy data configuration if the file does not contain the import configuration
+                    this.configurationService.uploadAllConfigurations(this.configurationFile, [this.dataConfigurationService.IMPORT_CONFIGURATION_NAME]).subscribe(
                         {
                             next: () => {
                                 this.handleConfigurationUpload();
@@ -447,8 +448,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @private
      */
     private handleUpload(estimation: DataConfigurationEstimation): void {
-        this.dataConfigurationService.setDataConfiguration(estimation.dataConfiguration);
-        this.dataConfigurationService.confidence = estimation.confidences
+        // The estimation is stored on the server
+        this.dataConfigurationService.reset();
+        this.dataConfigurationService.confidence = estimation.confidences;
         this.navigateToNextStep();
     }
 

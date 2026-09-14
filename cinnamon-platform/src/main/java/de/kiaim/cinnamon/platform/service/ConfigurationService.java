@@ -165,6 +165,15 @@ public class ConfigurationService {
 			                                        "The root of the configuration file must be an object!");
 		}
 
+		// The import configuration replaces the legacy data configuration, only one of them is allowed
+		if (yamlConfig.has(ConfigurationFile.IMPORT_CONFIGURATION_KEY) &&
+		    yamlConfig.has(ConfigurationFile.DATA_CONFIGURATION_KEY)) {
+			throw new BadConfigurationFileException(
+					BadConfigurationFileException.DUPLICATE_DATA_CONFIGURATION,
+					"The configuration file must not contain both '" + ConfigurationFile.IMPORT_CONFIGURATION_KEY +
+					"' and '" + ConfigurationFile.DATA_CONFIGURATION_KEY + "'!");
+		}
+
 		final var importSummary = new ConfigurationImportSummary(parameters);
 
 		final var seenConfigs = new HashSet<String>();
@@ -185,9 +194,11 @@ public class ConfigurationService {
 			final var configEntry = yamlConfig.get(configName);
 
 			seenConfigs.add(configName);
+			seenConfigs.addAll(getAliases(configName));
 
 			if (parameters.getConfigurationsToImport() != null &&
-			    !parameters.getConfigurationsToImport().contains(configName)) {
+			    !parameters.getConfigurationsToImport().contains(configName) &&
+			    getAliases(configName).stream().noneMatch(parameters.getConfigurationsToImport()::contains)) {
 				importSummary.addIgnored(configName);
 				continue;
 			}
@@ -234,6 +245,22 @@ public class ConfigurationService {
 		return importSummary;
 	}
 
+
+	/**
+	 * Returns other names of the given configuration that are interchangeable when selecting configurations for import.
+	 * The legacy data configuration is replaced by the import configuration,
+	 * so selecting either one imports the one present in the file.
+	 *
+	 * @param configName The name of the configuration.
+	 * @return The aliases, empty if there are none.
+	 */
+	private List<String> getAliases(final String configName) {
+		return switch (configName) {
+			case ConfigurationFile.IMPORT_CONFIGURATION_KEY -> List.of(ConfigurationFile.DATA_CONFIGURATION_KEY);
+			case ConfigurationFile.DATA_CONFIGURATION_KEY -> List.of(ConfigurationFile.IMPORT_CONFIGURATION_KEY);
+			default -> List.of();
+		};
+	}
 
 	/**
 	 * Loads the configuration with the given name from the database.
@@ -363,9 +390,9 @@ public class ConfigurationService {
 
 		// 2. No validation to allow manual editing of the attribute configuration
 
-		// 3. Store the DataConfiguration
+		// 3. Store the DataConfiguration, attributes not matching the data are kept separately
 		try {
-			databaseService.storeOriginalDataConfiguration(dataConfiguration, project);
+			databaseService.importOriginalDataConfiguration(dataConfiguration, project);
 			outImportSummary.addSuccess(ConfigurationFile.DATA_CONFIGURATION_KEY);
 		} catch (final ApiException e) {
 			outImportSummary.addError(ConfigurationFile.DATA_CONFIGURATION_KEY, e.getErrorCode(), e.getMessage());

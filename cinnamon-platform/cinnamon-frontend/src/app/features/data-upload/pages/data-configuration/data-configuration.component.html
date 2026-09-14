@@ -13,7 +13,7 @@
                            (confirm)="confirmConfiguration()">
 
             <app-workstep-item header="Configure the attributes" [locked]="data.locked.isLocked"
-                               [invalid]="attributeConfigurationForm.invalid" [stepIndex]="0">
+                               [invalid]="isAttributeConfigurationInvalid" [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
             </app-workstep-item>
 
@@ -27,7 +27,11 @@
     </ng-container>
     <ng-container *ngIf="data.status.mode === Mode.EXPERT">
 
-        <app-workstep-box header="Attribute Configuration" toggleable [invalid]="attributeConfigurationForm.invalid">
+        <app-workstep-box header="File" toggleable>
+            <ng-container *ngTemplateOutlet="fileInfo"></ng-container>
+        </app-workstep-box>
+
+        <app-workstep-box header="Attribute Configuration" toggleable [invalid]="isAttributeConfigurationInvalid">
             <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
         </app-workstep-box>
 
@@ -39,7 +43,7 @@
             <div class="btn-group">
                 <div class="px-1">
                     <button mat-raised-button type="button" color="primary" (click)="confirmConfiguration()"
-                            [disabled]="attributeConfigurationForm.invalid || isDataSetConfigurationFormInvalid || data.locked.isLocked">
+                            [disabled]="isInvalid || data.locked.isLocked">
                         Confirm configuration and start validation
                     </button>
                 </div>
@@ -47,6 +51,13 @@
         </app-workstep-box>
 
     </ng-container>
+
+    <ng-template #fileInfo>
+        <div>
+            <span>Number of attributes:</span>
+            <span>{{data.fileInformation.numberOfAttributes}}</span>
+        </div>
+    </ng-template>
 
 
     <ng-template #attributeConfiguration>
@@ -60,7 +71,7 @@
                          [formGroupName]="i">
                         <app-attribute-configuration #attributeConfiguration [attrNumber]="i"
                                                      [columnConfigurationForm]="columnConfig"
-                                                     [confidence]="getConfidence(i)" [disabled]="data.locked.isLocked"
+                                                     [confidence]="getConfidence(columnConfig.controls['index'].value)" [disabled]="data.locked.isLocked"
                                                      [fileType]="data.fileType" (onInput)="checkUniqueColumnNames()">
                         </app-attribute-configuration>
                     </div>
@@ -68,6 +79,63 @@
 
             </form>
         </div>
+
+        <ng-container *ngIf="!data.locked.isLocked">
+            <div *ngIf="dataOnlyAttributes.length > 0" class="box mt-3">
+                <div class="box-name">Attributes without configuration</div>
+                <div class="settings-info mb-2">
+                    The following attributes are present in the data, but not in the configuration.
+                    Add a configuration or assign one of the ignored configurations before confirming.
+                </div>
+                <ng-container *ngFor="let attribute of dataOnlyAttributes; let last = last">
+                    <div class="config-input-row no-wrap">
+                        <div class="config-input-row-label-inline">
+                            <div class="config-input-row-label-inline-header">{{ getAttributeName(attribute) }}</div>
+                            <div class="config-input-row-label-inline-info">Attribute number {{ attribute.index + 1 }}</div>
+                        </div>
+                        <div class="config-input-row-button config-input-row-end input-height">
+                            <button mat-raised-button color="primary" type="button"
+                                    (click)="addDataOnlyAttribute(attribute)">
+                                {{ attribute.suggestedConfiguration ? 'Add estimated configuration' : 'Add configuration' }}
+                            </button>
+                        </div>
+                    </div>
+                    <div *ngIf="!last" class="config-input-divider"></div>
+                </ng-container>
+            </div>
+
+            <div *ngIf="configOnlyAttributes.length > 0" class="box mt-3">
+                <div class="box-name">Ignored configurations</div>
+                <div class="settings-info mb-2">
+                    The following configurations do not match any attribute in the data and are ignored.
+                    You can assign them to an attribute without configuration or discard them.
+                </div>
+                <ng-container *ngFor="let attribute of configOnlyAttributes; let last = last">
+                    <div class="config-input-row no-wrap">
+                        <div class="config-input-row-label-inline">
+                            <div class="config-input-row-label-inline-header">{{ attribute.name }}</div>
+                            <div class="config-input-row-label-inline-info">{{ attribute.type }} / {{ attribute.scale }}</div>
+                        </div>
+                        <mat-form-field class="config-input-row-field hide-mat-error-gap"
+                                        *ngIf="dataOnlyAttributes.length > 0">
+                            <mat-label>Assign to attribute</mat-label>
+                            <mat-select (selectionChange)="assignConfigOnlyAttribute(attribute, $event.value)">
+                                <mat-option *ngFor="let dataOnly of dataOnlyAttributes" [value]="dataOnly">
+                                    {{ getAttributeName(dataOnly) }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <div class="config-input-row-button config-input-row-end input-height">
+                            <button mat-raised-button color="warn" type="button"
+                                    (click)="removeConfigOnlyAttribute(attribute)">
+                                Discard
+                            </button>
+                        </div>
+                    </div>
+                    <div *ngIf="!last" class="config-input-divider"></div>
+                </ng-container>
+            </div>
+        </ng-container>
     </ng-template>
 
     <ng-template #dataSetConfiguration>

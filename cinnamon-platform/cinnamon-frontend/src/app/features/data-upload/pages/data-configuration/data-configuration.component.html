@@ -27,6 +27,10 @@
     </ng-container>
     <ng-container *ngIf="data.status.mode === Mode.EXPERT">
 
+        <app-workstep-box header="File" toggleable>
+            <ng-container *ngTemplateOutlet="fileInfo"></ng-container>
+        </app-workstep-box>
+
         <app-workstep-box header="Attribute Configuration" toggleable [invalid]="attributeConfigurationForm.invalid">
             <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
         </app-workstep-box>
@@ -47,6 +51,13 @@
         </app-workstep-box>
 
     </ng-container>
+
+    <ng-template #fileInfo>
+        <div>
+            <span>Number of attributes:</span>
+            <span>{{data.fileInformation.numberOfAttributes}}</span>
+        </div>
+    </ng-template>
 
 
     <ng-template #attributeConfiguration>

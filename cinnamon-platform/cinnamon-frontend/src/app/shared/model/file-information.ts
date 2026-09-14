@@ -11,4 +11,9 @@ export class FileInformation {
      * Otherwise, the value is null.
      */
     fhirResourceTypes: string[] | null;
+
+    /**
+     * Number of attributes in the file.
+     */
+    numberOfAttributes: number;
 }

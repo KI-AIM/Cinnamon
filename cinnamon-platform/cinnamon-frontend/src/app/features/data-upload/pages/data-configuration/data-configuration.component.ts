@@ -19,6 +19,7 @@ import { DataSetInfo } from "@shared/model/data-set-info";
 import { DataType } from "@shared/model/data-type";
 import { DateFormatConfiguration } from "@shared/model/date-format-configuration";
 import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
+import { FileInformation } from "@shared/model/file-information";
 import { RangeConfiguration } from "@shared/model/range-configuration";
 import { Status } from "@shared/model/status";
 import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
@@ -65,6 +66,7 @@ export class DataConfigurationComponent implements OnInit {
     protected pageData$: Observable<{
         dataConfiguration: DataConfiguration,
         dataSetInfo: DataSetInfo | null,
+        fileInformation: FileInformation,
         fileType: FileType | null,
         locked: LockedInformation,
         status: Status,
@@ -105,6 +107,7 @@ export class DataConfigurationComponent implements OnInit {
                     return of(null);
                 }),
             ),
+            fileInformation: this.fileService.fileInfo$,
             fileType: this.fileService.fileInfo$.pipe(
                 map(fileInformation => fileInformation.type),
             ),

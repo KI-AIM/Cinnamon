@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
-import { Router } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { TitleService } from "@core/services/title-service.service";
 import { AppConfigService } from "@shared/services/app-config.service";
@@ -24,7 +24,10 @@ export class LoginComponent implements OnInit {
 
 	loginForm: FormGroup<LoginForm>;
 
+	private returnUrl: string | null;
+
 	constructor(
+        private readonly activatedRoute: ActivatedRoute,
         private readonly appConfigService: AppConfigService,
         private readonly notificationService: NotificationService,
         private readonly router: Router,
@@ -35,6 +38,8 @@ export class LoginComponent implements OnInit {
 	}
 
 	ngOnInit() {
+        this.returnUrl = this.activatedRoute.snapshot.queryParamMap.get("returnUrl");
+
         this.isInvitationRequired$ = this.appConfigService.appConfig$.pipe(
             map(config => config.isInvitationRequired),
         );
@@ -55,14 +60,14 @@ export class LoginComponent implements OnInit {
         this.userService.cachedPasswordInput = null;
 
         if (this.userService.isAuthenticated()) {
-            this.userService.routeToUser$().subscribe();
+            this.userService.routeToUser$(this.returnUrl).subscribe();
         }
 	}
 
 	onSubmit() {
         const loginData = this.loginForm.value as { username: string; password: string };
         this.userService.login(loginData).pipe(
-            switchMap(() => this.userService.routeToUser$())
+            switchMap(() => this.userService.routeToUser$(this.returnUrl))
         ).subscribe({
             error: (error) => {
                 let message = "Something went wrong during login. Please try again";

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,6 +46,44 @@ public class DateTimeDataTest {
 		Configuration config = estimation.getConfigurations().get(0);
 		DateTimeFormatConfiguration dateFormat = assertInstanceOf(DateTimeFormatConfiguration.class, config);
 		assertEquals("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", dateFormat.getDateTimeFormatter());
+	}
+
+	@Test
+	public void estimateColumnConfiguration24HourClock() {
+		String value = "2024-01-01 14:30:00";
+
+		ColumnConfiguration estimation = builder.estimateColumnConfiguration(value);
+
+		assertEquals(DataType.DATE_TIME, estimation.getType());
+
+		Configuration config = estimation.getConfigurations().get(0);
+		DateTimeFormatConfiguration dateTimeFormat = assertInstanceOf(DateTimeFormatConfiguration.class, config);
+		assertEquals("yyyy-MM-dd HH:mm:ss", dateTimeFormat.getDateTimeFormatter());
+	}
+
+	@Test
+	public void estimateColumnConfigurationMillisAndOffset() {
+		String value = "2024-01-01T14:30:00.123+02:00";
+
+		ColumnConfiguration estimation = builder.estimateColumnConfiguration(value);
+
+		assertEquals(DataType.DATE_TIME, estimation.getType());
+
+		Configuration config = estimation.getConfigurations().get(0);
+		DateTimeFormatConfiguration dateTimeFormat = assertInstanceOf(DateTimeFormatConfiguration.class, config);
+		assertEquals("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", dateTimeFormat.getDateTimeFormatter());
+	}
+
+	@Test
+	public void estimateFormatForSamplesResolvesDayFirstUsingColumnEvidence() {
+		// "13-04-2020 10:00:00" can only be day-first, which should disambiguate the whole column
+		// in favor of dd-MM-yyyy even though "05-04-2020 10:00:00" alone is ambiguous.
+		List<String> samples = List.of("13-04-2020 10:00:00", "05-04-2020 10:00:00");
+
+		Optional<String> format = builder.estimateFormatForSamples(samples);
+
+		assertTrue(format.isPresent());
+		assertEquals("dd-MM-yyyy HH:mm:ss", format.get());
 	}
 
 	@Test

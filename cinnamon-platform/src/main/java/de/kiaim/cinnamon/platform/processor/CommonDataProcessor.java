@@ -3,6 +3,8 @@ package de.kiaim.cinnamon.platform.processor;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.Configuration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DateFormatConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DateTimeFormatConfiguration;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.DataBuildingException;
@@ -293,7 +295,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
             case MOST_GENERAL -> getMostGeneralDatatypeFromCountMap(countedEstimatedDatatypes);
         };
 
-        final var configs = getMostEstimatedConfiguration(estimatedDataType, columnConfigurationForSamples);
+        final var configs = estimateConfigurationsForType(estimatedDataType, attributeSamples, columnConfigurationForSamples);
         var columnConfiguration = new ColumnConfiguration();
         columnConfiguration.setType(estimatedDataType);
         columnConfiguration.setConfigurations(configs);
@@ -325,6 +327,51 @@ public abstract class CommonDataProcessor implements DataProcessor {
         }
 
         return columnConfiguration;
+    }
+
+    /**
+     * Determines the configurations for the estimated data type of a column.
+     * <p>
+     * For {@link DataType#DATE} and {@link DataType#DATE_TIME}, the format is chosen by testing every known
+     * format against every sample that was individually estimated as that type, and picking the format that
+     * matches the most samples. This avoids the order-dependent misdetection that would otherwise occur when
+     * ambiguous numeric formats (e.g. {@code dd/MM/yyyy} vs. {@code MM/dd/yyyy}) are resolved per-sample instead
+     * of using evidence from the whole column.
+     * <p>
+     * All other data types keep using the modal vote of the per-sample estimations via
+     * {@link #getMostEstimatedConfiguration(DataType, List)}.
+     *
+     * @param estimatedDataType             The estimated data type for the column.
+     * @param attributeSamples              The raw samples of the column.
+     * @param columnConfigurationForSamples The per-sample estimation results, aligned by index with attributeSamples.
+     * @return The configurations for the column.
+     */
+    private List<Configuration> estimateConfigurationsForType(
+            final DataType estimatedDataType,
+            final List<String> attributeSamples,
+            final List<ColumnConfiguration> columnConfigurationForSamples
+    ) {
+        if (estimatedDataType == DataType.DATE || estimatedDataType == DataType.DATE_TIME) {
+            final List<String> matchingSamples = new ArrayList<>();
+            for (int i = 0; i < attributeSamples.size(); i++) {
+                if (columnConfigurationForSamples.get(i).getType() == estimatedDataType) {
+                    matchingSamples.add(attributeSamples.get(i));
+                }
+            }
+
+            final Optional<String> bestFormat = estimatedDataType == DataType.DATE
+                    ? new DateData.DateDataBuilder().estimateFormatForSamples(matchingSamples)
+                    : new DateTimeData.DateTimeDataBuilder().estimateFormatForSamples(matchingSamples);
+
+            if (bestFormat.isPresent()) {
+                final Configuration formatConfiguration = estimatedDataType == DataType.DATE
+                        ? new DateFormatConfiguration(bestFormat.get())
+                        : new DateTimeFormatConfiguration(bestFormat.get());
+                return List.of(formatConfiguration);
+            }
+        }
+
+        return getMostEstimatedConfiguration(estimatedDataType, columnConfigurationForSamples);
     }
 
     /**

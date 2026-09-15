@@ -10,6 +10,7 @@ import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.*;
+import de.kiaim.cinnamon.platform.helper.DataSetCopyReader;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.model.dto.*;
@@ -39,6 +40,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.jspecify.annotations.Nullable;
+import org.postgresql.PGConnection;
+import org.postgresql.copy.CopyManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,7 +55,6 @@ import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -1720,40 +1722,14 @@ public class DatabaseService {
 			                                              "The Table for the DataSet could not be created!", e);
 		}
 
-		// Insert data
-		try (final Statement insertStatement = connection.createStatement()) {
-			long rowNumber = 0;
-			for (final DataRow dataRow : dataSet.getDataRows()) {
-				final List<String> stringRow = new ArrayList<>();
-
-				// Add values from the dataset, account for rows containing too many values
-				int columnIndex = 0;
-				final int numberRowsCapped = Math.min(dataRow.getData().size(),
-				                                      dataSet.getDataConfiguration().getConfigurations().size());
-				for (int i = 0; i < numberRowsCapped; i++) {
-					final Data data = dataRow.getData().get(i);
-					stringRow.add(convertDataToString(data));
-					columnIndex++;
-				}
-
-				// Fill missing values with null values to account for rows containing too few values
-				for (int i = columnIndex; i < dataSet.getDataConfiguration().getConfigurations().size(); i++) {
-					stringRow.add("null");
-				}
-
-				// Add initial value for is_hold_out flag
-				stringRow.add(Boolean.FALSE.toString());
-
-				// Add row number for row_number
-				stringRow.add(String.valueOf(rowNumber));
-
-				String values = String.join(",", stringRow);
-
-				insertStatement.execute("INSERT INTO " + tableName + " VALUES (" + values + ")");
-
-				rowNumber++;
-			}
-		} catch (SQLException e) {
+		// Bulk-load the data using PostgreSQL's COPY protocol. This avoids the per-row round-trip
+		// and commit cost of individual INSERT statements, which dominates the cost of storing
+		// large data sets.
+		final String copyQuery = createCopyQuery(dataSet.getDataConfiguration(), tableName);
+		try {
+			final CopyManager copyManager = connection.unwrap(PGConnection.class).getCopyAPI();
+			copyManager.copyIn(copyQuery, new DataSetCopyReader(dataSet));
+		} catch (SQLException | IOException e) {
 			try {
 				deleteDataSet(dataSetEntity);
 			} catch (InternalDataSetPersistenceException ignored) {
@@ -1769,27 +1745,23 @@ public class DatabaseService {
 		return dataSetRepository.save(dataSetEntity);
 	}
 
+	/**
+	 * Builds the {@code COPY ... FROM STDIN} command used to bulk-load a data set into the given table.
+	 * The column order matches the schema created by {@link DataschemeGenerator#createSchema}.
+	 *
+	 * @param dataConfiguration The configuration describing the data columns.
+	 * @param tableName         Name of the table to copy into.
+	 * @return The COPY command.
+	 */
+	private String createCopyQuery(final DataConfiguration dataConfiguration, final String tableName) {
+		final List<String> columnNames = dataConfiguration.getConfigurations().stream()
+		                                                  .map(ColumnConfiguration::getName)
+		                                                  .map(this::quoteColumnName)
+		                                                  .collect(Collectors.toCollection(ArrayList::new));
+		columnNames.add(quoteColumnName(DataschemeGenerator.HOLD_OUT_FLAG_NAME));
+		columnNames.add(quoteColumnName(DataschemeGenerator.ROW_INDEX_NAME));
 
-	private String convertDataToString(final Data data) throws InternalDataSetPersistenceException {
-		if (data.getValue() == null) {
-			return "null";
-		}
-
-		return switch (data.getDataType()) {
-			case BOOLEAN -> data.getValue().toString();
-			case DATE -> "'" + data.getValue() + "'";
-			case DATE_TIME ->
-					"'" + data.asDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")) + "'";
-			case DECIMAL -> data.getValue().toString();
-			case INTEGER -> data.getValue().toString();
-			case TEXT -> "'" + data.getValue().toString().replace("'", "''") + "'";
-			case STRING -> "'" + data.getValue().toString().replace("'", "''") + "'";
-			case UNDEFINED -> {
-				LOGGER.error("Undefined data type can not be persisted!");
-				throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_TYPE_STORE,
-				                                              "Undefined data type can not be persisted!");
-			}
-		};
+		return "COPY " + tableName + " (" + String.join(",", columnNames) + ") FROM STDIN";
 	}
 
 	private DataSet exportDataSet(final DataSetEntity dataSetEntity, final RowSelector rowSelector,

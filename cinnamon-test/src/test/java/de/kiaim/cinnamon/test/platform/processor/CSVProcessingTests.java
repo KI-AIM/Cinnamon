@@ -519,6 +519,25 @@ public class CSVProcessingTests {
 	}
 
 	@Test
+	void testEstimationAmbiguousDateColumnUsesColumnWideEvidence() {
+		// "13/04/2020" can only be day-first (13 is not a valid month), which should disambiguate
+		// the whole column in favor of dd/MM/yyyy even though the other samples alone are ambiguous.
+		List<List<String>> samples = List.of(
+				List.of("13/04/2020", "05/04/2020", "07/04/2020")
+		);
+
+		DataConfigurationEstimation estimation = csvProcessor.estimateDataConfiguration(
+				samples, DatatypeEstimationAlgorithm.MOST_ESTIMATED, 1, List.of("date"));
+
+		ColumnConfiguration columnConfiguration = estimation.getDataConfiguration().getConfigurations().get(0);
+		assertEquals(DataType.DATE, columnConfiguration.getType());
+
+		DateFormatConfiguration dateFormat = assertInstanceOf(DateFormatConfiguration.class,
+		                                                       columnConfiguration.getConfigurations().get(0));
+		assertEquals("dd/MM/yyyy", dateFormat.getDateFormatter());
+	}
+
+	@Test
 	void testWrite() throws IOException {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		DataSet dataset = DataSetTestHelper.generateDataSet();

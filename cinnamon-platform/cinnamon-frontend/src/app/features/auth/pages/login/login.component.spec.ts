@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { ActivatedRoute, convertToParamMap } from "@angular/router";
 
 import { LoginComponent } from "./login.component";
 
@@ -9,6 +10,12 @@ describe("LoginComponent", () => {
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
 			declarations: [LoginComponent],
+			providers: [
+				{
+					provide: ActivatedRoute,
+					useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+				},
+			],
 		}).compileComponents();
 
 		fixture = TestBed.createComponent(LoginComponent);

@@ -37,7 +37,7 @@ Test guidance differs by what changed:
   - `cinnamon-risk-assessment`: `python -m xmlrunner discover -s Tests -p "*.py"` (unittest-style; note tests live in `Tests/`, capital T — stray `test_*.py` files at the module root are not part of the discovered suite)
   - `cinnamon-synthetization`: `pytest tests/` (split into `tests/unit/` and `tests/integration/`)
   - `cinnamon-evaluation`: pytest, tests in `tests/` (not currently wired into CI)
-- `cinnamon-test` supports three DB backends for local runs (real Postgres, TestContainers, H2), configurable via `cinnamon.test.database` in `application-test.properties`. CI and production always use real Postgres, so prefer testing against Postgres too.
+- `cinnamon-test` supports two DB backends for local runs (a custom real Postgres, or TestContainers), configurable via `cinnamon.test.database` in `application-test.properties`. CI and production always use real Postgres. There is no H2 fallback: `DatabaseService.storeDataSet` bulk-loads data via PostgreSQL's `COPY` protocol, so tests that store a data set require a real Postgres backend.
 
 ## Linting
 

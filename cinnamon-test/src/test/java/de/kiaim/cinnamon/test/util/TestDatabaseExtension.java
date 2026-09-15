@@ -60,7 +60,6 @@ public class TestDatabaseExtension implements BeforeAllCallback, AfterAllCallbac
 
 		switch (database) {
 			case POSTGRES_TESTCONTAINERS -> usePostgres();
-			case H2 -> useH2();
 			case POSTGRES_CUSTOM -> useCustomDatabase();
 			case AUTO -> useAutoDatabase();
 		}
@@ -84,12 +83,11 @@ public class TestDatabaseExtension implements BeforeAllCallback, AfterAllCallbac
 
 		return switch (configuredValue.trim().toLowerCase()) {
 			case "auto" -> TestDatabase.AUTO;
-			case "h2" -> TestDatabase.H2;
 			case "postgres_custom" -> TestDatabase.POSTGRES_CUSTOM;
 			case "postgres_testcontainers" -> TestDatabase.POSTGRES_TESTCONTAINERS;
 			default -> throw new IllegalArgumentException(
 					"Unsupported test database value '" + configuredValue + "'. " +
-					"Supported values are: auto, h2, postgres_testcontainer, postgres_custom"
+					"Supported values are: auto, postgres_testcontainer, postgres_custom"
 			);
 		};
 	}
@@ -104,7 +102,7 @@ public class TestDatabaseExtension implements BeforeAllCallback, AfterAllCallbac
 			}
 
 			System.out.println(
-					"Configured test database is not available, falling back to Docker/Testcontainers or H2: " +
+					"Configured test database is not available, falling back to Docker/Testcontainers: " +
 					properties.getUrl()
 			);
 		}
@@ -112,7 +110,11 @@ public class TestDatabaseExtension implements BeforeAllCallback, AfterAllCallbac
 		if (isDockerAvailable()) {
 			usePostgres();
 		} else {
-			useH2();
+			throw new IllegalStateException(
+					"No test database is available. A custom PostgreSQL database must be configured, " +
+					"or Docker must be available for Testcontainers. An H2 fallback is no longer " +
+					"supported since DatabaseService.storeDataSet uses PostgreSQL's COPY protocol."
+			);
 		}
 	}
 
@@ -139,28 +141,6 @@ public class TestDatabaseExtension implements BeforeAllCallback, AfterAllCallbac
 		activeDatabase = TestDatabase.POSTGRES_TESTCONTAINERS;
 
 		System.out.println("Using PostgreSQL Testcontainer for tests: " + postgres.getJdbcUrl());
-	}
-
-	private static void useH2() {
-		System.setProperty(
-				"spring.datasource.url",
-				"jdbc:h2:mem:cinnamon_test_db;" +
-				"DB_CLOSE_DELAY=-1;" +
-				"DB_CLOSE_ON_EXIT=FALSE;" +
-				"MODE=PostgreSQL;" +
-				"DATABASE_TO_LOWER=TRUE;" +
-				"DEFAULT_NULL_ORDERING=HIGH;" +
-				"INIT=CREATE DOMAIN IF NOT EXISTS TINYINT AS SMALLINT\\;" +
-				"CREATE DOMAIN IF NOT EXISTS BLOB AS BYTEA"
-		);
-		System.setProperty("spring.datasource.username", "sa");
-		System.setProperty("spring.datasource.password", "");
-		System.setProperty("spring.datasource.driver-class-name", "org.h2.Driver");
-		System.setProperty("spring.jpa.database-platform", "org.hibernate.dialect.H2Dialect");
-
-		activeDatabase = TestDatabase.H2;
-
-		System.out.println("Using H2 in-memory database for tests");
 	}
 
 	private static void useCustomDatabase() {
@@ -306,14 +286,9 @@ public class TestDatabaseExtension implements BeforeAllCallback, AfterAllCallbac
 		 * <ol>
 		 * <li>Custom database defined in application properties</li>
 		 * <li>Docker/Testcontainers</li>
-		 * <li>H2 in-memory database</li>
 		 * </ol>
 		 */
 		AUTO,
-		/**
-		 * Uses an H2 in-memory database.
-		 */
-		H2,
 		/**
 		 * Uses a custom database defined in the application properties.
 		 */

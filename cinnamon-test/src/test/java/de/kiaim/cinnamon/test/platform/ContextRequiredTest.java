@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @ExtendWith(TestDatabaseExtension.class)
@@ -44,19 +46,28 @@ public abstract class ContextRequiredTest {
 		externalProcess.setUuid(UUID.randomUUID());
 
 		final ExecutionStepEntity executionStep = new ExecutionStepEntity();
-		executionStep.setStatus(status == ProcessStatus.RUNNING ? StageStatus.RUNNING : StageStatus.FINISHED);
 		executionStep.addProcess(externalProcess);
 
 		final ProjectEntity project = new ProjectEntity();
 		final PipelineEntity pipeline = project.addPipeline(new PipelineEntity());
 		pipeline.addStage(stage, executionStep);
 
-		if (status == ProcessStatus.RUNNING) {
-			executionStep.setCurrentProcessIndex(0);
-			externalProcess.setServerInstance(job.getServer().getName() + ".0");
-		} else if (status == ProcessStatus.FINISHED) {
-			externalProcess.setStatus("FINISHED");
-			externalProcess.getResultFiles().put("data", new LobWrapperEntity());
+		switch (status) {
+			case SCHEDULED -> {
+				executionStep.setCurrentProcessIndex(0);
+				executionStep.setStatus(StageStatus.RUNNING);
+				externalProcess.setScheduledTime(Timestamp.valueOf(LocalDateTime.now()));
+			}
+			case RUNNING -> {
+				executionStep.setCurrentProcessIndex(0);
+				executionStep.setStatus(StageStatus.RUNNING);
+				externalProcess.setServerInstance(job.getServer().getName() + ".0");
+			}
+			case FINISHED -> {
+				executionStep.setStatus(StageStatus.FINISHED);
+				externalProcess.setStatus("FINISHED");
+				externalProcess.getResultFiles().put("data", new LobWrapperEntity());
+			}
 		}
 
 		return project;

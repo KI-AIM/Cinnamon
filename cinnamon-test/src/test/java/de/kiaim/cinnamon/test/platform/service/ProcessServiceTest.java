@@ -117,4 +117,16 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		           "Unexpected start of the error message: '" + message + "'");
 	}
 
+	@Test
+	public void cancelScheduledProcess() {
+		final Stage stage = cinnamonConfiguration.getPipeline().getStageList().get(0);
+		final ProjectEntity project = createProject(stage, ProcessStatus.SCHEDULED);
+
+		var pipeline = project.getPipelines().get(0);
+		assertDoesNotThrow(() -> processService.cancel(pipeline));
+
+		var process = pipeline.getStageByStep(stage).getProcess(0);
+		assertEquals(ProcessStatus.CANCELED, process.getExternalProcessStatus());
+	}
+
 }

@@ -891,12 +891,12 @@ public class ProcessService {
 
 		// Get configuration
 		final ExternalEndpoint ese = stepService.getExternalServerEndpointConfiguration(backgroundProcess);
+		ExternalServerInstance esi = null;
 
 		if (backgroundProcess.getExternalProcessStatus() == ProcessStatus.SCHEDULED) {
 			backgroundProcess.setScheduledTime(null);
 		} else if (!ese.getCancelEndpoint().isBlank()) {
-			final ExternalServerInstance esi = stepService.getExternalServerInstanceConfiguration(
-					backgroundProcess.getServerInstance());
+			esi = stepService.getExternalServerInstanceConfiguration(backgroundProcess.getServerInstance());
 
 			final String serverUrl = esi.getUrl();
 			final String cancelEndpoint = injectUrlParameter(ese.getCancelEndpoint(), backgroundProcess);
@@ -933,13 +933,17 @@ public class ProcessService {
 			         .block();
 
 			backgroundProcess.setServerInstance(null);
-			startScheduledProcess(ese, esi);
 		}
 
 		backgroundProcess.setExternalProcessStatus(ProcessStatus.CANCELED);
 		log.debug("Canceled process '{}'", backgroundProcess.getUuid());
 
 		backgroundProcessRepository.save(backgroundProcess);
+
+		if (esi != null) {
+			// Must be called after save to have a valid state
+			startScheduledProcess(ese, esi);
+		}
 	}
 
 	/**

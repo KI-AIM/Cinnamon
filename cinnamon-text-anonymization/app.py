@@ -11,12 +11,12 @@ from flask import Flask, Response, jsonify, request
 
 from cinnamon_text_anonymization.anonymization_service import run_anonymization
 from cinnamon_text_anonymization.status_store import (
+    JobStatus,
     cancel_job,
     get_job_status,
     is_cancellation_requested,
     register_job,
     set_job_status,
-    JobStatus
 )
 
 logging.basicConfig(
@@ -94,6 +94,33 @@ def post_error_callback(callback_url: str, session_key: str, message: str,status
         )
 
 
+def text_anonymization_configs(anonymization_config: dict) -> list[dict]:
+    """Returns enabled PII/sensitive text configurations.
+
+    The nested configuration is the only supported wire format.
+    """
+    configurations = anonymization_config.get("textAnonymizationConfigurations", None)
+
+    if configurations is not None:
+        if not isinstance(configurations, dict):
+            raise ValueError("textAnonymizationConfigurations must be an object")
+
+        result: list[dict] = []
+        for key, anonymization_type in (("pii", "PII"), ("sensitive", "SENSITIVE")):
+            value = configurations.get(key)
+            if value is None:
+                continue
+            if not isinstance(value, dict):
+                raise ValueError(f"textAnonymizationConfigurations.{key} must be an object")
+            if value.get("enabled", True) is False:
+                continue
+
+            result.append({**value, "anonymizationType": anonymization_type})
+        return result
+
+    raise ValueError("Missing textAnonymizationConfigurations")
+
+
 def run_anonymization_job(session_key: str, callback_url: str, data: pd.DataFrame, config: dict) -> None:
     """Runs anonymization and send the result to the callback URL.
 
@@ -103,8 +130,18 @@ def run_anonymization_job(session_key: str, callback_url: str, data: pd.DataFram
         data (pd.DataFrame): The data to be anonymized.
         config (dict): The config with the details needed for anonymization.
             e.g: {"anonymization": {
-                            "textAnonymizationConfiguration": {
-                            "modelType":"XLM ROBERTA",
+                            "textAnonymizationConfigurations": {
+                            "pii": {
+                            "enabled": true,
+                            "modelType":"LLM",
+                            "llmProfile":"BIH GPU",
+                            "columns": ["dokument_text"],
+                            "confidenceThreshold":0.9,
+                            "anonymizationMode":"redact"},
+
+                            "sensitive": {
+                            "enabled": true,
+                            "modelType":"GELECTRA",
                             "columns": ["dokument_text"],
                             "confidenceThreshold":0.9,
                             "anonymizationMode":"redact"}
@@ -115,9 +152,18 @@ def run_anonymization_job(session_key: str, callback_url: str, data: pd.DataFram
         return
 
     try:
-        text_ano_config = (config.get("anonymization") or {}).get("textAnonymizationConfiguration")
-        if text_ano_config is None:
-            raise ValueError("Missing anonymization.textAnonymizationConfiguration")
+        anonymization_config = config.get("anonymization") or {}
+        text_ano_configs = text_anonymization_configs(anonymization_config)
+
+        # Keep the profile key canonical before handing configurations to the
+        # inference service. This also supports imported snake_case YAML.
+        text_ano_configs = [
+            {
+                **text_ano_config,
+                "llmProfile": text_ano_config.get("llmProfile", "")
+            }
+            for text_ano_config in text_ano_configs
+        ]
     except Exception as error:
         logger.exception(
             "Anonymization config is empty for session %s",
@@ -134,7 +180,9 @@ def run_anonymization_job(session_key: str, callback_url: str, data: pd.DataFram
         return
 
     try:
-        result = run_anonymization(text_ano_config, data)
+        result = data
+        for text_ano_config in text_ano_configs:
+            result = run_anonymization(text_ano_config, result)
         result_bytes = result.to_csv(index=False).encode("utf-8")
     except Exception as error:
         logger.exception(

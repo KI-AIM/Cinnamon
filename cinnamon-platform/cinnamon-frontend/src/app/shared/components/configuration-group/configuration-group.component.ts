@@ -287,6 +287,9 @@ export class ConfigurationGroupComponent implements AfterViewInit, OnChanges {
                 }
 
                 const componentRef: ComponentRef<AdditionalConfigurationGroup> = container.createComponent(config.component);
+                for (const [inputName, inputValue] of Object.entries(config.componentInputs)) {
+                    componentRef.setInput(inputName, inputValue);
+                }
                 componentRef.setInput('disabled', this.isAdditionalConfigDisabled(config));
                 componentRef.instance.form = this.form;
                 this.instances.push(componentRef);

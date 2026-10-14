@@ -36,11 +36,13 @@ def request_data(*,
         else json.dumps(
             {
                 "anonymization": {
-                    "textAnonymizationConfiguration": {
-                        "modelType": "XLM ROBERTA",
-                        "columns": ["text"],
-                        "confidenceThreshold": 0.9,
-                        "anonymizationMode": "redact",
+                    "textAnonymizationConfigurations": {
+                        "pii": {
+                            "modelType": "XLM ROBERTA",
+                            "columns": ["text"],
+                            "confidenceThreshold": 0.9,
+                            "anonymizationMode": "redact",
+                        },
                     }
                 }
             }
@@ -150,7 +152,7 @@ def test_cancel_endpoint_returns_not_found_for_unknown_job(client) -> None:
 
 def test_cancelled_job_does_not_send_callback() -> None:
     data = pd.DataFrame({"text": ["Jane"]})
-    config = {"anonymization": {"textAnonymizationConfiguration": {"columns": ["text"]}}}
+    config = {"anonymization": {"textAnonymizationConfigurations": {"pii": {"columns": ["text"]}}}}
     assert app_module.register_job("session-1")
     assert app_module.cancel_job("session-1")
 
@@ -195,14 +197,14 @@ def test_start_endpoint_parses_csv_and_starts_background_job(client) -> None:
         thread_kwargs["args"][2],
         pd.DataFrame({"text": ["Jane"]}),
     )
-    ano_config =  thread_kwargs["args"][3]["anonymization"]["textAnonymizationConfiguration"]
+    ano_config = thread_kwargs["args"][3]["anonymization"]["textAnonymizationConfigurations"]["pii"]
     assert ano_config["modelType"] == "XLM ROBERTA"
     fake_thread.start.assert_called_once_with()
 
 
 def test_run_anonymization_job_posts_success_callback() -> None:
     data = pd.DataFrame({"text": ["[PERSON]"]})
-    config = {"anonymization": {"textAnonymizationConfiguration": {"columns": ["text"]}}}
+    config = {"anonymization": {"textAnonymizationConfigurations": {"pii": {"columns": ["text"]}}}}
     assert app_module.register_job("session-1")
 
     with (
@@ -219,9 +221,48 @@ def test_run_anonymization_job_posts_success_callback() -> None:
     error_callback.assert_not_called()
 
 
+def test_run_anonymization_job_processes_enabled_pii_and_sensitive_configs() -> None:
+    data = pd.DataFrame({"text": ["Jane hat Fieber"]})
+    pii_result = pd.DataFrame({"text": ["[NAME_PATIENT]"]})
+    sensitive_result = pd.DataFrame({"text": ["[DIAGNOSIS]"]})
+    config = {
+        "anonymization": {
+            "textAnonymizationConfigurations": {
+                "pii": {
+                    "enabled": True,
+                    "modelType": "XLM ROBERTA",
+                    "columns": ["text"],
+                    "anonymizationMode": "redact",
+                },
+                "sensitive": {
+                    "enabled": True,
+                    "modelType": "GELECTRA",
+                    "columns": ["text"],
+                    "anonymizationMode": "redact",
+                },
+            }
+        }
+    }
+    assert app_module.register_job("session-1")
+
+    with (
+        patch.object(app_module, "run_anonymization", side_effect=[pii_result, sensitive_result]) as anonymize,
+        patch.object(app_module, "post_success_callback") as success_callback,
+    ):
+        app_module.run_anonymization_job("session-1", "http://callback", data, config)
+
+    assert anonymize.call_count == 2
+    assert anonymize.call_args_list[0].args[0]["anonymizationType"] == "PII"
+    assert anonymize.call_args_list[1].args[0]["anonymizationType"] == "SENSITIVE"
+    success_callback.assert_called_once_with(
+        "http://callback",
+        b"text\n[DIAGNOSIS]\n",
+    )
+
+
 def test_run_anonymization_job_posts_error_callback_when_processing_fails() -> None:
     data = pd.DataFrame({"text": ["Jane"]})
-    config = {"anonymization": {"textAnonymizationConfiguration": {"columns": ["text"]}}}
+    config = {"anonymization": {"textAnonymizationConfigurations": {"pii": {"columns": ["text"]}}}}
     assert app_module.register_job("session-1")
 
     with (

@@ -19,6 +19,21 @@ MODEL_ENV_KEYS = {
     "GELECTRA": "GELECTRA",
 }
 
+SENSITIVE_MODEL_ENV_KEYS = {
+    "XLM ROBERTA": "SENSITIVE_XLM",
+    "GELECTRA": "SENSITIVE_GELECTRA",
+}
+
+MODEL_DEFAULT_LOCAL_PATHS = {
+    "XLM ROBERTA": "models/xlm-grascco-pii",
+    "GELECTRA": "models/gelectra-grascco-pii",
+}
+
+SENSITIVE_MODEL_DEFAULT_LOCAL_PATHS = {
+    "XLM ROBERTA": "models/xlm-bronco150-sensitive",
+    "GELECTRA": "models/gelectra-bronco150-sensitive",
+}
+
 def load_inference_config(model_path: str | Path) -> tuple[int, int]:
     """Loads the model-specific window size and overlap.
 
@@ -148,7 +163,7 @@ def read_hugging_face_token() -> str | None:
     return None
 
 
-def resolve_model_directory(model_type: str) -> Path:
+def resolve_model_directory(model_type: str, anonymization_type: str = "PII") -> Path:
     """Resolves a mounted local model or downloads it into the mounted cache.
 
     If a local model is absent, it's fetched from Hugging Face and stored to TEXT_ANONYMIZATION_MODEL_CACHE.
@@ -159,9 +174,18 @@ def resolve_model_directory(model_type: str) -> Path:
     Returns:
         The model's local path.
     """
-    env_key = MODEL_ENV_KEYS[model_type]
+    anonymization_type = anonymization_type.strip().upper()
+    if anonymization_type == "SENSITIVE":
+        env_key = SENSITIVE_MODEL_ENV_KEYS[model_type]
+        default_local_path = SENSITIVE_MODEL_DEFAULT_LOCAL_PATHS[model_type]
+    else:
+        env_key = MODEL_ENV_KEYS[model_type]
+        default_local_path = MODEL_DEFAULT_LOCAL_PATHS[model_type]
 
-    local_path = os.getenv(f"TEXT_ANONYMIZATION_{env_key}_LOCAL_PATH", "models")
+    local_path = os.getenv(
+        f"TEXT_ANONYMIZATION_{env_key}_LOCAL_PATH",
+        default_local_path,
+    )
 
     existing = existing_model_directory(local_path)
     if existing is not None:
@@ -196,3 +220,94 @@ def resolve_model_directory(model_type: str) -> Path:
     logger.info(f"completed HF download of {repository}")
 
     return downloaded
+
+
+def resolve_overlapping_entities(text: str, entities: list[dict]) -> list[dict]:
+    """Validates and resolves overlapping entity spans.
+
+    Entity spans may overlap because models can return nested entities.
+    Name entities containing a ``NAME_TITLE`` span are
+    trimmed so the title remains a separate entity. Remaining overlaps are
+    resolved by preferring the longest span, then the highest confidence score.
+
+    Args:
+        text: The original text that is processed.
+        entities: The entities detected in the original text.
+
+    Returns:
+        A "clean" version of the entities, where overlaps are avoided.
+    """
+    # Different model predictions can describe the same text at different
+    # granularities (for example, both ``Prof. Dr. Norbert Breuer`` and
+    # ``Breuer``). Applying overlapping spans from right to left still shifts
+    # the offsets of the earlier span and corrupts the output. Keep the
+    # longest non-overlapping span so the original offsets remain valid.
+    valid_entities = [
+        entity
+        for entity in entities
+        if 0 <= entity["start"] < entity["end"] <= len(text)
+    ]
+
+    # The training annotations keep titles separate from names. If the LLM
+    # returns both ``Prof. Dr.`` and the larger ``Prof. Dr. Norbert Breuer``
+    # span, trim the name span after the title instead of dropping the title.
+    title_spans = [
+        entity for entity in valid_entities if entity.get("label") == "NAME_TITLE"
+    ]
+    title_aware_entities: list[dict] = []
+    for entity in valid_entities:
+        if entity.get("label") not in {"NAME_DOCTOR"}:
+            title_aware_entities.append(entity)
+            continue
+
+        contained_titles = [
+            title
+            for title in title_spans
+            if title["start"] <= entity["start"]
+               and title["end"] <= entity["end"]
+               and title["end"] > entity["start"]
+        ]
+        if not contained_titles:
+            title_aware_entities.append(entity)
+            continue
+
+        name_start = max(title["end"] for title in contained_titles)
+        while name_start < entity["end"] and text[name_start].isspace():
+            name_start += 1
+        if name_start < entity["end"]:
+            trimmed_entity = dict(entity)
+            trimmed_entity["start"] = name_start
+            trimmed_entity["text"] = text[name_start:entity["end"]]
+            title_aware_entities.append(trimmed_entity)
+        else:
+            logger.debug(
+                "Dropping name span fully covered by a title: %s-%s.",
+                entity["start"],
+                entity["end"],
+            )
+
+    selected_entities: list[dict] = []
+    for entity in sorted(
+            title_aware_entities,
+            key=lambda item: (
+                    -(item["end"] - item["start"]),
+                    -float(item.get("score", 0.0)),
+                    item["start"],
+            ),
+    ):
+        overlaps = any(
+            entity["start"] < selected["end"]
+            and entity["end"] > selected["start"]
+            for selected in selected_entities
+        )
+        if overlaps:
+            logger.debug(
+                "Skipping overlapping entity span %s-%s (%s).",
+                entity["start"],
+                entity["end"],
+                entity.get("label"),
+            )
+            continue
+        selected_entities.append(entity)
+
+    return selected_entities

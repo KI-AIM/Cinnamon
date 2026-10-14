@@ -34,6 +34,8 @@ services:
             - synthetization-network
             - anonymization-network
             - evaluation-network
+        env_file:
+            - .env
         environment:
             SPRING.SERVLET.MULTIPART.MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
             CINNAMON_MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
@@ -144,6 +146,8 @@ services:
             - "127.0.0.1:5060:5060"
         networks:
             - anonymization-network
+        env_file:
+            - .env
         volumes:
             - ${TEXT_ANONYMIZATION_MODEL_HOST_PATH}:/app/models:${TEXT_ANONYMIZATION_MODEL_MOUNT_MODE}
             - ${TEXT_ANONYMIZATION_STATUS_HOST_PATH:-./cinnamon-text-anonymization/outputs/status}:/app/outputs/status:rw
@@ -153,10 +157,14 @@ services:
             HF_TOKEN_FILE: /run/secrets/hf_token
             TEXT_ANONYMIZATION_MODEL_CACHE: /app/models
             TEXT_ANONYMIZATION_STATUS_DIR: /app/outputs/status
-            TEXT_ANONYMIZATION_XLM_LOCAL_PATH: /app/models/xlm-grascco
-            TEXT_ANONYMIZATION_GELECTRA_LOCAL_PATH: /app/models/gelectra-grascco
+            TEXT_ANONYMIZATION_XLM_LOCAL_PATH: /app/models/xlm-grascco-pii
+            TEXT_ANONYMIZATION_GELECTRA_LOCAL_PATH: /app/models/gelectra-grascco-pii
+            TEXT_ANONYMIZATION_SENSITIVE_XLM_LOCAL_PATH: /app/models/xlm-bronco150-sensitive
+            TEXT_ANONYMIZATION_SENSITIVE_GELECTRA_LOCAL_PATH: /app/models/gelectra-bronco150-sensitive
             TEXT_ANONYMIZATION_XLM_HF_REPOSITORY: ${TEXT_ANONYMIZATION_XLM_HF_REPOSITORY}
             TEXT_ANONYMIZATION_GELECTRA_HF_REPOSITORY: ${TEXT_ANONYMIZATION_GELECTRA_HF_REPOSITORY}
+            TEXT_ANONYMIZATION_SENSITIVE_XLM_HF_REPOSITORY: ${TEXT_ANONYMIZATION_SENSITIVE_XLM_HF_REPOSITORY}
+            TEXT_ANONYMIZATION_SENSITIVE_GELECTRA_HF_REPOSITORY: ${TEXT_ANONYMIZATION_SENSITIVE_GELECTRA_HF_REPOSITORY}
 secrets:
     hf_token:
         file: ${HF_TOKEN_FILE}

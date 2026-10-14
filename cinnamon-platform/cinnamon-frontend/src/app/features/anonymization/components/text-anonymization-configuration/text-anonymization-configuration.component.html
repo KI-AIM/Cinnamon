@@ -1,7 +1,13 @@
 <div [formGroup]="form">
-    <div [formGroupName]="textAnonymizationConfigurationService.formGroupName">
-        <div class="d-flex">
-            <mat-form-field class="flex-grow-1">
+    <div [formGroupName]="configurationGroupName">
+        <div class="config-input-row">
+            <mat-checkbox color="primary" formControlName="enabled">
+                Enable {{ getTextAnonymizationType() }} anonymization
+            </mat-checkbox>
+        </div>
+
+        <div class="config-input-row">
+            <mat-form-field class="config-input-row-field">
                 <mat-label>Model</mat-label>
                 <mat-select formControlName="modelType">
                     <mat-option *ngFor="let model of modelTypes" [value]="model">
@@ -9,7 +15,7 @@
                     </mat-option>
                 </mat-select>
             </mat-form-field>
-            <div class="config-input-row-button d-flex flex-column justify-content-center input-height ms-2">
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height">
                 <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('modelType')" class="icon-enabled">
                     <mat-icon fontIcon="replay"></mat-icon>
                 </a>
@@ -17,21 +23,47 @@
                     <mat-icon fontIcon="replay"></mat-icon>
                 </span>
             </div>
-            <div class="config-input-row-info ms-2">
+            <div class="config-input-row-info">
                 <app-configuration-input-info
                     [configurationInputDefinition]="modelTypeInfo">
                 </app-configuration-input-info>
             </div>
         </div>
 
-        <div class="d-flex">
-            <mat-form-field class="flex-grow-1">
+        <div class="config-input-row" *ngIf="textConfigGroup.get('modelType')?.value === ModelType.LLM">
+            <mat-form-field class="config-input-row-field">
+                <mat-label>LLM profile</mat-label>
+                <mat-select formControlName="llmProfile">
+                    <mat-option *ngFor="let profile of textAnonymizationConfigurationService.llmProfiles$ | async"
+                                [value]="profile">
+                        {{ profile }}
+                    </mat-option>
+                </mat-select>
+                <mat-error>An LLM profile is required for the LLM model.</mat-error>
+            </mat-form-field>
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height">
+                <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('llmProfile')" class="icon-enabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </a>
+                <span *ngIf="disabled" title="Set to default" class="icon-disabled">
+                    <mat-icon fontIcon="replay"></mat-icon>
+                </span>
+            </div>
+            <div class="config-input-row-info">
+                <app-configuration-input-info
+                    [configurationInputDefinition]="llmProfileInfo">
+                </app-configuration-input-info>
+            </div>
+        </div>
+
+        <div class="config-input-row">
+            <mat-form-field class="config-input-row-field">
                 <mat-label>Text columns</mat-label>
                 <mat-select formControlName="columns" multiple>
                     <mat-option *ngFor="let column of textColumns" [value]="column.name">{{ column.name }}</mat-option>
                 </mat-select>
             </mat-form-field>
-            <div class="config-input-row-button d-flex flex-column justify-content-center input-height ms-2">
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height">
                 <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('columns')" class="icon-enabled">
                     <mat-icon fontIcon="replay"></mat-icon>
                 </a>
@@ -39,20 +71,20 @@
                     <mat-icon fontIcon="replay"></mat-icon>
                 </span>
             </div>
-            <div class="config-input-row-info ms-2">
+            <div class="config-input-row-info">
                 <app-configuration-input-info
                     [configurationInputDefinition]="textColumnsInfo">
                 </app-configuration-input-info>
             </div>
         </div>
 
-        <div class="d-flex">
-            <mat-form-field class="flex-grow-1">
+        <div class="config-input-row">
+            <mat-form-field class="config-input-row-field">
                 <mat-label>Detection confidence threshold</mat-label>
                 <input matInput type="number" step="0.05" min="0" max="1" formControlName="confidenceThreshold">
                 <mat-error *ngIf="textConfigGroup.get('confidenceThreshold')?.invalid">Enter a value from 0 to 1.</mat-error>
             </mat-form-field>
-            <div class="config-input-row-button d-flex flex-column justify-content-center input-height ms-2">
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height">
                 <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('confidenceThreshold')" class="icon-enabled">
                     <mat-icon fontIcon="replay"></mat-icon>
                 </a>
@@ -60,22 +92,22 @@
                     <mat-icon fontIcon="replay"></mat-icon>
                 </span>
             </div>
-            <div class="config-input-row-info ms-2">
+            <div class="config-input-row-info">
                 <app-configuration-input-info
                     [configurationInputDefinition]="confidenceThresholdInfo">
                 </app-configuration-input-info>
             </div>
         </div>
 
-        <div class="d-flex">
-            <mat-form-field class="flex-grow-1">
+        <div class="config-input-row">
+            <mat-form-field class="config-input-row-field">
                 <mat-label>Anonymization mode</mat-label>
                 <mat-select formControlName="anonymizationMode">
                     <mat-option [value]="AnonymizationMode.Redact">Redact</mat-option>
                     <mat-option [value]="AnonymizationMode.Pseudonymize">Pseudonymize</mat-option>
                 </mat-select>
             </mat-form-field>
-            <div class="config-input-row-button d-flex flex-column justify-content-center input-height ms-2">
+            <div class="config-input-row-button d-flex flex-column justify-content-center input-height">
                 <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('anonymizationMode')" class="icon-enabled">
                     <mat-icon fontIcon="replay"></mat-icon>
                 </a>
@@ -83,7 +115,7 @@
                     <mat-icon fontIcon="replay"></mat-icon>
                 </span>
             </div>
-            <div class="config-input-row-info ms-2">
+            <div class="config-input-row-info">
                 <app-configuration-input-info
                     [configurationInputDefinition]="anonymizationModeInfo">
                 </app-configuration-input-info>

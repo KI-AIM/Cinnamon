@@ -1,9 +1,12 @@
 import logging
+from typing import Any
 
 import pandas as pd
 
 from cinnamon_text_anonymization.inference import utils
 from cinnamon_text_anonymization.inference.inference_model import InferenceModel
+from cinnamon_text_anonymization.inference.llm_inference import LlmInferenceModel
+from cinnamon_text_anonymization.inference.utils import resolve_overlapping_entities
 
 logger = logging.getLogger(__name__)
 
@@ -12,21 +15,32 @@ ANONYMIZATION_MODES = {"redact", "pseudonymize"}
 BATCH_SIZE = 16
 DEFAULT_CONFIDENCE_THRESHOLD = 0.90
 
+NerModel = InferenceModel | LlmInferenceModel
 
 def get_ner_model(model_type: str,
                   batch_size: int = BATCH_SIZE,
-                  device: str | None = "auto") -> InferenceModel:
+                  device: str | None = "auto",
+                  llm_profile: str | None = None,
+                  anonymization_type: str = "PII") -> NerModel:
     """Loads a NER model for inference.
 
     Args:
         model_type (str): Model type used to select a path from `MODEL_PATHS`.
         batch_size (int): Number of text chunks processed together during inference.
         device (str | None): Device used for inference. Can be "auto", "cpu", "cuda", "cuda:N".
+        llm_profile (str | None): Profile name used when model_type is "LLM".
 
     Returns:
-        The configured NER model.
+        The configured NER model as NerModel.
     """
-    model_path = utils.resolve_model_directory(model_type)
+    if model_type == "LLM":
+        return LlmInferenceModel(
+            profile_name=llm_profile,
+            batch_size=batch_size,
+            anonymization_type=anonymization_type,
+        )
+
+    model_path = utils.resolve_model_directory(model_type, anonymization_type)
     return InferenceModel(
         model_path=model_path,
         batch_size=batch_size,
@@ -53,10 +67,12 @@ def apply_anonymization_mode(text: str, entities: list[dict], anonymization_mode
 
     result = text
 
+    entities = resolve_overlapping_entities(text, entities)
+
     for entity in sorted(
-            entities,
-            key=lambda item: item["start"],
-            reverse=True,
+        entities,
+        key=lambda item: item["start"],
+        reverse=True,
     ):
         replacement = f"[{entity['label']}]"
 
@@ -66,14 +82,14 @@ def apply_anonymization_mode(text: str, entities: list[dict], anonymization_mode
 
 
 def process_texts(texts: list[str],
-                  ner_model: InferenceModel,
+                  ner_model: NerModel,
                   confidence_threshold: float,
                   anonymization_mode: str) -> list[str]:
     """Runs NER and anonymization on a batch of texts.
 
     Args:
         texts (list[str]): Text values to anonymize.
-        ner_model (InferenceModel): NER model used for entity detection.
+        ner_model (NerModel): NER model used for entity detection.
         confidence_threshold (float): Minimum entity confidence score to accept.
         anonymization_mode (str): Transformation applied to detected entities.
 
@@ -109,7 +125,7 @@ def process_texts(texts: list[str],
 def process_column(data: pd.DataFrame,
                    column_position: int,
                    result: pd.DataFrame,
-                   ner_model: InferenceModel,
+                   ner_model: NerModel,
                    confidence_threshold: float,
                    anonymization_mode: str) -> None:
     """Processes the values of `column_position` in `data`.
@@ -140,7 +156,7 @@ def process_column(data: pd.DataFrame,
 
 def anonymize_data(data: pd.DataFrame,
                    target_columns: list[str],
-                   ner_model: InferenceModel,
+                   ner_model: NerModel,
                    confidence_threshold: float,
                    anonymization_mode: str) -> pd.DataFrame:
     """Anonymizes configured text columns in a DataFrame.
@@ -148,7 +164,7 @@ def anonymize_data(data: pd.DataFrame,
     Args:
         data (pd.DataFrame): DataFrame containing the text to anonymize.
         target_columns (list[str]): Column names to anonymize.
-        ner_model (InferenceModel): NER model used for entity detection.
+        ner_model (NerModel): NER model used for entity detection.
         confidence_threshold (float): Minimum entity confidence score to accept.
         anonymization_mode (str): Transformation applied to detected entities.
 
@@ -214,7 +230,27 @@ def run_anonymization(config: dict, data: pd.DataFrame) -> pd.DataFrame:
 
     confidence_threshold = float(config.get("confidenceThreshold", DEFAULT_CONFIDENCE_THRESHOLD))
 
-    ner_model = get_ner_model(model_type=str(model_type), batch_size=BATCH_SIZE)
+    llm_profile = config.get("llmProfile", None)
+    anonymization_type = str(config.get("anonymizationType", "PII")).strip().upper()
+    if anonymization_type not in {"PII", "SENSITIVE"}:
+        raise ValueError(
+            f"Unsupported anonymization type {anonymization_type!r}. "
+            "Expected PII or SENSITIVE."
+        )
+    if model_type == "LLM":
+        if llm_profile is None:
+            raise ValueError("No LLM Profile provided for the LLM model")
+        logger.info("Using configured LLM profile %r.", llm_profile)
+
+    model_loader_kwargs: dict[str, Any] = {
+        "model_type": model_type,
+        "batch_size": BATCH_SIZE,
+        "llm_profile": llm_profile,
+    }
+    # Keep the old PII call shape for compatibility with API users and tests.
+    if "anonymizationType" in config:
+        model_loader_kwargs["anonymization_type"] = anonymization_type
+    ner_model = get_ner_model(**model_loader_kwargs)
 
     logger.info("Using model type=%s from %s (window_size=%s, overlap=%s, batch_size=%s).",
                 model_type,

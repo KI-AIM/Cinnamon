@@ -5,5 +5,11 @@ export enum AnonymizationMode {
 
 export enum ModelType {
     XLM_ROBERTA = 'XLM ROBERTA',
-    GELECTRA = 'GELECTRA'
+    GELECTRA = 'GELECTRA',
+    LLM = 'LLM',
+}
+
+export enum TextAnonymizationType {
+    PII = 'pii',
+    SENSITIVE = 'sensitive',
 }

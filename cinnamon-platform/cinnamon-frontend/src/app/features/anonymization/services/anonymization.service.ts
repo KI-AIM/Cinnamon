@@ -29,7 +29,8 @@ export interface AnonymizationAlgorithmData extends AlgorithmData {
 export class AnonymizationFormConfig extends ConfigurationObject {
     modelConfiguration: any; // Specify the type of `modelConfiguration` as needed.
     attributeConfiguration: AnonymizationAttributeRowConfiguration[];
-    textAnonymizationConfiguration: TextAnonymizationConfiguration | null = null;
+    piiTextAnonymizationConfiguration: TextAnonymizationConfiguration | null = null;
+    sensitiveTextAnonymizationConfiguration: TextAnonymizationConfiguration | null = null;
 }
 
 @Injectable({
@@ -51,6 +52,9 @@ export class AnonymizationService extends AlgorithmService {
     }
 
     public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {
+        const piiConfiguration = arg.piiTextAnonymizationConfiguration;
+        const sensitiveConfiguration = arg.sensitiveTextAnonymizationConfiguration;
+
         return {
             anonymization: {
                 algorithm: {
@@ -66,7 +70,12 @@ export class AnonymizationService extends AlgorithmService {
                     },
                 ],
                 attributeConfiguration: arg.attributeConfiguration,
-                textAnonymizationConfiguration: arg.textAnonymizationConfiguration,
+                textAnonymizationConfigurations: piiConfiguration === null && sensitiveConfiguration === null
+                    ? null
+                    : {
+                        pii: piiConfiguration,
+                        sensitive: sensitiveConfiguration,
+                    },
             }
         };
     }
@@ -78,7 +87,10 @@ export class AnonymizationService extends AlgorithmService {
         delete config["type"];
 
         config[this.attributeConfigurationService.formGroupName] = arg["anonymization"][this.attributeConfigurationService.formGroupName];
-        config.textAnonymizationConfiguration = arg["anonymization"].textAnonymizationConfiguration;
+        const anonymization = arg["anonymization"];
+        const textConfigurations = anonymization.textAnonymizationConfigurations;
+        config.piiTextAnonymizationConfiguration = textConfigurations?.pii ?? null;
+        config.sensitiveTextAnonymizationConfiguration = textConfigurations?.sensitive ?? null;
 
         return {config, selectedAlgorithm};
     }

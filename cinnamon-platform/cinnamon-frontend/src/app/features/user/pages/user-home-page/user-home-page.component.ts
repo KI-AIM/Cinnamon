@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { TitleService } from "@core/services/title-service.service";
+import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { ProjectOverview } from "@shared/model/project";
 import { UserService } from "@shared/services/user.service";
 import { combineLatest, Observable, switchMap } from "rxjs";
@@ -24,6 +25,7 @@ export class UserHomePageComponent implements OnInit {
 
     constructor(
         protected readonly dialog: MatDialog,
+        private readonly errorHandlingService: ErrorHandlingService,
         private readonly formBuilder: FormBuilder,
         private readonly titleService: TitleService,
         private readonly userService: UserService,
@@ -33,7 +35,11 @@ export class UserHomePageComponent implements OnInit {
 
     public ngOnInit(): void {
         this.pageData$ = combineLatest({
-            projects: this.userService.getProjectsForCurrentUser$(),
+            projects: this.userService.projectList$,
+        });
+
+        this.userService.refreshProjectsForCurrentUser$().subscribe({
+            error: error => this.errorHandlingService.addError(error),
         });
 
         this.createProjectForm = this.formBuilder.group({
@@ -50,6 +56,7 @@ export class UserHomePageComponent implements OnInit {
             next: _ => {
                 this.createProjectForm.reset();
             },
+            error: error => this.errorHandlingService.addError(error),
         });
     }
 }

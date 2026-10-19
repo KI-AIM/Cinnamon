@@ -50,26 +50,6 @@
                     </li>
                 </ul>
 
-
-                <div class="nav-bottom">
-
-                    <a class="logout" (click)="onLogout()">
-                        <mat-icon>logout</mat-icon>
-                        <span>Close Project</span>
-                    </a>
-
-                    <div class="nav-bottom-right">
-                        <div class="site-link">
-                            <!-- ID is used for external selenium script. DO NOT REMOVE OR CHANGE! -->
-                            <a id="imprint" (click)="openDialog(imprintDialog)">Imprint</a>
-                        </div>
-                        <div class="site-link">
-                            <a href="https://www.medizin.uni-muenster.de/en/faculty-of-medicine/dataprotection.html"
-                               target="_blank">Data Privacy</a>
-                        </div>
-                    </div>
-                </div>
-
                 <app-project-settings></app-project-settings>
                 <app-project-export></app-project-export>
 
@@ -78,7 +58,29 @@
             }
         }
 
+        <div class="nav-bottom">
+
+            @if (pageData.navigationKey == NavigationKey.PROJECT) {
+                <a class="logout" (click)="onLogout()">
+                    <mat-icon>logout</mat-icon>
+                    <span>Close Project</span>
+                </a>
+            }
+
+            <div class="nav-bottom-right">
+                <div class="site-link">
+                    <!-- ID is used for external selenium script. DO NOT REMOVE OR CHANGE! -->
+                    <a id="imprint" (click)="openDialog(imprintDialog)">Imprint</a>
+                </div>
+                <div class="site-link">
+                    <a href="https://www.medizin.uni-muenster.de/en/faculty-of-medicine/dataprotection.html"
+                       target="_blank">Data Privacy</a>
+                </div>
+            </div>
+        </div>
+
     }
+
 </div>
 
 

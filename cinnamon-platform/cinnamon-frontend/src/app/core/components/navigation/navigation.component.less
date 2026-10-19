@@ -52,21 +52,19 @@
     width: fit-content;
     padding-left: 20px;
     padding-right: 20px;
-    margin-top: auto;
-    padding-top: 6px;
     cursor: pointer;
     color: @color-white;
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 
     span {
-        vertical-align: super;
+        line-height: 1;
     }
 }
 
 .site-link {
-    margin-bottom: auto;
-    margin-top: auto;
-
     a {
         text-align: center;
         cursor: pointer;
@@ -78,12 +76,15 @@
 .nav-bottom {
     display: flex;
     flex-direction: row;
+    align-items: center;
+    height: 40px;
     margin-top: auto;
 }
 
 .nav-bottom-right {
     display: flex;
     flex-direction: row;
+    align-items: center;
     gap: 20px;
     margin-left: auto;
     padding-right: 20px;

@@ -1,11 +1,15 @@
 import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { FormGroup, Validators } from '@angular/forms';
 import { AdditionalConfigurationGroup } from '@shared/interfaces/AdditionalConfigurationGroup';
 import { DataType } from '@shared/model/data-type';
 import { DataConfigurationService } from '@shared/services/data-configuration.service';
 import { Subscription } from 'rxjs';
 import { TextAnonymizationConfigurationService } from '../../services/text-anonymization-configuration.service';
-import { AnonymizationMode, ModelType } from '@shared/model/text-anonymization.types';
+import {
+    AnonymizationMode,
+    ModelType,
+    TextAnonymizationType,
+} from '@shared/model/text-anonymization.types';
 import { ConfigurationInputDefinition } from '@shared/model/configuration-input-definition';
 import { ConfigurationInputType } from '@shared/model/configuration-input-type';
 
@@ -17,7 +21,11 @@ import { ConfigurationInputType } from '@shared/model/configuration-input-type';
 export class TextAnonymizationConfigurationComponent implements AdditionalConfigurationGroup, OnChanges, OnInit, OnDestroy {
     @Input() public disabled!: boolean;
     @Input() public form!: FormGroup;
+    @Input() public configurationGroupName = 'piiTextAnonymizationConfiguration';
+    @Input() public textAnonymizationType: TextAnonymizationType = TextAnonymizationType.PII;
+    @Input() public defaultEnabled = true;
     protected readonly AnonymizationMode = AnonymizationMode;
+    protected readonly ModelType = ModelType;
     protected readonly modelTypes: ModelType[] = Object.values(ModelType);
 
     protected readonly modelTypeInfo: ConfigurationInputDefinition = {
@@ -40,6 +48,20 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
         label: 'Text columns',
         description: 'Select which TEXT columns should be anonymized. All TEXT columns are selected by default.',
         default_value: 'All available text columns',
+        mandatory: false,
+        invert: null,
+        min_value: null,
+        max_value: null,
+        values: null,
+        switch: null,
+    };
+
+    protected readonly llmProfileInfo: ConfigurationInputDefinition = {
+        name: 'llmProfile',
+        type: ConfigurationInputType.STRING,
+        label: 'LLM profile',
+        description: 'Profile name configured through CINNAMON_LLM_PROFILE_* environment variables.',
+        default_value: '',
         mandatory: false,
         invert: null,
         min_value: null,
@@ -78,6 +100,8 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
 
     protected textColumns: Array<{name: string, index: number}> = [];
     private dataConfigurationSubscription?: Subscription;
+    private modelTypeSubscription?: Subscription;
+    private enabledSubscription?: Subscription;
     private textColumnsInitialized = false;
 
     constructor(
@@ -93,6 +117,17 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
     }
 
     public ngOnInit(): void {
+        const modelTypeControl = this.textConfigGroup.get('modelType');
+        this.modelTypeSubscription = modelTypeControl?.valueChanges.subscribe(value => {
+            this.updateLlmProfileValidation(value);
+        });
+        this.updateLlmProfileValidation(modelTypeControl?.value);
+
+        this.enabledSubscription = this.textConfigGroup.get('enabled')?.valueChanges.subscribe(() => {
+            this.updateEnabledFieldState();
+        });
+        this.updateEnabledFieldState();
+
         this.dataConfigurationSubscription = this.dataConfigurationService.dataConfiguration$.subscribe(configuration => {
             this.textColumns = configuration.configurations
                 .filter(column => column.type === DataType.TEXT)
@@ -103,6 +138,8 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
 
     public ngOnDestroy(): void {
         this.dataConfigurationSubscription?.unsubscribe();
+        this.modelTypeSubscription?.unsubscribe();
+        this.enabledSubscription?.unsubscribe();
     }
 
     private updateFormDisabledState(): void {
@@ -110,7 +147,7 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
             return;
         }
 
-        const group = this.form.controls[this.textAnonymizationConfigurationService.formGroupName] as FormGroup | undefined;
+        const group = this.form.controls[this.configurationGroupName] as FormGroup | undefined;
         if (!group) {
             return;
         }
@@ -119,32 +156,85 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
             group.disable({emitEvent: false});
         } else {
             group.enable({emitEvent: false});
+            this.updateEnabledFieldState();
+        }
+    }
+
+    private updateEnabledFieldState(): void {
+        if (!this.form || this.disabled) {
+            return;
+        }
+
+        const group = this.textConfigGroup;
+        const enabled = group.get('enabled')?.value !== false;
+        for (const controlName of Object.keys(group.controls)) {
+            if (controlName === 'enabled') {
+                continue;
+            }
+            const control = group.get(controlName);
+            if (enabled) {
+                control?.enable({emitEvent: false});
+            } else {
+                control?.disable({emitEvent: false});
+            }
         }
     }
 
     public patchValue(config: any): void {
         this.textConfigGroup.patchValue(
-            this.textAnonymizationConfigurationService.createGroup(config, this.disabled).getRawValue(),
+            this.textAnonymizationConfigurationService.createGroup(
+                config,
+                this.disabled,
+                this.defaultEnabled,
+            ).getRawValue(),
             {emitEvent: false},
         );
+        this.updateLlmProfileValidation(this.textConfigGroup.get('modelType')?.value);
+        this.updateEnabledFieldState();
         this.selectAllTextColumnsIfEmpty();
     }
 
     protected get textConfigGroup(): FormGroup {
-        return this.form.controls[this.textAnonymizationConfigurationService.formGroupName] as FormGroup;
+        return this.form.controls[this.configurationGroupName] as FormGroup;
     }
 
     protected resetToDefault(
-        field: 'modelType' | 'columns' | 'confidenceThreshold' | 'anonymizationMode',
+        field: 'modelType' | 'llmProfile' | 'columns' | 'confidenceThreshold' | 'anonymizationMode',
     ): void {
         const defaults = {
             modelType: ModelType.XLM_ROBERTA,
+            llmProfile: '',
             columns: this.textColumns.map(column => column.name),
             confidenceThreshold: 0.9,
             anonymizationMode: AnonymizationMode.Redact,
         };
 
         this.textConfigGroup.get(field)?.setValue(defaults[field]);
+    }
+
+    protected getTextAnonymizationType(): string {
+        switch (this.textAnonymizationType) {
+            case TextAnonymizationType.PII:
+                return 'PII';
+            case TextAnonymizationType.SENSITIVE:
+                return 'Sensitive data';
+            default:
+                return '';
+        }
+    }
+
+    private updateLlmProfileValidation(modelType: ModelType | null | undefined): void {
+        const control = this.textConfigGroup?.get('llmProfile');
+        if (!control) {
+            return;
+        }
+
+        if (modelType === ModelType.LLM) {
+            control.setValidators([Validators.required]);
+        } else {
+            control.clearValidators();
+        }
+        control.updateValueAndValidity({emitEvent: false});
     }
 
     private selectAllTextColumnsIfEmpty(): void {

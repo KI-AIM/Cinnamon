@@ -56,10 +56,14 @@ jobs:
           echo TEXT_ANONYMIZATION_MODEL_HOST_PATH="./cinnamon-text-anonymization/models" >> .env
           echo TEXT_ANONYMIZATION_MODEL_MOUNT_MODE="rw" >> .env
           echo HF_TOKEN_FILE="./secrets/hf_token" >> .env
-          echo TEXT_ANONYMIZATION_XLM_HF_REPOSITORY="ki-aim/xlm-grascco" >> .env
-          echo TEXT_ANONYMIZATION_GELECTRA_HF_REPOSITORY="ki-aim/gelectra-grascco" >> .env
-          echo TEXT_ANONYMIZATION_XLM_LOCAL_PATH="models/xlm-grascco" >> .env
-          echo TEXT_ANONYMIZATION_GELECTRA_LOCAL_PATH="models/gelectra-grascco" >> .env
+          echo TEXT_ANONYMIZATION_XLM_HF_REPOSITORY="ki-aim/xlm-grascco-pii" >> .env
+          echo TEXT_ANONYMIZATION_GELECTRA_HF_REPOSITORY="ki-aim/gelectra-grascco-pii" >> .env
+          echo TEXT_ANONYMIZATION_SENSITIVE_XLM_HF_REPOSITORY="ki-aim/xlm-bronco150-sensitive" >> .env
+          echo TEXT_ANONYMIZATION_SENSITIVE_GELECTRA_HF_REPOSITORY="ki-aim/gelectra-bronco150-sensitive" >> .env
+          echo TEXT_ANONYMIZATION_XLM_LOCAL_PATH="models/xlm-grascco-pii" >> .env
+          echo TEXT_ANONYMIZATION_GELECTRA_LOCAL_PATH="models/gelectra-grascco-pii" >> .env
+          echo TEXT_ANONYMIZATION_SENSITIVE_XLM_LOCAL_PATH="models/xlm-bronco150-sensitive" >> .env
+          echo TEXT_ANONYMIZATION_SENSITIVE_GELECTRA_LOCAL_PATH="models/gelectra-bronco150-sensitive" >> .env
           echo TEXT_ANONYMIZATION_MODEL_CACHE="models" >> .env
           cat .env
 

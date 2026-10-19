@@ -7,7 +7,62 @@ from cinnamon_text_anonymization.inference.utils import (
     load_inference_config,
     project_path,
     resolve_device,
+    resolve_overlapping_entities,
 )
+
+
+@pytest.mark.parametrize(
+    ("text", "entities", "expected"),
+    [
+        ("No entities.", [], []),
+        (
+            "Maria Müller",
+            [
+                {"text": "Maria", "label": "NAME_PATIENT", "start": 0, "end": 5},
+                {"text": "Müller", "label": "NAME_PATIENT", "start": 6, "end": 12},
+                {"text": "invalid", "label": "OTHER", "start": -1, "end": 2},
+                {"text": "invalid", "label": "OTHER", "start": 4, "end": 99},
+            ],
+            [("NAME_PATIENT", 0, 5), ("NAME_PATIENT", 6, 12)],
+        ),
+        (
+            "Maria Müller",
+            [
+                {"text": "Maria Müller", "label": "NAME_PATIENT", "start": 0, "end": 12},
+                {"text": "Müller", "label": "NAME_PATIENT", "start": 6, "end": 12},
+            ],
+            [("NAME_PATIENT", 0, 12)],
+        ),
+        (
+            "abcdefghij",
+            [
+                {"text": "abcde", "label": "NAME_PATIENT", "start": 0, "end": 5, "score": 0.7},
+                {"text": "cdefg", "label": "NAME_DOCTOR", "start": 2, "end": 7, "score": 0.95},
+            ],
+            [("NAME_DOCTOR", 2, 7)],
+        ),
+        (
+            "Prof. Dr. Maria Müller",
+            [
+                {"text": "Prof. Dr.", "label": "NAME_TITLE", "start": 0, "end": 9},
+                {"text": "Prof. Dr. Maria Müller", "label": "NAME_DOCTOR", "start": 0, "end": 22},
+            ],
+            [("NAME_TITLE", 0, 9), ("NAME_DOCTOR", 10, 22)],
+        ),
+    ],
+)
+def test_resolve_overlapping_entities(text, entities, expected) -> None:
+    result = resolve_overlapping_entities(text, entities)
+
+    actual = sorted(
+        [
+            (entity["label"], entity["start"], entity["end"])
+            for entity in result
+        ],
+        key=lambda item: item[1],
+    )
+
+    assert actual == expected
 
 
 @pytest.mark.parametrize(

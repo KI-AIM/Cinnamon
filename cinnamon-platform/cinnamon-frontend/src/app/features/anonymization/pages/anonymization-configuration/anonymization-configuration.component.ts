@@ -21,6 +21,7 @@ import { AnonymizationService } from "../../services/anonymization.service";
 import { TextAnonymizationConfigurationComponent } from '../../components/text-anonymization-configuration/text-anonymization-configuration.component';
 import { TextAnonymizationConfigurationService } from '../../services/text-anonymization-configuration.service';
 import { hasStructuredColumns, hasTextColumns } from '@shared/model/data-configuration';
+import { TextAnonymizationType } from '@shared/model/text-anonymization.types';
 
 @Component({
     selector: 'app-anonymization-configuration',
@@ -66,16 +67,51 @@ export class AnonymizationConfigurationComponent implements OnInit {
             ),
             new AdditionalConfig(
                 TextAnonymizationConfigurationComponent,
-                'Text Anonymization',
-                'Configure how personal data in free-text columns is detected and transformed.',
-                this.textAnonymizationConfigurationService.formGroupName,
+                'PII Text Anonymization',
+                'Configure how personally identifiable information (PII) in free-text columns is detected and transformed.',
+                this.textAnonymizationConfigurationService.piiFormGroupName,
                 (form: FormGroup, config: any, disabled: boolean) => {
-                    this.textAnonymizationConfigurationService.initForm(form, config, disabled);
+                    this.textAnonymizationConfigurationService.initForm(
+                        form,
+                        config,
+                        disabled,
+                        this.textAnonymizationConfigurationService.piiFormGroupName,
+                        true,
+                    );
                 },
                 null,
                 null,
                 (_, dataConfiguration) => hasTextColumns(dataConfiguration),
                 'text_anonymization',
+                {
+                    configurationGroupName: this.textAnonymizationConfigurationService.piiFormGroupName,
+                    textAnonymizationType: TextAnonymizationType.PII,
+                    defaultEnabled: true,
+                },
+            ),
+            new AdditionalConfig(
+                TextAnonymizationConfigurationComponent,
+                'Sensitive Data Text Anonymization',
+                'Configure how sensitive clinical information such as medication, treatment, and diagnosis is detected and transformed.',
+                this.textAnonymizationConfigurationService.sensitiveFormGroupName,
+                (form: FormGroup, config: any, disabled: boolean) => {
+                    this.textAnonymizationConfigurationService.initForm(
+                        form,
+                        config,
+                        disabled,
+                        this.textAnonymizationConfigurationService.sensitiveFormGroupName,
+                        false,
+                    );
+                },
+                null,
+                null,
+                (_, dataConfiguration) => hasTextColumns(dataConfiguration),
+                'text_anonymization',
+                {
+                    configurationGroupName: this.textAnonymizationConfigurationService.sensitiveFormGroupName,
+                    textAnonymizationType: TextAnonymizationType.SENSITIVE,
+                    defaultEnabled: false,
+                },
             )];
         this.additionalConfigs = new ConfigurationAdditionalConfigs(configs);
     }

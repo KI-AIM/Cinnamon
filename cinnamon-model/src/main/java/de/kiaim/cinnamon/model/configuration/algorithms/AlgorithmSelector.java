@@ -1,10 +1,7 @@
 package de.kiaim.cinnamon.model.configuration.algorithms;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.*;
+import tools.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -21,6 +18,7 @@ import java.util.Map;
  */
 @Schema(description = "Specifies of the selected algorithm.")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonPropertyOrder({"id", "version"})
 @NoArgsConstructor
 @Getter @Setter
 public class AlgorithmSelector {

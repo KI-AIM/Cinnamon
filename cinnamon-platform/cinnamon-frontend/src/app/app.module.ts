@@ -12,7 +12,7 @@ import { NavigationComponent } from './core/components/navigation/navigation.com
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TitleService } from './core/services/title-service.service';
 import { StateManagementService } from './core/services/state-management.service';
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { DataService } from './shared/services/data.service';
 import { DataConfigurationService } from './shared/services/data-configuration.service';
 import { DataUploadModule } from './features/data-upload/data-upload.module';
@@ -82,7 +82,7 @@ import { UserCenterComponent } from '@core/components/user-center/user-center.co
         DataService,
         DataConfigurationService,
         { provide: HTTP_INTERCEPTORS, useClass: XhrInterceptor, multi: true },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
     ],
     bootstrap: [AppComponent]
 })

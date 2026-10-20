@@ -1,12 +1,11 @@
 package de.kiaim.cinnamon.model.serialization;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.node.ArrayNode;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataBuilder;
@@ -16,21 +15,20 @@ import de.kiaim.cinnamon.model.exception.ConfigurationFormatException;
 import de.kiaim.cinnamon.model.helper.DataTransformationHelper;
 import de.kiaim.cinnamon.model.serialization.exception.DataFormatException;
 import de.kiaim.cinnamon.model.serialization.exception.InvalidDatatypeJsonException;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DataSetDeserializer extends JsonDeserializer<DataSet> {
+public class DataSetDeserializer extends ValueDeserializer<DataSet> {
 
-	ObjectMapper mapper = JsonMapper.jsonMapper();
+	ObjectMapper mapper = CinnamonJsonMapper.jsonMapper();
 
 	DataTransformationHelper dataTransformationHelper = new DataTransformationHelper();
 
 	@Override
-	public DataSet deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
-		final JsonNode jsonNode = p.getCodec().readTree(p);
+	public DataSet deserialize(JsonParser p, DeserializationContext ctxt) {
+		final JsonNode jsonNode = p.objectReadContext().readTree(p);
 
 		final DataConfiguration dataConfiguration = mapper.treeToValue(jsonNode.get("dataConfiguration"),
 		                                                               DataConfiguration.class);
@@ -55,12 +53,12 @@ public class DataSetDeserializer extends JsonDeserializer<DataSet> {
 				}
 
 				var valJson = rowArray.get(colIndex);
-				var stringValue = valJson.asText();
 
 				Data value;
-				if (stringValue.equals("null")) {
+				if (valJson.isNull()) {
 					value = builder.buildNull();
 				} else {
+					var stringValue = valJson.asString();
 					try {
 						value = builder.setValue(stringValue, new ArrayList<>()).build();
 					} catch (Exception e) {

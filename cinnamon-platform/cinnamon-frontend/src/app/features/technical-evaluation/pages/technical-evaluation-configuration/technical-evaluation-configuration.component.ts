@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ChangeDetectionStrategy } from "@angular/core";
 import { Steps } from "@core/enums/steps";
 import { TitleService } from "@core/services/title-service.service";
 import { TechnicalEvaluationService } from "@features/technical-evaluation/services/technical-evaluation.service";
@@ -15,6 +15,7 @@ import { Observable } from "rxjs";
             useExisting: TechnicalEvaluationService
         },
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TechnicalEvaluationConfigurationComponent implements OnInit {

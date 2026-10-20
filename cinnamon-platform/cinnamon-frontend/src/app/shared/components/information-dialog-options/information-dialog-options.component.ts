@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import {
     InformationDialogPartComponent
 } from "@shared/components/information-dialog-part/information-dialog-part.component";
@@ -13,6 +13,7 @@ import {
     selector: 'info-options',
     standalone: false,
     templateUrl: '../information-dialog-part/information-dialog-part.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: '../information-dialog-part/information-dialog-part.component.less'
 })
 export class InformationDialogOptionsComponent extends InformationDialogPartComponent {

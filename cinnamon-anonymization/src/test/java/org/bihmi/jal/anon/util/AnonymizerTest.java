@@ -9,12 +9,8 @@ import org.bihmi.jal.anon.privacyModels.KAnonymity;
 import org.bihmi.jal.anon.privacyModels.PrivacyModel;
 import org.bihmi.jal.config.AttributeConfig;
 import org.bihmi.jal.config.HierarchyConfig;
-import org.deidentifier.arx.AttributeType;
 import org.deidentifier.arx.Data;
-import org.deidentifier.arx.DataType;
-import org.deidentifier.arx.aggregates.HierarchyBuilder;
 import org.junit.jupiter.api.Test;
-import org.w3c.dom.Attr;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -22,9 +18,6 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class AnonymizerTest {
 
@@ -97,8 +90,8 @@ public class AnonymizerTest {
 
     private List<String> loadUniqueValues(String fileName, String column) throws IOException {
         Set<String> uniqueValues = new HashSet<>();
-        try (Reader in = new FileReader(fileName, StandardCharsets.UTF_8);
-             CSVParser parser = CSVFormat.DEFAULT.withDelimiter(',').withFirstRecordAsHeader().parse(in)) {
+        CSVFormat csvFormat = CSVFormat.Builder.create(CSVFormat.DEFAULT).setDelimiter(',').setSkipHeaderRecord(true).get();
+        try (Reader in = new FileReader(fileName, StandardCharsets.UTF_8); CSVParser parser = csvFormat.parse(in)) {
             for (CSVRecord record : parser) {
                 uniqueValues.add(record.get(column));
             }

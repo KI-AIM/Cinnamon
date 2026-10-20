@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, TemplateRef, ViewChild } from "@angular/core";
+import { Component, Input, OnInit, TemplateRef, ViewChild, ChangeDetectionStrategy } from "@angular/core";
 import { MatSelect } from "@angular/material/select";
 import {
     ConfigurationType, ConfigurationTypeMetadata,
@@ -18,6 +18,7 @@ import { DataType, dataTypeFromString, DataTypeMetadata } from "../../../../shar
     selector: "app-additional-configuration",
     templateUrl: "./additional-configuration.component.html",
     styleUrls: ["./additional-configuration.component.less"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AdditionalConfigurationComponent implements OnInit {

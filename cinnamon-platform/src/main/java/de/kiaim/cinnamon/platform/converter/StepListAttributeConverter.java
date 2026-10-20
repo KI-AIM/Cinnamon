@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,7 +23,7 @@ public class StepListAttributeConverter implements AttributeConverter<List<Job>,
 
 
 	@Override
-	public String convertToDatabaseColumn(final List<Job> attribute) {
+	public @Nullable String convertToDatabaseColumn(final @Nullable List<Job> attribute) {
 		if (attribute == null || attribute.isEmpty()) {
 			return null;
 		}
@@ -31,7 +32,7 @@ public class StepListAttributeConverter implements AttributeConverter<List<Job>,
 	}
 
 	@Override
-	public List<Job> convertToEntityAttribute(final String dbData) {
+	public List<@Nullable Job> convertToEntityAttribute(final @Nullable String dbData) {
 		if (dbData == null || dbData.isEmpty()) {
 			return List.of();
 		}

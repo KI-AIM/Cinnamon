@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.anonymization.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.anonymization.model.AnonymizationRequest;
 import de.kiaim.cinnamon.anonymization.service.AnonymizationService;
 import de.kiaim.cinnamon.anonymization.service.ReportService;
@@ -8,7 +7,7 @@ import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnon
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.dto.ModuleReportContent;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -41,12 +41,12 @@ public class AnonymizationController {
     private final ReportService reportService;
 
     private final Map<String, Future<DataSet>> tasks = new ConcurrentHashMap<>();
-    private final ObjectMapper jsonMapper;
+    private final JsonMapper jsonMapper;
 
     public AnonymizationController(final AnonymizationService anonymizationService, final ReportService reportService) {
         this.anonymizationService = anonymizationService;
 	    this.reportService = reportService;
-	    this.jsonMapper = JsonMapper.jsonMapper();
+	    this.jsonMapper = CinnamonJsonMapper.jsonMapper();
     }
 
     @Operation(summary = "Creates a new anonymization task.",

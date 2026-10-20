@@ -31,8 +31,8 @@
 
             <!-- Latest notification -->
             @if (latestNotification$ | async; as notification) {
-                <app-info-card @slideInFromTop [closable]="true" class="notification"
-                               [typeClass]="'card-' + notification.type"
+                <app-info-card animate.enter="slide-in-from-top" animate.leave="slide-out-to-top" [closable]="true"
+                               class="notification" [typeClass]="'card-' + notification.type"
                                (onClose)="notificationService.markLatestAsRead();">
                     {{ notification.message }}
                 </app-info-card>

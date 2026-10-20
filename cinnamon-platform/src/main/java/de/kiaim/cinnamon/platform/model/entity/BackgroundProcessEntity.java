@@ -5,7 +5,7 @@ import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalServerInstance;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -28,7 +28,7 @@ public class BackgroundProcessEntity {
 	 */
 	@Id @GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * UUID used for the callback URL.

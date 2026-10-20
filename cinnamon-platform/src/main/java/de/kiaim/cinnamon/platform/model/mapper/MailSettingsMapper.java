@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Mapper for {@link EmailSettingsEntity} and {@link EMailSettingsDTO}.
@@ -45,7 +46,7 @@ public interface MailSettingsMapper {
 	}
 
 	@Named("isPasswordSet")
-	default boolean isPasswordSet(final String password) {
+	default boolean isPasswordSet(@Nullable final String password) {
 		return password != null && !password.isBlank();
 	}
 

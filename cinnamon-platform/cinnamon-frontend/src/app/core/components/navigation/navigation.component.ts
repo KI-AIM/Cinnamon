@@ -1,5 +1,5 @@
 import { KeyValue } from '@angular/common';
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { NavigationService } from "@core/services/navigation.service";
 import { StateManagementService } from "@core/services/state-management.service";
@@ -17,6 +17,7 @@ import { StepConfiguration, StepDefinition, Steps } from '../../enums/steps';
     selector: 'app-navigation',
     templateUrl: './navigation.component.html',
     styleUrls: ['./navigation.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 

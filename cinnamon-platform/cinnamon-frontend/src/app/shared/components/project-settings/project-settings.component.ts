@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, TemplateRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
@@ -31,6 +31,7 @@ import { UserService } from "src/app/shared/services/user.service";
     selector: 'app-project-settings',
     standalone: false,
     templateUrl: './project-settings.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './project-settings.component.less'
 })
 export class ProjectSettingsComponent implements OnInit, OnDestroy {

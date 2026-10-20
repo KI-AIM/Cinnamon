@@ -1,4 +1,4 @@
-import { Component, OnChanges, OnInit } from '@angular/core';
+import { Component, OnChanges, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ColumnConfiguration } from "@shared/model/column-configuration";
 import { StatisticsData } from "@shared/model/statistics";
 import {DataType} from "../../model/data-type";
@@ -9,6 +9,7 @@ import { EChartsCoreOption, EChartsType } from "echarts/core";
     selector: 'app-chart',
     templateUrl: './chart.component.html',
     styleUrls: ['./chart.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ChartComponent implements OnInit, OnChanges {

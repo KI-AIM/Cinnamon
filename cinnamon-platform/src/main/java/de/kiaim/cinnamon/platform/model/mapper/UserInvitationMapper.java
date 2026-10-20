@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.model.entity.UserInvitationEntity;
 import de.kiaim.cinnamon.platform.model.entity.admin.EmailTemplateItemEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.UserInvitationStatus;
 import de.kiaim.cinnamon.platform.repository.EmailTemplateItemRepository;
+import org.jspecify.annotations.Nullable;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -35,7 +36,7 @@ public abstract class UserInvitationMapper {
 	@Mapping(target = "acceptedBy", ignore = true) @Mapping(target = "acceptedAt", ignore = true)
 	public abstract void updateEntity(@MappingTarget UserInvitationEntity entity, UserInvitationRequest request);
 
-	protected EmailTemplateItemEntity map(final Long emailTemplateItemId) {
+	protected @Nullable EmailTemplateItemEntity map(@Nullable final Long emailTemplateItemId) {
 		if (emailTemplateItemId == null) {
 			return null;
 		}

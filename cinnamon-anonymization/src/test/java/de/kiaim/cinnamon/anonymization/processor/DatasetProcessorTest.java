@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static de.kiaim.cinnamon.anonymization.service.CompatibilityAssurance.isDataSetCompatible;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -30,7 +29,7 @@ public class DatasetProcessorTest extends AbstractAnonymizationTests {
 
     public DataSet importDataset(String anonymizedDatasetPath) throws IOException {
         String dataSetJson = new String(Files.readAllBytes(Paths.get(anonymizedDatasetPath)));
-        return objectMapper.readValue(dataSetJson, DataSet.class);
+        return jsonMapper.readValue(dataSetJson, DataSet.class);
     }
 
     // convertDatasetToStringArray

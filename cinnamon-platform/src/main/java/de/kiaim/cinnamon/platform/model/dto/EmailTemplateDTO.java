@@ -35,7 +35,6 @@ public class EmailTemplateDTO {
 	@Schema(description = "The content of the template. Contains at most one entry per language. Languages that "
 	                      + "are not part of the request are removed from the template.")
 	@NotEmpty(message = "The template must be configured for at least one language.")
-	@Valid
-	private List<EmailTemplateItemDTO> items = new ArrayList<>();
+	private List<@Valid EmailTemplateItemDTO> items = new ArrayList<>();
 
 }

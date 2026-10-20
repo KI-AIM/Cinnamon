@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { MatDialog } from "@angular/material/dialog";
 import { TitleService } from "@core/services/title-service.service";
@@ -11,6 +11,7 @@ import { combineLatest, Observable, switchMap } from "rxjs";
     selector: 'app-user-home-page',
     standalone: false,
     templateUrl: './user-home-page.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './user-home-page.component.less'
 })
 export class UserHomePageComponent implements OnInit {

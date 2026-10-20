@@ -25,7 +25,7 @@
 	</repositories>
 
 	<properties>
-		<org.dhatim.fastexcel.version>0.19.0</org.dhatim.fastexcel.version>
+		<org.dhatim.fastexcel.version>0.20.2</org.dhatim.fastexcel.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
         <skip.frontend>false</skip.frontend>
 	</properties>
@@ -41,6 +41,7 @@
     </profiles>
 
 	<dependencies>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -87,13 +88,21 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		</dependency>
 
+		<!-- Jackson -->
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
+			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
+			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>tools.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
@@ -143,12 +152,12 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-csv</artifactId>
-			<version>1.11.0</version>
+			<version>1.14.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.hypersistence</groupId>
-			<artifactId>hypersistence-utils-hibernate-62</artifactId>
-			<version>3.9.4</version>
+			<artifactId>hypersistence-utils-hibernate-71</artifactId>
+			<version>3.15.4</version>
 		</dependency>
 
 		<dependency>
@@ -165,7 +174,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>${artifactId}</finalName>
+		<finalName>${project.artifactId}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -208,7 +217,7 @@
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
-				<version>1.14.0</version>
+				<version>2.0.2</version>
 				<executions>
 					<execution>
 						<id>install node and npm</id>
@@ -235,7 +244,7 @@
 				</executions>
 				<configuration>
 					<workingDirectory>cinnamon-frontend</workingDirectory>
-					<nodeVersion>v22.14.0</nodeVersion>
+					<nodeVersion>v22.23.2</nodeVersion>
 					<npmVersion>10.9.2</npmVersion>
                     <skip>${skip.frontend}</skip>
 				</configuration>
@@ -243,7 +252,7 @@
 
 			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
-				<version>3.3.2</version>
+				<version>3.5.1</version>
 				<configuration>
 					<attachClasses>true</attachClasses>
 					<classesClassifier>classes</classesClassifier>

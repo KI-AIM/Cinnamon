@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef } from "@angular/core";
+import { Component, Input, TemplateRef, ChangeDetectionStrategy } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { instanceToPlain } from "class-transformer";
 import { ColumnConfiguration } from "src/app/shared/model/column-configuration";
@@ -9,6 +9,7 @@ import { FormArray, FormGroup } from "@angular/forms";
     selector: "app-added-configuration-list",
     templateUrl: "./added-configuration-list.component.html",
     styleUrls: ["./added-configuration-list.component.less"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AddedConfigurationListComponent {

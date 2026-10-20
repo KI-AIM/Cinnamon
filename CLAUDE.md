@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Cinnamon is a multi-module Maven monorepo plus several standalone Python microservices, orchestrated via Docker Compose:
 
 - `cinnamon-model/` — Java/Spring shared model classes (Maven submodule)
-- `cinnamon-platform/` — Java 17 / Spring Boot 3.4.3 backend (Maven submodule), plus `cinnamon-frontend/` (Angular 19 + Angular Material) embedded as a static resource via `frontend-maven-plugin`
+- `cinnamon-platform/` — Java 17 / Spring Boot 4.1.1 backend (Maven submodule), plus `cinnamon-frontend/` (Angular 22 + Angular Material) embedded as a static resource via `frontend-maven-plugin`
 - `cinnamon-anonymization/` — Java/Spring wrapper around the ARX anonymization library (Maven submodule)
 - `cinnamon-test/` — shared JUnit test suite for `cinnamon-model`, `cinnamon-platform`, `cinnamon-anonymization` (Maven submodule; kept separate to avoid circular deps)
 - `cinnamon-evaluation/` — Python/Flask microservice (standalone, not a Maven module)

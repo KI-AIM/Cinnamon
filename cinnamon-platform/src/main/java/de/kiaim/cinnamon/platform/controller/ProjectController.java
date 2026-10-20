@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.jspecify.annotations.Nullable;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -192,7 +193,7 @@ public class ProjectController {
 	public void resetProject(
 			@PathVariable final String projectId,
 			@Parameter(description = "Target identifier to reset. If missing or empty, the entire project is reset.")
-			@RequestParam(required = false) final String target,
+			@RequestParam(required = false) @Nullable final String target,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());

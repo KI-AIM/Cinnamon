@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.model.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.serialization.DataSetDeserializer;
 import io.swagger.v3.oas.annotations.media.ArraySchema;

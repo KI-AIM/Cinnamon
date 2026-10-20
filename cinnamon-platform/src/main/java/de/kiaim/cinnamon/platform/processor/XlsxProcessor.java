@@ -33,8 +33,8 @@ import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
 import org.dhatim.fastexcel.reader.Sheet;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -141,7 +141,7 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor 
         return convertedRows;
     }
 
-    private String getConvertedCellValue(Row r, int index, ColumnConfiguration columnConfiguration) {
+    private @Nullable String getConvertedCellValue(Row r, int index, ColumnConfiguration columnConfiguration) {
 
         if (index < r.getCellCount()) {
             switch (columnConfiguration.getType()) {

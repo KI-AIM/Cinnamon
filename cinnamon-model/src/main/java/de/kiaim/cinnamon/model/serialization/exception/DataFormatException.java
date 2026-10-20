@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.model.serialization.exception;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 
-public class DataFormatException extends JsonProcessingException {
+public class DataFormatException extends JacksonException {
 	public DataFormatException(String msg, Throwable rootCause) {
 		super(msg, rootCause);
 	}

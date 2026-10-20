@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.platform.controller;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.service.ResponseService;
@@ -13,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.util.Pair;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.*;
-import org.springframework.lang.Nullable;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -24,6 +22,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 import java.util.*;
 
@@ -201,17 +201,17 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	 * @return Pair containing the field path and error message.
 	 */
 	@Nullable
-	private Pair<String, String> extractBestMessage(final Throwable throwable, final String fieldName) {
+	private Pair<String, String> extractBestMessage(final @Nullable Throwable throwable, final String fieldName) {
 		if (throwable == null) {
 			return null;
 		}
 
-		if (throwable.getCause() instanceof JsonMappingException jsonMappingException) {
+		if (throwable.getCause() instanceof JacksonException jsonMappingException) {
 			final var path = jsonMappingException.getPath();
 			var field = fieldName;
 			for (final var segment : path) {
-				if (segment.getFieldName() != null) {
-					field += (field.isEmpty() ? "" : ".") + segment.getFieldName();
+				if (segment.getPropertyName() != null) {
+					field += (field.isEmpty() ? "" : ".") + segment.getPropertyName();
 				} else {
 					field += "[" + segment.getIndex() + "]";
 				}

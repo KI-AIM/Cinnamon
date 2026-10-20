@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.platform.repository;
 
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -27,6 +28,6 @@ public interface ProjectRepository extends CrudRepository<ProjectEntity, Long> {
 	long countByExternalId(UUID workflowId);
 
 	@Query(value = "SELECT data_configuration from project_entity where id = :id", nativeQuery = true)
-	String getDataConfiguration(@Param("id") Long id);
+	@Nullable String getDataConfiguration(@Param("id") Long id);
 
 }

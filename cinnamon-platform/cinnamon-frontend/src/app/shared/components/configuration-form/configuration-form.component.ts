@@ -1,15 +1,16 @@
 import {
-    ChangeDetectorRef,
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    OnInit,
-    Output,
-    QueryList,
-    ViewChild,
-    ViewChildren,
-    SimpleChanges
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  QueryList,
+  ViewChild,
+  ViewChildren,
+  SimpleChanges,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ValidatorFn, Validators } from "@angular/forms";
 import { ConfigurationObject } from "@shared/model/anonymization-attribute-config";
@@ -36,6 +37,7 @@ import { ConfigurationService } from "../../services/configuration.service";
     selector: 'app-configuration-form',
     templateUrl: './configuration-form.component.html',
     styleUrls: ['./configuration-form.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationFormComponent implements OnChanges, OnInit {
@@ -109,6 +111,7 @@ export class ConfigurationFormComponent implements OnChanges, OnInit {
     }
 
     public ngOnChanges(changes: SimpleChanges): void {
+        // This fixes that the anonymization attribute configuration is not toggled by the free text anonymization
         if (changes['disabled'] || changes['processEnabled'] || changes['processJob']) {
             this.updateProcessConfigurationState();
         }
@@ -381,15 +384,12 @@ export class ConfigurationFormComponent implements OnChanges, OnInit {
             }
 
             const control = this.form.controls[name];
-            algorithmDisabled ? control.disable({emitEvent: false}) : control.enable({emitEvent: false});
+            if (algorithmDisabled) {
+                control.disable({emitEvent: false});
+            } else {
+                control.enable({emitEvent: false});
+            }
             this.rootGroup?.setGroupDisabled(name, algorithmDisabled);
-        }
-
-        for (const config of additionalConfigs) {
-            const disabled = this.additionalConfigurationDisabled(config);
-            const control = this.form.controls[config.formGroupName];
-            disabled ? control.disable({emitEvent: false}) : control.enable({emitEvent: false});
-            this.rootGroup?.setAdditionalConfigDisabled(config.formGroupName, disabled);
         }
     }
 

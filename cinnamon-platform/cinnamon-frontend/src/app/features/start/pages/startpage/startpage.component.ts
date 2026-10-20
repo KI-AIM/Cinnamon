@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { StateManagementService } from "@core/services/state-management.service";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { Mode } from 'src/app/core/enums/mode';
@@ -12,6 +12,7 @@ import { Status } from "../../../../shared/model/status";
     templateUrl: './startpage.component.html',
     styleUrls: ['./startpage.component.less'],
     providers: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class StartpageComponent implements OnInit {

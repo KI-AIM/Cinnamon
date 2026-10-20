@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.enumeration.PasswordConstraints;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -17,7 +18,7 @@ public class PasswordRequirementsValidator implements ConstraintValidator<Passwo
 	private CinnamonConfiguration cinnamonConfiguration;
 
 	@Override
-	public boolean isValid(String value, final ConstraintValidatorContext context) {
+	public boolean isValid(@Nullable String value, final ConstraintValidatorContext context) {
 		if (value == null || value.isBlank()) {
 			customMessageForValidation(context, "Password must not be blank!");
 			return false;

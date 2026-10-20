@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { Component, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import {
     AbstractControl,
     FormArray,
@@ -53,6 +53,7 @@ import { FileService } from '../../services/file.service';
     selector: 'app-data-configuration',
     templateUrl: './data-configuration.component.html',
     styleUrls: ['./data-configuration.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DataConfigurationComponent implements OnInit {

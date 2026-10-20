@@ -1,10 +1,8 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
-import de.kiaim.cinnamon.model.serialization.mapper.YamlMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonYamlMapper;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.exception.InternalMissingHandlingException;
@@ -16,6 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Service class for HTTP requests.
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class HttpService {
 
-	private final ObjectMapper jsonMapper;
+	private final JsonMapper jsonMapper;
 
 	public HttpService(final SerializationConfig serializationConfig) {
 		this.jsonMapper = serializationConfig.jsonMapper();
@@ -43,13 +43,13 @@ public class HttpService {
 		if (response.getBody() != null) {
 			try {
 				responseBody = jsonMapper.readValue(response.getBody(), ExternalProcessResponse.class);
-			} catch (JsonProcessingException e) {
+			} catch (JacksonException e) {
 
 				try {
 					ErrorResponse errorResponse = jsonMapper.readValue(response.getBody(), ErrorResponse.class);
 					responseBody = new ExternalProcessResponse();
 					responseBody.setError(errorResponse.getErrorMessage());
-				} catch (JsonProcessingException e1) {
+				} catch (JacksonException e1) {
 					responseBody = new ExternalProcessResponse();
 					responseBody.setError(response.getBody());
 				}
@@ -120,9 +120,9 @@ public class HttpService {
 			case JSON -> {
 				//Convert yaml config to json for anonymization controller
 				try {
-					final String jsonConfig = YamlMapper.toJson(configuration);
+					final String jsonConfig = CinnamonYamlMapper.toJson(configuration);
 					bodyBuilder.part(partName, jsonConfig, MediaType.APPLICATION_JSON);
-				} catch (JsonProcessingException e) {
+				} catch (JacksonException e) {
 					throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
 					                              "Could not convert configuration from yaml to json!", e);
 				}

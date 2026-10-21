@@ -118,7 +118,7 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
     LlmTextOnlyParaphraseSynthesisSynthesizer
 ):
     """
-    Generate TEXT-only rows using sparse BM25-style nearest-neighbor retrieval as prompt context.
+    Generate TEXT-only rows using similarity-based retrieval as prompt context.
     """
 
     _SUPPORTED_EMBEDDING_PROVIDERS = {"bm25", "ollama"}
@@ -284,7 +284,7 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
                 for index, example in enumerate(reference_examples)
             ]
             reference_block = (
-                "NEAREST-NEIGHBOR REFERENCE EXAMPLES\n"
+                "RETRIEVED REFERENCE EXAMPLES\n"
                 "----------------------------------------\n"
                 f"{chr(10).join(example_lines)}\n\n"
             )

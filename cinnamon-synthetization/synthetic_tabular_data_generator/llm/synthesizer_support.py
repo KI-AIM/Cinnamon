@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Sequence
 import pandas as pd
 
 from data_processing.utils import BOOLEAN_MAP, MISSING_BOOLEAN, MISSING_VALUE_STRING
-from data_processing.utils import get_date_format, parse_to_date_format, parse_to_unix
+from data_processing.utils import format_timestamp, get_date_input_formats, get_date_pattern, parse_to_unix
 
 
 @dataclass(frozen=True)
@@ -20,7 +20,7 @@ class ColumnProfileOptions:
 
 
 class LlmSynthesizerSupport:
-    NUMERIC_TYPES = {"INTEGER", "DECIMAL", "DATE"}
+    NUMERIC_TYPES = {"INTEGER", "DECIMAL", "DATE", "DATE_TIME"}
     _NULL_LIKE_STRINGS = {"nan", "null", "none", "<na>"}
 
     def build_column_profile(
@@ -117,17 +117,17 @@ class LlmSynthesizerSupport:
     def build_prompt_profile_line(self, column_config: Dict[str, Any], profile: Dict[str, Any]) -> str:
         column_name = str(column_config.get("name", ""))
         column_type = str(column_config.get("type", "STRING")).upper()
-        if column_type != "DATE":
+        if column_type not in {"DATE", "DATE_TIME"}:
             return self.build_profile_line(column_name, column_type, profile)
         if not profile or not profile.get("available", False):
             return f"- {column_name} ({column_type}): no observed values."
         if profile.get("kind") != "numeric":
             return self.build_profile_line(column_name, column_type, profile)
 
-        date_format = get_date_format(column_config)
-        min_value = self._format_profile_date_stat(profile.get("min"), date_format)
-        max_value = self._format_profile_date_stat(profile.get("max"), date_format)
-        mean_value = self._format_profile_date_stat(profile.get("mean"), date_format)
+        date_pattern = get_date_pattern(column_config)
+        min_value = self._format_profile_date_stat(profile.get("min"), date_pattern)
+        max_value = self._format_profile_date_stat(profile.get("max"), date_pattern)
+        mean_value = self._format_profile_date_stat(profile.get("mean"), date_pattern)
         std_days = self._format_profile_date_std_days(profile.get("std"))
         missing_ratio = profile.get("missing_ratio", 0.0)
         return (
@@ -309,9 +309,10 @@ class LlmSynthesizerSupport:
         fallback_value: Any = None,
         column_config: Optional[Dict[str, Any]] = None,
     ) -> Any:
+        column_type = str((column_config or {}).get("type", "DATE")).upper()
         numeric_value = self.coerce_numeric(
             column_name,
-            "DATE",
+            column_type,
             value,
             column_profiles,
             fallback_value=fallback_value,
@@ -326,7 +327,7 @@ class LlmSynthesizerSupport:
 
         return self.coerce_numeric(
             column_name,
-            "DATE",
+            column_type,
             parsed_value,
             column_profiles,
             fallback_value=parsed_fallback,
@@ -338,19 +339,19 @@ class LlmSynthesizerSupport:
         for column_config in column_configs:
             column_name = column_config.get("name")
             column_type = str(column_config.get("type", "STRING")).upper()
-            if not isinstance(column_name, str) or column_type != "DATE":
+            if not isinstance(column_name, str) or column_type not in {"DATE", "DATE_TIME"}:
                 continue
-            formats[column_name] = get_date_format(column_config)
+            formats[column_name] = get_date_pattern(column_config)
         return formats
 
     def _format_date_for_prompt(self, value: Any, date_format: str) -> Any:
         numeric_value = self.to_float(value)
         if numeric_value is None:
             return self.serialize_value(value)
-        return parse_to_date_format(numeric_value, date_format)
+        return format_timestamp(numeric_value, date_format)
 
     @staticmethod
-    def _parse_date_to_unix(value: Any, column_config: Dict[str, Any]) -> Optional[int]:
+    def _parse_date_to_unix(value: Any, column_config: Dict[str, Any]) -> Optional[float]:
         if value is None:
             return None
         if isinstance(value, float) and math.isnan(value):
@@ -360,16 +361,16 @@ class LlmSynthesizerSupport:
         if not normalized or normalized.lower() in LlmSynthesizerSupport._NULL_LIKE_STRINGS:
             return None
 
-        parsed = parse_to_unix(normalized, get_date_format(column_config))
+        parsed = parse_to_unix(normalized, get_date_input_formats(column_config))
         if pd.isna(parsed):
             return None
-        return int(parsed)
+        return float(parsed)
 
     def _format_profile_date_stat(self, value: Any, date_format: str) -> Any:
         numeric_value = self.to_float(value)
         if numeric_value is None:
             return value
-        return parse_to_date_format(numeric_value, date_format)
+        return format_timestamp(numeric_value, date_format)
 
     @staticmethod
     def _format_profile_date_std_days(value: Any) -> Any:

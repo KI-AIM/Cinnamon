@@ -29,9 +29,9 @@ settings apply unchanged. Optuna tuning is supported for the six classical synth
 its sampler, pruner, trial count, and timeout are configurable in the frontend.
 
 For datasets that also contain TEXT columns, select a second method: mixed-data paraphrase,
-indirect-identifier rewrite, or embedding/attribute nearest neighbors. This stage generates
+expert-guided synthesis, indirect-identifier rewrite, or retrieval-guided synthesis. This stage generates
 one text per synthetic row and per TEXT column, preserving structured values, missingness,
-row order, and row count exactly. For embedding nearest-neighbor synthesis, its Number of Samples
+row order, and row count exactly. For retrieval-guided synthesis, its Number of Samples
 sets the total output count and overrides the structured sampling count before generation.
 This may exceed the source dataset size. Other text methods use the structured sampling count.
 Text-only datasets continue to use their existing text-only methods.
@@ -45,7 +45,7 @@ require the narrative to agree with all ground-truth facts. Reference texts may 
 additional information when consistent with those facts. Identifier-rewrite rules apply to
 additional reference details, never to the synthetic structured values.
 
-Nearest-neighbor queries use the synthetic structured facts. The existing embedding settings
+Retrieval queries use the synthetic structured facts. The existing embedding settings
 and similarity weights remain available; set text similarity weight to `0` and structured
 similarity weight to `1` for attribute-only retrieval.
 

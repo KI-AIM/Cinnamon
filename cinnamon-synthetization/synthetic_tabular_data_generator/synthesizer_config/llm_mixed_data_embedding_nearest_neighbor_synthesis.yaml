@@ -1,8 +1,8 @@
 name: llm_mixed_data_embedding_nearest_neighbor_synthesis
 version: "0.1"
 type: cross-sectional
-display_name: LLM Mixed-data Embedding Nearest-neighbor Synthesis
-description: Retrieve reference texts using synthetic structured facts and weighted embedding or attribute similarity. Generate text containing every ground-truth fact and optional consistent reference details.
+display_name: LLM Mixed-data Retrieval-Guided Synthesis
+description: Retrieve relevant reference texts using synthetic structured facts and weighted text or attribute similarity. Generate text containing every ground-truth fact and optional consistent reference details.
 URL: /start_synthetization_process/llm_mixed_data_embedding_nearest_neighbor_synthesis
 processing_capabilities:
   data_modality: mixed
@@ -20,7 +20,7 @@ configurations:
         mandatory: true
   model_parameter:
     display_name: Retrieval and Profile Parameters
-    description: Configure text embeddings, mixed-data similarity weighting, nearest neighbors, and structured similarity ranges.
+    description: Configure retrieval, mixed-data similarity weighting, and structured similarity ranges.
     parameters:
       - name: profile_rows
         type: integer
@@ -31,8 +31,8 @@ configurations:
         max_value: 1000000
       - name: few_shot_examples
         type: integer
-        label: Nearest Neighbors
-        description: Number of nearest-neighbor reference texts included in the text-generation prompt.
+        label: Retrieved Examples
+        description: Number of relevant reference texts retrieved for the text-generation prompt.
         default_value: 3
         min_value: 0
         max_value: 20
@@ -67,14 +67,14 @@ configurations:
       - name: text_similarity_weight
         type: float
         label: Free-text Similarity Weight
-        description: Relative contribution of similarity between synthetic structured facts and reference text embeddings. Set to zero for attribute-only nearest neighbors.
+        description: Relative contribution of similarity between synthetic structured facts and reference text embeddings. Set to zero for attribute-only retrieval.
         default_value: 0.7
         min_value: 0.0
         max_value: 1.0
       - name: structured_similarity_weight
         type: float
         label: Structured Similarity Weight
-        description: Relative contribution of datatype-aware structured similarity to the combined nearest-neighbor score.
+        description: Relative contribution of datatype-aware structured similarity to the combined retrieval score.
         default_value: 0.3
         min_value: 0.0
         max_value: 1.0

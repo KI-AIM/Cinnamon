@@ -91,6 +91,7 @@ def build_tabular_non_text_generation_prompt_prefix(
         "- INTEGER: integer number\n"
         "- DECIMAL: decimal number\n"
         "- DATE: human-readable date string in the same format shown in the examples\n"
+        "- DATE_TIME: human-readable date-time string in the same format shown in the examples\n"
         "- BOOLEAN: true or false\n"
         f"- STRING: plain text, use '{missing_value_string}' for missing\n"
         f"- TEXT: always use '{missing_value_string}' in this step\n"
@@ -155,6 +156,7 @@ def build_tabular_text_completion_prompt_prefix(
         f"- For missing strings/text use '{missing_value_string}'\n"
         "- BOOLEAN values must be true/false.\n"
         "- DATE values must use the same human-readable date format shown in the examples.\n"
+        "- DATE_TIME values must use the same human-readable date-time format shown in the examples.\n"
         "\n"
     )
 
@@ -241,6 +243,7 @@ def build_tabular_generation_prompt_prefix(
         "- INTEGER: integer number\n"
         "- DECIMAL: decimal number\n"
         "- DATE: human-readable date string in the same format shown in the examples\n"
+        "- DATE_TIME: human-readable date-time string in the same format shown in the examples\n"
         "- BOOLEAN: true or false\n"
         f"- STRING: plain text, use '{missing_value_string}' for missing\n"
         f"- TEXT: realistic free text, use '{missing_value_string}' for missing\n"

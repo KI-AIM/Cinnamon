@@ -879,7 +879,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
                     if (isinstance(requested_samples, bool)
                             or not str(requested_samples).strip().isdigit()
                             or int(requested_samples) <= 0):
-                        raise ValueError("Nearest-neighbor num_samples must be a positive integer.")
+                        raise ValueError("Retrieval-guided num_samples must be a positive integer.")
                     structured_algorithm_config = deepcopy(algorithm_config)
                     structured_algorithm_config["synthetization_configuration"]["algorithm"].setdefault(
                         "sampling", {},

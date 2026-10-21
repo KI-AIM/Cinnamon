@@ -111,6 +111,28 @@ def test_serialize_row_for_prompt_formats_date_columns_using_configured_date_for
     assert serialized == {"event_date": "2024-01-01", "group": "A"}
 
 
+def test_date_time_is_profiled_and_serialized_as_a_timestamp():
+    support = _SupportHarness()
+    config = {
+        "name": "event_time",
+        "type": "DATE_TIME",
+        "configurations": [{"dateTimeFormatter": "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}],
+    }
+    timestamp = 1704067200.123456
+
+    profile = support.build_column_profile(
+        pd.DataFrame({"event_time": [timestamp, timestamp + 1]}),
+        "event_time",
+        "DATE_TIME",
+    )
+    serialized = support.serialize_row_for_prompt({"event_time": timestamp}, [config])
+    coerced = support.coerce_date("event_time", "2024-01-01T00:00:00.123456", {}, column_config=config)
+
+    assert profile["kind"] == "numeric"
+    assert serialized == {"event_time": "2024-01-01T00:00:00.123456"}
+    assert coerced == timestamp
+
+
 def test_coerce_date_accepts_human_readable_date_strings():
     support = _SupportHarness()
 

@@ -1,0 +1,50 @@
+name: llm_mixed_data_expert_guided_synthesis
+version: "0.1"
+type: cross-sectional
+display_name: LLM Mixed-data Expert-Guided Synthesis
+description: Generate text from immutable synthetic structured ground truth using expert-provided style instructions, document structure, text modules, and anonymized examples.
+URL: /start_synthetization_process/llm_mixed_data_expert_guided_synthesis
+processing_capabilities:
+  data_modality: mixed
+configurations:
+  llm_profile:
+    display_name: LLM Profile
+    description: Select which configured LLM instance should be used.
+    parameters:
+      - name: llm_profile
+        type: string
+        label: LLM Profile
+        description: Select the configured LLM profile.
+        default_value: ""
+        values: []
+        mandatory: true
+  model_fitting:
+    display_name: Expert Guidance
+    description: Provide the approved instructions and examples that guide every generated text.
+    parameters:
+      - name: expert_guidance
+        type: string
+        multiline: true
+        rows: 14
+        label: Style, Structure and Examples
+        description: Paste style instructions, the desired document schema, reusable text modules, and fully anonymized expert-approved examples. Clearly separate multiple examples with headings.
+        default_value: ""
+        mandatory: true
+  sampling:
+    display_name: Sampling
+    description: Configure LLM decoding. One text is generated for every row from the structured synthesizer.
+    parameters:
+      - name: temperature
+        type: float
+        label: Temperature
+        description: Controls randomness of token sampling. Lower values are more deterministic.
+        default_value: 0.2
+        min_value: 0.0
+        max_value: 2.0
+      - name: top_p
+        type: float
+        label: Top-p
+        description: Controls nucleus sampling by limiting candidate tokens to a probability mass.
+        default_value: 0.9
+        min_value: 0.0
+        max_value: 1.0

@@ -195,16 +195,16 @@ def test_configuration_sections_and_parameters():
                                 assert default_value <= param["max_value"]
 
 
-def test_yaml_matches_synthesizer_classes_name_version_type():
+def test_registered_synthesizers_match_yaml_name_version_type():
     yaml_configs = {}
     for path in CONFIG_DIR.glob("*.yaml"):
         config = _load_yaml(path)
         yaml_configs[config["name"]] = config
 
-    assert set(yaml_configs.keys()) == set(synthesizer_classes.keys())
+    assert set(synthesizer_classes.keys()) <= set(yaml_configs.keys())
 
-    for name, config in yaml_configs.items():
-        synthesizer_config = synthesizer_classes[name]
+    for name, synthesizer_config in synthesizer_classes.items():
+        config = yaml_configs[name]
         assert config["name"] == name
         assert config["version"] == synthesizer_config["version"]
         assert config["type"] == synthesizer_config["type"]

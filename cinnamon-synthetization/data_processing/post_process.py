@@ -8,11 +8,12 @@ from data_processing.utils import (
     adjust_date_within_bounds_post,
     get_column_name,
     get_column_type,
-    get_date_format,
+    format_timestamp,
+    get_date_pattern,
+    get_date_range,
     normalize_missing_dataframe,
     normalize_string_series,
     order_dataframe_by_config,
-    parse_to_date_format,
     validate_column_configurations,
 )
 
@@ -58,7 +59,7 @@ def post_process_dataframe(
                 df[column_name] = pd.to_numeric(df[column_name], errors="coerce").astype("Float64")
                 continue
 
-            if column_type == "DATE":
+            if column_type in {"DATE", "DATE_TIME"}:
                 df[column_name] = _post_process_date(df[column_name], column_config)
                 continue
 
@@ -83,6 +84,8 @@ def _post_process_boolean(series: pd.Series) -> pd.Series:
 def _post_process_date(series: pd.Series, column_config: Dict[str, Any]) -> pd.Series:
     numeric = pd.to_numeric(series, errors="coerce")
     numeric = numeric.apply(adjust_date_within_bounds_post)
-    date_format = get_date_format(column_config)
-    formatted = numeric.apply(parse_to_date_format, args=(date_format,))
+    minimum, maximum = get_date_range(column_config)
+    numeric = numeric.clip(lower=minimum, upper=maximum)
+    date_pattern = get_date_pattern(column_config)
+    formatted = numeric.apply(format_timestamp, args=(date_pattern,))
     return formatted.astype("string")

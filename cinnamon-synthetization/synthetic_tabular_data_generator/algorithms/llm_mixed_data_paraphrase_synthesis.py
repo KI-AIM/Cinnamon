@@ -18,6 +18,8 @@ from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthe
 class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisSynthesizer):
     """Generate one TEXT column from immutable synthetic structured ground truth."""
 
+    _SYNTHESIZER_NAME = "llm_mixed_data_paraphrase_synthesis"
+
     def __init__(
         self,
         attribute_configuration: Optional[Dict[str, Any]] = None,
@@ -66,11 +68,11 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
         ]
         if len(self._text_columns) != 1:
             raise ValueError(
-                "llm_mixed_data_paraphrase_synthesis requires exactly one TEXT column. "
+                f"{self._SYNTHESIZER_NAME} requires exactly one TEXT column. "
                 f"Found {len(self._text_columns)} TEXT columns."
             )
         if not self._structured_column_configs:
-            raise ValueError("llm_mixed_data_paraphrase_synthesis requires at least one non-TEXT column.")
+            raise ValueError(f"{self._SYNTHESIZER_NAME} requires at least one non-TEXT column.")
 
     def _initialize_synthesizer(self) -> None:
         self._initialize_llm_backend(mode="mixed_data_paraphrase")
@@ -129,14 +131,20 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
             "- Include each REQUIRED FACT verbatim as 'column: value' in sentences or a compact factual section, in addition to fluent narrative.\n"
             "- Preserve exact numbers, dates, names, categories, boolean values, negations and units.\n"
             "- Missing structured values are unknown; do not present them as known facts or copy conflicting reference values.\n"
-            "- Reference texts provide language, document type, style and additional context. Rewrite their wording.\n"
-            "- Additional information absent from the structured schema may be incorporated from references when consistent with all ground-truth facts.\n"
-            "- Replace or omit any reference detail that contradicts the ground truth, including identifying details and chronology.\n"
+            f"{self._guidance_usage_rules()}"
             "- Never change or generalize ground-truth values to accommodate a reference or an identifier-rewrite rule.\n"
             "- Generate text even when the input TEXT is missing. Use the reference language; without references use the domain context's language.\n"
             "- Before returning, check every required fact for coverage and the entire narrative for contradictions.\n"
             "- Return ONLY valid JSON with shape {\"row\": { ... }}.\n"
             f"- Include only this TEXT column in row: {self._text_columns[0]}\n\n"
+        )
+
+    @staticmethod
+    def _guidance_usage_rules() -> str:
+        return (
+            "- Reference texts provide language, document type, style and additional context. Rewrite their wording.\n"
+            "- Additional information absent from the structured schema may be incorporated from references when consistent with all ground-truth facts.\n"
+            "- Replace or omit any reference detail that contradicts the ground truth, including identifying details and chronology.\n"
         )
 
     def _ground_truth(self, base_row: Dict[str, Any]) -> Dict[str, Any]:
@@ -161,6 +169,11 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
             f"{json.dumps(self._ground_truth(base_row), ensure_ascii=False, indent=2)}\n\n"
             "REQUIRED FACTS (include every entry verbatim)\n"
             f"{chr(10).join(self._required_facts(base_row))}\n\n"
+            f"{self._guidance_prompt_block(base_row)}"
+        )
+
+    def _guidance_prompt_block(self, base_row: Dict[str, Any]) -> str:
+        return (
             "REFERENCE TEXTS (supporting context only)\n"
             f"{json.dumps(self._neighbor_examples(base_row), ensure_ascii=False, indent=2)}\n"
         )

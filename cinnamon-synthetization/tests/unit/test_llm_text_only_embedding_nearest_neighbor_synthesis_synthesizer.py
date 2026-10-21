@@ -102,7 +102,7 @@ def test_llm_text_only_embedding_nearest_neighbor_synthesis_uses_bm25_reference_
             return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
-            assert "NEAREST-NEIGHBOR REFERENCE EXAMPLES" in prompt
+            assert "RETRIEVED REFERENCE EXAMPLES" in prompt
             assert "Always write the output TEXT in the same language as the source TEXT. Do not translate it" in prompt
             assert "Information:\n" in prompt
             assert "Treat the source row and reference texts as pools of domain, content, and style signals" in prompt

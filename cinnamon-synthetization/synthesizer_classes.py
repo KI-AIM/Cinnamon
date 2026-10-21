@@ -3,11 +3,11 @@ from synthetic_tabular_data_generator.algorithms.bayesian_network import Bayesia
 from synthetic_tabular_data_generator.algorithms.ctgan import CtganSynthesizer
 from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
 from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
+from synthetic_tabular_data_generator.algorithms.llm_mixed_data_expert_guided_synthesis import (
+    LlmMixedDataExpertGuidedSynthesisSynthesizer,
+)
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_embedding_nearest_neighbor_synthesis import (
     LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
-)
-from synthetic_tabular_data_generator.algorithms.llm_mixed_data_indirect_identifier_rewrite_synthesis import (
-    LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
 )
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synthesis import (
     LlmMixedDataParaphraseSynthesisSynthesizer,
@@ -81,21 +81,21 @@ synthesizer_classes = {
         'description': 'Generate structured-only synthetic tabular rows with an LLM from statistical column profiles calculated on a configurable sample of the input dataset.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_tabular.yaml'
     },
+    'llm_mixed_data_expert_guided_synthesis': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': LlmMixedDataExpertGuidedSynthesisSynthesizer,
+        'display_name': 'LLM Mixed-data Expert-Guided Synthesis',
+        'description': 'Generate text from immutable synthetic structured ground truth using expert-provided style instructions, document structure, text modules, and anonymized examples.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_expert_guided_synthesis.yaml'
+    },
     'llm_mixed_data_embedding_nearest_neighbor_synthesis': {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
-        'display_name': 'LLM Mixed-data Embedding Nearest-neighbor Synthesis',
-        'description': 'Retrieve reference texts using synthetic structured facts and weighted embedding or attribute similarity. Generate text containing every ground-truth fact and optional consistent reference details.',
+        'display_name': 'LLM Mixed-data Retrieval-Guided Synthesis',
+        'description': 'Retrieve relevant reference texts using synthetic structured facts and weighted text or attribute similarity. Generate text containing every ground-truth fact and optional consistent reference details.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_embedding_nearest_neighbor_synthesis.yaml'
-    },
-    'llm_mixed_data_indirect_identifier_rewrite_synthesis': {
-        'version': '0.1',
-        'type': 'cross-sectional',
-        'class': LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
-        'display_name': 'LLM Mixed-data Indirect Identifier Rewrite Synthesis',
-        'description': 'Generate text from synthetic structured ground truth while generalizing additional reference identifiers. Every structured fact remains unchanged and must occur in the text.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_mixed_data_indirect_identifier_rewrite_synthesis.yaml'
     },
     'llm_mixed_data_paraphrase_synthesis': {
         'version': '0.1',
@@ -117,8 +117,8 @@ synthesizer_classes = {
         'version': '0.1',
         'type': 'cross-sectional',
         'class': LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
-        'display_name': 'LLM Text-only Nearest-neighbor Synthesis',
-        'description': 'Generate a new single TEXT column for fictional but plausible patients by retrieving similar reference texts and using them as in-context examples. The initial implementation supports BM25-style sparse nearest-neighbor retrieval and Ollama-based embedding retrieval for exactly one free-text column.',
+        'display_name': 'LLM Text-only Retrieval-Guided Synthesis',
+        'description': 'Generate a new single TEXT column for fictional but plausible patients by retrieving relevant reference texts and using them as in-context examples. Supports BM25-style sparse retrieval and Ollama-based embedding retrieval for exactly one free-text column.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_embedding_nearest_neighbor_synthesis.yaml'
     },
     'llm_text_only_indirect_identifier_rewrite_synthesis': {

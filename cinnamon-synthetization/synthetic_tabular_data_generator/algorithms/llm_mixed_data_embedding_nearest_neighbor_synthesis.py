@@ -8,7 +8,7 @@ import pandas as pd
 
 from data_processing.utils import (
     MISSING_VALUE_STRING,
-    get_date_format,
+    get_date_input_formats,
     parse_to_unix,
 )
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synthesis import (
@@ -90,7 +90,7 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
 
     def _build_prompt_prefix(self) -> str:
         return super()._build_prompt_prefix() + (
-            "- Use nearest-neighbor reference texts to construct a coherent new case around the fixed ground truth.\n"
+            "- Use the retrieved reference texts to construct a coherent new case around the fixed ground truth.\n"
             "- Vary wording and narrative structure while keeping every required fact unchanged.\n\n"
         )
 
@@ -161,11 +161,11 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
         column_type = str(config.get("type", "STRING")).upper()
         if self._is_missing_similarity_value(value):
             return None
-        if column_type == "DATE":
+        if column_type in {"DATE", "DATE_TIME"}:
             numeric = self.to_float(value)
             if numeric is not None:
                 return numeric
-            parsed = parse_to_unix(value, get_date_format(config))
+            parsed = parse_to_unix(value, get_date_input_formats(config))
             return None if pd.isna(parsed) else float(parsed)
         if column_type in {"INTEGER", "DECIMAL"}:
             return self.to_float(value)

@@ -17,7 +17,7 @@ from synthetic_tabular_data_generator.llm.response_validation import require_non
 class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
     """Generate structured-only synthetic rows from statistical column profiles."""
 
-    NUMERIC_TYPES = {"INTEGER", "DECIMAL", "DATE"}
+    NUMERIC_TYPES = {"INTEGER", "DECIMAL", "DATE", "DATE_TIME"}
 
     def __init__(
         self,
@@ -329,7 +329,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             value = row.get(column_name)
             if column_type == "BOOLEAN":
                 result[column_name] = self.coerce_boolean(value)
-            elif column_type == "DATE":
+            elif column_type in {"DATE", "DATE_TIME"}:
                 result[column_name] = self.coerce_date(
                     column_name,
                     value,

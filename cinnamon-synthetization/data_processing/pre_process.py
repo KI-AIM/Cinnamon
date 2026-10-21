@@ -8,7 +8,7 @@ from data_processing.utils import (
     TEXT_PENDING_LLM,
     get_column_name,
     get_column_type,
-    get_date_format,
+    get_date_input_formats,
     handle_date_column,
     normalize_string_series,
     set_text_columns_to_pending,
@@ -52,7 +52,7 @@ def pre_process_dataframe(
                 df[column_name] = _preprocess_boolean(df[column_name])
                 continue
 
-            if column_type == "DATE":
+            if column_type in {"DATE", "DATE_TIME"}:
                 df[column_name] = _preprocess_date(df[column_name], column_config)
                 continue
 
@@ -83,11 +83,11 @@ def _preprocess_boolean(series: pd.Series) -> pd.Series:
 
 def _preprocess_date(series: pd.Series, column_config: Dict[str, Any]) -> pd.Series:
     working_series = series.copy()
-    date_format = get_date_format(column_config)
+    date_formats = get_date_input_formats(column_config)
     working_df = pd.DataFrame({"value": working_series})
-    handle_date_column(working_df, "value", date_format)
+    handle_date_column(working_df, "value", date_formats)
     numeric = pd.to_numeric(working_df["value"], errors="coerce")
-    return _fill_numeric_missing_with_mean(numeric, get_column_name(column_config), "DATE")
+    return _fill_numeric_missing_with_mean(numeric, get_column_name(column_config), get_column_type(column_config))
 
 
 def _preprocess_decimal(series: pd.Series, column_name: str) -> pd.Series:

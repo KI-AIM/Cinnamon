@@ -171,8 +171,137 @@ def test_post_process_dataframe_missing_date_format_keeps_column_without_crashin
     assert "Date format not specified for DATE column 'event_date'" in str(exc.value)
 
 
+def test_post_process_dataframe_keeps_missing_date_values_missing():
+    result = post_process_dataframe(
+        pd.DataFrame({"event_date": [pd.NA]}),
+        [{
+            "name": "event_date",
+            "type": "DATE",
+            "index": 0,
+            "configurations": [{"dateFormatter": "yyyy-MM-dd"}],
+        }],
+        all_missing_values_column=[],
+    )
+
+    assert pd.isna(result.loc[0, "event_date"])
+
+
 def test_iso_to_strftime_converts_expected_tokens():
-    assert iso_to_strftime("yyyy-MM-dd HH:mm:SS") == "%Y-%m-%d %H:%M:%S"
+    assert iso_to_strftime("yyyy-MM-dd'T'HH:mm:ss.SSSSSS") == "%Y-%m-%dT%H:%M:%S.%f"
+
+
+@pytest.mark.parametrize(
+    ("date_format", "value"),
+    [
+        ("EEEE, MMMM d, yyyy", "Saturday, March 14, 1998"),
+        ("yyyy-MM-dd", "1998-03-14"),
+        ("yyyy:MM:dd", "1998:03:14"),
+        ("yyyy.MM.dd", "1998.03.14"),
+        ("dd-MM-yyyy", "14-03-1998"),
+        ("dd:MM:yyyy", "14:03:1998"),
+        ("dd.MM.yyyy", "14.03.1998"),
+        ("dd/MM/yyyy", "14/03/1998"),
+        ("MM-dd-yyyy", "03-14-1998"),
+        ("MM.dd.yyyy", "03.14.1998"),
+        ("MM:dd:yyyy", "03:14:1998"),
+        ("MM/dd/yyyy", "03/14/1998"),
+        ("dd.MM.yy", "14.03.98"),
+    ],
+)
+def test_date_round_trip_supports_cinnamon_formats(date_format, value):
+    config = [{
+        "name": "event_date",
+        "type": "DATE",
+        "index": 0,
+        "configurations": [{"name": "DateFormatConfiguration", "dateFormatter": date_format}],
+    }]
+
+    processed, dropped = pre_process_dataframe(pd.DataFrame({"event_date": [value]}), config)
+    result = post_process_dataframe(processed, config, dropped)
+
+    assert result.loc[0, "event_date"] == value
+
+
+@pytest.mark.parametrize(
+    ("date_format", "value"),
+    [
+        ("yyyy-MM-dd'T'HH:mm:ss", "1998-03-14T14:03:51"),
+        ("dd.MM.yyyy HH:mm", "14.03.1998 14:03"),
+        ("MM/dd/yyyy hh:mm:ss a", "03/14/1998 02:03:51 PM"),
+        ("yyyy-MM-dd hh:mm:ss", "1998-03-14 08:03:51"),
+        ("yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "1998-03-14T14:03:51.123456"),
+    ],
+)
+def test_date_time_round_trip_supports_cinnamon_formats(date_format, value):
+    config = [{
+        "name": "event_time",
+        "type": "DATE_TIME",
+        "index": 0,
+        "configurations": [{"name": "DateTimeFormatConfiguration", "dateTimeFormatter": date_format}],
+    }]
+
+    processed, dropped = pre_process_dataframe(pd.DataFrame({"event_time": [value]}), config)
+    result = post_process_dataframe(processed, config, dropped)
+
+    assert result.loc[0, "event_time"] == value
+
+
+@pytest.mark.parametrize(
+    ("date_format", "exported_value", "expected_value"),
+    [
+        ("yyyy-MM-dd'T'HH:mm:ssX", "2017-01-01T06:15:00", "2017-01-01T06:15:00Z"),
+        ("yyyy-MM-dd'T'HH:mm:ssXX", "2017-01-01T06:15:00", "2017-01-01T06:15:00Z"),
+        ("yyyy-MM-dd'T'HH:mm:ssXXX", "2017-01-01T06:15:00", "2017-01-01T06:15:00Z"),
+        ("yyyy-MM-dd'T'HH:mm:ss'Z'", "2017-01-01T06:15:00Z", "2017-01-01T06:15:00Z"),
+        ("yyyy-MM-dd'T'HH:mm:ss VV", "2017-01-01T06:15:00 ", "2017-01-01T06:15:00 UTC"),
+        ("E, y-M-d 'at' h:m:s a z", "Sun, 2017-1-1 at 6:15:0 AM ",
+         "Sun, 2017-1-1 at 6:15:0 AM UTC"),
+        ("E yyyy.MM.dd 'at' hh:mm:ss a zzz", "Sun 2017.01.01 at 06:15:00 AM ",
+         "Sun 2017.01.01 at 06:15:00 AM UTC"),
+    ],
+)
+def test_date_time_round_trip_restores_timezone_removed_by_cinnamon_export(
+    date_format, exported_value, expected_value,
+):
+    config = [{
+        "name": "event_time",
+        "type": "DATE_TIME",
+        "index": 0,
+        "configurations": [{"name": "DateTimeFormatConfiguration", "dateTimeFormatter": date_format}],
+    }]
+
+    processed, dropped = pre_process_dataframe(pd.DataFrame({"event_time": [exported_value]}), config)
+    result = post_process_dataframe(processed, config, dropped)
+
+    assert result.loc[0, "event_time"] == expected_value
+
+
+@pytest.mark.parametrize(
+    ("column_type", "format_name", "format_key", "date_format", "minimum", "maximum", "sampled", "expected"),
+    [
+        ("DATE", "DateFormatConfiguration", "dateFormatter", "yyyy-MM-dd",
+         "2000-01-01", "2030-01-01", "2040-01-01", "2030-01-01"),
+        ("DATE_TIME", "DateTimeFormatConfiguration", "dateTimeFormatter", "yyyy-MM-dd'T'HH:mm:ss",
+         "2000-01-01T00:00:00", "2030-01-01T12:00:00", "1990-01-01T00:00:00", "2000-01-01T00:00:00"),
+    ],
+)
+def test_post_process_clamps_dates_to_cinnamon_range(
+    column_type, format_name, format_key, date_format, minimum, maximum, sampled, expected,
+):
+    config = [{
+        "name": "value",
+        "type": column_type,
+        "index": 0,
+        "configurations": [
+            {"name": format_name, format_key: date_format},
+            {"name": "RangeConfiguration", "minValue": minimum, "maxValue": maximum},
+        ],
+    }]
+    sampled_timestamp = pd.Timestamp(sampled).timestamp()
+
+    result = post_process_dataframe(pd.DataFrame({"value": [sampled_timestamp]}), config, [])
+
+    assert result.loc[0, "value"] == expected
 
 
 def test_parse_to_unix_invalid_entry_returns_na():

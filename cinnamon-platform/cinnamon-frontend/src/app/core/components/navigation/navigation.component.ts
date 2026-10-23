@@ -5,6 +5,7 @@ import { NavigationService } from "@core/services/navigation.service";
 import { StateManagementService } from "@core/services/state-management.service";
 import { ProjectExportComponent } from "@shared/components/project-export/project-export.component";
 import { NavigationKey } from "@shared/model/navigation";
+import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
 import { StatusService } from "@shared/services/status.service";
 import { combineLatest, Observable } from "rxjs";
 import { ProjectSettingsComponent } from "src/app/shared/components/project-settings/project-settings.component";
@@ -33,11 +34,13 @@ export class NavigationComponent implements OnInit{
     @ViewChild(ProjectSettingsComponent) private projectSettings: ProjectSettingsComponent;
 
     protected pageData$: Observable<{
+        appConfig: AppConfig,
         navigationKey: NavigationKey,
         openStep: StepDefinition | null,
     }>;
 
     constructor(
+        private readonly appConfigService: AppConfigService,
         private readonly dialog: MatDialog,
         private readonly navigationService: NavigationService,
         protected readonly stateManagementService: StateManagementService,
@@ -47,6 +50,7 @@ export class NavigationComponent implements OnInit{
 
     public ngOnInit(): void {
         this.pageData$ = combineLatest({
+            appConfig: this.appConfigService.appConfig$,
             navigationKey: this.navigationService.navigationKey$,
             openStep: this.stateManagementService.currentStep$,
         });

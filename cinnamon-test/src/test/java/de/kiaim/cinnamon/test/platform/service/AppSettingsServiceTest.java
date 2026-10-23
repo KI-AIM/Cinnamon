@@ -4,6 +4,7 @@ import com.icegreen.greenmail.util.GreenMail;
 import de.kiaim.cinnamon.platform.exception.BadMailSettingsException;
 import de.kiaim.cinnamon.platform.exception.InternalMailException;
 import de.kiaim.cinnamon.platform.model.dto.EMailSettingsDTO;
+import de.kiaim.cinnamon.platform.repository.AppSettingsRepository;
 import de.kiaim.cinnamon.platform.repository.EmailSettingsRepository;
 import de.kiaim.cinnamon.platform.service.AppSettingsService;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
@@ -20,11 +21,15 @@ import static org.junit.jupiter.api.Assertions.*;
 @WithGreenMail
 public class AppSettingsServiceTest extends ContextRequiredTest {
 
-	@Autowired private AppSettingsService appSettingsService;
+	@Autowired private AppSettingsRepository appSettingsRepository;
 	@Autowired private EmailSettingsRepository emailSettingsRepository;
+
+	@Autowired private AppSettingsService appSettingsService;
 
 	private GreenMail greenMail;
 	@GreenMailPort private int port;
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Mail settings ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ //
 
 	@Test
 	public void getMailSettingsNotConfigured() {
@@ -133,6 +138,29 @@ public class AppSettingsServiceTest extends ContextRequiredTest {
 		request.setMailTLS(false);
 		request.setMailSMTPAuth(false);
 		return request;
+	}
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ App settings ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ //
+
+	@Test
+	public void initAppSettingsNotCreatingMultiple() {
+		assertEquals(1, appSettingsRepository.count(), "There should be one app settings after app startup!");
+
+		appSettingsService.initAppSettings();
+
+		assertEquals(1, appSettingsRepository.count(), "No second entity should have been created!");
+	}
+
+	@Test
+	public void getAndUpdateImprint() {
+		var imprint = assertDoesNotThrow(() -> appSettingsService.getImprint());
+		assertNull(imprint, "The initial imprint should be null!");
+
+		var newImprint = "imprint";
+		assertDoesNotThrow(() -> appSettingsService.updateImprint(newImprint));
+
+		var updatedImprint = assertDoesNotThrow(() -> appSettingsService.getImprint());
+		assertEquals(newImprint, updatedImprint, "The imprint should have been updated!");
 	}
 
 }

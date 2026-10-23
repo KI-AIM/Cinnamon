@@ -4,6 +4,7 @@
  * for it automatically and the corresponding route has to be registered in the routing module.
  */
 export enum AdminPage {
+    GENERAL = "GENERAL",
     USERS = "USERS",
     MAIL = "MAIL",
 }
@@ -33,18 +34,25 @@ export interface AdminPageDefinition {
 }
 
 export const AdminPageConfiguration: Record<AdminPage, AdminPageDefinition> = {
+    GENERAL: {
+        path: "/admin/general",
+        id: "navLinkAdminGeneral",
+        text: "General",
+        enum: AdminPage.GENERAL,
+        index: 0,
+    },
     USERS: {
         path: "/admin/users",
         id: "navLinkAdminUsers",
         text: "Users",
         enum: AdminPage.USERS,
-        index: 0,
+        index: 1,
     },
     MAIL: {
         path: "/admin/mail",
         id: "navLinkAdminMail",
         text: "Mail Settings",
         enum: AdminPage.MAIL,
-        index: 1,
+        index: 2,
     },
 };

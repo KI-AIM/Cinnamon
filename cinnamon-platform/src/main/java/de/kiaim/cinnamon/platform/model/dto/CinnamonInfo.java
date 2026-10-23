@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import de.kiaim.cinnamon.platform.model.configuration.PasswordRequirementsConfiguration;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.jspecify.annotations.Nullable;
 
 /**
  * General information about Cinnamon.
@@ -56,4 +57,12 @@ public class CinnamonInfo {
 	 */
 	@Schema(description = "The Cinnamon version.", example = "1.0.0")
 	private final String version;
+
+	/**
+	 * The imprint as HTML.
+	 * Can be null if no imprint is available.
+	 */
+	@Schema(description = "The imprint as HTML.")
+	@Nullable
+	private final String imprint;
 }

@@ -11,10 +11,12 @@
         @switch (pageData.navigationKey) {
             @case(NavigationKey.ADMIN) {
                 <ul class="nav flex-column justify-content-start">
-                    <li *ngFor="let page of AdminPageConfiguration | keyvalue: indexOrderAsc" class="nav-item">
-                        <a class="nav-link" [id]="page.value.id" [routerLink]="page.value.path"
-                           routerLinkActive="active">{{ page.value.text }}</a>
-                    </li>
+                    @for (page of AdminPageConfiguration | keyvalue: indexOrderAsc; track page.value.id) {
+                        <li class="nav-item">
+                            <a class="nav-link" [id]="page.value.id" [routerLink]="page.value.path"
+                               routerLinkActive="active">{{ page.value.text }}</a>
+                        </li>
+                    }
                 </ul>
             }
             @case (NavigationKey.USER) {

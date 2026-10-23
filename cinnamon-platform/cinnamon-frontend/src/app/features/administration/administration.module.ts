@@ -23,6 +23,9 @@ import {
     MatTable
 } from "@angular/material/table";
 import { RouterModule } from "@angular/router";
+import {
+    GeneralSettingsComponent
+} from "@features/administration/components/general-settings/general-settings.component";
 import { SharedModule } from "@shared/shared.module";
 import {
     UserInvitationFormComponent
@@ -41,6 +44,7 @@ import { MailTemplatesComponent } from './components/mail-templates/mail-templat
         AdminShellComponent,
         AdminUsersComponent,
         AdminMailSettingsComponent,
+        GeneralSettingsComponent,
         MailTemplatesComponent,
         UserInvitationsComponent,
         UserInvitationFormComponent

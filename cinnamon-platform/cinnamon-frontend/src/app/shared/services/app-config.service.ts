@@ -41,6 +41,16 @@ export class AppConfigService {
     }
 
     /**
+     * Returns the current cached app config.
+     * Null if the app config has not been fetched before.
+     *
+     * @return Cached app config or null.
+     */
+    public get appConfig(): AppConfig | null {
+        return this.appConfigSubject.value;
+    }
+
+    /**
      * Fetches the app config from the backend and emits the new value to all subscribers of {@link appConfig$}.
      * If the request fails and no app config has been loaded yet, a fallback config is emitted.
      *
@@ -69,6 +79,18 @@ export class AppConfigService {
         );
 
         return this.fetchRequest$;
+    }
+
+    /**
+     * Updates the imprint and refreshes the app config afterward.
+     *
+     * @param newImprint The new imprint.
+     */
+    public updateImprint(newImprint: string | null): Observable<void> {
+        return this.http.put<void>(this.baseURL + "/api/admin/settings/imprint", newImprint).pipe(
+            switchMap(() => this.fetchAppConfig()),
+            map(() => undefined),
+        );
     }
 
     private fallbackAppConfig(): AppConfig {

@@ -81,41 +81,25 @@
             </div>
         </div>
 
+        <ng-template #imprintDialog>
+            <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Imprint</h2>
+            <mat-dialog-content class="mat-typography dialog-content">
+
+                @if (!pageData.appConfig.imprint) {
+                    <div class="box">
+                        <i>No imprint available.</i>
+                    </div>
+                } @else {
+                    <div class="box" [innerHTML]="pageData.appConfig.imprint">
+                    </div>
+                }
+
+            </mat-dialog-content>
+            <mat-dialog-actions align="end">
+                <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
+            </mat-dialog-actions>
+        </ng-template>
+
     }
 
 </div>
-
-
-<ng-template #imprintDialog>
-    <h2 mat-dialog-title class="dialog-title fs-4 fw-bold">Imprint</h2>
-    <mat-dialog-content class="mat-typography dialog-content">
-
-        <div class="box">
-
-
-            Universität Münster<br>
-            Schlossplatz 2, 48149 Münster<br>
-            Telephone: +49 (251) 83-0<br>
-            Fax: +49 (251) 83-3 20 90<br>
-            E-mail: <a href="mailto:verwaltung@uni-muenster.de">verwaltung&#64;uni-muenster.de</a><br>
-            <br>
-            The University Münster is a statutory body and an institution of the Land of North Rhine-Westphalia. It is
-            represented by the Rector, Professor Dr. Johannes Wessels.<br>
-            <br>
-            Turnover tax identification number: DE 126118759<br>
-            <br>
-            Edited in accordance with §5 TMG by:<br>
-            Univ.-Prof. Dr. rer. nat. Dominik Heider<br>
-            Institute of Medical Informatics<br>
-            Albert-Schweizer-Campus 1, Building A11<br>
-            48149 Münster, Germany<br>
-            Telephone: +49 (251) 83-55262<br>
-            E-mail: <a href="mailto:imi@uni-muenster.de">imi&#64;uni-muenster.de</a><br>
-
-        </div>
-
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-raised-button mat-dialog-close color="primary" type="button">Close</button>
-    </mat-dialog-actions>
-</ng-template>

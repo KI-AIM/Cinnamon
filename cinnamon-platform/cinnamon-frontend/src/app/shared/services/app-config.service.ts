@@ -73,6 +73,7 @@ export class AppConfigService {
 
     private fallbackAppConfig(): AppConfig {
         return {
+            imprint: null,
             isDemoInstance: false,
             isInvitationRequired: false,
             maxFileSize: 0,
@@ -86,6 +87,7 @@ export class AppConfigService {
 }
 
 export interface AppConfig {
+    imprint: string | null;
     isDemoInstance: boolean;
     isInvitationRequired: boolean;
     maxFileSize: number;

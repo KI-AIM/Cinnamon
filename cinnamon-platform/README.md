@@ -29,6 +29,8 @@ A minimal example of the entire file can be found in the [settings.xml](../.gith
 
 It is recommended to use the [docker-compose-build.yml](../docker-compose-build.yml) for building and [docker-compose.yml](../docker-compose.yml) for running the platform with Docker.
 
+Before building the image, copy the [settings.xml](../.github/maven/settings.xml) to `../secrets/mvn_settings.xml` and fill in the username and PAT.
+
 Run the following command in the root directory to build Cinnamon Platform:
 ```sh
 docker compose -f docker-compose-build.yml build cinnamon-platform 

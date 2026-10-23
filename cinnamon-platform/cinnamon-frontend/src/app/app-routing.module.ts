@@ -5,6 +5,9 @@ import { projectAccessGuard } from "@core/guards/project-access.guard";
 import { AdminMailSettingsComponent } from "@features/administration/components/admin-mail-settings/admin-mail-settings.component";
 import { AdminShellComponent } from "@features/administration/components/admin-shell/admin-shell.component";
 import { AdminUsersComponent } from "@features/administration/components/admin-users/admin-users.component";
+import {
+    GeneralSettingsComponent
+} from "@features/administration/components/general-settings/general-settings.component";
 import { ProjectShellComponent } from "@features/project/components/project-shell/project-shell.component";
 import { UserHomePageComponent } from "@features/user/pages/user-home-page/user-home-page.component";
 import { UserSettingsComponent } from "@features/user/pages/user-settings/user-settings.component";
@@ -44,6 +47,7 @@ const routes: Routes = [
         component: AdminShellComponent,
         children: [
             {path: '', redirectTo: 'users', pathMatch: 'full'},
+            {path: 'general', component: GeneralSettingsComponent},
             {path: 'users', component: AdminUsersComponent},
             {path: 'invitation/:invitationId', component: UserInvitationFormComponent},
             {path: 'mail', component: AdminMailSettingsComponent},

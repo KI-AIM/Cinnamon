@@ -1,7 +1,9 @@
 package de.kiaim.cinnamon.platform.controller;
 
+import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.dto.CinnamonInfo;
+import de.kiaim.cinnamon.platform.service.AppSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,13 +35,16 @@ public class RootController {
 
     private final CinnamonConfiguration cinnamonConfiguration;
 
+    private final AppSettingsService appSettingsService;
 
     public RootController(
-            @Value("${cinnamon.users.invitation.is-required}") boolean isInvitationRequired,
-            final CinnamonConfiguration cinnamonConfiguration
+		    @Value("${cinnamon.users.invitation.is-required}") boolean isInvitationRequired,
+		    final CinnamonConfiguration cinnamonConfiguration,
+            final AppSettingsService appSettingsService
     ) {
         this.isInvitationRequired = isInvitationRequired;
         this.cinnamonConfiguration = cinnamonConfiguration;
+	    this.appSettingsService = appSettingsService;
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/")
@@ -59,9 +64,9 @@ public class RootController {
     })
     @ResponseBody
     @GetMapping(value = "/config.json", produces = MediaType.APPLICATION_JSON_VALUE)
-    public CinnamonInfo getConfig() {
+    public CinnamonInfo getConfig() throws ApiException {
         return new CinnamonInfo(isDemoInstance, maxFileSize, cinnamonConfiguration.getPasswordRequirements(),
-                                isInvitationRequired, version);
+                                isInvitationRequired, version, appSettingsService.getImprint());
     }
 
 }

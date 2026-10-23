@@ -48,6 +48,11 @@ public class InternalInvalidStateException extends InternalException {
 	 */
 	public static final String MISSING_PROCESS_UUID = "8";
 
+	/**
+	 * Exception code for a missing app settings entity in the database.
+	 */
+	public static final String MISSING_APP_SETTINGS = "9";
+
 	public InternalInvalidStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

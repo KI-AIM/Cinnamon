@@ -31,6 +31,9 @@ public class RootController {
     @Value("${cinnamon.version}")
     private String version;
 
+    @Value("${cinnamon.status-request-interval:2000}")
+    private long statusRequestInterval;
+
     private final CinnamonConfiguration cinnamonConfiguration;
 
 
@@ -61,7 +64,7 @@ public class RootController {
     @GetMapping(value = "/config.json", produces = MediaType.APPLICATION_JSON_VALUE)
     public CinnamonInfo getConfig() {
         return new CinnamonInfo(isDemoInstance, maxFileSize, cinnamonConfiguration.getPasswordRequirements(),
-                                isInvitationRequired, version);
+                                isInvitationRequired, version, statusRequestInterval);
     }
 
 }

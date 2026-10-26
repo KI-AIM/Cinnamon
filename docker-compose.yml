@@ -50,6 +50,7 @@ services:
             CINNAMON.CORSALLOWEDORIGINS: http://127:0:0:1,http://localhost:4200,http://127.0.0.1:8080
 
             CINNAMON_IS-DEMO-INSTANCE: ${IS_DEMO_INSTANCE:-false}
+            CINNAMON_STATUS-REQUEST-INTERVAL: ${STATUS_REQUEST_INTERVAL:-2000}
 
             # Hosts
             CINNAMON.EXTERNAL-HOST.anonymization-host.URL: http://cinnamon-anonymization

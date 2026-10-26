@@ -140,6 +140,13 @@
             } @else {
                 <span>No file is currently stored. Please import one.</span>
             }
+            <p class="mt-2 mb-0">
+                <mat-icon fontIcon="warning" style="vertical-align: bottom;"></mat-icon>
+                Please import your complete dataset at once.
+                Do not split a dataset into several parts and anonymize them separately.
+                The anonymization only considers the data of the current project, so combining separately anonymized
+                parts can make it possible to re-identify individuals.
+            </p>
         </div>
     </ng-template>
 

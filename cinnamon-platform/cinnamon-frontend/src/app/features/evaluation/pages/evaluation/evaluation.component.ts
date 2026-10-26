@@ -1,4 +1,4 @@
-import { Component, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { ProcessStatus, StageStatus } from "@core/enums/process-status";
 import { Steps } from "@core/enums/steps";
@@ -35,6 +35,7 @@ export class EvaluationComponent implements OnInit {
     }>
 
     @ViewChildren('statusPanel') private statusPanels: QueryList<MatExpansionPanel>;
+    @ViewChildren('statusPanel', {read: ElementRef}) private statusPanelElements: QueryList<ElementRef<HTMLElement>>;
 
     private currentJob: number | null = null;
     private currentStatus: StageStatus | null = null;
@@ -70,8 +71,9 @@ export class EvaluationComponent implements OnInit {
 
                         if (jobIndex !== null) {
                             this.statusPanels.get(jobIndex)?.open();
+                            this.statusPanelElements?.get(jobIndex)?.nativeElement.scrollIntoView({behavior: 'smooth', block: 'center'});
                             const name = this.getJobName(value.processes[jobIndex].step);
-                            this.errorHandlingService.addError(`The ${name} process failed. See the status panel for more information.`);
+                            this.errorHandlingService.addError(`The ${name} process failed. The error details are shown in the "Status" panel of the ${name} process on this page, which has been opened for you.`);
                         }
                     }
                 }),

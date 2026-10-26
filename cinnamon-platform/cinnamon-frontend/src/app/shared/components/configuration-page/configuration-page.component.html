@@ -7,7 +7,7 @@
                            (confirm)="submit()">
             <!-- Activation -->
             <app-workstep-item header="Select steps to execute" [locked]="data.locked" [stepIndex]="0"
-                               [invalid]="!oneEnabled" altConfirm="Skip all steps" [altConfirmAll]="true"
+                               [invalid]="!oneEnabled" invalidMessage="Please select at least one step to execute or skip all steps." altConfirm="Skip all steps" [altConfirmAll]="true"
                                [altConfirmValid]="!oneEnabled">
                 <ng-container *ngTemplateOutlet="processActivation"></ng-container>
             </app-workstep-item>
@@ -15,7 +15,7 @@
             <!-- Upload -->
             <app-workstep-item header="Upload a configuration if available" [locked]="data.locked"
                                [stepIndex]="1" altConfirm="Continue witout a configuraiton"
-                               [invalid]="configFileCache === null" (confirm)="uploadCachedConfiguration()">
+                               [invalid]="configFileCache === null" invalidMessage="Please upload a configuration file or continue without a configuration." (confirm)="uploadCachedConfiguration()">
                 Upload an existing configuration:
                 <app-file-upload #standardFileUpload accept=".yml,.yaml" [disabled]="data.locked || !oneEnabled"
                                  (input)="cacheConfiguration($event)"></app-file-upload>
@@ -23,7 +23,7 @@
 
             <!-- Algorithm Selection -->
             <app-workstep-item [header]="getSelectionStepHeader(data.dataConfiguration)" [locked]="data.locked"
-                               [skip]="!hasAlgorithmSelection" [stepIndex]="2" [invalid]="selectedAlgorithm == null">
+                               [skip]="!hasAlgorithmSelection" [stepIndex]="2" [invalid]="selectedAlgorithm == null" invalidMessage="Please select an algorithm.">
                 <app-configuration-selection #selection [algorithms]="getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)"
                                              [disabled]="data.locked || !oneEnabled"
                                              [initialValue]="data.configurationData.selectedAlgorithm"
@@ -40,7 +40,7 @@
             <!-- Algorithm Configuration -->
             <app-workstep-item [header]="getConfigurationStepHeader(data.dataConfiguration)" [locked]="data.locked"
                                [stepIndex]="getAlgorithmConfigurationStepIndex(data.dataConfiguration)"
-                               [invalid]="!hideAlgorithmConfigForm && structuredConfigurationInvalid">
+                               [invalid]="!hideAlgorithmConfigForm && structuredConfigurationInvalid" invalidMessage="The configuration contains missing or invalid values. Please check the fields above.">
                 <ng-container *ngIf="hideAlgorithmConfigForm; else algorithmConfigBody">
                     <div class="w-100 mt-4">
                         <div class="ms-auto me-auto" style="width: fit-content">
@@ -98,7 +98,7 @@
                 <!-- Free-text Selection -->
                 <app-workstep-item header="Select the free-text synthesizer" [locked]="data.locked"
                                    [stepIndex]="getFreeTextSelectionStepIndex(data.dataConfiguration)" [skip]="!hasFreeTextConfiguration"
-                                   [invalid]="freeTextSelectionInvalid">
+                                   [invalid]="freeTextSelectionInvalid" invalidMessage="Please select a free-text synthesizer.">
                     <ng-container *ngIf="forms?.form as rootForm">
                         <div [formGroup]="rootForm">
                             <div formGroupName="text_synthesis_configuration">
@@ -122,7 +122,7 @@
                 <!-- Free-text Configuration -->
                 <app-workstep-item header="Configure the free-text synthesizer" [locked]="data.locked"
                                    [stepIndex]="getFreeTextConfigurationStepIndex(data.dataConfiguration)" [skip]="!hasFreeTextConfiguration"
-                                   [invalid]="freeTextConfigurationInvalid">
+                                   [invalid]="freeTextConfigurationInvalid" invalidMessage="The free-text synthesizer configuration contains missing or invalid values.">
                     <ng-container *ngIf="getFreeTextAlgorithmGroup() as freeTextAlgorithmForm">
                         <ng-container *ngIf="getFreeTextAlgorithmDefinition(data.algorithms, data.dataConfiguration) | async as freeTextDefinition">
                             <app-configuration-group [form]="freeTextAlgorithmForm" [fromGroupName]="''"

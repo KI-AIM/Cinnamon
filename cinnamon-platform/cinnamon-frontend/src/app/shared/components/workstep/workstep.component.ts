@@ -14,6 +14,10 @@ export class WorkstepComponent {
     @Input() public loading: boolean = false;
     @Input() public locked!: boolean;
     @Input() public valid: boolean = true;
+    /**
+     * Message shown if the step is invalid. Falls back to a generic message if not set.
+     */
+    @Input() public invalidMessage: string | null = null;
 
     @Input() public altConfirm: string | null = null;
     @Input() public altConfirmValid: boolean = true;

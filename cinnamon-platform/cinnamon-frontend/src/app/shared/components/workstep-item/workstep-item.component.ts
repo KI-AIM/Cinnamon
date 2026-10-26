@@ -12,6 +12,10 @@ export class WorkstepItemComponent {
 
     @Input() public stepIndex!: number;
     @Input({transform: booleanAttribute}) public invalid: boolean = false;
+    /**
+     * Message shown if the step is invalid. Falls back to a generic message if not set.
+     */
+    @Input() public invalidMessage: string | null = null;
     @Input({transform: booleanAttribute}) public loading: boolean = false;
     @Input({transform: booleanAttribute}) public locked: boolean = false;
     @Input() public header!: string;

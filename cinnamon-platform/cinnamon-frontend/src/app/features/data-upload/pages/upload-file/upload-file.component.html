@@ -7,13 +7,13 @@
                            (confirm)="uploadFile()">
 
             <app-workstep-item header="Select your data source" [locked]="pageData.locked.isLocked"
-                               [invalid]="isDataSourceTypeInvalid" [stepIndex]="0">
+                               [invalid]="isDataSourceTypeInvalid" invalidMessage="Please select a data source." [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="dataSourceSelector"></ng-container>
             </app-workstep-item>
 
             @if (dataSourceType === DataSourceType.LOCAL) {
                 <app-workstep-item header="Select your dataset" [locked]="pageData.locked.isLocked"
-                                   [loading]="loadingEstimation" [invalid]="isDataFileInvalid"
+                                   [loading]="loadingEstimation" [invalid]="isDataFileInvalid" invalidMessage="Please select a valid dataset file."
                                    [stepIndex]="1">
 
                     <ng-container *ngTemplateOutlet="currentFileDisclaimer"></ng-container>
@@ -23,18 +23,18 @@
                 </app-workstep-item>
             } @else {
                 <app-workstep-item header="Configure the FHIR-Server" [locked]="pageData.locked.isLocked"
-                                   [invalid]="isDataSourceInvalid" [stepIndex]="1" (confirm)="fetchDataFile(false)">
+                                   [invalid]="isDataSourceInvalid" invalidMessage="Please complete the FHIR server configuration." [stepIndex]="1" (confirm)="fetchDataFile(false)">
                     <ng-container *ngTemplateOutlet="fhirServerConfig"></ng-container>
                 </app-workstep-item>
             }
 
             <app-workstep-item header="Specify the file's content" [locked]="pageData.locked.isLocked"
-                               [invalid]="isFileConfigurationInvalid() || loadingEstimation" [stepIndex]="2">
+                               [invalid]="isFileConfigurationInvalid() || loadingEstimation" [invalidMessage]="loadingEstimation ? 'Please wait until the file has been analyzed.' : 'The file settings are incomplete or invalid. Please check the fields above.'" [stepIndex]="2">
                 <ng-container *ngTemplateOutlet="fileConfigurationForm"></ng-container>
             </app-workstep-item>
 
             <app-workstep-item header="Select a data configuration if available" [locked]="pageData.locked.isLocked"
-                               [invalid]="isConfigFileInvalid" [stepIndex]="3"
+                               [invalid]="isConfigFileInvalid" invalidMessage="Please select a configuration file or continue without a configuration." [stepIndex]="3"
                                altConfirm="Continue without a configuration">
                 <ng-container *ngTemplateOutlet="configFileUpload"></ng-container>
             </app-workstep-item>

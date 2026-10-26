@@ -56,4 +56,11 @@ public class CinnamonInfo {
 	 */
 	@Schema(description = "The Cinnamon version.", example = "1.0.0")
 	private final String version;
+
+	/**
+	 * Interval in milliseconds in which the frontend requests the status of running processes.
+	 */
+	@Schema(description = "Interval in milliseconds in which the frontend requests the status of running processes.",
+	        example = "2000")
+	private final long statusRequestInterval;
 }

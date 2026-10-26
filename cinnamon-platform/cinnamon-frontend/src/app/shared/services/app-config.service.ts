@@ -43,6 +43,7 @@ export class AppConfigService {
                         constraints: [],
                     },
                     version: 'unknown',
+                    statusRequestInterval: DEFAULT_STATUS_REQUEST_INTERVAL,
                 });
             }),
             finalize(() => {
@@ -56,12 +57,21 @@ export class AppConfigService {
     }
 }
 
+/**
+ * Default interval in milliseconds in which the status of running processes is requested.
+ */
+export const DEFAULT_STATUS_REQUEST_INTERVAL = 2000;
+
 export interface AppConfig {
     isDemoInstance: boolean;
     isInvitationRequired: boolean;
     maxFileSize: number;
     passwordRequirements: PasswordRequirements;
     version: string;
+    /**
+     * Interval in milliseconds in which the status of running processes is requested.
+     */
+    statusRequestInterval: number;
 }
 
 export interface PasswordRequirements {

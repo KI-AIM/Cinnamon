@@ -10,6 +10,7 @@ import { SynthetizationService } from "@features/synthetization/services/synthet
 import { TechnicalEvaluationService } from "@features/technical-evaluation/services/technical-evaluation.service";
 import { ExecutionStep, PipelineInformation } from "@shared/model/execution-step";
 import { Status } from "@shared/model/status";
+import { AppConfigService, DEFAULT_STATUS_REQUEST_INTERVAL } from "@shared/services/app-config.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { ProjectService } from "@shared/services/project.service";
 import { StatusService } from "@shared/services/status.service";
@@ -50,6 +51,7 @@ export class StateManagementService {
 
     constructor(
         private readonly anonymizationService: AnonymizationService,
+        private readonly appConfigService: AppConfigService,
         private readonly configurationService: ConfigurationService,
         protected readonly dataSetInfoService: DataSetInfoService,
         private readonly fileService: FileService,
@@ -75,7 +77,10 @@ export class StateManagementService {
             shareReplay(1),
         );
 
-        this._pipelineObserver$ = interval(2000).pipe(
+        this._pipelineObserver$ = this.appConfigService.appConfig$.pipe(
+            switchMap(appConfig => interval(appConfig.statusRequestInterval > 0
+                                            ? appConfig.statusRequestInterval
+                                            : DEFAULT_STATUS_REQUEST_INTERVAL)),
             switchMap(() => this.fetchPipelineInformationForCurrentProject()),
             tap(value => this.doUpdatePipeline(value)),
         );

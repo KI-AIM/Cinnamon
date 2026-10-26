@@ -86,12 +86,13 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * Opens the dialog.
+     * Opens the dialog and selects all available resources by default.
      */
     public open(): void {
-        this.dialog.open(this.dialogWrap, {
+        const dialogRef = this.dialog.open(this.dialogWrap, {
             width: '60%'
         });
+        dialogRef.afterOpened().subscribe(() => this.toggleAll(true));
     }
 
     /**

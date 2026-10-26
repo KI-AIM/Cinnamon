@@ -13,12 +13,12 @@
                            (confirm)="confirmConfiguration()">
 
             <app-workstep-item header="Configure the attributes" [locked]="data.locked.isLocked"
-                               [invalid]="attributeConfigurationForm.invalid" [stepIndex]="0">
+                               [invalid]="attributeConfigurationForm.invalid" invalidMessage="Some attribute configurations are missing or invalid. Please check the attributes above." [stepIndex]="0">
                 <ng-container *ngTemplateOutlet="attributeConfiguration"></ng-container>
             </app-workstep-item>
 
             <app-workstep-item header="Configure the dataset" [locked]="data.locked.isLocked"
-                               [invalid]="isDataSetConfigurationFormInvalid" [stepIndex]="1">
+                               [invalid]="isDataSetConfigurationFormInvalid" invalidMessage="The dataset configuration contains invalid values." [stepIndex]="1">
                 <ng-container *ngTemplateOutlet="dataSetConfiguration"></ng-container>
             </app-workstep-item>
 

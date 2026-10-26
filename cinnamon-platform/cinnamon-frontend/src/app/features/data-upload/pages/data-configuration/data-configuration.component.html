@@ -76,6 +76,13 @@
                 Should an extended analysis of the data be carried out automatically (this reduces the amount of usable data
                 and possibly worsens the results)
             </mat-checkbox>
+            <p class="mb-2" style="margin-left: 40px;">
+                If enabled, a part of your dataset (the hold-out split) is set aside before the anonymization.
+                This part is neither anonymized nor included in the results.
+                Instead, it is used as a reference to evaluate how well the privacy of the original records is protected.
+                This is required for the risk assessment.
+                Because less data is available for the anonymization and synthetization, the results may be slightly worse.
+            </p>
             <div style="margin-left: 40px;">
                 <mat-expansion-panel [disabled]="!createHoldOutSplit" [(expanded)]="isAdvanceConfigurationExpanded">
                     <mat-expansion-panel-header>

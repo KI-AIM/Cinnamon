@@ -41,7 +41,7 @@
                     <div><span>
                         <mat-checkbox #resource color="primary"
                                       [value]="'configuration.dataset'"
-                                      [checked]="selectedResources.includes('configuration.dateset')"
+                                      [checked]="selectedResources.includes('configuration.dataset')"
                                       [disabled]="!statusService.isStepCompleted(Steps.DATA_CONFIG)"
                                       (input)="updateChecked()">
                             Dataset Configuration

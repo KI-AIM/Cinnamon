@@ -272,6 +272,10 @@
                                       matTooltip="This step requires extended analysis to be enabled."
                                       matTooltipPosition="right"></mat-icon>
                         </span>
+                        <a class="ms-1 my-auto" role="button" tabindex="0" style="cursor: pointer;"
+                           (click)="routeToExtendedAnalysis()" (keydown.enter)="routeToExtendedAnalysis()">
+                            Enable extended analysis
+                        </a>
                 </ng-container>
             </div>
         </ng-container>

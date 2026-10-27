@@ -35,6 +35,18 @@ class LlmMixedDataExpertGuidedSynthesisSynthesizer(
     def _initialize_synthesizer(self) -> None:
         self._initialize_llm_backend(mode="mixed_data_expert_guided")
 
+    def _build_prompt_prefix(self) -> str:
+        text_column = self._text_columns[0]
+        return (
+            "Generate one TEXT value from synthetic structured ground truth.\n"
+            f"Domain context: {self._user_prompt_domain_context}\n\n"
+            "- The structured row is authoritative. Include every non-missing attribute naturally, preserving its exact meaning, values, units, negations and temporal relations. Do not infer missing values.\n"
+            "- Follow expert guidance for language, terminology, style and structure, unless it conflicts with the structured row or output rules.\n"
+            "- Use examples only for writing style; do not copy their case-specific facts. Do not invent facts to fill requested sections.\n"
+            "- Generate even if the input TEXT is missing. Use the language specified by the guidance or domain context.\n"
+            f"- Return only valid JSON: {{\"row\":{{\"{text_column}\":\"...\"}}}}.\n\n"
+        )
+
     def _fit(self) -> None:
         if self.dataset is None:
             raise ValueError("Dataset is not initialized.")

@@ -89,9 +89,15 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
         self._reference_vectors = [None] * len(self._reference_rows)
 
     def _build_prompt_prefix(self) -> str:
-        return super()._build_prompt_prefix() + (
-            "- Use the retrieved reference texts to construct a coherent new case around the fixed ground truth.\n"
-            "- Vary wording and narrative structure while keeping every required fact unchanged.\n\n"
+        text_column = self._text_columns[0]
+        return (
+            "Generate one TEXT value from synthetic structured ground truth.\n"
+            f"Domain context: {self._user_prompt_domain_context}\n\n"
+            "- The structured row is authoritative. Include every non-missing attribute naturally, preserving its exact meaning, values, units, negations and temporal relations. Do not infer missing values.\n"
+            "- Use retrieved texts for language, terminology, structure and general context; combine and rephrase their patterns rather than copying them.\n"
+            "- Do not transfer identifiers or case-specific facts absent from the structured row, or introduce unsupported or conflicting claims.\n"
+            "- Generate even if the input TEXT is missing. Follow reference language, otherwise domain context.\n"
+            f"- Return only valid JSON: {{\"row\":{{\"{text_column}\":\"...\"}}}}.\n\n"
         )
 
     def _neighbor_examples(self, base_row: Dict[str, Any]) -> list[str]:

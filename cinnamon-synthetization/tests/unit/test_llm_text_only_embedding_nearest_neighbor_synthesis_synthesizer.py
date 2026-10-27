@@ -103,15 +103,12 @@ def test_llm_text_only_embedding_nearest_neighbor_synthesis_uses_bm25_reference_
         if method == "POST" and url.endswith("/api/generate"):
             prompt = kwargs["json"]["prompt"]
             assert "RETRIEVED REFERENCE EXAMPLES" in prompt
-            assert "Always write the output TEXT in the same language as the source TEXT. Do not translate it" in prompt
-            assert "Information:\n" in prompt
-            assert "Treat the source row and reference texts as pools of domain, content, and style signals" in prompt
-            assert "Preserve only the medical domain, document type, language, tone, approximate length" in prompt
-            assert "must differ substantially from the source in at least five of these areas" in prompt
-            assert "Do not preserve the source case's narrative blueprint" in prompt
-            assert "The document date must not precede the described discharge date." in prompt
-            assert "internally check: 1. chronology, 2. diagnosis and ICD consistency" in prompt
-            assert "Keep a missing TEXT value as '__MISSING_VALUE__'." in prompt
+            assert "Generate a distinct TEXT record using the source and retrieved examples as inspiration, not templates." in prompt
+            assert "Keep the source language, document type, tone, approximate length and level of detail." in prompt
+            assert "Recombine and vary case-specific facts" in prompt
+            assert "Ensure internal consistency of values, chronology, negations and relationships" in prompt
+            assert "If the source TEXT is missing, return '__MISSING_VALUE__'." in prompt
+            assert "Return only valid JSON: {\"row\":{\"summary\":\"...\"}}." in prompt
             assert "Use the source row as the main clinical basis" not in prompt
             assert "Change at least three relevant case aspects" not in prompt
             assert "Hypertension follow-up was scheduled after persistently elevated blood pressure." in prompt

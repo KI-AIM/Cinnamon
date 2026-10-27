@@ -12,9 +12,6 @@ if str(PROJECT_ROOT) not in sys.path:
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synthesis import (
     LlmMixedDataParaphraseSynthesisSynthesizer,
 )
-from synthetic_tabular_data_generator.algorithms.llm_mixed_data_indirect_identifier_rewrite_synthesis import (
-    LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
-)
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_embedding_nearest_neighbor_synthesis import (
     LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
 )
@@ -48,7 +45,6 @@ class _DummyResponse:
 
 SYNTHESIZERS = [
     LlmMixedDataParaphraseSynthesisSynthesizer,
-    LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer,
     LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer,
 ]
 
@@ -101,20 +97,14 @@ def test_mixed_methods_preserve_ground_truth_and_generate_missing_text(monkeypat
     assert result["note"].tolist() == texts
     assert len(prompts) == 2
     assert all('"age"' in prompt and "STRUCTURED GROUND TRUTH" in prompt for prompt in prompts)
-    assert all("Additional information absent from the structured schema" in prompt for prompt in prompts)
+    assert all("Rework the reference's wording and organization into a new coherent text" in prompt for prompt in prompts)
     assert "Gardening was discussed." in prompts[0]
-    if cls is LlmMixedDataIndirectIdentifierRewriteSynthesisSynthesizer:
-        assert "Selected anonymization level: HIGH" in prompts[0]
-        assert "ONLY to additional reference details absent from the ground truth" in prompts[0]
-        assert "NAME: Person names" in prompts[0]
-
-
 def test_mixed_retries_incomplete_text_without_returning_it(monkeypatch):
     dataset = pd.DataFrame([{"age": 8, "note": None}])
     configs = [{"name": "age", "type": "INTEGER"}, {"name": "note", "type": "TEXT"}]
     synth, prompts = _initialize(monkeypatch, SYNTHESIZERS[0], dataset, dataset, configs,
-                                [{"note": "age: 80"}, {"note": "Follow-up. age: 8."}])
-    assert synth.sample()["note"].tolist() == ["Follow-up. age: 8."]
+                                [{"note": "No structured values."}, {"note": "Follow-up for a patient aged 8."}])
+    assert synth.sample()["note"].tolist() == ["Follow-up for a patient aged 8."]
     assert len(prompts) == 2
 
 

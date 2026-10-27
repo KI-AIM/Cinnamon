@@ -237,40 +237,14 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
 
     def _build_prompt_prefix(self) -> str:
         text_column = self._text_columns[0]
-        domain_context = ""
-        if self._user_prompt_domain_context:
-            domain_context = f"Domain context: {self._user_prompt_domain_context}\n"
-
         return (
-            "You generate a new TEXT value for a fictional patient based on a source table row and similar reference texts.\n"
-            f"{self._SOURCE_LANGUAGE_RULE}"
-            f"{domain_context}"
-            "Information:\n"
-            "- Create an independent new clinical case. Novelty from every individual input case is more important than preserving the source case.\n"
-            "- Treat the source row and reference texts as pools of domain, content, and style signals, not as templates to rewrite.\n"
-            "- Preserve only the medical domain, document type, language, tone, approximate length, and general level of clinical detail.\n"
-            "- Do not preserve the source case's narrative blueprint, paragraph mapping, order of clinical events, or combination of case-specific details.\n"
-            "- Before writing, silently construct a new coherent case plan containing the presentation, relevant history, findings, diagnosis, treatment, clinical course, complications, and outcome.\n"
-            "- The new case plan must differ substantially from the source in at least five of these areas: presentation, chronology, medical history, findings, medication, treatment course, complications, and discharge plan.\n"
-            "- Build a new chronology from scratch. Do not obtain a new timeline merely by shifting the original dates.\n"
-            "- Do not copy exact combinations of diagnoses, metastasis sites, therapies, adverse events, examination findings, and outcomes from one input case.\n"
-            "- Standard medical phrases, section headings, diagnoses, and technical terms may remain unchanged when appropriate.\n"
-            "- Ensure that all dates are chronologically valid.\n"
-            "- The document date must not precede the described discharge date.\n"
-            "- Ensure that diagnoses, ICD codes, symptoms, medication, dosage, treatment, findings, and outcome are medically plausible and mutually consistent.\n"
-            "- Do not add findings that are unrelated to the clinical course or remain unexplained.\n"
-            "- Avoid impossible treatment periods, contradictory timelines, implausible dosages, and unsupported diagnoses.\n"
-            "- Before returning the result, internally check: 1. chronology, 2. diagnosis and ICD consistency, 3. medication plausibility, 4. consistency between findings, treatment, and discharge.\n"
-            "- Before returning the result, compare it with every input case. If its event sequence, paragraph structure, or case-specific wording is still recognizably derived from one case, redesign and rewrite it.\n"
-            "- Do not mention that the text is synthetic, fictional, generated, anonymized, or paraphrased.\n"
-            f"- Keep a missing TEXT value as '{MISSING_VALUE_STRING}'.\n"
-            "Output rules:\n"
-            "- Return ONLY valid JSON.\n"
-            "- Use exactly this shape: {\"row\": { ... }}\n"
-            f"- Include exactly this column in row: {text_column}\n"
-            f"- Generate a value only for this TEXT column: {text_column}\n"
-            f"- For a missing string/text use '{MISSING_VALUE_STRING}'\n"
-            "\n"
+            "Generate a distinct TEXT record using the source and retrieved examples as inspiration, not templates.\n"
+            f"Domain context: {self._user_prompt_domain_context}\n\n"
+            "- Keep the source language, document type, tone, approximate length and level of detail.\n"
+            "- Recombine and vary case-specific facts to create a new plausible record; do not copy distinctive details or fact combinations from any input.\n"
+            "- Ensure internal consistency of values, chronology, negations and relationships; avoid unrelated or implausible claims.\n"
+            f"- If the source TEXT is missing, return '{MISSING_VALUE_STRING}'.\n"
+            f"- Return only valid JSON: {{\"row\":{{\"{text_column}\":\"...\"}}}}.\n\n"
         )
 
     def _build_rewrite_prompt(self, base_row: Dict[str, Any]) -> str:

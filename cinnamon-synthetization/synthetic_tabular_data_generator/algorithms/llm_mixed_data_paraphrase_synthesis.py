@@ -124,19 +124,14 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
 
     def _build_prompt_prefix(self) -> str:
         return (
-            "You generate a new TEXT value from synthetic structured ground truth.\n"
+            "Generate one TEXT value from synthetic structured ground truth, using the reference text as a paraphrasing guide.\n"
             f"Domain context: {self._user_prompt_domain_context or ''}\n"
-            "- The structured row is the authoritative ground truth and must never be changed.\n"
-            "- Every non-missing structured fact must appear in the generated text, even if reference texts omit it.\n"
-            "- Include each REQUIRED FACT verbatim as 'column: value' in sentences or a compact factual section, in addition to fluent narrative.\n"
-            "- Preserve exact numbers, dates, names, categories, boolean values, negations and units.\n"
-            "- Missing structured values are unknown; do not present them as known facts or copy conflicting reference values.\n"
-            f"{self._guidance_usage_rules()}"
-            "- Never change or generalize ground-truth values to accommodate a reference or an identifier-rewrite rule.\n"
-            "- Generate text even when the input TEXT is missing. Use the reference language; without references use the domain context's language.\n"
-            "- Before returning, check every required fact for coverage and the entire narrative for contradictions.\n"
-            "- Return ONLY valid JSON with shape {\"row\": { ... }}.\n"
-            f"- Include only this TEXT column in row: {self._text_columns[0]}\n\n"
+            "\n"
+            "- The structured row is authoritative. Include every non-missing attribute naturally, preserving its exact meaning, values, units, negations and temporal relations. Do not infer missing values.\n"
+            "- Rework the reference's wording and organization into a new coherent text; preserve standard technical terms where needed.\n"
+            "- Replace or omit reference-specific facts not supported by the structured row, including identifiers. Add no unsupported or conflicting claims.\n"
+            "- Generate even if the input TEXT is missing. Follow reference language, otherwise domain context.\n"
+            f"- Return only valid JSON: {{\"row\":{{\"{self._text_columns[0]}\":\"...\"}}}}.\n\n"
         )
 
     @staticmethod
@@ -167,8 +162,6 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
             f"{self._prompt_prefix or self._build_prompt_prefix()}"
             "STRUCTURED GROUND TRUTH\n"
             f"{json.dumps(self._ground_truth(base_row), ensure_ascii=False, indent=2)}\n\n"
-            "REQUIRED FACTS (include every entry verbatim)\n"
-            f"{chr(10).join(self._required_facts(base_row))}\n\n"
             f"{self._guidance_prompt_block(base_row)}"
         )
 
@@ -186,8 +179,12 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
         text = candidate_row.get(text_column)
         if not isinstance(text, str) or self._is_missing_text(text) or text == FAILED_TEXT_GENERATION:
             raise ValueError("LLM response must contain a non-empty generated TEXT value.")
-        missing = [fact for fact in self._required_facts(base_row)
-                   if not re.search(r"(?<!\w)" + re.escape(fact) + r"(?!\w|[.,]\d)", text)]
+        required_values = [
+            fact.split(": ", 1)[1]
+            for fact in self._required_facts(base_row)
+        ]
+        missing = [value for value in required_values
+                   if not re.search(r"(?<!\w)" + re.escape(value) + r"(?!(?:\w|[.,]\d))", text)]
         if missing:
             raise ValueError(f"LLM response omits required ground-truth facts: {missing}")
         # Discard any structured keys returned by the LLM.

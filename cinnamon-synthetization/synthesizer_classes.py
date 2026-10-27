@@ -18,9 +18,6 @@ from synthetic_tabular_data_generator.algorithms.llm_text_only_paraphrase_synthe
 from synthetic_tabular_data_generator.algorithms.llm_text_only_embedding_nearest_neighbor_synthesis import (
     LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
 )
-from synthetic_tabular_data_generator.algorithms.llm_text_only_indirect_identifier_rewrite_synthesis import (
-    LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer,
-)
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
 
@@ -121,14 +118,6 @@ synthesizer_classes = {
         'description': 'Generate a new single TEXT column for fictional but plausible patients by retrieving relevant reference texts and using them as in-context examples. Supports BM25-style sparse retrieval and Ollama-based embedding retrieval for exactly one free-text column.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_embedding_nearest_neighbor_synthesis.yaml'
     },
-    'llm_text_only_indirect_identifier_rewrite_synthesis': {
-        'version': '0.1',
-        'type': 'cross-sectional',
-        'class': LlmTextOnlyIndirectIdentifierRewriteSynthesisSynthesizer,
-        'display_name': 'LLM Text-only Indirect Identifier Rewrite Synthesis',
-        'description': 'Rewrite a single TEXT input column with an LLM while preserving medically relevant content and generalizing direct or indirect identifiers. This synthesizer expects exactly one free-text column and produces exactly one rewritten output row per input row.',
-        'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_indirect_identifier_rewrite_synthesis.yaml'
-    }
 }
 
 # Keep hyperparameter-tuning metadata separate so the public synthesizer registry

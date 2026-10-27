@@ -153,31 +153,14 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
 
     def _build_prompt_prefix(self) -> str:
         text_column = self._text_columns[0]
-        domain_context = ""
-        if self._user_prompt_domain_context:
-            domain_context = f"Domain context: {self._user_prompt_domain_context}\n"
-
         return (
-            "You rewrite the TEXT value of a table row without losing information.\n"
-            f"{self._SOURCE_LANGUAGE_RULE}"
-            f"{domain_context}"
-            "Important:\n"
-            "- The TEXT field already contains the source content.\n"
-            "- Rewrite the non-missing TEXT field with different wording.\n"
-            "- Rewrite each sentence with substantially different wording and sentence structure.\n"
-            "- Prefer changing active/passive voice, clause order, and sentence openings.\n"
-            "- Preserve every fact, number, measurement, diagnosis, negation, uncertainty, and temporal relation.\n"
-            "- Do not add information.\n"
-            "- Do not remove information.\n"
-            "- Keep short fixed technical terms unchanged when paraphrasing would distort meaning.\n"
-            f"- Keep a missing TEXT value as '{MISSING_VALUE_STRING}'.\n"
-            "Output rules:\n"
-            "- Return ONLY valid JSON.\n"
-            "- Use exactly this shape: {\"row\": { ... }}\n"
-            f"- Include exactly this column in row: {text_column}\n"
-            f"- Rewrite only this TEXT column: {text_column}\n"
-            f"- For a missing string/text use '{MISSING_VALUE_STRING}'\n"
-            "\n"
+            "Paraphrase the source TEXT without changing its information.\n"
+            f"Domain context: {self._user_prompt_domain_context}\n\n"
+            "- Keep the original language and domain-specific terminology where needed.\n"
+            "- Substantially vary wording and sentence structure, while preserving all facts, exact values, negations, uncertainty and temporal relationships.\n"
+            "- Do not add, omit or invent information.\n"
+            f"- If the source TEXT is missing, return '{MISSING_VALUE_STRING}'.\n"
+            f"- Return only valid JSON: {{\"row\":{{\"{text_column}\":\"...\"}}}}.\n\n"
         )
 
     def _build_rewrite_prompt(self, base_row: Dict[str, Any]) -> str:

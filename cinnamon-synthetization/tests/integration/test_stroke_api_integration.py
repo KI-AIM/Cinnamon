@@ -29,6 +29,8 @@ if "flask_cors" not in sys.modules:
 
 
 import app as app_module
+import synthesis_configuration as configuration
+import synthesizer_classes as synthesizer_registry
 from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
 
 
@@ -159,10 +161,10 @@ def test_stroke_api_generates_synthetic_dataset(monkeypatch):
         "Process",
         InlineProcess,
     )
-    monkeypatch.setattr(app_module, "get_data_modality", lambda _name: "structured_only")
+    monkeypatch.setattr(configuration, "get_data_modality", lambda _name: "structured_only")
     monkeypatch.setattr(app_module, "post_callback_request", fake_requests_post)
     monkeypatch.setitem(
-        app_module.synthesizer_classes,
+        synthesizer_registry.synthesizer_classes,
         "stroke_mock",
         {
             "version": "0.1",
@@ -174,7 +176,7 @@ def test_stroke_api_generates_synthetic_dataset(monkeypatch):
         },
     )
     monkeypatch.setitem(
-        app_module.synthesizer_classes,
+        synthesizer_registry.synthesizer_classes,
         "dummy_text_synth",
         {
             "version": "0.1",

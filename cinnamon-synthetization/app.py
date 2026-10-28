@@ -6,7 +6,9 @@ import tempfile
 from pathlib import Path
 from threading import RLock
 import os
+import signal
 import sys
+import time
 from functools import wraps
 from multiprocessing import get_context
 
@@ -36,6 +38,9 @@ PROCESS_CONTEXT = get_context("spawn")
 
 CALLBACK_TIMEOUT_SECONDS = 30.0
 ERROR_CALLBACK_TIMEOUT_SECONDS = 5.0
+TERMINAL_TASK_CLEANUP_GRACE_SECONDS = 10.0
+
+
 def configure_realtime_logging():
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
@@ -85,6 +90,16 @@ def _finish_job(file_path, state, error=None):
 def _prune_finished_tasks():
     for task_id, task_process in list(tasks.items()):
         if _task_is_alive(task_process):
+            file_path = _status_file_path(task_id)
+            if os.path.exists(file_path):
+                with open(file_path, encoding="utf-8") as handle:
+                    status = yaml.safe_load(handle)
+                if (
+                    status.get("job_state") in {"succeeded", "failed", "delivery_failed", "cancelled"}
+                    and time.time() - os.path.getmtime(file_path) >= TERMINAL_TASK_CLEANUP_GRACE_SECONDS
+                ):
+                    _terminate_task_process(task_process)
+                    _cleanup_task_state(task_id)
             continue
         file_path = _status_file_path(task_id)
         if os.path.exists(file_path):
@@ -115,21 +130,32 @@ def _task_is_alive(task_process):
 
 
 def _terminate_task_process(task_process):
-    terminate = getattr(task_process, 'terminate', None)
-    if not callable(terminate):
-        raise RuntimeError('Task process cannot be terminated cleanly.')
-    terminate()
+    pid = getattr(task_process, "pid", None)
+
+    def signal_process(sig, method):
+        if pid is not None:
+            try:
+                if os.getpgid(pid) == pid:
+                    os.killpg(pid, sig)
+                    return
+            except ProcessLookupError:
+                pass
+        callback = getattr(task_process, method, None)
+        if callable(callback):
+            callback()
+        else:
+            raise RuntimeError("Task process cannot be terminated cleanly.")
+
+    signal_process(signal.SIGTERM, "terminate")
 
     join = getattr(task_process, 'join', None)
     if callable(join):
         join(timeout=2.0)
 
     if _task_is_alive(task_process):
-        kill = getattr(task_process, 'kill', None)
-        if callable(kill):
-            kill()
-            if callable(join):
-                join(timeout=1.0)
+        signal_process(signal.SIGKILL, "kill")
+        if callable(join):
+            join(timeout=1.0)
 
     if _task_is_alive(task_process):
         raise RuntimeError('Task process is still running after cancellation attempt.')
@@ -410,6 +436,11 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
         return {'message': error_message, 'session_key': session_key, 'status_code': 500}
 
 
+def _synthesis_process_entry(*args):
+    os.setsid()
+    return synthesize_data(*args)
+
+
 @app.route('/start_synthetization_process/<string:synthesizer_name>', methods=['POST'])
 @_locked_tasks
 def start_synthetization_process(synthesizer_name):
@@ -450,7 +481,7 @@ def start_synthetization_process(synthesizer_name):
 
         # Create and start the process
         task_process = PROCESS_CONTEXT.Process(
-            target=synthesize_data,
+            target=_synthesis_process_entry,
             args=(synthesizer_name, file_path_status, attribute_config, algorithm_config,
                   data.copy(), original_data.copy() if original_data is not None else None, callback_url, session_key)
         )

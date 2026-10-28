@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import pandas as pd
 
 from synthetic_tabular_data_generator.synthcity_synthesizer import SynthcitySynthesizer
 
@@ -26,6 +27,12 @@ class BayesianNetworkSynthesizer(SynthcitySynthesizer):
         }
         self._sampling = config["synthetization_configuration"]["algorithm"]["sampling"]
 
+    def _initialize_dataset(self, df: pd.DataFrame) -> None:
+        self._output_columns = list(df.columns)
+        constant_columns = [column for column in df if df[column].nunique(dropna=False) == 1]
+        self._constant_values = {column: df[column].iloc[0] for column in constant_columns}
+        self.dataset = df.drop(columns=constant_columns)
+
     def _fit(self) -> Optional[float]:
         """
         Core logic for fitting the synthesizer.
@@ -36,6 +43,9 @@ class BayesianNetworkSynthesizer(SynthcitySynthesizer):
         (Optuna direction ``maximize``). Metric extraction never breaks the
         normal synthesis path: any failure returns ``None``.
         """
+        if self.dataset.empty:
+            return None
+
         self.synthesizer.fit(self.dataset)
         try:
             network = self.synthesizer.model.model  # pgmpy BayesianNetwork
@@ -44,3 +54,25 @@ class BayesianNetworkSynthesizer(SynthcitySynthesizer):
         except Exception as exc:  # pragma: no cover - defensive
             print(f"[bayesian_network] could not extract fit metric: {exc}")
         return None
+
+    def _sample(self) -> pd.DataFrame:
+        num_samples = int(self._sampling["num_samples"])
+        constant_values = getattr(self, "_constant_values", {})
+        output_columns = getattr(self, "_output_columns", None)
+        if output_columns is not None and len(constant_values) == len(output_columns):
+            samples = pd.DataFrame(index=range(num_samples))
+        else:
+            samples = self.synthesizer.generate(num_samples).dataframe()
+
+        for column, value in constant_values.items():
+            samples[column] = value
+        return samples[output_columns] if output_columns is not None else samples
+
+    def _model_for_export(self) -> "BayesianNetworkSynthesizer":
+        model = super()._model_for_export()
+        model._constant_values = getattr(self, "_constant_values", {}).copy()
+        output_columns = getattr(self, "_output_columns", None)
+        model._output_columns = output_columns.copy() if output_columns is not None else None
+        if self.dataset is not None and self.dataset.empty:
+            model.synthesizer = None
+        return model

@@ -83,18 +83,6 @@ configurations:
         label: Exclude Identical Source Text
         description: Exclude reference rows whose TEXT is identical to the sampled source row.
         default_value: true
-  model_fitting:
-    display_name: Prompt Configuration
-    description: Configure optional domain context for text generation from fixed structured ground truth.
-    parameters:
-      - name: user_prompt_domain_context
-        type: string
-        multiline: true
-        rows: 5
-        label: Domain Context
-        description: Optional domain context used for text generation.
-        default_value: ""
-        mandatory: false
   sampling:
     display_name: Sampling
     description: Configure the total number of synthetic records and LLM decoding.

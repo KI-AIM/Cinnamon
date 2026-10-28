@@ -91,8 +91,10 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
             if self._profile_rows_used == available_rows
             else profile_source.sample(n=self._profile_rows_used)
         )
-        self._reference_texts = self._sample_non_missing_examples(
-            self._profile_data[self._text_columns[0]], max_examples=len(self._profile_data),
+        self._reference_texts = self.deduplicate_texts(
+            self._sample_non_missing_examples(
+                self._profile_data[self._text_columns[0]], max_examples=len(self._profile_data),
+            )
         )
         self._prompt_prefix = self._build_prompt_prefix()
 
@@ -125,21 +127,12 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
     def _build_prompt_prefix(self) -> str:
         return (
             "Generate one TEXT value from synthetic structured ground truth, using the reference text as a paraphrasing guide.\n"
-            f"Domain context: {self._user_prompt_domain_context or ''}\n"
-            "\n"
+            f"{self.PROMPT_INJECTION_RULE}"
             "- The structured row is authoritative. Include every non-missing attribute naturally, preserving its exact meaning, values, units, negations and temporal relations. Do not infer missing values.\n"
             "- Rework the reference's wording and organization into a new coherent text; preserve standard technical terms where needed.\n"
             "- Replace or omit reference-specific facts not supported by the structured row, including identifiers. Add no unsupported or conflicting claims.\n"
-            "- Generate even if the input TEXT is missing. Follow reference language, otherwise domain context.\n"
+            "- Generate even if the input TEXT is missing. Follow reference language; otherwise use language appropriate to the structured schema.\n"
             f"- Return only valid JSON: {{\"row\":{{\"{self._text_columns[0]}\":\"...\"}}}}.\n\n"
-        )
-
-    @staticmethod
-    def _guidance_usage_rules() -> str:
-        return (
-            "- Reference texts provide language, document type, style and additional context. Rewrite their wording.\n"
-            "- Additional information absent from the structured schema may be incorporated from references when consistent with all ground-truth facts.\n"
-            "- Replace or omit any reference detail that contradicts the ground truth, including identifying details and chronology.\n"
         )
 
     def _ground_truth(self, base_row: Dict[str, Any]) -> Dict[str, Any]:

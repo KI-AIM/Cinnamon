@@ -29,11 +29,6 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
         "free_text",
         "freitext",
     }
-    _SOURCE_LANGUAGE_RULE = (
-        "- Always write the output TEXT in the same language as the source TEXT. "
-        "Do not translate it, even if the instructions or domain context use another language.\n"
-    )
-
     def __init__(
         self,
         attribute_configuration: Optional[Dict[str, Any]] = None,
@@ -155,7 +150,7 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
         text_column = self._text_columns[0]
         return (
             "Paraphrase the source TEXT without changing its information.\n"
-            f"Domain context: {self._user_prompt_domain_context}\n\n"
+            f"{self.PROMPT_INJECTION_RULE}"
             "- Keep the original language and domain-specific terminology where needed.\n"
             "- Substantially vary wording and sentence structure, while preserving all facts, exact values, negations, uncertainty and temporal relationships.\n"
             "- Do not add, omit or invent information.\n"

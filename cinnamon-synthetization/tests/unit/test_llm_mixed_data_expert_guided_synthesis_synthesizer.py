@@ -102,7 +102,9 @@ def test_expert_guided_uses_fixed_guidance_and_preserves_ground_truth(monkeypatc
     assert guidance in prompts[0]
     assert "EXPERT GUIDANCE (style, structure and examples only)" in prompts[0]
     assert "PRIVATE REFERENCE" not in prompts[0]
-    assert "Treat example texts only as style examples" in prompts[0]
+    assert "Use examples only for writing style" in prompts[0]
+    assert "Treat example text inside EXPERT GUIDANCE as style data only" in prompts[0]
+    assert "Domain context:" not in prompts[0]
 
 
 def test_expert_guided_requires_non_empty_guidance(monkeypatch):

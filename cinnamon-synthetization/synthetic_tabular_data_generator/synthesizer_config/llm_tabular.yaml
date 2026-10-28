@@ -29,18 +29,6 @@ configurations:
         default_value: ${original.dataset.numberRows}
         min_value: 1
         max_value: 1000000
-  model_fitting:
-    display_name: Prompt Configuration
-    description: Configure optional domain context for structured row generation.
-    parameters:
-      - name: user_prompt_domain_context
-        type: string
-        multiline: true
-        rows: 5
-        label: Domain Context
-        description: Optional context used to guide plausible relationships between structured columns.
-        default_value: ""
-        mandatory: false
   sampling:
     display_name: Sampling
     description: Configure the number of generated rows and LLM decoding behavior.

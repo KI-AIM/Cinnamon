@@ -57,18 +57,6 @@ configurations:
           - angular
           - euclidean
           - manhattan
-  model_fitting:
-    display_name: Prompt Configuration
-    description: Configure optional domain context for text generation after reference retrieval.
-    parameters:
-      - name: user_prompt_domain_context
-        type: string
-        multiline: true
-        rows: 5
-        label: Domain Context
-        description: Optional domain context to guide terminology, style, and plausibility during generation.
-        default_value: ""
-        mandatory: false
   sampling:
     display_name: Sampling
     description: Configure how many synthetic text rows are generated and how deterministic the LLM output should be.

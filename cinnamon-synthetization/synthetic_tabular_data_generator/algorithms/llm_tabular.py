@@ -198,16 +198,10 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             self.build_prompt_profile_line(config, self._column_profiles.get(config["name"], {}))
             for config in self._ordered_column_configs
         ]
-        domain_context = (
-            f"Domain context: {self._user_prompt_domain_context}\n"
-            if self._user_prompt_domain_context
-            else ""
-        )
         dataset_rows = len(self.dataset) if self.dataset is not None else self._profile_rows_used
 
         return (
             "You generate new synthetic rows containing only structured tabular data.\n"
-            f"{domain_context}"
             "Information:\n"
             f"- The statistical profiles were calculated from {self._profile_rows_used} of {dataset_rows} input rows.\n"
             "- Use the column schema and statistical profiles to generate plausible new rows.\n"

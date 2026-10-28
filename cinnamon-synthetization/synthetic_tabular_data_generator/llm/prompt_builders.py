@@ -7,12 +7,6 @@ def _row_count_phrase(num_rows: int) -> str:
     return f"{num_rows} {row_label}"
 
 
-def _domain_context_block(domain_context: str) -> str:
-    if not domain_context:
-        return ""
-    return f"Domain context: {domain_context}\n"
-
-
 def _section_heading(title: str) -> str:
     return f"{title}\n{'-' * 40}\n\n"
 
@@ -48,7 +42,6 @@ def build_tabular_non_text_generation_prompt_prefix(
     text_columns: Sequence[str],
     profile_lines: Sequence[str],
     missing_value_string: str,
-    domain_context: str = "",
 ) -> str:
     shape_example = {column_name: "<value>" for column_name in ordered_columns}
     shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=False)
@@ -56,7 +49,6 @@ def build_tabular_non_text_generation_prompt_prefix(
 
     return (
         "You generate non-TEXT fields for synthetic tabular rows.\n"
-        f"{_domain_context_block(domain_context)}"
         "Important:\n"
         "- Do not reconstruct an original record.\n"
         "- You are creating a new synthetic record in the same content category.\n"
@@ -126,11 +118,9 @@ def build_tabular_text_completion_prompt_prefix(
     column_order: Sequence[str],
     text_columns: Sequence[str],
     missing_value_string: str,
-    domain_context: str = "",
 ) -> str:
     return (
         "You generate TEXT fields for repaired synthetic tabular rows.\n"
-        f"{_domain_context_block(domain_context)}"
         "Important:\n"
         "- The non-TEXT fields are already fixed for this row.\n"
         "- Do not modify any non-TEXT field in this step.\n"
@@ -180,7 +170,6 @@ def build_tabular_generation_prompt_prefix(
     ordered_columns: Sequence[str],
     profile_lines: Sequence[str],
     missing_value_string: str,
-    domain_context: str = "",
 ) -> str:
     shape_example = {column_name: "<value>" for column_name in ordered_columns}
     shape_text = json.dumps({"rows": [shape_example]}, ensure_ascii=False)
@@ -188,7 +177,6 @@ def build_tabular_generation_prompt_prefix(
 
     return (
         "You generate new synthetic tabular rows.\n"
-        f"{_domain_context_block(domain_context)}"
         "Important:\n"
         "- You are not reconstructing original records.\n"
         "- You are creating new synthetic records in the same content category.\n"
@@ -279,14 +267,12 @@ def build_tabular_generation_prompt(
     profile_lines: Sequence[str],
     num_rows: int,
     missing_value_string: str,
-    domain_context: str = "",
     few_shot_examples: Optional[Sequence[Dict[str, Any]]] = None,
 ) -> str:
     prompt_prefix = build_tabular_generation_prompt_prefix(
         ordered_columns=ordered_columns,
         profile_lines=profile_lines,
         missing_value_string=missing_value_string,
-        domain_context=domain_context,
     )
     return build_tabular_generation_prompt_from_prefix(
         prompt_prefix,

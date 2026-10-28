@@ -25,7 +25,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         self._llm_client: Optional[LlmClient] = None
         self._fitting_kwargs: Optional[Dict[str, Any]] = None
         self._sampling: Optional[Dict[str, Any]] = None
-        self._user_prompt_domain_context: str = ""
         self._sample_start_time: Optional[float] = None
         self._generation_failures: int = 0
         self.synthesizer = None
@@ -52,7 +51,6 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         }
 
         self._sampling = algorithm_config.get("sampling", {})
-        self._user_prompt_domain_context = str(training_params.get("user_prompt_domain_context", "")).strip()
         return algorithm_config, model_params, training_params
 
     def _initialize_llm_backend(self, *, mode: Optional[str] = None) -> None:

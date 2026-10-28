@@ -187,15 +187,14 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
         reference_df = self.reference_dataset if self.reference_dataset is not None else self.dataset
         text_column = self._text_columns[0]
         reference_rows = []
-        reference_texts = []
         for row in reference_df.to_dict(orient="records"):
             text = self.coerce_text(row.get(text_column))
             if text == MISSING_VALUE_STRING:
                 continue
             reference_rows.append(row)
-            reference_texts.append(text)
 
-        self._reference_rows = reference_rows
+        self._reference_rows = self.deduplicate_reference_rows(reference_rows, text_column)
+        reference_texts = [self.coerce_text(row.get(text_column)) for row in self._reference_rows]
         self._reference_vectors = []
         self._sparse_encoder = None
 
@@ -239,7 +238,7 @@ class LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer(
         text_column = self._text_columns[0]
         return (
             "Generate a distinct TEXT record using the source and retrieved examples as inspiration, not templates.\n"
-            f"Domain context: {self._user_prompt_domain_context}\n\n"
+            f"{self.PROMPT_INJECTION_RULE}"
             "- Keep the source language, document type, tone, approximate length and level of detail.\n"
             "- Recombine and vary case-specific facts to create a new plausible record; do not copy distinctive details or fact combinations from any input.\n"
             "- Ensure internal consistency of values, chronology, negations and relationships; avoid unrelated or implausible claims.\n"

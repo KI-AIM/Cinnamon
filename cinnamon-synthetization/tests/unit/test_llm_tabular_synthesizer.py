@@ -30,7 +30,6 @@ def _algorithm_config(*, profile_rows=2, num_samples=3) -> dict:
             "algorithm": {
                 "llm_profile": {"llm_profile": "Test Profile"},
                 "model_parameter": {"profile_rows": profile_rows},
-                "model_fitting": {"user_prompt_domain_context": "Clinical registry data."},
                 "sampling": {
                     "num_samples": num_samples,
                     "temperature": 0.3,
@@ -134,6 +133,7 @@ def test_llm_tabular_generates_structured_rows_and_includes_profiles(monkeypatch
     assert '"rows": [{"age": "<value>"' in prompts[0]
     assert "Generate exactly 1 row." in prompts[0]
     assert "REFERENCE EXAMPLES" not in prompts[0]
+    assert "Domain context:" not in prompts[0]
 
 
 def test_llm_tabular_supports_openai_compatible(monkeypatch):

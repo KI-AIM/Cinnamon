@@ -659,6 +659,14 @@ def run_synthesizer_stage(
                 replace_text_with_pending=False,
             )
 
+    working_attribute_config = {
+        **stage_attribute_config,
+        "configurations": [cfg for cfg in stage_attribute_config["configurations"]
+                           if cfg["name"] not in all_missing_values_column],
+    }
+    if not working_attribute_config["configurations"]:
+        raise ValueError("Dataset has no non-empty columns available for synthesis.")
+
     if tuning_enabled:
         tuning_metadata = synthesizer_tuning_metadata.get(synthesizer_name, {})
         tuning_supported = bool(tuning_metadata.get("supported"))
@@ -702,7 +710,7 @@ def run_synthesizer_stage(
             trial_synth = synthesizer_classes[synthesizer_name]['class']()
             trial_synth.set_progress_callback(_handle_progress_update)
             trial_synth.initialize_anonymization_configuration(trial_algorithm_config)
-            trial_synth.initialize_attribute_configuration(stage_attribute_config)
+            trial_synth.initialize_attribute_configuration(working_attribute_config)
             trial_synth.initialize_dataset(pre_processed_data)
             if pre_processed_reference_data is not None:
                 if not hasattr(trial_synth, "initialize_reference_dataset"):
@@ -746,7 +754,7 @@ def run_synthesizer_stage(
         best_synth = synthesizer_classes[synthesizer_name]['class']()
         best_synth.set_progress_callback(_handle_progress_update)
         best_synth.initialize_anonymization_configuration(best_cfg)
-        best_synth.initialize_attribute_configuration(stage_attribute_config)
+        best_synth.initialize_attribute_configuration(working_attribute_config)
         best_synth.initialize_dataset(pre_processed_data)
         if pre_processed_reference_data is not None:
             if not hasattr(best_synth, "initialize_reference_dataset"):
@@ -782,7 +790,7 @@ def run_synthesizer_stage(
         synthesizer_class.initialize_anonymization_configuration(stage_algorithm_config)
         print(f"[{stage_label}] Anonymization configuration initialized.")
 
-        synthesizer_class.initialize_attribute_configuration(stage_attribute_config)
+        synthesizer_class.initialize_attribute_configuration(working_attribute_config)
         print(f"[{stage_label}] Attribute configuration initialized.")
 
         synthesizer_class.initialize_dataset(pre_processed_data)

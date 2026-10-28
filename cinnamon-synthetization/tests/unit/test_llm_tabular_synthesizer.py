@@ -201,7 +201,7 @@ def test_llm_tabular_rejects_non_positive_profile_rows(monkeypatch):
         synthesizer.initialize_anonymization_configuration(_algorithm_config(profile_rows=0))
 
 
-def test_llm_tabular_maps_positional_column_names(monkeypatch):
+def test_llm_tabular_rejects_positional_column_names(monkeypatch):
     _set_llm_env(monkeypatch)
 
     def fake_request(method, url, **kwargs):
@@ -216,13 +216,8 @@ def test_llm_tabular_maps_positional_column_names(monkeypatch):
         )
 
     monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
-    sample = _initialize_synthesizer(
-        _algorithm_config(profile_rows=3, num_samples=1)
-    ).sample()
-
-    assert sample.to_dict(orient="records") == [
-        {"age": 31, "height": 171.0, "risk": True, "group": "A"}
-    ]
+    with pytest.raises(SynthesizerOperationError):
+        _initialize_synthesizer(_algorithm_config(profile_rows=3, num_samples=1)).sample()
 
 
 def test_llm_tabular_reports_sampling_completion(monkeypatch):
@@ -267,3 +262,37 @@ def test_llm_tabular_logs_invalid_response_diagnostics(monkeypatch):
 
     assert any("[LLM_TABULAR_STRUCTURED_GENERATION]" in message for message in logs)
     assert any("unusable_rows=" in message for message in logs)
+
+
+@pytest.mark.parametrize("invalid", [
+    {"wrong_a": 30, "wrong_b": 170, "wrong_c": True, "wrong_d": "A"},
+    {"age": 30, "height": 170},
+    {"age": "nonsense", "height": 170, "risk": True, "group": "A"},
+    {"age": 30, "height": 170, "risk": "maybe", "group": "A"},
+    {"age": 30, "height": 170, "risk": True, "group": "A", "extra": 1},
+])
+def test_invalid_structured_response_is_retried_without_guessing(monkeypatch, invalid):
+    _set_llm_env(monkeypatch)
+    valid = {"age": 30, "height": 170, "risk": True, "group": "A"}
+    rows = iter([invalid, valid])
+    calls = []
+
+    def fake_request(method, url, **kwargs):
+        if method == "GET":
+            return _DummyResponse({"models": [{"name": "llama3.1:8b"}]})
+        calls.append(1)
+        return _DummyResponse({"response": json.dumps({"rows": [next(rows)]})})
+
+    monkeypatch.setattr("synthetic_tabular_data_generator.llm.client.requests.request", fake_request)
+    result = _initialize_synthesizer(_algorithm_config(profile_rows=3, num_samples=1)).sample()
+    assert result.to_dict("records") == [valid]
+    assert len(calls) == 2
+
+
+def test_explicit_missing_values_are_not_imputed():
+    synth = LlmTabularSynthesizer()
+    synth.initialize_attribute_configuration(_attribute_config())
+    row = {cfg["name"]: None for cfg in _attribute_config()["configurations"]}
+    synth._column_profiles = {"age": {"mean": 42}}
+    assert synth._is_row_usable(row)
+    assert synth._coerce_row(row) == row

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-import re
 import random
 from typing import Any, Dict, List, Optional
 
@@ -172,14 +171,7 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
         text = candidate_row.get(text_column)
         if not isinstance(text, str) or self._is_missing_text(text) or text == FAILED_TEXT_GENERATION:
             raise ValueError("LLM response must contain a non-empty generated TEXT value.")
-        required_values = [
-            fact.split(": ", 1)[1]
-            for fact in self._required_facts(base_row)
-        ]
-        missing = [value for value in required_values
-                   if not re.search(r"(?<!\w)" + re.escape(value) + r"(?!(?:\w|[.,]\d))", text)]
-        if missing:
-            raise ValueError(f"LLM response omits required ground-truth facts: {missing}")
+        # Natural-language factual consistency cannot be established by literal value matching.
         # Discard any structured keys returned by the LLM.
         return {text_column: text}
 

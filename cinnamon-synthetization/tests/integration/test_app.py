@@ -1269,3 +1269,37 @@ def test_delivered_result_is_retained_when_final_status_cannot_be_saved(monkeypa
     assert result["status_code"] == 500
     assert "check the receiver" in result["message"]
     assert app_module._result_directory(key).exists()
+
+
+def test_structured_llm_restores_empty_columns(monkeypatch, tmp_path):
+    import json
+    from synthetic_tabular_data_generator.algorithms.llm_tabular import LlmTabularSynthesizer
+
+    class LocalLlm(LlmTabularSynthesizer):
+        def _initialize_anonymization_configuration(self, config):
+            self._fitting_kwargs = {"max_retries": 1}
+            self._sampling = {"num_samples": 2}
+
+        def _initialize_synthesizer(self):
+            self._llm_client = types.SimpleNamespace(generate_text=lambda _: json.dumps({"rows": [{"age": 42}]}))
+
+    monkeypatch.setitem(app_module.synthesizer_classes, "local", {"class": LocalLlm})
+    attrs = {"configurations": [{"name": "empty", "type": "INTEGER", "index": 0},
+                                 {"name": "age", "type": "INTEGER", "index": 1}]}
+    source = app_module.pd.DataFrame({"empty": [None, None], "age": [40, 50]})
+    path = str(tmp_path / "status.yaml")
+    initialize_status_file(path, "empty-column", "local")
+    result, *_ = app_module.run_synthesizer_stage(
+        stage_label="STRUCTURED", synthesizer_name="local", stage_attribute_config=attrs,
+        stage_algorithm_config={}, input_data=source, file_path_status=path,
+    )
+    assert list(result.columns) == ["empty", "age"]
+    assert len(result) == 2
+    assert result["empty"].isna().all()
+    assert result["age"].tolist() == [42, 42]
+    assert len(attrs["configurations"]) == 2
+    with pytest.raises(ValueError, match="no non-empty columns"):
+        app_module.run_synthesizer_stage(
+            stage_label="STRUCTURED", synthesizer_name="local", stage_attribute_config=attrs,
+            stage_algorithm_config={}, input_data=source.assign(age=None), file_path_status=path,
+        )

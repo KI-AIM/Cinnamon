@@ -36,14 +36,18 @@ sets the total output count and overrides the structured sampling count before g
 This may exceed the source dataset size. Other text methods use the structured sampling count.
 Text-only datasets continue to use their existing text-only methods.
 
-Synthetic structured values are ground truth. Prompts require every non-missing fact in the
-text as an exact `column: value` entry, embedded in sentences or a compact factual section
-alongside the narrative. The response validator checks these entries and retries incomplete
-responses; exhausted retries fail the job rather than export incomplete text. This checks
-literal coverage, not semantic consistency of the entire narrative. Prompts separately
-require the narrative to agree with all ground-truth facts. Reference texts may contribute
-additional information when consistent with those facts. Identifier-rewrite rules apply to
-additional reference details, never to the synthetic structured values.
+Synthetic structured values are ground truth. Prompts require their meaning to be
+preserved in natural language, for example “50-jährige Frau”; literal `column: value`
+entries are not required. The validator checks the response structure and non-empty
+text, not factual completeness or semantic consistency. Those remain requirements
+for the LLM, not guarantees of the validator. Structured output columns are checked
+separately and must remain unchanged.
+
+Structured LLM responses must use exactly the configured column names. Unknown,
+missing or positional names are rejected and retried, never mapped by position.
+Explicit JSON null values remain missing rather than being replaced with profile means.
+Fully empty input columns are excluded from the working synthesis schema and restored
+as missing columns afterward. Inputs with no non-empty columns are rejected explicitly.
 
 Retrieval queries use the synthetic structured facts. The existing embedding settings
 and similarity weights remain available; set text similarity weight to `0` and structured

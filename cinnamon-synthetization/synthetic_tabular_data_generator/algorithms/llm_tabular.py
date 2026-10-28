@@ -4,7 +4,7 @@ import cloudpickle
 import json
 import math
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -141,12 +141,11 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
                     if not isinstance(row, dict):
                         non_dict_rows += 1
                         continue
-                    aligned_row, used_positional_mapping = self._align_row_to_schema(row)
-                    if not self._is_row_usable(row, aligned_row, used_positional_mapping):
+                    if not self._is_row_usable(row):
                         unusable_rows += 1
                         continue
                     try:
-                        return self._coerce_row(aligned_row)
+                        return self._coerce_row(row)
                     except Exception:  # noqa: BLE001
                         coercion_errors += 1
             except Exception as exc:  # noqa: BLE001
@@ -252,68 +251,11 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
                     return index
         return None
 
-    def _align_row_to_schema(self, row: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
-        ordered_columns = [config["name"] for config in self._ordered_column_configs]
-        if any(column_name in row for column_name in ordered_columns):
-            return row, False
-
-        positional_map = self._build_positional_key_map(list(row.keys()))
-        if positional_map:
-            return {
-                column_name: row.get(positional_map.get(index))
-                for index, column_name in enumerate(ordered_columns)
-            }, True
-        if len(row) == len(ordered_columns):
-            return dict(zip(ordered_columns, row.values())), True
-        return row, False
-
-    def _build_positional_key_map(self, row_keys: Sequence[Any]) -> Dict[int, str]:
-        indexed_keys: List[Tuple[int, str]] = []
-        for key in row_keys:
-            if not isinstance(key, str):
-                return {}
-            position = self._extract_positional_index(key)
-            if position is None or position < 0:
-                return {}
-            indexed_keys.append((position, key))
-        return dict(sorted(indexed_keys))
-
-    @staticmethod
-    def _extract_positional_index(key: str) -> Optional[int]:
-        normalized = key.lower().strip()
-        numeric_match = re.match(r"^(?:column|col|feature|field|attribute)[_\-\s]?(\d+)$", normalized)
-        if numeric_match:
-            return int(numeric_match.group(1)) - 1
-        alpha_match = re.match(r"^(?:column|col|feature|field|attribute)[_\-\s]?([a-z]+)$", normalized)
-        if not alpha_match:
-            return None
-        value = 0
-        for character in alpha_match.group(1):
-            value = value * 26 + ord(character) - ord("a") + 1
-        return value - 1
-
-    def _is_row_usable(
-        self,
-        original_row: Dict[str, Any],
-        aligned_row: Dict[str, Any],
-        used_positional_mapping: bool,
-    ) -> bool:
-        ordered_columns = [config["name"] for config in self._ordered_column_configs]
-        values = [aligned_row.get(column_name) for column_name in ordered_columns]
-        if not any(value is not None for value in values):
+    def _is_row_usable(self, row: Dict[str, Any]) -> bool:
+        columns = [config["name"] for config in self._ordered_column_configs]
+        if set(row) != set(columns):
             return False
-        if any(isinstance(value, (dict, list, tuple, set)) for value in values if value is not None):
-            return False
-        echoed_columns = sum(
-            isinstance(value, str) and value.strip().lower() == column_name.lower()
-            for column_name, value in zip(ordered_columns, values)
-        )
-        if echoed_columns >= max(1, math.ceil(len(ordered_columns) * 0.5)):
-            return False
-        if used_positional_mapping:
-            return True
-        matches = sum(column_name in original_row for column_name in ordered_columns)
-        return matches >= max(1, math.ceil(len(ordered_columns) * 0.5))
+        return not any(isinstance(value, (dict, list, tuple, set)) for value in row.values())
 
     def _coerce_row(self, row: Dict[str, Any]) -> Dict[str, Any]:
         result: Dict[str, Any] = {}
@@ -321,9 +263,24 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
             column_name = config["name"]
             column_type = str(config.get("type", "STRING")).upper()
             value = row.get(column_name)
+            if value is None:
+                result[column_name] = None
+                continue
+            if column_type in {"INTEGER", "DECIMAL"}:
+                numeric = self.to_float(value)
+                if isinstance(value, bool) or numeric is None or not math.isfinite(numeric):
+                    raise ValueError(f"Invalid numeric value for '{column_name}'.")
+                if column_type == "INTEGER" and not numeric.is_integer():
+                    raise ValueError(f"Expected an integer for '{column_name}'.")
             if column_type == "BOOLEAN":
-                result[column_name] = self.coerce_boolean(value)
+                if not isinstance(value, bool):
+                    raise ValueError(f"Expected a boolean for '{column_name}'.")
+                result[column_name] = value
             elif column_type in {"DATE", "DATE_TIME"}:
+                numeric = self.to_float(value)
+                parsed = numeric if numeric is not None else self._parse_date_to_unix(value, config)
+                if parsed is None or not math.isfinite(parsed):
+                    raise ValueError(f"Invalid date value for '{column_name}'.")
                 result[column_name] = self.coerce_date(
                     column_name,
                     value,

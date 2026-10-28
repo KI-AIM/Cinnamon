@@ -1,28 +1,14 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
-import cloudpickle
-import pandas as pd
-from synthcity.plugins import Plugins
-
-from synthetic_tabular_data_generator.tabular_data_synthesizer import TabularDataSynthesizer
+from typing import Any, Dict, Optional
 
 
-class BayesianNetworkSynthesizer(TabularDataSynthesizer):
+from synthetic_tabular_data_generator.synthcity_synthesizer import SynthcitySynthesizer
+
+
+class BayesianNetworkSynthesizer(SynthcitySynthesizer):
     """Wrapper for synthcity's Bayesian Network plugin."""
 
-    def __init__(
-        self,
-        attribute_configuration: Optional[Dict[str, Any]] = None,
-        anonymization_configuration: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        super().__init__(attribute_configuration, anonymization_configuration)
-        self.attribute_config: Optional[Dict[str, Any]] = None
-        self.discrete_columns: Optional[List[str]] = None
-        self.dataset: Optional[pd.DataFrame] = None
-        self._model_kwargs: Optional[Dict[str, Any]] = None
-        self.synthesizer = None
-        self._sampling: Optional[Dict[str, Any]] = None
+    plugin_name = "bayesian_network"
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
         """Initialize synthesizer and sampling parameters."""
@@ -39,18 +25,6 @@ class BayesianNetworkSynthesizer(TabularDataSynthesizer):
             "workspace": Path("workspace"),
         }
         self._sampling = config["synthetization_configuration"]["algorithm"]["sampling"]
-
-    def _initialize_attribute_configuration(self, attribute_config: Dict[str, Any]) -> None:
-        """Store the attribute configuration."""
-        self.attribute_config = attribute_config
-
-    def _initialize_dataset(self, df: pd.DataFrame) -> None:
-        """Store the dataset."""
-        self.dataset = df
-
-    def _initialize_synthesizer(self) -> None:
-        """Create the synthcity plugin instance."""
-        self.synthesizer = Plugins().get("bayesian_network", **self._model_kwargs)
 
     def _fit(self) -> Optional[float]:
         """
@@ -70,22 +44,3 @@ class BayesianNetworkSynthesizer(TabularDataSynthesizer):
         except Exception as exc:  # pragma: no cover - defensive
             print(f"[bayesian_network] could not extract fit metric: {exc}")
         return None
-
-    def _sample(self) -> pd.DataFrame:
-        """Generate synthetic samples."""
-        num_samples: int = self._sampling["num_samples"]
-        return self.synthesizer.generate(num_samples).dataframe()
-
-    def _get_model(self) -> bytes:
-        """Serialize the synthesizer instance."""
-        return cloudpickle.dumps(self._model_for_export())
-
-    def _load_model(self, filepath: str) -> "BayesianNetworkSynthesizer":
-        """Load a serialized synthesizer instance from disk."""
-        with open(filepath, "rb") as f:
-            model: "BayesianNetworkSynthesizer" = cloudpickle.load(f)
-        return model
-
-    def _save_data(self, sample: pd.DataFrame, filename: str) -> None:
-        """Write sampled data to CSV."""
-        sample.to_csv(filename, index=False)

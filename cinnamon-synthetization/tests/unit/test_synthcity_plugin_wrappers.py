@@ -2,6 +2,7 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
 import torch
 
 
@@ -18,7 +19,8 @@ sys.modules.setdefault("synthcity", synthcity_module)
 sys.modules.setdefault("synthcity.plugins", plugins_module)
 
 
-from synthetic_tabular_data_generator.algorithms import ctgan, tvae
+from synthetic_tabular_data_generator.algorithms import ctgan, tvae, rtvae
+from synthetic_tabular_data_generator import synthcity_synthesizer
 
 
 class DummyPlugins:
@@ -53,7 +55,7 @@ def _config():
 
 def test_ctgan_wrapper_omits_unsupported_verbose_kwarg(monkeypatch):
     plugins = DummyPlugins()
-    monkeypatch.setattr(ctgan, "Plugins", lambda: plugins)
+    monkeypatch.setattr(synthcity_synthesizer, "Plugins", lambda: plugins)
 
     synthesizer = ctgan.CtganSynthesizer()
     synthesizer.initialize_anonymization_configuration(_config())
@@ -67,7 +69,7 @@ def test_ctgan_wrapper_omits_unsupported_verbose_kwarg(monkeypatch):
 
 def test_tvae_wrapper_initializes_expected_synthcity_plugin(monkeypatch):
     plugins = DummyPlugins()
-    monkeypatch.setattr(tvae, "Plugins", lambda: plugins)
+    monkeypatch.setattr(synthcity_synthesizer, "Plugins", lambda: plugins)
 
     synthesizer = tvae.TvaeSynthesizer()
     synthesizer.initialize_anonymization_configuration(_config())
@@ -146,3 +148,63 @@ def test_classical_exports_keep_sampling_without_training_data(tmp_path):
             assert restored._model_kwargs == {"random_state": 42}
         else:
             pd.testing.assert_frame_equal(restored.sample(), synth.sample())
+
+
+@pytest.mark.parametrize("cls", [tvae.TvaeSynthesizer, rtvae.RtvaeSynthesizer])
+@pytest.mark.parametrize("outcome", ["success", "fit_error", "invalid_loss", "missing_hook"])
+def test_vae_loss_capture_restores_hook_and_fits_once(monkeypatch, cls, outcome):
+    import pandas as pd
+    from synthetic_tabular_data_generator.tabular_data_synthesizer import SynthesizerOperationError
+
+    class VAE:
+        def _loss_function(self, value):
+            return value
+
+    original = VAE._loss_function
+    module = types.ModuleType("synthcity.plugins.core.models.vae")
+    module.VAE = VAE
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    if outcome == "missing_hook":
+        del VAE._loss_function
+
+    dataset = pd.DataFrame({"x": [1, 2]})
+    calls = []
+    failure = RuntimeError("training failed")
+
+    class Plugin:
+        def fit(self, data):
+            assert data is dataset
+            calls.append(data)
+            if outcome != "missing_hook":
+                values = [object()] if outcome == "invalid_loss" else [torch.tensor(3.0), torch.tensor(1.5)]
+                for value in values:
+                    assert VAE()._loss_function(value) is value
+            if outcome == "fit_error":
+                raise failure
+
+    synth = cls({}, {})
+    synth.initialize_dataset(dataset)
+    synth.synthesizer = Plugin()
+    synth._synthesizer_initialized = True
+    if outcome == "fit_error":
+        with pytest.raises(SynthesizerOperationError) as exc:
+            synth.fit()
+        assert exc.value.__cause__ is failure
+        assert not synth.is_ready_for_sampling
+    else:
+        assert synth.fit() == (1.5 if outcome == "success" else None)
+        assert synth.is_ready_for_sampling
+    assert len(calls) == 1
+    if outcome == "missing_hook":
+        assert not hasattr(VAE, "_loss_function")
+    else:
+        assert VAE._loss_function is original
+
+
+def test_shared_csv_export_preserves_columns_without_index(tmp_path):
+    import pandas as pd
+
+    sample = pd.DataFrame({"text": ["hello, world", "two\nlines"], "value": [1, 2]})
+    path = tmp_path / "sample.csv"
+    tvae.TvaeSynthesizer().save_data(sample, str(path))
+    pd.testing.assert_frame_equal(pd.read_csv(path), sample)

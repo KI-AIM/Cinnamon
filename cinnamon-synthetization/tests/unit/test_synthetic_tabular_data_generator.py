@@ -45,6 +45,7 @@ def _annotation_matches(annotation: str, expected_parts: list[str]) -> bool:
 def _is_tabular_base(base: ast.expr) -> bool:
     valid_base_names = {
         "TabularDataSynthesizer",
+        "SynthcitySynthesizer",
         "ConfiguredLlmSynthesizerBase",
     }
     if isinstance(base, ast.Name):
@@ -91,10 +92,12 @@ def _method_map(cls: ast.ClassDef) -> dict[str, ast.FunctionDef]:
     return {node.name: node for node in cls.body if isinstance(node, ast.FunctionDef)}
 
 
-def _llm_base_method_maps() -> dict[str, dict[str, ast.FunctionDef]]:
-    tree = ast.parse(LLM_BASE_FILE.read_text(encoding="utf-8"))
-    classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
-    return {cls.name: _method_map(cls) for cls in classes}
+def _base_method_maps() -> dict[str, dict[str, ast.FunctionDef]]:
+    methods = {}
+    for path in (LLM_BASE_FILE, PROJECT_ROOT / "synthetic_tabular_data_generator" / "synthcity_synthesizer.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        methods.update({node.name: _method_map(node) for node in tree.body if isinstance(node, ast.ClassDef)})
+    return methods
 
 
 def _resolve_method(cls: ast.ClassDef, method_name: str) -> ast.FunctionDef | None:
@@ -102,7 +105,7 @@ def _resolve_method(cls: ast.ClassDef, method_name: str) -> ast.FunctionDef | No
     if method_name in direct_methods:
         return direct_methods[method_name]
 
-    inherited_method_maps = _llm_base_method_maps()
+    inherited_method_maps = _base_method_maps()
     for base in cls.bases:
         base_name = _annotation_to_str(base)
         base_methods = inherited_method_maps.get(base_name)

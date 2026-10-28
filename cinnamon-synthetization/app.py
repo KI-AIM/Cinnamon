@@ -1,10 +1,16 @@
 import io
+import hashlib
+import json
+import shutil
+import tempfile
+from pathlib import Path
+from threading import RLock
 import math
 import os
 import sys
 import time
 from copy import deepcopy
-from functools import lru_cache
+from functools import lru_cache, wraps
 from multiprocessing import get_context
 
 import cloudpickle
@@ -14,7 +20,7 @@ import yaml
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
-from api_utility.status.status_updater import initialize_status_file
+from api_utility.status.status_updater import initialize_status_file, set_job_status
 from api_utility.status.status_updater import intercept_standard_streams
 from api_utility.status.status_updater import update_component_status
 from api_utility.status.status_updater import update_status
@@ -31,6 +37,11 @@ from synthetic_tabular_data_generator.embedding_profiles import get_embedding_pr
 
 app = Flask(__name__)
 tasks = {}
+TASKS_LOCK = RLock()
+MAX_SYNTHESIS_JOBS = int(os.getenv("CINNAMON_MAX_SYNTHESIS_JOBS", "1"))
+if MAX_SYNTHESIS_JOBS < 1:
+    raise ValueError("CINNAMON_MAX_SYNTHESIS_JOBS must be at least 1.")
+RESULTS_DIR = Path(__file__).parent / "outputs" / "pending_callbacks"
 CORS(app)
 
 synthesizer_classes = synthesizer_registry.synthesizer_classes
@@ -74,41 +85,57 @@ def _status_file_path(session_key):
     return os.path.join(os.path.dirname(__file__), 'outputs', 'status', f"{session_key}.yaml")
 
 
+def _locked_tasks(function):
+    @wraps(function)
+    def locked(*args, **kwargs):
+        with TASKS_LOCK:
+            return function(*args, **kwargs)
+    return locked
+
+
 def _cleanup_task_state(task_id):
-    tasks.pop(task_id, None)
+    task_process = tasks.pop(task_id, None)
+    if task_process is not None:
+        join = getattr(task_process, "join", None)
+        if callable(join):
+            join(timeout=0)
+        close = getattr(task_process, "close", None)
+        if callable(close):
+            close()
 
 
+def _finish_job(file_path, state, error=None):
+    try:
+        set_job_status(file_path, state, error)
+        return True
+    except OSError as exc:
+        print(f"Failed to write job state {state}: {exc}")
+        return False
+
+
+@_locked_tasks
 def _prune_finished_tasks():
     for task_id, task_process in list(tasks.items()):
-        try:
-            if _task_is_alive(task_process):
-                continue
-        except Exception as exc:
-            print(f"Warning: Failed to inspect task {task_id}: {exc}")
+        if _task_is_alive(task_process):
+            continue
+        file_path = _status_file_path(task_id)
+        if os.path.exists(file_path):
+            with open(file_path, encoding="utf-8") as handle:
+                status = yaml.safe_load(handle)
+            if status.get("job_state") in {"running", "delivering"}:
+                state = "delivery_failed" if _result_directory(task_id).exists() else "failed"
+                _finish_job(file_path, state, f"Worker exited without completing the job (exitcode={getattr(task_process, 'exitcode', None)}).")
         _cleanup_task_state(task_id)
 
 
 def _mark_task_cancelled(task_id):
     file_path = _status_file_path(task_id)
-    if not os.path.exists(file_path):
-        return
-
-    try:
-        update_status(file_path, 'callback', completed=False)
-        for step in ('initialization', 'fitting', 'sampling'):
-            update_status(file_path, step, remaining_time='Cancelled')
-        update_total_synthesis_status(file_path, completed=False, remaining_time='Cancelled')
-        for component_name in ('structured_synthesis', 'llm_synthesis'):
-            update_component_status(
-                file_path,
-                component_name,
-                remaining_time='Cancelled',
-                fitting_remaining_time='Cancelled',
-                sampling_remaining_time='Cancelled',
-                completed=False,
-            )
-    except Exception as exc:
-        print(f"Warning: Failed to update cancellation status for session {task_id}: {exc}")
+    if os.path.exists(file_path):
+        with open(file_path, encoding="utf-8") as handle:
+            status = yaml.safe_load(handle)
+        if status.get("job_state") in {"succeeded", "failed", "delivery_failed"}:
+            return False
+    return _finish_job(file_path, "cancelled")
 
 
 def _task_is_alive(task_process):
@@ -232,7 +259,6 @@ def initialize_input_data(synthesizer_name):
 
     # Initialize status file
     file_path_status = _status_file_path(session_key)
-    initialize_status_file(file_path_status, session_key, synthesizer_name)
 
     # Get the files from the request
     attribute_config = request.files['attribute_config']
@@ -258,6 +284,7 @@ def initialize_input_data(synthesizer_name):
     except ValueError as exc:
         return str(exc), 400
 
+    initialize_status_file(file_path_status, session_key, synthesizer_name)
     return session_key, callback_url, file_path_status, attribute_config, algorithm_config, data, original_data
 
 
@@ -295,6 +322,81 @@ def post_callback_request(callback_url, *, files, data, timeout):
             data=data,
             timeout=timeout,
         )
+
+
+def _result_directory(session_key):
+    return RESULTS_DIR / hashlib.sha256(session_key.encode("utf-8")).hexdigest()
+
+
+def _save_callback_result(session_key, callback_url, samples, model):
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    temporary = Path(tempfile.mkdtemp(dir=RESULTS_DIR))
+    try:
+        files = prepare_callback_data(samples, model)
+        for filename, content in files.values():
+            (temporary / filename).write_bytes(content.getvalue())
+        (temporary / "callback.json").write_text(json.dumps({"callback_url": callback_url}), encoding="utf-8")
+        os.rename(temporary, _result_directory(session_key))
+    finally:
+        if temporary.exists():
+            shutil.rmtree(temporary)
+
+
+def _deliver_saved_result(session_key, file_path_status):
+    directory = _result_directory(session_key)
+    _finish_job(file_path_status, "delivering")
+    try:
+        metadata = json.loads((directory / "callback.json").read_text(encoding="utf-8"))
+        files = {
+            "synthetic_data": ("synthetic_data.csv", io.BytesIO((directory / "synthetic_data.csv").read_bytes())),
+            "model": ("model.pkl", io.BytesIO((directory / "model.pkl").read_bytes())),
+        }
+        response = post_callback_request(
+            metadata["callback_url"], files=files, data={"session_key": session_key},
+            timeout=CALLBACK_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+    except Exception as exc:
+        message = f"Synthesis finished, but result delivery failed: {exc}"
+        _finish_job(file_path_status, "delivery_failed", message)
+        # The receiver is not idempotent: ambiguous HTTP failures require an explicit retry.
+        return {"message": message, "session_key": session_key, "status_code": 502}
+
+    if not _finish_job(file_path_status, "succeeded"):
+        return {"message": "Result delivered but status could not be saved; check the receiver before retrying.",
+                "session_key": session_key, "status_code": 500}
+    try:
+        shutil.rmtree(directory)
+    except OSError as exc:
+        print(f"Delivered result could not be removed: {exc}")
+    return {"message": "Synthetization Finished, successfully sent callback notification",
+            "session_key": session_key, "status_code": 200}
+
+
+@app.route('/retry_synthetization_callback', methods=['POST'])
+@_locked_tasks
+def retry_synthetization_callback():
+    _prune_finished_tasks()
+    session_key = request.form.get("session_key")
+    if not session_key:
+        return jsonify({"message": "No session key provided"}), 400
+    if session_key in tasks:
+        return jsonify({"message": "Session already has a running task"}), 409
+    if not _result_directory(session_key).exists():
+        return jsonify({"message": "No saved result found"}), 404
+    with open(_status_file_path(session_key), encoding="utf-8") as handle:
+        status = yaml.safe_load(handle)
+    if status.get("job_state") != "delivery_failed":
+        return jsonify({"message": "Only a failed result delivery can be retried"}), 409
+    if len(tasks) >= MAX_SYNTHESIS_JOBS:
+        return jsonify({"message": "Synthesis job limit reached"}), 429
+    process = PROCESS_CONTEXT.Process(target=_deliver_saved_result, args=(session_key, _status_file_path(session_key)))
+    try:
+        process.start()
+    except Exception as exc:
+        return jsonify({"message": "Callback retry could not be started", "error": str(exc)}), 500
+    tasks[session_key] = process
+    return jsonify({"message": "Callback retry started", "session_key": session_key, "pid": process.pid}), 202
 
 
 @lru_cache(maxsize=None)
@@ -697,7 +799,6 @@ def run_synthesizer_stage(
             if hasattr(synthesizer_class, '_llm_client') and synthesizer_class._llm_client is not None:
                 try:
                     synthesizer_class._llm_client.set_session_key(session_key)
-                    print(f"[{stage_label}] Prompt logging enabled for session: {session_key}")
                 except Exception as e:
                     print(f"[{stage_label}] Warning: Failed to set session key for prompt logging: {e}")
 
@@ -830,6 +931,7 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
 
         if synthesizer_name not in synthesizer_classes:
             error_message = f"Error: Synthesizer '{synthesizer_name}' not found"
+            _finish_job(file_path_status, "failed", error_message)
             send_callback_error(callback_url, session_key, error_message, 400)
             return {'message': error_message, 'session_key': session_key, 'status_code': 400}
 
@@ -982,36 +1084,18 @@ def synthesize_data(synthesizer_name, file_path_status, attribute_config, algori
             completed=True,
         )
 
-        try:
-            files = prepare_callback_data(final_samples, final_model)
-            print(f"Sending success callback to {callback_url} with session_key={session_key}")
-            response = post_callback_request(
-                callback_url,
-                files=files,
-                data={'session_key': session_key},
-                timeout=CALLBACK_TIMEOUT_SECONDS
-            )
-            response.raise_for_status()
-            print(f"Success callback completed with status={response.status_code}")
-            update_status(file_path_status, 'callback', completed=True)
-            return {
-                'message': 'Synthetization Finished, successfully sent callback notification',
-                'session_key': session_key,
-                'status_code': 200
-            }
-        except requests.exceptions.RequestException as e:
-            update_status(file_path_status, 'callback', completed=False)
-            error_message = f"Synthetization Finished, failed to send callback notification. {str(e)}"
-            send_callback_error(callback_url, session_key, error_message, 500)
-            return {'message': error_message, 'session_key': session_key, 'status_code': 500}
+        _save_callback_result(session_key, callback_url, final_samples, final_model)
+        return _deliver_saved_result(session_key, file_path_status)
 
     except Exception as e:
         error_message = _format_synthesis_exception_message(e)
+        _finish_job(file_path_status, "failed", error_message)
         send_callback_error(callback_url, session_key, error_message, 500)
         return {'message': error_message, 'session_key': session_key, 'status_code': 500}
 
 
 @app.route('/start_synthetization_process/<string:synthesizer_name>', methods=['POST'])
+@_locked_tasks
 def start_synthetization_process(synthesizer_name):
     """
     Starts the data synthesis process in a separate process.
@@ -1026,6 +1110,12 @@ def start_synthetization_process(synthesizer_name):
     task_id = request.form.get('session_key')
     if not task_id:
         return jsonify({'message': 'No session key provided'}), 400
+    if task_id in tasks:
+        return jsonify({'message': 'Session already has a running task', 'session_key': task_id}), 409
+    if _result_directory(task_id).exists():
+        return jsonify({'message': 'Session has an undelivered result; retry its callback', 'session_key': task_id}), 409
+    if len(tasks) >= MAX_SYNTHESIS_JOBS:
+        return jsonify({'message': 'Synthesis job limit reached', 'session_key': task_id}), 429
 
     try:
         configure_realtime_logging()
@@ -1049,8 +1139,8 @@ def start_synthetization_process(synthesizer_name):
                   data.copy(), original_data.copy() if original_data is not None else None, callback_url, session_key)
         )
 
-        tasks[task_id] = task_process
         task_process.start()
+        tasks[task_id] = task_process
         pid = task_process.pid
 
         return jsonify({
@@ -1060,6 +1150,7 @@ def start_synthetization_process(synthesizer_name):
         }), 202
 
     except Exception as e:
+        _finish_job(_status_file_path(task_id), 'failed', str(e))
         return jsonify({
             'message': 'Exception occurred during Synthetization',
             'error': str(e),
@@ -1194,6 +1285,7 @@ def get_algorithms():
 
 
 @app.route('/cancel_synthetization_process', methods=['POST'])
+@_locked_tasks
 def cancel_synthetization():
     """
     Cancel a running synthetization process using its session key and PID.
@@ -1242,8 +1334,11 @@ def cancel_synthetization():
 
     try:
         _terminate_task_process(task_process)
-        _mark_task_cancelled(task_id)
+        marked_cancelled = _mark_task_cancelled(task_id)
         _cleanup_task_state(task_id)
+        if not marked_cancelled:
+            return jsonify({'message': 'Process stopped, but cancellation was not recorded; check job status',
+                            'session_key': task_id, 'pid': actual_pid}), 409
         return jsonify({'message': 'Task canceled', 'session_key': task_id, 'pid': actual_pid}), 200
     except Exception as e:
         return jsonify({'message': 'Task cannot be cancelled', 'error': f'Failed to cancel task: {str(e)}',
@@ -1358,4 +1453,4 @@ def health_check():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

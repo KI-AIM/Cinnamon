@@ -91,7 +91,7 @@ class DdpmSynthesizer(TabularDataSynthesizer):
 
     def _get_model(self) -> bytes:
         """Serialize the synthesizer instance."""
-        return cloudpickle.dumps(self)
+        return cloudpickle.dumps(self._model_for_export())
 
     def _load_model(self, filepath: str) -> "DdpmSynthesizer":
         """Load a serialized synthesizer instance from disk."""

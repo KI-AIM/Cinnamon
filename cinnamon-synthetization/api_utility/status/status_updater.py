@@ -22,12 +22,34 @@ def initialize_status_file(file_path, session_key, synthesizer_name):
     yaml_status = {
         "session_key": str(session_key),
         "synthesizer_name": str(synthesizer_name),
+        "job_state": "running",
         "status": _build_initial_steps(),
         "components": _build_initial_components(),
     }
 
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     _write_status_file(file_path, yaml_status)
+
+
+def set_job_status(file_path, state, error=None):
+    """Record lifecycle state atomically, independently of callback delivery."""
+    data = _read_status_file(file_path)
+    data["job_state"] = state
+    data["error"] = error
+    for step in data["status"]:
+        if step["step"] == "callback":
+            step["completed"] = _stringify_completed(state == "succeeded")
+    if state in {"failed", "cancelled"}:
+        remaining = "Failed" if state == "failed" else "Cancelled"
+        for step in data["status"]:
+            if "remaining_time" in step:
+                step["remaining_time"] = remaining
+        for component in data["components"].values():
+            component["completed"] = STATUS_FALSE
+            for key in ("remaining_time", "fitting_remaining_time", "sampling_remaining_time"):
+                if key in component:
+                    component[key] = remaining
+    _write_status_file(file_path, data)
 
 
 def update_status(file_path, step, duration=None, completed=None, remaining_time=None):

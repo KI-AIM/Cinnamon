@@ -2,7 +2,7 @@
 Prompt Logger Module
 
 This module provides functionality to log LLM prompts and responses for evaluation and debugging purposes.
-All prompts sent to the LLM and their corresponding responses are saved to text files in the outputs/prompts directory.
+Prompts and responses are saved only when explicitly enabled through the environment.
 """
 
 import os
@@ -50,19 +50,22 @@ class PromptLogger:
             session_key: Optional session key to organize logs by session.
         """
         self._session_id = session_key or str(uuid.uuid4())
-        
-        # Create log directory
-        base_dir = Path(__file__).parent.parent.parent / "outputs" / "prompts"
-        base_dir.mkdir(parents=True, exist_ok=True)
-        
-        if self._session_id:
-            self._log_dir = base_dir / self._session_id
-            self._log_dir.mkdir(parents=True, exist_ok=True)
-        else:
-            self._log_dir = base_dir / "default"
-            self._log_dir.mkdir(parents=True, exist_ok=True)
+        self._log_dir = None
+        if not self.is_enabled():
+            return
+        if self._session_id in {".", ".."} or "/" in self._session_id or "\\" in self._session_id:
+            raise ValueError("Prompt logging session key must be a single directory name.")
+
+        configured_dir = os.getenv("CINNAMON_LLM_LOG_DIR", "").strip()
+        base_dir = Path(configured_dir).expanduser() if configured_dir else Path(__file__).parent.parent.parent / "outputs" / "prompts"
+        self._log_dir = base_dir / self._session_id
+        self._log_dir.mkdir(parents=True, exist_ok=True)
         
         print(f"[PromptLogger] Initialized for session: {self._session_id}")
+
+    @staticmethod
+    def is_enabled() -> bool:
+        return os.getenv("CINNAMON_LLM_ENABLE_PROMPT_LOGGING", "").strip().lower() in {"true", "1", "yes", "on"}
     
     def log_prompt_and_response(
         self,
@@ -70,7 +73,7 @@ class PromptLogger:
         response: str,
         system_prompt: Optional[str] = None,
         metadata: Optional[dict] = None,
-    ) -> str:
+    ) -> Optional[str]:
         """
         Log a prompt and its corresponding response.
         
@@ -81,10 +84,12 @@ class PromptLogger:
             metadata: Optional metadata (e.g., model name, temperature, etc.).
         
         Returns:
-            The path to the log file.
+            The path to the log file, or None when logging is disabled.
         """
+        if not self.is_enabled():
+            return None
         if self._log_dir is None:
-            self.initialize()
+            self.initialize(self._session_id)
         
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -163,7 +168,7 @@ def log_llm_interaction(
     system_prompt: Optional[str] = None,
     metadata: Optional[dict] = None,
     session_key: Optional[str] = None,
-) -> str:
+) -> Optional[str]:
     """
     Convenience function to log an LLM interaction.
     
@@ -175,10 +180,10 @@ def log_llm_interaction(
         session_key: Optional session key.
     
     Returns:
-        The path to the log file.
+        The path to the log file, or None when logging is disabled.
     """
     logger = PromptLogger.get_instance()
-    if logger._log_dir is None and session_key:
+    if session_key and session_key != logger._session_id:
         logger.initialize(session_key)
     elif logger._log_dir is None:
         logger.initialize()

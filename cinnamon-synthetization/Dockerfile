@@ -26,5 +26,6 @@ EXPOSE 5000
 # Define environment variable
 ENV FLASK_APP=app.py
 
-# Run the application using Gunicorn when the container launches, timeout is set to one day
-CMD ["gunicorn", "--workers=4", "--bind=0.0.0.0:5000", "--timeout=86400", "app:app"]
+# The task registry belongs to one web worker; synthesis runs in child processes.
+# Do not increase web workers without replacing the in-process registry.
+CMD ["gunicorn", "--workers=1", "--bind=0.0.0.0:5000", "--timeout=86400", "app:app"]

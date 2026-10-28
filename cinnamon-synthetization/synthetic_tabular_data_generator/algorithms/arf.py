@@ -86,7 +86,15 @@ class AdversarialRandomForestsSynthesizer(TabularDataSynthesizer):
 
     def _get_model(self) -> bytes:
         """Serialize the synthesizer instance."""
-        return cloudpickle.dumps(self)
+        return cloudpickle.dumps(self._model_for_export())
+
+    def _model_for_export(self) -> "AdversarialRandomForestsSynthesizer":
+        model = super()._model_for_export()
+        # arfpy retains x_real and uses it again in forde() on every generate().
+        model.synthesizer = None
+        model._synthesizer_initialized = False
+        model._fit_completed = False
+        return model
 
     def _load_model(self, filepath: str) -> "AdversarialRandomForestsSynthesizer":
         """Load a serialized synthesizer instance from disk."""

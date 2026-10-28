@@ -94,3 +94,55 @@ def test_tvae_wrapper_initializes_expected_synthcity_plugin(monkeypatch):
             },
         )
     ]
+
+
+class ExportTestPlugin:
+    def generate(self, count):
+        import pandas as pd
+        from types import SimpleNamespace
+        return SimpleNamespace(dataframe=lambda: pd.DataFrame({"x": [7] * count}))
+
+
+def test_classical_exports_keep_sampling_without_training_data(tmp_path):
+    import pandas as pd
+    from synthetic_tabular_data_generator.algorithms.arf import AdversarialRandomForestsSynthesizer
+    from synthetic_tabular_data_generator.algorithms.bayesian_network import BayesianNetworkSynthesizer
+    from synthetic_tabular_data_generator.algorithms.ddpm import DdpmSynthesizer
+    from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
+
+    classes = (ctgan.CtganSynthesizer, tvae.TvaeSynthesizer, BayesianNetworkSynthesizer,
+               DdpmSynthesizer, RtvaeSynthesizer, AdversarialRandomForestsSynthesizer)
+    for cls in classes:
+        synth = cls()
+        synth.initialize_attribute_configuration({"configurations": [{"name": "x", "type": "INTEGER"}]})
+        synth.initialize_dataset(pd.DataFrame({"x": [123456789]}))
+        synth.anonymization_configuration = {"api_key": "EXPORT_SECRET"}
+        synth._sampling = {"num_samples": 2, "api_key": "EXPORT_SECRET"}
+        synth._model_kwargs = {"random_state": 42}
+        synth.synthesizer = ExportTestPlugin()
+        synth._anonymization_configuration_initialized = True
+        synth._synthesizer_initialized = True
+        synth._fit_completed = True
+        synth.set_progress_callback(lambda *_: "EXPORT_CALLBACK_SECRET")
+        source = synth.dataset
+        plugin = synth.synthesizer
+
+        blob = synth.get_model()
+        assert b"EXPORT_SECRET" not in blob
+        assert b"EXPORT_CALLBACK_SECRET" not in blob
+        path = tmp_path / "model.pkl"
+        path.write_bytes(blob)
+        restored = synth.load_model(str(path))
+        assert restored.dataset is None
+        assert restored.anonymization_configuration is None
+        assert restored._progress_callback is None
+        assert not restored.is_initialized_for_fit
+        assert synth.dataset is source
+        assert synth.synthesizer is plugin
+        assert synth.is_ready_for_sampling
+        if cls is AdversarialRandomForestsSynthesizer:
+            assert restored.synthesizer is None
+            assert not restored.is_ready_for_sampling
+            assert restored._model_kwargs == {"random_state": 42}
+        else:
+            pd.testing.assert_frame_equal(restored.sample(), synth.sample())

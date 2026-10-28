@@ -1054,3 +1054,218 @@ def test_text_stage_preserves_final_structured_values_without_preprocessing(monk
     )
     pd.testing.assert_frame_equal(samples.drop(columns="note"), source.drop(columns="note"))
     assert samples["note"].tolist() == [text]
+
+
+@pytest.fixture
+def job_environment(monkeypatch, tmp_path):
+    app_module.tasks.clear()
+    monkeypatch.setattr(app_module, "MAX_SYNTHESIS_JOBS", 1)
+    monkeypatch.setattr(app_module, "RESULTS_DIR", tmp_path / "results")
+    monkeypatch.setattr(app_module, "_status_file_path", lambda key: str(tmp_path / f"{key}.yaml"))
+    yield tmp_path
+    for process in list(app_module.tasks.values()):
+        if hasattr(process, "terminate") and app_module._task_is_alive(process):
+            app_module._terminate_task_process(process)
+    app_module.tasks.clear()
+
+
+def test_start_rejects_duplicate_and_capacity_before_reading_uploads(monkeypatch, job_environment):
+    key = "active"
+    status_path = app_module._status_file_path(key)
+    initialize_status_file(status_path, key, "ctgan")
+    before = Path(status_path).read_bytes()
+    app_module.tasks[key] = CancelableProcess()
+    monkeypatch.setattr(app_module, "initialize_input_data", lambda _: pytest.fail("must reject before reading input"))
+    client = app_module.app.test_client()
+    assert client.post("/start_synthetization_process/ctgan", data={"session_key": key}).status_code == 409
+    assert client.post("/start_synthetization_process/ctgan", data={"session_key": "other"}).status_code == 429
+    assert Path(status_path).read_bytes() == before
+    assert not Path(app_module._status_file_path("other")).exists()
+
+
+def test_simultaneous_starts_register_only_one_process(monkeypatch, job_environment):
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+    barrier = threading.Barrier(2)
+    starts = []
+
+    def initialize(_):
+        key = app_module.request.form["session_key"]
+        path = app_module._status_file_path(key)
+        initialize_status_file(path, key, "ctgan")
+        starts.append(key)
+        return key, "http://callback", path, {}, {}, app_module.pd.DataFrame(), None
+
+    monkeypatch.setattr(app_module, "initialize_input_data", initialize)
+    monkeypatch.setattr(app_module.PROCESS_CONTEXT, "Process", StartedProcess)
+
+    def start():
+        barrier.wait(timeout=5)
+        with app_module.app.test_client() as client:
+            return client.post("/start_synthetization_process/ctgan", data={"session_key": "same"}).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        codes = list(executor.map(lambda _: start(), range(2)))
+    assert sorted(codes) == [202, 409]
+    assert starts == ["same"]
+
+
+def test_process_start_failure_marks_job_failed_and_frees_capacity(monkeypatch, job_environment):
+    key = "start-failed"
+    path = app_module._status_file_path(key)
+    initialize_status_file(path, key, "ctgan")
+    monkeypatch.setattr(app_module, "initialize_input_data", lambda _: (
+        key, "http://callback", path, {}, {}, app_module.pd.DataFrame(), None,
+    ))
+
+    class FailingProcess(StartedProcess):
+        def start(self):
+            raise OSError("cannot start process")
+
+    monkeypatch.setattr(app_module.PROCESS_CONTEXT, "Process", FailingProcess)
+    response = app_module.app.test_client().post("/start_synthetization_process/ctgan", data={"session_key": key})
+    assert response.status_code == 500
+    assert not app_module.tasks
+    assert yaml.safe_load(Path(path).read_text())["job_state"] == "failed"
+
+
+def test_real_spawned_process_can_be_cancelled(job_environment):
+    import time
+    key = "real-cancel"
+    path = app_module._status_file_path(key)
+    initialize_status_file(path, key, "ctgan")
+    process = app_module.PROCESS_CONTEXT.Process(target=time.sleep, args=(30,))
+    process.start()
+    app_module.tasks[key] = process
+    pid = process.pid
+    response = app_module.app.test_client().post(
+        "/cancel_synthetization_process", data={"session_key": key, "pid": str(pid)},
+    )
+    assert response.status_code == 200
+    assert key not in app_module.tasks
+    assert yaml.safe_load(Path(path).read_text())["job_state"] == "cancelled"
+
+
+def test_crashed_process_is_reaped_and_marked_failed(job_environment):
+    import os
+    key = "real-crash"
+    path = app_module._status_file_path(key)
+    initialize_status_file(path, key, "ctgan")
+    process = app_module.PROCESS_CONTEXT.Process(target=os._exit, args=(7,))
+    process.start()
+    app_module.tasks[key] = process
+    process.join(timeout=10)
+    assert not process.is_alive()
+    response = app_module.app.test_client().get(f"/get_status/{key}")
+    assert response.status_code == 200
+    assert response.json["job_state"] == "failed"
+    assert "exitcode=7" in response.json["error"]
+    assert key not in app_module.tasks
+
+
+def test_synthesis_failure_records_terminal_state_before_error_callback(monkeypatch, job_environment):
+    key = "failed"
+    path = app_module._status_file_path(key)
+    initialize_status_file(path, key, "ctgan")
+    monkeypatch.setattr(app_module, "synthesizer_classes", {"ctgan": {"class": object}})
+    monkeypatch.setattr(app_module, "get_data_modality", lambda _: "structured_only")
+    monkeypatch.setattr(app_module, "run_synthesizer_stage", lambda **_: (_ for _ in ()).throw(ValueError("training failed")))
+    observed = []
+    monkeypatch.setattr(app_module, "send_callback_error", lambda *args: observed.append(yaml.safe_load(Path(path).read_text())))
+    result = app_module.synthesize_data("ctgan", path, _structured_attribute_config(), _algorithm_config(),
+                                        app_module.pd.DataFrame({"age": [42]}), None, "http://callback", key)
+    assert result["status_code"] == 500
+    assert observed[0]["job_state"] == "failed"
+    assert "training failed" in observed[0]["error"]
+    assert observed[0]["components"]["total_synthesis"]["remaining_time"] == "Failed"
+
+
+def test_failed_delivery_retains_results_and_retry_does_not_resynthesize(monkeypatch, job_environment):
+    import requests
+    key = "delivery"
+    path = app_module._status_file_path(key)
+    initialize_status_file(path, key, "ctgan")
+    app_module.update_pipeline_totals(path, 1, 2, 3, completed=True)
+    samples = app_module.pd.DataFrame({"age": [42]})
+    app_module._save_callback_result(key, "http://original-callback", samples, b"model-bytes")
+    attempts = []
+
+    def post(url, **kwargs):
+        attempts.append((url, {name: entry[1].read() for name, entry in kwargs["files"].items()}))
+        if len(attempts) == 1:
+            raise requests.Timeout("response lost")
+        return types.SimpleNamespace(raise_for_status=lambda: None)
+
+    monkeypatch.setattr(app_module, "post_callback_request", post)
+    monkeypatch.setattr(app_module, "send_callback_error", lambda *args: pytest.fail("delivery failure is not synthesis failure"))
+    first = app_module._deliver_saved_result(key, path)
+    assert first["status_code"] == 502
+    assert len(attempts) == 1
+    state = yaml.safe_load(Path(path).read_text())
+    assert state["job_state"] == "delivery_failed"
+    assert state["components"]["total_synthesis"]["completed"] == "True"
+    assert app_module._result_directory(key).exists()
+    assert app_module.app.test_client().post("/start_synthetization_process/ctgan", data={"session_key": key}).status_code == 409
+
+    monkeypatch.setattr(app_module.PROCESS_CONTEXT, "Process", StartedProcess)
+    client = app_module.app.test_client()
+    assert client.post("/retry_synthetization_callback", data={"session_key": key}).status_code == 202
+    assert client.post("/retry_synthetization_callback", data={"session_key": key}).status_code == 409
+    task = app_module.tasks[key]
+    assert task.target is app_module._deliver_saved_result
+    assert task.target(*task.args)["status_code"] == 200
+    assert attempts[0] == attempts[1]
+    assert attempts[1][1]["synthetic_data"] == samples.to_csv(index=False).encode()
+    assert attempts[1][1]["model"] == b"model-bytes"
+    assert not app_module._result_directory(key).exists()
+    state = yaml.safe_load(Path(path).read_text())
+    assert state["job_state"] == "succeeded"
+    assert next(step for step in state["status"] if step["step"] == "callback")["completed"] == "True"
+
+
+def test_crash_during_delivery_preserves_completed_synthesis(job_environment):
+    key = "delivery-crash"
+    path = app_module._status_file_path(key)
+    initialize_status_file(path, key, "ctgan")
+    app_module.update_pipeline_totals(path, 1, 2, 3, completed=True)
+    app_module._save_callback_result(key, "http://callback", app_module.pd.DataFrame({"age": [42]}), b"model")
+    app_module._finish_job(path, "delivering")
+    app_module.tasks[key] = FinishedProcess(exitcode=-9)
+    app_module._prune_finished_tasks()
+    state = yaml.safe_load(Path(path).read_text())
+    assert state["job_state"] == "delivery_failed"
+    assert state["components"]["total_synthesis"]["completed"] == "True"
+    assert app_module._result_directory(key).exists()
+
+
+def test_cancel_does_not_overwrite_confirmed_delivery(job_environment):
+    key = "already-delivered"
+    path = app_module._status_file_path(key)
+    initialize_status_file(path, key, "ctgan")
+    app_module._finish_job(path, "succeeded")
+    app_module.tasks[key] = CancelableProcess(pid=123)
+    response = app_module.app.test_client().post(
+        "/cancel_synthetization_process", data={"session_key": key, "pid": "123"},
+    )
+    assert response.status_code == 409
+    assert yaml.safe_load(Path(path).read_text())["job_state"] == "succeeded"
+
+
+def test_delivered_result_is_retained_when_final_status_cannot_be_saved(monkeypatch, job_environment):
+    key = "status-failure"
+    path = app_module._status_file_path(key)
+    initialize_status_file(path, key, "ctgan")
+    app_module._save_callback_result(key, "http://callback", app_module.pd.DataFrame({"age": [42]}), b"model")
+    original = app_module.set_job_status
+
+    def set_status(file_path, state, error=None):
+        if state == "succeeded":
+            raise OSError("disk unavailable")
+        original(file_path, state, error)
+
+    monkeypatch.setattr(app_module, "set_job_status", set_status)
+    monkeypatch.setattr(app_module, "post_callback_request", lambda *args, **kwargs: types.SimpleNamespace(raise_for_status=lambda: None))
+    result = app_module._deliver_saved_result(key, path)
+    assert result["status_code"] == 500
+    assert "check the receiver" in result["message"]
+    assert app_module._result_directory(key).exists()

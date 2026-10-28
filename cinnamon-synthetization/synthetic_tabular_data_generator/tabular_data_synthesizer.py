@@ -52,7 +52,26 @@ class TabularDataSynthesizer(ABC):
 
     @property
     def is_ready_for_sampling(self) -> bool:
-        return self.is_initialized_for_fit and self._fit_completed
+        # Fitted inference models do not need the original training dataset.
+        return (
+            self._anonymization_configuration_initialized
+            and self._attribute_configuration_initialized
+            and self._synthesizer_initialized
+            and self._fit_completed
+        )
+
+    def _model_for_export(self) -> "TabularDataSynthesizer":
+        """Export inference state only; never copy the live object's entire state."""
+        model = type(self)()
+        model.initialize_attribute_configuration(self.attribute_configuration)
+        model._model_kwargs = getattr(self, "_model_kwargs", None)
+        sampling = getattr(self, "_sampling", None)
+        model._sampling = {"num_samples": sampling["num_samples"]} if sampling else None
+        model.synthesizer = self.synthesizer
+        model._anonymization_configuration_initialized = self._anonymization_configuration_initialized
+        model._synthesizer_initialized = self._synthesizer_initialized
+        model._fit_completed = self._fit_completed
+        return model
 
     @staticmethod
     def error_handler(operation: str) -> Callable[[Callable[..., T]], Callable[..., T]]:

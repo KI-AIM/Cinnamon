@@ -421,15 +421,32 @@ class LlmClient:
     
     def set_session_key(self, session_key: Optional[str] = None) -> None:
         """Set the session key for prompt logging."""
-        self._prompt_logger = PromptLogger.get_instance()
+        self._prompt_logger = PromptLogger()
         self._prompt_logger.initialize(session_key)
 
     def generate_text(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         if self.config.provider == "ollama":
-            return self._generate_ollama(prompt, system_prompt=system_prompt)
-        if self.config.provider == "openai_compatible":
-            return self._generate_openai_compatible(prompt, system_prompt=system_prompt)
-        raise ValueError(f"Unsupported LLM provider '{self.config.provider}'.")
+            content = self._generate_ollama(prompt, system_prompt=system_prompt)
+        elif self.config.provider == "openai_compatible":
+            system_prompt = system_prompt.strip() if isinstance(system_prompt, str) and system_prompt.strip() else DEFAULT_OPENAI_SYSTEM_PROMPT
+            content = self._generate_openai_compatible(prompt, system_prompt=system_prompt)
+        else:
+            raise ValueError(f"Unsupported LLM provider '{self.config.provider}'.")
+
+        if self._prompt_logger is not None:
+            self._prompt_logger.log_prompt_and_response(
+                prompt=prompt,
+                response=content,
+                system_prompt=system_prompt,
+                metadata={
+                    "provider": self.config.provider,
+                    "model": self.config.model_name,
+                    "temperature": self.config.temperature,
+                    "top_p": self.config.top_p,
+                    "max_tokens": self.config.max_tokens,
+                },
+            )
+        return content
 
     def _healthcheck(self, base_url: str) -> None:
         if self.config.provider == "ollama":
@@ -480,22 +497,6 @@ class LlmClient:
         if not isinstance(content, str) or not content.strip():
             raise ValueError("LLM response is empty or missing the 'response' field.")
         
-        # Log prompt and response if logger is initialized
-        if self._prompt_logger is not None:
-            metadata = {
-                "provider": self.config.provider,
-                "model": self.config.model_name,
-                "temperature": self.config.temperature,
-                "top_p": self.config.top_p,
-                "max_tokens": self.config.max_tokens,
-            }
-            self._prompt_logger.log_prompt_and_response(
-                prompt=prompt,
-                response=content,
-                system_prompt=system_prompt,
-                metadata=metadata,
-            )
-        
         return content
 
     def _generate_openai_compatible(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -536,40 +537,10 @@ class LlmClient:
             content = message.get("content")
             extracted = self._normalize_openai_content(content)
             if extracted:
-                # Log prompt and response if logger is initialized
-                if self._prompt_logger is not None:
-                    metadata = {
-                        "provider": self.config.provider,
-                        "model": self.config.model_name,
-                        "temperature": self.config.temperature,
-                        "top_p": self.config.top_p,
-                        "max_tokens": self.config.max_tokens,
-                    }
-                    self._prompt_logger.log_prompt_and_response(
-                        prompt=prompt,
-                        response=extracted,
-                        system_prompt=resolved_system_prompt,
-                        metadata=metadata,
-                    )
                 return extracted
 
         text = first_choice.get("text")
         if isinstance(text, str) and text.strip():
-            # Log prompt and response if logger is initialized
-            if self._prompt_logger is not None:
-                metadata = {
-                    "provider": self.config.provider,
-                    "model": self.config.model_name,
-                    "temperature": self.config.temperature,
-                    "top_p": self.config.top_p,
-                    "max_tokens": self.config.max_tokens,
-                }
-                self._prompt_logger.log_prompt_and_response(
-                    prompt=prompt,
-                    response=text,
-                    system_prompt=resolved_system_prompt,
-                    metadata=metadata,
-                )
             return text
 
         raise ValueError("OpenAI-compatible response is missing text content.")

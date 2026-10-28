@@ -342,7 +342,7 @@ class LlmTabularSynthesizer(ConfiguredLlmSynthesizerBase):
         return result
 
     def _get_model(self) -> bytes:
-        return cloudpickle.dumps(self)
+        return cloudpickle.dumps(self._model_for_export())
 
     def _load_model(self, filepath: str) -> "LlmTabularSynthesizer":
         with open(filepath, "rb") as file:

@@ -119,6 +119,14 @@ The service will then be available at:
 http://127.0.0.1:5000
 ```
 
+Run exactly one Gunicorn web worker: the job registry is local to that process.
+Synthesis and callback retries run in separate child processes. Configure
+`CINNAMON_MAX_SYNTHESIS_JOBS` to limit concurrent children (default: `1`, minimum:
+`1`). Additional starts receive HTTP 429; an already running session receives
+HTTP 409 without changing its status. The local development server disables the
+reloader for the same reason. Multiple web workers or replicas require a shared
+job manager and are not supported by this registry.
+
 ## Run Locally
 
 From `cinnamon-synthetization/`:
@@ -162,6 +170,13 @@ For LLM-enabled pipelines the returned status may include:
 - stage-specific details in `components.structured_synthesis`
 - stage-specific details in `components.llm_synthesis`
 
+The additional `job_state` field is `running`, `delivering`, `succeeded`,
+`failed`, `cancelled`, or `delivery_failed`; `error` describes a failure.
+`delivery_failed` means synthesis completed but its results were not confirmed
+by the callback receiver. Existing step/component status fields remain available.
+Unexpected child-process exits are reconciled when the API next inspects tasks,
+including on every status request.
+
 ### Start a synthesis process
 
 Example:
@@ -199,6 +214,32 @@ Required form-data fields:
 - `session_key`
 - `pid`
 
+### Retry a failed result delivery
+
+```text
+POST /retry_synthetization_callback
+```
+
+Supply `session_key` as form-data. A successful start returns HTTP 202 with the
+retry process PID; the existing status and cancellation endpoints apply to it.
+This sends the saved CSV and model to the original callback URL without running
+the synthesizer again. Running sessions return 409, missing results 404, and a
+full job limit 429.
+
+Results are saved atomically under `outputs/pending_callbacks/` before sending
+and removed after a successful delivery. Failed deliveries remain available for
+an explicit retry and prevent a new synthesis from overwriting that session.
+There is no automatic HTTP retry: the platform callback is not idempotent, so
+after an ambiguous timeout check whether the receiver already accepted the result
+before retrying. A cancellation cannot undo a callback already accepted remotely.
+Delivery failures do not send a contradictory synthesis-error callback.
+
+Pending files can contain sensitive model information. Remove abandoned results
+when no longer needed; they are not expired automatically. Preserve both
+`outputs/status/` and `outputs/pending_callbacks/` on persistent storage if results
+must survive container replacement. Running jobs are not resumed after a web
+worker/service restart; this is not a persistent job queue.
+
 ## Callback Output
 
 When a synthesis job finishes successfully, the callback receives:
@@ -209,6 +250,33 @@ When a synthesis job finishes successfully, the callback receives:
   serialized synthesizer model
 
 In case of an error, the callback receives an error payload instead.
+
+### Model export contract
+
+Model files remain pickled synthesizer objects; two-stage exports retain the
+`structured_synthesis` / `text_synthesis` mapping described above. Exports are
+built from a fresh instance, not from the complete live object's state. Input
+dataframes, raw algorithm configuration, progress callbacks and LLM clients
+(including credentials and prompt loggers) are not exported. Exporting does
+not modify the running synthesizer.
+
+- CTGAN, TVAE, RTVAE, DDPM and Bayesian Network exports retain the fitted backend,
+  attribute schema and sampling count. After `loaded = synth.load_model(path)`,
+  `loaded.sample()` remains available. Supply a dataset before fitting again.
+- ARF exports retain its attribute schema, model parameters and sampling count,
+  but omit the fitted backend: arfpy retains original rows and reuses them in
+  generation. Supply a dataset, call `initialize_synthesizer()` and `fit()`
+  before sampling the loaded object.
+- LLM exports retain only the synthesizer type and attribute schema. Profiles,
+  reference texts, retrieval indexes, expert guidance and cached prompts are
+  omitted because they can contain source information. Reinitialize algorithm
+  configuration, input/reference datasets and the LLM backend, then call `fit()`
+  before reuse. Credentials are resolved again from the runtime environment.
+
+Fitted statistical models and attribute schemas are still sensitive artifacts:
+this export contract is not an anonymization or differential-privacy guarantee.
+Existing exported files are not retroactively cleaned. Load pickle files only
+from trusted sources.
 
 ## LLM Configuration Via `.env`
 
@@ -313,14 +381,20 @@ For text synthesis, `max_tokens` should always be evaluated together with datase
 
 ## LLM Prompt Logging
 
-Prompt logging can be enabled through environment variables. This is useful for debugging prompt construction and LLM responses.
+Prompt logging is disabled by default. Enable it explicitly through environment
+variables when debugging prompt construction and LLM responses. Disabled logging
+creates no prompt files or log directories, even when a session key is set.
 
 Available variables:
 
-- `CINNAMON_LLM_ENABLE_PROMPT_LOGGING=true/false`
+- `CINNAMON_LLM_ENABLE_PROMPT_LOGGING=true/false` (default: `false`)
 - `CINNAMON_LLM_LOG_DIR=/custom/path`
 
-Logs are written under `outputs/prompts/` by default.
+When enabled, logs are written under `outputs/prompts/<session_key>/` by default,
+or `<CINNAMON_LLM_LOG_DIR>/<session_key>/` when an override is configured.
+Each successful LLM response is logged once with its prompt and decoding metadata.
+Logs can contain original texts and reference information. Disabling logging does
+not delete previously written files.
 
 ## Development Notes
 

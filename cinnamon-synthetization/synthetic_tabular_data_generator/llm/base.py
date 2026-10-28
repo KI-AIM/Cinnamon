@@ -29,6 +29,12 @@ class ConfiguredLlmSynthesizerBase(TabularDataSynthesizer, LlmSynthesizerSupport
         self._generation_failures: int = 0
         self.synthesizer = None
 
+    def _model_for_export(self) -> "ConfiguredLlmSynthesizerBase":
+        # LLM profiles, prompts and retrieval indexes can contain original data or credentials.
+        model = type(self)()
+        model.initialize_attribute_configuration(self.attribute_configuration)
+        return model
+
     def _initialize_common_llm_configuration(
         self,
         config: Dict[str, Any],

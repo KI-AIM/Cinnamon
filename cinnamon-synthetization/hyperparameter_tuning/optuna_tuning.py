@@ -11,7 +11,7 @@ longer any evaluation of the synthetic sample against the real data.
 Public surface:
     - OptunaResult dataclass
     - optimize(...) function
-    - _build_sampler / _build_pruner factories
+    - _build_sampler factory
     - _build_search_space (YAML -> optuna-suggest mapping)
 
 The mapping from `parameter_grids/<synth>.yaml` entries to suggest calls:
@@ -258,30 +258,6 @@ def _build_sampler(
     raise ValueError(f"Unknown sampler: {name!r}")
 
 
-def _build_pruner(name: Optional[str]) -> Any:
-    """
-    Construct an Optuna pruner from a short name.
-
-    Supported names:
-        "median"              -> ``MedianPruner`` (default)
-        "hyperband"           -> ``HyperbandPruner``
-        "successive_halving"  -> ``SuccessiveHalvingPruner``
-        "none" / None         -> ``NopPruner``
-    """
-    import optuna
-
-    key = (name or "median").strip().lower()
-    if key == "median":
-        return optuna.pruners.MedianPruner()
-    if key == "hyperband":
-        return optuna.pruners.HyperbandPruner()
-    if key == "successive_halving":
-        return optuna.pruners.SuccessiveHalvingPruner()
-    if key in {"none", "nop", "no"}:
-        return optuna.pruners.NopPruner()
-    raise ValueError(f"Unknown pruner: {name!r}")
-
-
 def _is_hashable(value: Any) -> bool:
     try:
         hash(value)
@@ -462,7 +438,6 @@ def _run_single(
 
     grid_space = _build_search_space(grid_yaml) if sampler.lower() == "grid" else None
     sampler_obj = _build_sampler(sampler, search_space=grid_space, seed=random_state)
-    pruner_obj = _build_pruner(pruner)
 
     maximize = direction.lower() != "minimize"
     best_result: Dict[str, Any] = {
@@ -488,26 +463,16 @@ def _run_single(
 
         try:
             metric = fit_metric_fn(algorithm_config)
+            if metric is None:
+                raise ValueError(f"Synthesizer '{synthesizer}' returned no fit metric.")
+            score = float(metric)
+            if not math.isfinite(score):
+                raise ValueError(f"Synthesizer '{synthesizer}' returned a non-finite fit metric: {score}")
         except Exception as exc:
             trial.set_user_attr("error", repr(exc))
-            logger.warning(
-                "Trial %s failed: synthesizer=%s error=%s",
-                trial.number,
-                synthesizer,
-                exc,
-            )
-            raise optuna.TrialPruned() from exc
+            logger.exception("Trial %s failed: synthesizer=%s", trial.number, synthesizer)
+            raise
 
-        if metric is None or (isinstance(metric, float) and math.isnan(metric)):
-            reason = (
-                f"synthesizer '{synthesizer}' did not return a fit metric "
-                f"(hyperparameter tuning is not supported for it)"
-            )
-            trial.set_user_attr("error", reason)
-            logger.warning("Trial %s pruned: %s", trial.number, reason)
-            raise optuna.TrialPruned()
-
-        score = float(metric)
         logger.info(
             "Optuna trial result: synthesizer=%s trial=%s score=%.4f",
             synthesizer,
@@ -526,7 +491,7 @@ def _run_single(
     study = optuna.create_study(
         study_name=study_name or f"cinnamon_{synthesizer}",
         sampler=sampler_obj,
-        pruner=pruner_obj,
+        pruner=optuna.pruners.NopPruner(),
         direction=direction,
         storage=storage,
         load_if_exists=storage is not None,
@@ -538,6 +503,7 @@ def _run_single(
         n_trials=n_trials,
         timeout=timeout,
         gc_after_trial=True,
+        catch=(Exception,),
         show_progress_bar=show_progress_bar,
     )
     end_time = datetime.now(timezone.utc)
@@ -600,7 +566,7 @@ def optimize(
     *,
     sampler: str = "tpe",
     n_trials: int = 50,
-    pruner: str = "median",
+    pruner: str = "none",
     direction: str = "maximize",
     timeout: Optional[float] = None,
     study_name: Optional[str] = None,
@@ -637,7 +603,7 @@ def optimize(
             a cross-synthesizer search.
         sampler: One of ``tpe / cmaes / grid / random / qmc / nsgaii``.
         n_trials: Trials per synthesizer.
-        pruner: One of ``median / hyperband / successive_halving / none``.
+        pruner: Only ``none`` is supported; training does not report intermediate metrics.
         direction: ``maximize`` or ``minimize`` — must match the synthesizer's
             fit-metric semantics (loss -> minimize, score -> maximize).
         timeout: Stop study after this many seconds; ``None`` for no limit.
@@ -660,8 +626,11 @@ def optimize(
 
     Returns:
         :class:`OptunaResult`. ``best_algorithm_config`` may be ``None`` if
-        every trial pruned (e.g. all configs raised or returned no metric).
+        every trial failed (e.g. all configs raised or returned no finite metric).
     """
+    if pruner != "none":
+        raise ValueError("Pruning is not supported: training does not report intermediate metrics. Use pruner='none'.")
+
     if isinstance(synthesizer, str):
         synth_list: List[str] = [synthesizer]
         single_mode = True
@@ -735,6 +704,5 @@ __all__ = [
     "OptunaResult",
     "optimize",
     "_build_sampler",
-    "_build_pruner",
     "_build_search_space",
 ]

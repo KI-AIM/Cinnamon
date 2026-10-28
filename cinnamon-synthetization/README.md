@@ -26,7 +26,11 @@ Datasets with structured columns (including columns added by text extraction) fi
 structured synthesizer: CTGAN, TVAE, ARF, DDPM, RTVAE, Bayesian Network, or the structured
 LLM synthesizer. Their existing model, fitting, sampling, and supported Optuna tuning
 settings apply unchanged. Optuna tuning is supported for the six classical synthesizers;
-its sampler, pruner, trial count, and timeout are configurable in the frontend.
+its sampler, trial count, and timeout are configurable in the frontend.
+Pruning is not supported: training does not report intermediate metrics, so only
+`pruner: none` is accepted. Failed trials and missing or non-finite metrics are
+recorded as `FAIL` with an error reason; the study continues with the remaining trials.
+The objective uses training metrics, not measured quality of synthetic data.
 
 For datasets that also contain TEXT columns, select a second method: mixed-data paraphrase,
 expert-guided synthesis, indirect-identifier rewrite, or retrieval-guided synthesis. This stage generates
@@ -87,7 +91,7 @@ synthetization_configuration:
     hyperparameter_tuning:
       enabled: false
       sampler: tpe
-      pruner: median
+      pruner: none
       n_trials: 10
       timeout_minutes: 30
   text_synthesis_configuration:

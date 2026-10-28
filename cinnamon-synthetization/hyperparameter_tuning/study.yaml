@@ -7,7 +7,7 @@ URL: /hyperparameter_tuning/study.yaml
 configurations:
   study:
     display_name: Study Settings
-    description: Sampler, pruner, and budget for the Optuna study.
+    description: Search strategy and budget. Optimizes training metrics, not measured synthetic-data quality.
     parameters:
       - name: sampler
         type: string
@@ -21,14 +21,11 @@ configurations:
 
       - name: pruner
         type: string
-        label: Pruner
-        description: Strategy for early-stopping unpromising trials. "none" lets every trial run to completion; Median stops trials below the median of completed ones; Hyperband and Successive Halving allocate budget adaptively across trials.
-        default_value: median
+        label: Pruning (not supported)
+        description: Pruning is not supported because training does not report intermediate metrics. Trials run to completion unless they fail.
+        default_value: none
         values:
           - none
-          - median
-          - hyperband
-          - successive_halving
 
       - name: n_trials
         type: integer

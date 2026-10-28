@@ -117,7 +117,7 @@ def test_get_study_parameter_default_reads_values_from_study_yaml():
     app_module.load_study_config.cache_clear()
 
     assert app_module.get_study_parameter_default("sampler") == "tpe"
-    assert app_module.get_study_parameter_default("pruner") == "median"
+    assert app_module.get_study_parameter_default("pruner") == "none"
 
 
 def test_run_synthesizer_stage_uses_global_timeout_countdown_for_hyperparameter_tuning(monkeypatch, tmp_path):

@@ -46,7 +46,7 @@ class DdpmSynthesizer(SynthcitySynthesizer):
         Returns the final-epoch training loss (lower is better — the Optuna
         direction for ddpm is ``minimize``). Metric extraction never breaks the
         normal synthesis path: any failure returns ``None``, which the
-        hyperparameter-tuning objective treats as a pruned trial.
+        hyperparameter-tuning objective treats as a failed trial.
         """
         self.synthesizer.fit(self.dataset)
         try:

@@ -115,7 +115,7 @@ synthesizer_classes = {
         'type': 'cross-sectional',
         'class': LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
         'display_name': 'LLM Text-only Retrieval-Guided Synthesis',
-        'description': 'Generate a new single TEXT column for fictional but plausible patients by retrieving relevant reference texts and using them as in-context examples. Supports BM25-style sparse retrieval and Ollama-based embedding retrieval for exactly one free-text column.',
+        'description': 'Generate a new single TEXT column for fictional but plausible patients by retrieving relevant reference texts and using them as in-context examples. Supports term-frequency sparse retrieval and Ollama-based embedding retrieval for exactly one free-text column.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_embedding_nearest_neighbor_synthesis.yaml'
     },
 }

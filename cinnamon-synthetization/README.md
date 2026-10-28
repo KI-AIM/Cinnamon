@@ -53,6 +53,21 @@ Retrieval queries use the synthetic structured facts. The existing embedding set
 and similarity weights remain available; set text similarity weight to `0` and structured
 similarity weight to `1` for attribute-only retrieval.
 
+The local lexical provider is named `term_frequency`: it counts word occurrences,
+without document-frequency or length weighting. Supported providers are
+`term_frequency` and `ollama`. No new retrieval dependency is required.
+Sparse dot scores use `d / (1 + d)`; dense dot scores use
+`0.5 + 0.5 * d / (1 + abs(d))`. This preserves score ordering without hard clipping
+at 1. Dot-based rankings and mixed similarity weights can therefore select different
+references than older versions. DATE_TIME now uses temporal distance, like DATE.
+
+Both text retrieval methods share the same retrieval implementation, independently
+of their synthesis lifecycle. Reference vectors and structured values are prepared
+once per fit. Top-k selection preserves reference order for equal scores. Ollama
+reference and query requests contain at most 64 texts; query vectors are reused
+within each generation batch and discarded afterward. Retrieval still scans all
+references for each output row; there is no approximate vector index.
+
 The frontend saves both stages in one configuration. Existing direct mixed-data configurations
 must be reconfigured by selecting a structured synthesizer first. API example:
 

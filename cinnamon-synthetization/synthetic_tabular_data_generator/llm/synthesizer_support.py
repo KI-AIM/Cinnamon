@@ -180,15 +180,7 @@ class LlmSynthesizerSupport:
             return MISSING_VALUE_STRING
         return text
 
-    def coerce_string(self, value: Any, fallback_value: Any = None) -> str:
-        candidate = fallback_value if value is None else value
-        if candidate is None:
-            return MISSING_VALUE_STRING
-
-        text = str(candidate).strip()
-        if not text or text.lower() in self._NULL_LIKE_STRINGS:
-            return MISSING_VALUE_STRING
-        return text
+    coerce_string = coerce_text
 
     def coerce_boolean(self, value: Any, fallback_value: Any = None) -> Any:
         for candidate in (value, fallback_value):

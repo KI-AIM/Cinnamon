@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import heapq
 from typing import Any, Callable, Dict, Optional
 
 import cloudpickle
@@ -14,17 +15,14 @@ from data_processing.utils import (
 from synthetic_tabular_data_generator.algorithms.llm_mixed_data_paraphrase_synthesis import (
     LlmMixedDataParaphraseSynthesisSynthesizer,
 )
-from synthetic_tabular_data_generator.algorithms.llm_text_only_embedding_nearest_neighbor_synthesis import (
-    LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
-)
+from synthetic_tabular_data_generator.llm.retrieval import RetrievalSupport
 
 
 SimilarityFunction = Callable[[Any, Any], float]
 
 
 class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
-    LlmMixedDataParaphraseSynthesisSynthesizer,
-    LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer,
+    RetrievalSupport, LlmMixedDataParaphraseSynthesisSynthesizer,
 ):
     """Retrieve references for synthetic structured rows and generate matching text."""
 
@@ -34,17 +32,15 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
         anonymization_configuration: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__(attribute_configuration, anonymization_configuration)
+        self._initialize_retrieval()
         self._text_similarity_weight = 0.7
         self._structured_similarity_weight = 0.3
         self._structured_similarity_functions: Dict[str, SimilarityFunction] = {}
 
     def _initialize_anonymization_configuration(self, config: Dict[str, Any]) -> None:
-        LlmTextOnlyEmbeddingNearestNeighborSynthesisSynthesizer._initialize_anonymization_configuration(
-            self,
-            config,
-        )
+        super()._initialize_anonymization_configuration(config)
+        self._configure_retrieval(config)
         model_params = config["synthetization_configuration"]["algorithm"].get("model_parameter", {})
-        self._initialize_profile_rows_configuration(model_params)
         self._text_similarity_weight = self._parse_similarity_weight(
             model_params.get("text_similarity_weight", 0.7),
             "text_similarity_weight",
@@ -69,12 +65,13 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
         self._initialize_llm_backend(mode="mixed_data_embedding_nearest_neighbor")
 
     def _fit(self) -> None:
-        LlmMixedDataParaphraseSynthesisSynthesizer._fit(self)
+        super()._fit()
         if self._text_similarity_weight > 0:
             self._fit_embedding_index()
         else:
             self._fit_reference_rows_without_embeddings()
         self._build_structured_similarity_functions()
+        self._normalized_reference_rows = [self._normalize_structured_row(row) for row in self._reference_rows]
 
     def _fit_reference_rows_without_embeddings(self) -> None:
         if self.dataset is None:
@@ -101,44 +98,48 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
             f"- Return only valid JSON: {{\"row\":{{\"{text_column}\":\"...\"}}}}.\n\n"
         )
 
+    def _retrieval_query(self, row):
+        return "; ".join(self._required_facts(row))
+
     def _neighbor_examples(self, base_row: Dict[str, Any]) -> list[str]:
         if self._few_shot_examples <= 0 or not self._reference_rows or not self._reference_vectors:
             return []
 
         text_column = self._text_columns[0]
-        query_text = "; ".join(self._required_facts(base_row))
+        query_text = self._retrieval_query(base_row)
 
         query_vector = self._encode_query(query_text) if self._text_similarity_weight > 0 else None
-        scored_examples: list[tuple[float, str]] = []
-        for row, reference_vector in zip(self._reference_rows, self._reference_vectors):
-            reference_text = self.coerce_text(row.get(text_column))
-            if reference_text == MISSING_VALUE_STRING:
-                continue
-            if self._exclude_self_match and reference_text == self.coerce_text(base_row.get(text_column)):
-                continue
+        query_values = self._normalize_structured_row(base_row)
+        source_text = self.coerce_text(base_row.get(text_column))
+        total_weight = self._text_similarity_weight + self._structured_similarity_weight
+        def scored_examples():
+            for row, reference_vector, reference_values in zip(self._reference_rows, self._reference_vectors, self._normalized_reference_rows, strict=True):
+                reference_text = self.coerce_text(row.get(text_column))
+                if reference_text == MISSING_VALUE_STRING:
+                    continue
+                if self._exclude_self_match and reference_text == source_text:
+                    continue
 
-            text_similarity = (
-                self._score_vectors(query_vector, reference_vector)
-                if query_vector is not None
-                else 0.0
-            )
-            structured_similarity = self._score_structured_rows(base_row, row)
-            total_weight = self._text_similarity_weight + self._structured_similarity_weight
-            combined_similarity = (
-                self._text_similarity_weight * text_similarity
-                + self._structured_similarity_weight * structured_similarity
-            ) / total_weight
-            scored_examples.append((combined_similarity, reference_text))
+                text_similarity = (
+                    self._score_vectors(query_vector, reference_vector)
+                    if query_vector is not None
+                    else 0.0
+                )
+                structured_similarity = self._score_structured_rows(query_values, reference_values)
+                combined_similarity = (
+                    self._text_similarity_weight * text_similarity
+                    + self._structured_similarity_weight * structured_similarity
+                ) / total_weight
+                yield combined_similarity, reference_text
 
-        scored_examples.sort(key=lambda item: item[0], reverse=True)
-        return [text for _, text in scored_examples[: self._few_shot_examples]]
+        return [text for _, text in heapq.nlargest(self._few_shot_examples, scored_examples(), key=lambda item: item[0])]
 
     def _build_structured_similarity_functions(self) -> None:
         functions: Dict[str, SimilarityFunction] = {}
         for config in self._structured_column_configs:
             name = config["name"]
             column_type = str(config.get("type", "STRING")).upper()
-            if column_type in {"INTEGER", "DECIMAL", "DATE"}:
+            if column_type in {"INTEGER", "DECIMAL", "DATE", "DATE_TIME"}:
                 reference = self._profile_data
                 values = [self._normalize_structured_similarity_value(config, value) for value in reference[name]]
                 values = [value for value in values if value is not None]
@@ -152,17 +153,14 @@ class LlmMixedDataEmbeddingNearestNeighborSynthesisSynthesizer(
             functions[name] = self._missing_aware_similarity(base_function)
         self._structured_similarity_functions = functions
 
+    def _normalize_structured_row(self, row):
+        return {config["name"]: self._normalize_structured_similarity_value(config, row.get(config["name"]))
+                for config in self._structured_column_configs}
+
     def _score_structured_rows(self, query_row: Dict[str, Any], reference_row: Dict[str, Any]) -> float:
-        scores = []
-        for config in self._structured_column_configs:
-            name = config["name"]
-            function = self._structured_similarity_functions.get(name)
-            if function is None:
-                continue
-            query_value = self._normalize_structured_similarity_value(config, query_row.get(name))
-            reference_value = self._normalize_structured_similarity_value(config, reference_row.get(name))
-            scores.append(float(function(query_value, reference_value)))
-        return sum(scores) / len(scores) if scores else 0.0
+        functions = self._structured_similarity_functions
+        return (sum(function(query_row[name], reference_row[name]) for name, function in functions.items())
+                / len(functions)) if functions else 0.0
 
     def _normalize_structured_similarity_value(self, config: Dict[str, Any], value: Any) -> Any:
         column_type = str(config.get("type", "STRING")).upper()

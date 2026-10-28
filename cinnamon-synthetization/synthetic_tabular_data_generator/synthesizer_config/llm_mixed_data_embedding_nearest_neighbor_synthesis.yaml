@@ -39,22 +39,22 @@ configurations:
       - name: embedding_provider
         type: string
         label: Embedding Provider
-        description: Encode the synthetic structured facts and reference texts with sparse BM25 or an Ollama embedding profile.
-        default_value: bm25
+        description: Encode the synthetic structured facts and reference texts with sparse term-frequency or an Ollama embedding profile.
+        default_value: term_frequency
         values:
-          - bm25
+          - term_frequency
           - ollama
       - name: embedding_model
         type: string
         label: Embedding Profile
-        description: Select the configured Ollama embedding profile. Ignored for BM25.
+        description: Select the configured Ollama embedding profile. Ignored for term-frequency.
         default_value: ""
         values: []
         mandatory: false
       - name: similarity_function
         type: string
         label: Text Similarity Function
-        description: Use sparse_cosine or sparse_dot with BM25; use cosine, dot, angular, euclidean, or manhattan with Ollama.
+        description: Use sparse_cosine or sparse_dot with term-frequency; use cosine, dot, angular, euclidean, or manhattan with Ollama.
         default_value: sparse_cosine
         values:
           - sparse_cosine

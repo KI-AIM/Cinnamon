@@ -30,7 +30,7 @@ def _algorithm_config() -> dict:
                     "llm_profile": "Test Profile",
                 },
                 "model_parameter": {
-                    "embedding_provider": "bm25",
+                    "embedding_provider": "term_frequency",
                     "few_shot_examples": 1,
                     "similarity_function": "sparse_cosine",
                     "exclude_self_match": True,
@@ -76,7 +76,7 @@ class _DummyResponse:
         return self._payload
 
 
-def test_llm_text_only_embedding_nearest_neighbor_synthesis_uses_bm25_reference_examples(monkeypatch):
+def test_llm_text_only_embedding_nearest_neighbor_synthesis_uses_term_frequency_reference_examples(monkeypatch):
     _set_shared_llm_env(monkeypatch)
 
     dataset = pd.DataFrame(

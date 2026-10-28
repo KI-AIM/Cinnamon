@@ -112,7 +112,7 @@ class LlmMixedDataParaphraseSynthesisSynthesizer(LlmTextOnlyParaphraseSynthesisS
         self._reset_generation_counters()
         text_column = self._text_columns[0]
         generated_texts = []
-        for row_index, base_row in enumerate(rows):
+        for row_index, base_row in enumerate(self._generation_rows(rows)):
             rewritten = self._rewrite_row(base_row, row_index, total)
             text = rewritten[text_column]
             if text in {MISSING_VALUE_STRING, FAILED_TEXT_GENERATION}:

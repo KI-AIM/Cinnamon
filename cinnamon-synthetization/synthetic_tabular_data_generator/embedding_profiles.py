@@ -125,7 +125,7 @@ def load_embedding_profile_config(algorithm_config: Dict[str, Any]) -> Optional[
         .get("algorithm", {})
     )
     model_params = algorithm_section.get("model_parameter", {})
-    provider = str(model_params.get("embedding_provider", "bm25")).strip().lower()
+    provider = str(model_params.get("embedding_provider", "term_frequency")).strip().lower()
     if provider != "ollama":
         return None
     return load_embedding_profile_by_name(str(model_params.get("embedding_model", "")).strip())

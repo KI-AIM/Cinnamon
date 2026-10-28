@@ -435,10 +435,6 @@ def get_data_modality(synthesizer_name):
     return data_modality
 
 
-def is_llm_synthesizer(synthesizer_name: str) -> bool:
-    return get_data_modality(synthesizer_name) != PROCESSING_MODALITY_STRUCTURED_ONLY
-
-
 def split_attribute_configurations(attribute_config):
     all_configurations = attribute_config.get("configurations", [])
     structured = []

@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import cloudpickle
 import json
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
 from data_processing.utils import FAILED_TEXT_GENERATION, MISSING_VALUE_STRING
 from synthetic_tabular_data_generator.llm import ConfiguredLlmSynthesizerBase
-from synthetic_tabular_data_generator.llm.client import create_llm_client, load_llm_client_config
 from synthetic_tabular_data_generator.llm.response_validation import require_first_dict_row
-from synthetic_tabular_data_generator.llm.synthesizer_support import LlmSynthesizerSupport
 
 
 class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
@@ -105,6 +103,9 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
             if column_name not in generated.columns:
                 generated[column_name] = pd.NA
         return generated[ordered_columns]
+
+    def _generation_rows(self, rows):
+        return rows
 
     def _rewrite_row(self, base_row: Dict[str, Any], row_index: int, total_rows: int) -> Dict[str, Any]:
         if self._fitting_kwargs is None or self._llm_client is None:
@@ -317,93 +318,6 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
             if len(values) >= max_examples:
                 break
         return values
-
-    @staticmethod
-    def _normalize_named_attributes(raw_value: Any, *, field_name: str) -> list[dict[str, str]]:
-        if raw_value in (None, ""):
-            return []
-        if not isinstance(raw_value, list):
-            raise ValueError(f"{field_name} must be a list.")
-
-        normalized: list[dict[str, str]] = []
-        for item in raw_value:
-            if not isinstance(item, dict):
-                raise ValueError(f"Each {field_name} entry must be an object.")
-            name = str(item.get("name", "")).strip()
-            description = str(item.get("description", "")).strip()
-            if not name:
-                raise ValueError(f"Each {field_name} entry must define a non-empty name.")
-            normalized.append({
-                "name": name,
-                "description": description,
-            })
-        return normalized
-
-    @staticmethod
-    def _extract_named_attributes(parsed_json: Any, *, field_name: str) -> list[dict[str, Any]]:
-        if isinstance(parsed_json, dict):
-            raw_attributes = parsed_json.get(field_name)
-            if isinstance(raw_attributes, list):
-                return [item for item in raw_attributes if isinstance(item, dict)]
-
-            row = require_first_dict_row(parsed_json)
-            raw_attributes = row.get(field_name)
-            if isinstance(raw_attributes, list):
-                return [item for item in raw_attributes if isinstance(item, dict)]
-
-        raise ValueError(f"No {field_name} list found in LLM response.")
-
-    @staticmethod
-    def _deduplicate_named_attributes(items: list[dict[str, str]]) -> list[dict[str, str]]:
-        deduplicated: list[dict[str, str]] = []
-        seen: set[str] = set()
-        for item in items:
-            key = item["name"].strip().lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            deduplicated.append(item)
-        return deduplicated
-
-    @classmethod
-    def _suggest_named_attributes_from_examples(
-        cls,
-        *,
-        attribute_configuration: Dict[str, Any],
-        algorithm_configuration: Dict[str, Any],
-        dataset: pd.DataFrame,
-        max_examples: int,
-        synthesizer_name: str,
-        field_name: str,
-        prompt_builder: Callable[[str, list[str], Dict[str, Any]], str],
-    ) -> list[dict[str, str]]:
-        ordered_configs = cls._validate_single_text_column_configuration(
-            attribute_configuration,
-            synthesizer_name=synthesizer_name,
-        )
-        text_column = ordered_configs[0]["name"]
-        if text_column not in dataset.columns:
-            raise ValueError(f"Dataset does not contain the TEXT column '{text_column}'.")
-
-        examples = cls._sample_non_missing_examples(dataset[text_column], max_examples=max_examples)
-        if not examples:
-            raise ValueError(f"Dataset column '{text_column}' does not contain any non-missing text examples.")
-
-        llm_config = load_llm_client_config(algorithm_configuration)
-        llm_client = create_llm_client(llm_config)
-        llm_client.initialize()
-
-        try:
-            prompt = prompt_builder(text_column, examples, algorithm_configuration)
-            content = llm_client.generate_text(prompt)
-            parsed = LlmSynthesizerSupport.parse_json_with_fallback(content)
-            raw_attributes = cls._extract_named_attributes(parsed, field_name=field_name)
-            normalized = cls._normalize_named_attributes(raw_attributes, field_name=field_name)
-            return cls._deduplicate_named_attributes(normalized)
-        finally:
-            close = getattr(llm_client, "close", None)
-            if callable(close):
-                close()
 
     def _get_model(self) -> bytes:
         return cloudpickle.dumps(self._model_for_export())

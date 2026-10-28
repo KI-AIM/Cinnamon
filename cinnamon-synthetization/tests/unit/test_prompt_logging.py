@@ -8,16 +8,14 @@ from synthetic_tabular_data_generator.llm.client import (
     LlmClient,
     LlmClientConfig,
 )
-from synthetic_tabular_data_generator.llm.prompt_logger import PromptLogger, log_llm_interaction
+from synthetic_tabular_data_generator.llm.prompt_logger import PromptLogger
 
 
 @pytest.fixture(autouse=True)
 def logging_environment(monkeypatch, tmp_path):
     monkeypatch.delenv("CINNAMON_LLM_ENABLE_PROMPT_LOGGING", raising=False)
     monkeypatch.setenv("CINNAMON_LLM_LOG_DIR", str(tmp_path / "logs"))
-    PromptLogger.reset()
     yield
-    PromptLogger.reset()
 
 
 def client_for(provider, body):
@@ -39,7 +37,6 @@ def test_disabled_logging_creates_no_directories(monkeypatch, tmp_path, setting)
     logger = PromptLogger()
     logger.initialize("session")
     assert logger.log_prompt_and_response("PRIVATE_PROMPT", "PRIVATE_RESPONSE") is None
-    assert log_llm_interaction("PRIVATE_PROMPT", "PRIVATE_RESPONSE", session_key="other") is None
     client = client_for("ollama", {"response": "response"})
     client.set_session_key("client-session")
     assert client.generate_text("PRIVATE_PROMPT") == "response"

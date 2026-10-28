@@ -15,33 +15,10 @@ from typing import Optional
 class PromptLogger:
     """Logger for LLM prompts and responses."""
     
-    _instance: Optional["PromptLogger"] = None
-    _session_id: Optional[str] = None
-    _log_dir: Optional[Path] = None
-    
     def __init__(self):
         self._session_id = None
         self._log_dir = None
-        self._current_file_handle = None
-        self._current_file_path = None
-    
-    @classmethod
-    def get_instance(cls) -> "PromptLogger":
-        """Get the singleton instance of PromptLogger."""
-        if cls._instance is None:
-            cls._instance = PromptLogger()
-        return cls._instance
-    
-    @classmethod
-    def reset(cls):
-        """Reset the singleton instance (useful for testing)."""
-        if cls._instance is not None:
-            if cls._instance._current_file_handle is not None:
-                cls._instance._current_file_handle.close()
-        cls._instance = None
-        cls._session_id = None
-        cls._log_dir = None
-    
+
     def initialize(self, session_key: Optional[str] = None):
         """
         Initialize the prompt logger with a session key.
@@ -159,33 +136,3 @@ class PromptLogger:
     def get_log_directory(self) -> Optional[Path]:
         """Get the current log directory."""
         return self._log_dir
-
-
-# Global function for easy access
-def log_llm_interaction(
-    prompt: str,
-    response: str,
-    system_prompt: Optional[str] = None,
-    metadata: Optional[dict] = None,
-    session_key: Optional[str] = None,
-) -> Optional[str]:
-    """
-    Convenience function to log an LLM interaction.
-    
-    Args:
-        prompt: The user prompt.
-        response: The LLM response.
-        system_prompt: Optional system prompt.
-        metadata: Optional metadata.
-        session_key: Optional session key.
-    
-    Returns:
-        The path to the log file, or None when logging is disabled.
-    """
-    logger = PromptLogger.get_instance()
-    if session_key and session_key != logger._session_id:
-        logger.initialize(session_key)
-    elif logger._log_dir is None:
-        logger.initialize()
-    
-    return logger.log_prompt_and_response(prompt, response, system_prompt, metadata)

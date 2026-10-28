@@ -2,7 +2,7 @@ name: llm_text_only_embedding_nearest_neighbor_synthesis
 version: "0.1"
 type: cross-sectional
 display_name: LLM Text-only Retrieval-Guided Synthesis
-description: Generate a new single TEXT column by retrieving relevant original texts and using them as in-context examples for LLM generation. Supports sparse BM25 retrieval and Ollama-based embedding retrieval for exactly one TEXT column.
+description: Generate a new single TEXT column by retrieving relevant original texts and using them as in-context examples for LLM generation. Supports sparse term-frequency retrieval and Ollama-based embedding retrieval for exactly one TEXT column.
 URL: /start_synthetization_process/llm_text_only_embedding_nearest_neighbor_synthesis
 processing_capabilities:
   data_modality: text_only
@@ -32,22 +32,22 @@ configurations:
       - name: embedding_provider
         type: string
         label: Embedding Provider
-        description: Select how source and reference texts are encoded for retrieval. BM25 uses sparse lexical retrieval without a separate embedding model; Ollama uses the configured embedding profile.
-        default_value: bm25
+        description: Select how source and reference texts are encoded for retrieval. term-frequency uses sparse lexical retrieval without a separate embedding model; Ollama uses the configured embedding profile.
+        default_value: term_frequency
         values:
-          - bm25
+          - term_frequency
           - ollama
       - name: embedding_model
         type: string
         label: Embedding Profile
-        description: Select the configured embedding profile for Ollama-based retrieval. The selectable profiles are loaded dynamically from the environment. For bm25 this field is ignored.
+        description: Select the configured embedding profile for Ollama-based retrieval. The selectable profiles are loaded dynamically from the environment. For term_frequency this field is ignored.
         default_value: ""
         values: []
         mandatory: false
       - name: similarity_function
         type: string
         label: Similarity Function
-        description: Similarity metric applied to embedding vectors. Use sparse_cosine or sparse_dot with bm25. Use cosine, dot, angular, euclidean, or manhattan with ollama embeddings.
+        description: Similarity metric applied to embedding vectors. Use sparse_cosine or sparse_dot with term_frequency. Use cosine, dot, angular, euclidean, or manhattan with ollama embeddings.
         default_value: sparse_cosine
         values:
           - sparse_cosine

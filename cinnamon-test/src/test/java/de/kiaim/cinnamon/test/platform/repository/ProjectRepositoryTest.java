@@ -1,7 +1,6 @@
 package de.kiaim.cinnamon.test.platform.repository;
 
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
-import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,9 +26,7 @@ class ProjectRepositoryTest extends DatabaseTest {
 
 		final ProjectEntity entity = new ProjectEntity();
 
-		final DataSetEntity dataSetEntity = new DataSetEntity();
-		dataSetEntity.setDataConfiguration(dataConfiguration);
-		entity.getOriginalData().setDataSet(dataSetEntity);
+		entity.getOriginalData().getImportConfiguration().setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);
 
@@ -43,14 +39,12 @@ class ProjectRepositoryTest extends DatabaseTest {
 
 		final ProjectEntity entity = new ProjectEntity();
 
-		final DataSetEntity dataSetEntity = new DataSetEntity();
-		dataSetEntity.setDataConfiguration(dataConfiguration);
-		entity.getOriginalData().setDataSet(dataSetEntity);
+		entity.getOriginalData().getImportConfiguration().setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);
 		final Optional<ProjectEntity> loadedEntity = repository.findById(entity.getId());
 		assertTrue(loadedEntity.isPresent());
-		assertEquals(dataConfiguration, Objects.requireNonNull(loadedEntity.get().getOriginalData().getDataSet()).getDataConfiguration());
+		assertEquals(dataConfiguration, loadedEntity.get().getOriginalData().getImportConfiguration().getDataConfiguration());
 	}
 
 	@Test
@@ -61,9 +55,7 @@ class ProjectRepositoryTest extends DatabaseTest {
 		entity.setExternalId(UUID.randomUUID());
 		entity.getProjectConfiguration().setProjectName("Test Project");
 
-		final DataSetEntity dataSetEntity = new DataSetEntity();
-		dataSetEntity.setDataConfiguration(dataConfiguration);
-		entity.getOriginalData().setDataSet(dataSetEntity);
+		entity.getOriginalData().getImportConfiguration().setDataConfiguration(dataConfiguration);
 
 		repository.save(entity);
 		assertTrue(repository.existsById(entity.getId()));

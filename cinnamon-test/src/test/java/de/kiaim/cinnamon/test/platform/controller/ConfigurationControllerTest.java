@@ -220,9 +220,9 @@ class ConfigurationControllerTest extends ControllerTest {
 		                                 }
 		                                 """));
 
-		var dataset = getTestProject().getOriginalData().getDataSet();
-		assertNotNull(dataset);
-		assertEquals(DataConfigurationTestHelper.generateDataConfiguration(), dataset.getDataConfiguration());
+		var importConfiguration = getTestProject().getOriginalData().getImportConfiguration();
+		assertEquals(DataConfigurationTestHelper.generateDataConfiguration(),
+		             importConfiguration.getDataConfiguration());
 	}
 
 	@Test

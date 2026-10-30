@@ -84,10 +84,10 @@ public class ExportService {
 		}
 
 		// Add original dataset-related configurations/ data
+		if (project.getOriginalData().getImportConfiguration().getDataConfiguration() != null) {
+			resources.add("configuration." + ConfigurationFile.IMPORT_CONFIGURATION_KEY);
+		}
 		if (project.getOriginalData().getDataSet() != null) {
-			if (project.getOriginalData().getDataSet().getDataConfiguration() != null) {
-				resources.add("configuration." + ConfigurationFile.IMPORT_CONFIGURATION_KEY);
-			}
 			if (project.getOriginalData().getDataSet().isStoredData()) {
 				resources.add("original.dataset");
 			}

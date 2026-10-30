@@ -51,8 +51,19 @@ public class ImportConfigurationEntity {
 	private HandleDataOnlyStrategy handleDataOnly = HandleDataOnlyStrategy.ERROR;
 
 	/**
+	 * The data configuration containing the attributes matched to the data.
+	 * Shared by all datasets of the project.
+	 * Null if no attributes have been configured yet.
+	 */
+	@Convert(converter = DataConfigurationAttributeConverter.class)
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(columnDefinition = "json")
+	@Nullable
+	private DataConfiguration dataConfiguration = null;
+
+	/**
 	 * Attribute configurations that could not be matched to an attribute in the data (config-only attributes).
-	 * Kept separately from the data configuration of the dataset, so the data configuration always matches the data.
+	 * Kept separately from the data configuration, so the data configuration always matches the data.
 	 * Used for displaying the attributes and for re-matching them if the file or the matching strategy changes.
 	 * Null if no attribute matching has been performed yet.
 	 */

@@ -232,10 +232,7 @@ public class DatabaseService {
 		dataConfiguration.setConfigurations(importConfigurationDTO.getAttributes() == null
 		                                    ? new ArrayList<>()
 		                                    : new ArrayList<>(importConfigurationDTO.getAttributes()));
-		if (project.getOriginalData().getDataSet() == null) {
-			new DataSetEntity(project.getOriginalData());
-		}
-		project.getOriginalData().getDataSet().setDataConfiguration(dataConfiguration);
+		entity.setDataConfiguration(dataConfiguration);
 
 		final var results = matchAttributes(project);
 		throwOnAttributeMismatch(project, results);
@@ -263,14 +260,11 @@ public class DatabaseService {
 		throwIfStored(project.getOriginalData().getDataSet());
 
 		project.getOriginalData().getImportConfiguration().setUnmatchedAttributes(null);
-		if (project.getOriginalData().getDataSet() == null) {
-			new DataSetEntity(project.getOriginalData());
-		}
 		final DataConfiguration copy = new DataConfiguration();
 		copy.setConfigurations(dataConfiguration.getConfigurations() == null
 		                       ? new ArrayList<>()
 		                       : new ArrayList<>(dataConfiguration.getConfigurations()));
-		project.getOriginalData().getDataSet().setDataConfiguration(copy);
+		project.getOriginalData().getImportConfiguration().setDataConfiguration(copy);
 
 		matchAttributes(project);
 
@@ -358,14 +352,12 @@ public class DatabaseService {
 		matched.sort(Comparator.comparing(ColumnConfiguration::getIndex));
 		final DataConfiguration dataConfiguration = new DataConfiguration();
 		dataConfiguration.setConfigurations(matched);
-		if (project.getOriginalData().getDataSet() == null) {
-			new DataSetEntity(project.getOriginalData());
-		}
-		project.getOriginalData().getDataSet().setDataConfiguration(dataConfiguration);
+		final ImportConfigurationEntity importConfiguration = project.getOriginalData().getImportConfiguration();
+		importConfiguration.setDataConfiguration(dataConfiguration);
 
 		final DataConfiguration unmatchedAttributes = new DataConfiguration();
 		unmatchedAttributes.setConfigurations(new ArrayList<>(request.getUnmatchedAttributes()));
-		project.getOriginalData().getImportConfiguration().setUnmatchedAttributes(unmatchedAttributes);
+		importConfiguration.setUnmatchedAttributes(unmatchedAttributes);
 
 		projectRepository.save(project);
 		log.debug("Stored attribute matching");
@@ -671,17 +663,20 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Stores the DataConfiguration and associates the configuration with the data set for the given step in the given configuration.
+	 * Stores the DataConfiguration in the import configuration of the given project.
+	 * The configuration is shared by all datasets of the project.
 	 *
 	 * @param dataConfiguration The configuration to be stored.
-	 * @param project           The project of the data set the configuration should be associated with.
-	 * @throws BadDataSetIdException If the data has already been confirmed.
+	 * @param project           The project the configuration should be associated with.
+	 * @throws BadDataSetIdException If the data has already been stored.
 	 */
 	@Transactional
 	public void storeOriginalDataConfiguration(final DataConfiguration dataConfiguration, final ProjectEntity project)
 			throws BadDataSetIdException {
 		throwIfStored(project.getOriginalData().getDataSet());
-		doStoreOriginalDataConfiguration(project, dataConfiguration);
+		project.getOriginalData().getImportConfiguration().setDataConfiguration(dataConfiguration);
+		projectRepository.save(project);
+		log.debug("Stored original data configuration");
 	}
 
 	/**
@@ -746,16 +741,15 @@ public class DatabaseService {
 		final LobWrapperEntity file = fileEntity.getFile();
 		final FileConfigurationEntity fileConfiguration = fileEntity.getFileConfiguration();
 		final List<String> attributesInData = fileEntity.getAttributeNames();
-		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
-		if (file == null || fileConfiguration == null || attributesInData == null || dataSet == null ||
-		    dataSet.getDataConfiguration() == null) {
+		final ImportConfigurationEntity importConfiguration = project.getOriginalData().getImportConfiguration();
+		if (file == null || fileConfiguration == null || attributesInData == null ||
+		    importConfiguration.getDataConfiguration() == null) {
 			return List.of();
 		}
 
-		final ImportConfigurationEntity importConfiguration = project.getOriginalData().getImportConfiguration();
-
 		// Collect all known attribute configurations, previously matched ones first
-		final List<ColumnConfiguration> candidates = new ArrayList<>(dataSet.getDataConfiguration().getConfigurations());
+		final List<ColumnConfiguration> candidates = new ArrayList<>(
+				importConfiguration.getDataConfiguration().getConfigurations());
 		if (importConfiguration.getUnmatchedAttributes() != null) {
 			candidates.addAll(importConfiguration.getUnmatchedAttributes().getConfigurations());
 		}
@@ -827,7 +821,7 @@ public class DatabaseService {
 		matched.sort(Comparator.comparing(ColumnConfiguration::getIndex));
 		final DataConfiguration dataConfiguration = new DataConfiguration();
 		dataConfiguration.setConfigurations(matched);
-		dataSet.setDataConfiguration(dataConfiguration);
+		importConfiguration.setDataConfiguration(dataConfiguration);
 
 		final DataConfiguration unmatchedAttributes = new DataConfiguration();
 		unmatchedAttributes.setConfigurations(configOnly);
@@ -845,15 +839,16 @@ public class DatabaseService {
 	@Transactional(readOnly = true)
 	public List<AttributeMatchingResult> getDataOnlyAttributes(final ProjectEntity project) {
 		final List<String> attributesInData = project.getOriginalData().getFile().getAttributeNames();
-		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
-		if (attributesInData == null || dataSet == null || dataSet.getDataConfiguration() == null) {
+		final DataConfiguration dataConfiguration = project.getOriginalData().getImportConfiguration()
+		                                                  .getDataConfiguration();
+		if (attributesInData == null || dataConfiguration == null) {
 			return List.of();
 		}
 
-		final Set<Integer> matchedIndices = dataSet.getDataConfiguration().getConfigurations().stream()
-		                                           .map(ColumnConfiguration::getIndex)
-		                                           .filter(Objects::nonNull)
-		                                           .collect(Collectors.toSet());
+		final Set<Integer> matchedIndices = dataConfiguration.getConfigurations().stream()
+		                                                     .map(ColumnConfiguration::getIndex)
+		                                                     .filter(Objects::nonNull)
+		                                                     .collect(Collectors.toSet());
 
 		final List<AttributeMatchingResult> dataOnly = new ArrayList<>();
 		for (int i = 0; i < attributesInData.size(); i++) {
@@ -930,14 +925,9 @@ public class DatabaseService {
 			throw new BadStateException(BadStateException.NO_DATASET_FILE_CONFIGURATION,
 			                            "Storing the dataset requires the file configuration!");
 		}
-		// Check if the dataset is available
-		final DataSetEntity originalDataSet = project.getOriginalData().getDataSet();
-		if (originalDataSet == null) {
-			throw new BadStateException(BadStateException.NO_ORIGINAL_DATA_CONFIGURATION,
-			                            "Storing the dataset requires the attributes to be configured!");
-		}
 		// Check if the data configuration is available
-		final DataConfiguration configuration = originalDataSet.getDataConfiguration();
+		final DataConfiguration configuration = project.getOriginalData().getImportConfiguration()
+		                                               .getDataConfiguration();
 		if (configuration == null) {
 			throw new BadStateException(BadStateException.NO_ORIGINAL_DATA_CONFIGURATION,
 			                            "Storing the dataset requires the attributes to be configured!");
@@ -1006,7 +996,7 @@ public class DatabaseService {
 		deleteDataSetIfNotConfirmedOrThrow(project.getOriginalData().getDataSet());
 
 		// Store configuration
-		DataSetEntity dataSetEntity = doStoreOriginalDataConfiguration(project, dataSet.getDataConfiguration());
+		DataSetEntity dataSetEntity = doStoreOriginalDataSet(project, dataSet.getDataConfiguration());
 
 		// Store transformation errors
 		convertTransformationErrors(transformationResult, dataSetEntity);
@@ -1047,9 +1037,8 @@ public class DatabaseService {
 		// Delete the existing data set
 		deleteDataSetIfNotConfirmedOrThrow(dataProcessingEntity.getDataSet());
 
-		// Store configuration
-		final DataSetEntity dataSetEntity = doStoreDataConfiguration(dataSet.getDataConfiguration(),
-		                                                             dataProcessingEntity, processed);
+		// Create the dataset
+		final DataSetEntity dataSetEntity = doStoreDataSet(dataProcessingEntity, processed);
 
 		// Store transformation errors
 		convertTransformationErrors(transformationResult, dataSetEntity);
@@ -1384,7 +1373,7 @@ public class DatabaseService {
 			DataSetEntity dataSetEntity) throws BadStateException, InternalDataSetPersistenceException {
 		final OriginalDataEntity originalData = dataSetEntity.getOriginalData();
 		final DataConfigurationInfo dataConfigurationInfo = getDataConfigurationInfo(
-				dataSetEntity.getDataConfiguration());
+				dataSetEntity.getProject().getOriginalData().getImportConfiguration().getDataConfiguration());
 
 		if (!dataSetEntity.isStoredData()) {
 			final Integer numberRetainedRows = originalData == null ? 0 : null;
@@ -1434,8 +1423,8 @@ public class DatabaseService {
 	@Transactional
 	public DataConfiguration exportDataConfiguration(final ProjectEntity project, final DataSetSource dataSetSource)
 			throws BadDataSetIdException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
-		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
-		return getDetachedDataConfiguration(dataSetEntity);
+		dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
+		return exportOriginalDataConfiguration(project);
 	}
 
 	/**
@@ -1449,13 +1438,14 @@ public class DatabaseService {
 	@Transactional
 	public DataConfiguration exportOriginalDataConfiguration(final ProjectEntity project)
 			throws BadStateException, InternalIOException {
-		if (project.getOriginalData().getDataSet() == null) {
+		final DataConfiguration dataConfiguration = project.getOriginalData().getImportConfiguration()
+		                                                  .getDataConfiguration();
+		if (dataConfiguration == null) {
 			throw new BadStateException(BadStateException.NO_ORIGINAL_DATA_CONFIGURATION,
 			                            "No original data configuration available!");
 		}
 
-		final DataSetEntity dataSetEntity = project.getOriginalData().getDataSet();
-		return getDetachedDataConfiguration(dataSetEntity);
+		return getDetachedDataConfiguration(dataConfiguration);
 	}
 
 	/**
@@ -1647,7 +1637,8 @@ public class DatabaseService {
 		final var startRow = (pageNumber - 1) * pageSize;
 
 		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
-				dataSetEntity.getDataConfiguration(), columnNames);
+				dataSetEntity.getProject().getOriginalData().getImportConfiguration().getDataConfiguration(),
+				columnNames);
 		final DataSet dataSet = exportDataSet(dataSetEntity, rowSelector, columnNames,
 		                                      loadDataRequest.getHoldOutSelector(), true, startRow, pageSize,
 		                                      calcRowNumbers);
@@ -1738,6 +1729,7 @@ public class DatabaseService {
 		project.getOriginalData().getFile().setFileConfiguration(null);
 		project.getOriginalData().getFile().setCompatibility(null);
 		project.getOriginalData().getFile().setFile(null);
+		project.getOriginalData().getImportConfiguration().setDataConfiguration(null);
 		project.getOriginalData().getImportConfiguration().setUnmatchedAttributes(null);
 
 		project.getOriginalData().getDatasetConfiguration().setCreateHoldOutSplit(false);
@@ -2023,8 +2015,7 @@ public class DatabaseService {
 		log.debug("Stored dataset configuration");
 	}
 
-	private DataSetEntity doStoreOriginalDataConfiguration(ProjectEntity project,
-	                                                       final DataConfiguration dataConfiguration) {
+	private DataSetEntity doStoreOriginalDataSet(ProjectEntity project, final DataConfiguration dataConfiguration) {
 		final DataSetEntity dataSetEntity;
 
 		if (project.getOriginalData().getDataSet() == null) {
@@ -2033,18 +2024,16 @@ public class DatabaseService {
 			dataSetEntity = project.getOriginalData().getDataSet();
 		}
 
-		dataSetEntity.setDataConfiguration(dataConfiguration);
+		project.getOriginalData().getImportConfiguration().setDataConfiguration(dataConfiguration);
 
 		project = projectRepository.save(project);
 
-		log.debug("Stored original data configuration");
+		log.debug("Stored original dataset");
 
 		return project.getOriginalData().getDataSet();
 	}
 
-	private DataSetEntity doStoreDataConfiguration(final DataConfiguration dataConfiguration,
-	                                               final DataProcessingEntity dataProcessingEntity,
-	                                               final List<Job> processed)  {
+	private DataSetEntity doStoreDataSet(final DataProcessingEntity dataProcessingEntity, final List<Job> processed) {
 		final DataSetEntity dataSetEntity;
 
 		if (dataProcessingEntity.getDataSet() == null) {
@@ -2053,10 +2042,9 @@ public class DatabaseService {
 			dataSetEntity = dataProcessingEntity.getDataSet();
 		}
 
-		dataSetEntity.setDataConfiguration(dataConfiguration);
 		dataSetEntity.setProcessed(processed);
 
-		log.debug("Stored data configuration for job {}", dataProcessingEntity.getJob().getName());
+		log.debug("Stored dataset for job {}", dataProcessingEntity.getJob().getName());
 
 		return dataSetRepository.save(dataSetEntity);
 	}
@@ -2162,7 +2150,8 @@ public class DatabaseService {
 	                              final boolean pagination, final int startRow, final int pageSize,
 	                              final boolean exportRowIndexColumn)
 			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
-		DataConfiguration dataConfiguration = getDetachedDataConfiguration(dataSetEntity);
+		DataConfiguration dataConfiguration = getDetachedDataConfiguration(
+				dataSetEntity.getProject().getOriginalData().getImportConfiguration().getDataConfiguration());
 
 		List<Integer> columnIndices;
 
@@ -2231,12 +2220,17 @@ public class DatabaseService {
 		}
 	}
 
+	/**
+	 * Creates a deep copy of the given data configuration, so modifications do not affect the persisted entity.
+	 *
+	 * @param dataConfiguration The data configuration to copy.
+	 * @return The copy.
+	 * @throws InternalIOException If the (de-)serialization failed.
+	 */
 	private DataConfiguration getDetachedDataConfiguration(
-			final DataSetEntity dataSetEntity) throws InternalIOException {
-		final String json = dataSetRepository.getDataConfiguration(dataSetEntity.getId());
-
+			final DataConfiguration dataConfiguration) throws InternalIOException {
 		try {
-			return jsonMapper.readValue(json, DataConfiguration.class);
+			return jsonMapper.readValue(jsonMapper.writeValueAsString(dataConfiguration), DataConfiguration.class);
 		} catch (JacksonException e) {
 			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_DESERIALIZATION,
 			                              "Failed to export data configuration because of a failed deserialization!",
@@ -2514,7 +2508,8 @@ public class DatabaseService {
 
 		final String tableA = "f";
 		final String tableB = "s";
-		final String joinPart = getJoinStatement(original.getDataConfiguration(), tableA, tableB);
+		final String joinPart = getJoinStatement(
+				dataSet.getProject().getOriginalData().getImportConfiguration().getDataConfiguration(), tableA, tableB);
 
 		final String query =
 				"""

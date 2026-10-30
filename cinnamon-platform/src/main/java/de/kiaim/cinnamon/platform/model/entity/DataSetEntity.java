@@ -1,8 +1,6 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
-import de.kiaim.cinnamon.platform.converter.DataConfigurationAttributeConverter;
 import de.kiaim.cinnamon.platform.converter.StepListAttributeConverter;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import jakarta.annotation.PreDestroy;
@@ -10,8 +8,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -29,15 +25,6 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter @Entity
 public class DataSetEntity extends ProcessOwner {
-
-	/**
-	 * The data configuration.
-	 */
-	@Convert(converter = DataConfigurationAttributeConverter.class)
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(columnDefinition = "json")
-	@Setter
-	private @Nullable DataConfiguration dataConfiguration;
 
 	/**
 	 * If the data has been stored into the extra table.

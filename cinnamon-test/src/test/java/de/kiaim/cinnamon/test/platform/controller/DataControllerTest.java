@@ -479,7 +479,7 @@ class DataControllerTest extends ControllerTest {
 		estimateDataConfiguration();
 
 		var project = getTestProject();
-		var configuration = project.getOriginalData().getDataSet().getDataConfiguration();
+		var configuration = project.getOriginalData().getImportConfiguration().getDataConfiguration();
 		configuration.getConfigurations().get(3).setName("invalid");
 		var string = jsonMapper.writeValueAsString(configuration);
 
@@ -1224,13 +1224,9 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/configuration")
 				                .param("configuration", configuration))
 		       .andExpect(status().isOk());
-		final DataSetEntity dataSetEntity = getTestProject().getOriginalData().getDataSet();
-		final var dataSetId = dataSetEntity.getId();
-
-		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
+		assertNull(getTestProject().getOriginalData().getDataSet(), "Dataset should not exist!");
 		assertEquals(".*",
-		             ((StringPatternConfiguration) testProject.getOriginalData().getDataSet()
+		             ((StringPatternConfiguration) testProject.getOriginalData().getImportConfiguration()
 		                                                      .getDataConfiguration().getConfigurations().get(5)
 		                                                      .getConfigurations().get(0))
 				             .getPattern(),
@@ -1246,10 +1242,9 @@ class DataControllerTest extends ControllerTest {
 		       .andReturn().getResponse().getContentAsString();
 
 		testUser = getTestUser();
-		assertFalse(existsTable(dataSetId), "Table should not exist!");
-		assertTrue(existsDataSet(dataSetId), "Configuration has not been persisted!");
+		assertNull(getTestProject().getOriginalData().getDataSet(), "Dataset should not exist!");
 		assertEquals("[0-9]*",
-		             ((StringPatternConfiguration) testProject.getOriginalData().getDataSet()
+		             ((StringPatternConfiguration) testProject.getOriginalData().getImportConfiguration()
 		                                                      .getDataConfiguration().getConfigurations().get(5)
 		                                                      .getConfigurations().get(0)).getPattern(),
 		             "Type of first column does not match!");

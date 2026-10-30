@@ -41,6 +41,34 @@ public class ExportServiceTest extends DatabaseTest {
 	@Autowired UserService userService;
 
 	@Test
+	public void getAvailableExportResourcesWithoutDataSource() {
+		final var project = assertDoesNotThrow(() -> userService.createProject(getTestUser(), null, null));
+		assertDoesNotThrow(() -> databaseService.storeFileConfiguration(
+				project, FileConfigurationTestHelper.generateFileConfiguration()));
+		assertDoesNotThrow(() -> databaseService.storeFile(project, ResourceHelper.loadCsvFile()));
+
+		final List<String> resources = exportService.getAvailableExportResources(project);
+		assertFalse(resources.contains("configuration.dataSource"), resources.toString());
+		assertTrue(resources.contains("configuration.file"), resources.toString());
+		assertTrue(resources.contains("original.file"), resources.toString());
+
+		// Exporting all available resources must not fail
+		final var parameter = new ProjectExportParameter(false, FileType.CSV, HoldOutSelector.ALL, List.of());
+		assertDoesNotThrow(() -> exportService.createZipFile(project, new ByteArrayOutputStream(), parameter));
+	}
+
+	@Test
+	public void getAvailableExportResourcesWithDataSource() {
+		final var project = assertDoesNotThrow(() -> userService.createProject(getTestUser(), null, null));
+		assertDoesNotThrow(() -> databaseService.storeDataSourceConfiguration(
+				project, FileConfigurationTestHelper.generateDataSourceConfiguration(DataSourceType.LOCAL)));
+
+		final List<String> resources = exportService.getAvailableExportResources(project);
+		assertTrue(resources.contains("configuration.dataSource"), resources.toString());
+		assertFalse(resources.contains("configuration.file"), resources.toString());
+	}
+
+	@Test
 	public void createZipFile() throws IOException, InternalDataSetPersistenceException, InternalMissingHandlingException, BadDataConfigurationException, BadStateException, BadDataSetIdException, InternalIOException {
 		// Preparation
 		final var project = assertDoesNotThrow(() -> userService.createProject(getTestUser(), null, null));

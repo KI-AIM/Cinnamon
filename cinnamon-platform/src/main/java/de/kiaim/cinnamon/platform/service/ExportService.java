@@ -72,8 +72,11 @@ public class ExportService {
 
 		// Add file-related configurations/ data
 		if (project.getOriginalData().getFile() != null) {
-			if (project.getOriginalData().getFile().getFileConfiguration() != null) {
+			if (project.getOriginalData().getFile().getDataSourceConfiguration() != null) {
 				resources.add("configuration." + ConfigurationFile.DATA_SOURCE_CONFIGURATION_KEY);
+			}
+			if (project.getOriginalData().getFile().getFileConfiguration() != null) {
+				resources.add("configuration." + ConfigurationFile.FILE_CONFIGURATION_KEY);
 			}
 			if (project.getOriginalData().getFile().getFile() != null) {
 				resources.add("original.file");

@@ -194,11 +194,9 @@ public class ConfigurationService {
 			final var configEntry = yamlConfig.get(configName);
 
 			seenConfigs.add(configName);
-			seenConfigs.addAll(getAliases(configName));
 
 			if (parameters.getConfigurationsToImport() != null &&
-			    !parameters.getConfigurationsToImport().contains(configName) &&
-			    getAliases(configName).stream().noneMatch(parameters.getConfigurationsToImport()::contains)) {
+			    !parameters.getConfigurationsToImport().contains(configName)) {
 				importSummary.addIgnored(configName);
 				continue;
 			}
@@ -243,23 +241,6 @@ public class ConfigurationService {
 		}
 
 		return importSummary;
-	}
-
-
-	/**
-	 * Returns other names of the given configuration that are interchangeable when selecting configurations for import.
-	 * The legacy data configuration is replaced by the import configuration,
-	 * so selecting either one imports the one present in the file.
-	 *
-	 * @param configName The name of the configuration.
-	 * @return The aliases, empty if there are none.
-	 */
-	private List<String> getAliases(final String configName) {
-		return switch (configName) {
-			case ConfigurationFile.IMPORT_CONFIGURATION_KEY -> List.of(ConfigurationFile.DATA_CONFIGURATION_KEY);
-			case ConfigurationFile.DATA_CONFIGURATION_KEY -> List.of(ConfigurationFile.IMPORT_CONFIGURATION_KEY);
-			default -> List.of();
-		};
 	}
 
 	/**

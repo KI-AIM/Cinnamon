@@ -8,7 +8,6 @@ import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.csv.CSVFormat;
-import org.jspecify.annotations.Nullable;
 
 /**
  * File configuration for CSV files.

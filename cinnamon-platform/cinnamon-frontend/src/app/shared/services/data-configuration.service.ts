@@ -16,6 +16,10 @@ import { ColumnConfiguration } from "@shared/model/column-configuration";
     providedIn: 'root',
 })
 export class DataConfigurationService {
+    /**
+     * Name of the legacy data configuration, replaced by {@link IMPORT_CONFIGURATION_NAME}.
+     * Still supported for importing older configuration files.
+     */
     public readonly CONFIGURATION_NAME = "configurations";
     public readonly IMPORT_CONFIGURATION_NAME = "import";
 
@@ -84,7 +88,7 @@ export class DataConfigurationService {
         configReg.availableAfterStep = Steps.UPLOAD;
         configReg.lockedAfterStep = Steps.VALIDATION;
         configReg.displayName = "Data Configuration";
-        configReg.name = this.CONFIGURATION_NAME;
+        configReg.name = this.IMPORT_CONFIGURATION_NAME;
         configReg.orderNumber = 0;
 
         this.configurationService.registerConfiguration(configReg);

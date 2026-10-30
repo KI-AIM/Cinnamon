@@ -15,7 +15,11 @@ import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportParameters;
 import de.kiaim.cinnamon.model.dto.ConfigurationImportSummary;
 import de.kiaim.cinnamon.platform.service.ConfigurationService;
+import de.kiaim.cinnamon.platform.model.dto.ProjectExportParameter;
+import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.service.DatabaseService;
+import de.kiaim.cinnamon.platform.service.ExportService;
+import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.test.platform.DatabaseTest;
 import de.kiaim.cinnamon.test.util.DataConfigurationTestHelper;
@@ -26,11 +30,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,6 +61,9 @@ class AttributeMatchingTest extends DatabaseTest {
 
 	@Autowired
 	ConfigurationService configurationService;
+
+	@Autowired
+	ExportService exportService;
 
 	@BeforeEach
 	public void setUp() throws IOException, ApiException {
@@ -371,6 +384,44 @@ class AttributeMatchingTest extends DatabaseTest {
 		                                            BadConfigurationFileException.CONFIGURATION_FILE,
 		                                            BadConfigurationFileException.DUPLICATE_DATA_CONFIGURATION),
 		             exception.getErrorCode());
+	}
+
+	@Test
+	void exportUsesImportConfiguration() throws Exception {
+		final List<ColumnConfiguration> attributes = estimatedAttributes();
+		attributes.add(new ColumnConfiguration(6, "extra", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()));
+		databaseService.storeImportConfiguration(testProject, importConfiguration(
+				attributes, AttributeMatchingStrategy.INDEX, HandleConfigOnlyStrategy.IGNORE,
+				HandleDataOnlyStrategy.ERROR));
+
+		final List<String> availableResources = exportService.getAvailableExportResources(getTestProject());
+		assertTrue(availableResources.contains("configuration.import"), availableResources.toString());
+		assertFalse(availableResources.contains("configuration.configurations"), availableResources.toString());
+
+		final var out = new ByteArrayOutputStream();
+		exportService.createZipFile(getTestProject(), out, new ProjectExportParameter(
+				false, FileType.CSV, HoldOutSelector.ALL, List.of("configuration.import")));
+
+		final Map<String, String> entries = new HashMap<>();
+		try (final var zip = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
+			ZipEntry entry;
+			while ((entry = zip.getNextEntry()) != null) {
+				entries.put(entry.getName(), new String(zip.readAllBytes(), StandardCharsets.UTF_8));
+			}
+		}
+
+		assertFalse(entries.containsKey("configurations.yaml"), "The legacy data configuration must not be exported!");
+		assertTrue(entries.containsKey("import.yaml"), "The import configuration is missing!");
+		final String exported = entries.get("import.yaml");
+		assertTrue(exported.startsWith("import:"), exported);
+		assertTrue(exported.contains("attributeMatching: \"INDEX\""), exported);
+		assertFalse(exported.contains("extra"), "Unmatched attributes must not be exported!");
+
+		// The exported configuration can be imported again
+		importConfigurationFile(exported, "import");
+		final AttributeImportOverview overview = databaseService.getAttributeImportOverview(getTestProject());
+		assertEquals(ALL_COLUMNS, names(overview.getImportConfiguration().getAttributes()));
+		assertTrue(overview.getConfigOnlyAttributes().isEmpty());
 	}
 
 	private ConfigurationImportSummary importConfigurationFile(final String configuration,

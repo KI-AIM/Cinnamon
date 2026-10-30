@@ -1,12 +1,15 @@
 package de.kiaim.cinnamon.platform.model.entity.admin;
 
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.enumeration.AttributeMatchingStrategy;
 import de.kiaim.cinnamon.model.enumeration.HandleConfigOnlyStrategy;
 import de.kiaim.cinnamon.model.enumeration.HandleDataOnlyStrategy;
-import io.swagger.v3.oas.annotations.media.Schema;
+import de.kiaim.cinnamon.platform.converter.DataConfigurationAttributeConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -47,4 +50,15 @@ public class ImportConfigurationEntity {
 	@Column(nullable = false)
 	private HandleDataOnlyStrategy handleDataOnly = HandleDataOnlyStrategy.ERROR;
 
+	/**
+	 * Attribute configurations that could not be matched to an attribute in the data (config-only attributes).
+	 * Kept separately from the data configuration of the dataset, so the data configuration always matches the data.
+	 * Used for displaying the attributes and for re-matching them if the file or the matching strategy changes.
+	 * Null if no attribute matching has been performed yet.
+	 */
+	@Convert(converter = DataConfigurationAttributeConverter.class)
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(columnDefinition = "json")
+	@Nullable
+	private DataConfiguration unmatchedAttributes = null;
 }

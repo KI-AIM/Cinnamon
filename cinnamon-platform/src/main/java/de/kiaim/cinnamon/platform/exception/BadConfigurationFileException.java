@@ -72,6 +72,11 @@ public class BadConfigurationFileException extends BadRequestException {
 	 */
 	public static final String EMPTY = "13";
 
+	/**
+	 * The import configuration could not be deserialized.
+	 */
+	public static final String IMPORT_CONFIGURATION_DESERIALIZATION = "14";
+
 	public BadConfigurationFileException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

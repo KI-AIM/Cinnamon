@@ -14,6 +14,7 @@ public interface ImportConfigurationMapper {
 	ImportConfigurationDTO toDto(ImportConfigurationEntity entity);
 
 	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "unmatchedAttributes", ignore = true)
 	void updateEntity(@MappingTarget ImportConfigurationEntity entity, ImportConfigurationDTO dto);
 
 }

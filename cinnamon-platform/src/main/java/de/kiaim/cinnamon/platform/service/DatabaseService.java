@@ -15,6 +15,7 @@ import de.kiaim.cinnamon.platform.model.configuration.Job;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.*;
+import de.kiaim.cinnamon.platform.model.entity.admin.ImportConfigurationEntity;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.mapper.DataSourceConfigurationMapper;
@@ -206,22 +207,41 @@ public class DatabaseService {
 	 * Stores the given import configuration and associates it with the original data of the given project.
 	 *
 	 * @param project                The project of which the import configuration should be stored.
+	 * If the file is already available, the attributes are matched against the data,
+	 * see {@link #matchAttributes(ProjectEntity)}.
+	 *
 	 * @param importConfigurationDTO The import configuration to be stored.
-	 * @throws BadDataSetIdException If the dataset is already stored.
+	 * @throws BadDataConfigurationException    If the attributes do not match and the import configuration forbids it.
+	 * @throws BadDataSetIdException            If the dataset is already stored.
+	 * @throws InternalIOException              If reading the file failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
 	 */
 	@Transactional
 	public void storeImportConfiguration(
 			final ProjectEntity project,
 			final ImportConfigurationDTO importConfigurationDTO
-	) throws BadDataSetIdException {
+	) throws BadDataConfigurationException, BadDataSetIdException, InternalIOException,
+			         InternalMissingHandlingException {
 		throwIfStored(project.getOriginalData().getDataSet());
 
 		final var entity = project.getOriginalData().getImportConfiguration();
 		importConfigurationMapper.updateEntity(entity, importConfigurationDTO);
+		entity.setUnmatchedAttributes(null);
 
 		var dataConfiguration = new DataConfiguration();
-		dataConfiguration.setConfigurations(importConfigurationDTO.getAttributes());
-		storeOriginalDataConfiguration(dataConfiguration, project);
+		dataConfiguration.setConfigurations(importConfigurationDTO.getAttributes() == null
+		                                    ? new ArrayList<>()
+		                                    : new ArrayList<>(importConfigurationDTO.getAttributes()));
+		if (project.getOriginalData().getDataSet() == null) {
+			new DataSetEntity(project.getOriginalData());
+		}
+		project.getOriginalData().getDataSet().setDataConfiguration(dataConfiguration);
+
+		final var results = matchAttributes(project);
+		throwOnAttributeMismatch(project, results);
+
+		projectRepository.save(project);
+		log.debug("Stored import configuration");
 	}
 
 	/**
@@ -240,6 +260,25 @@ public class DatabaseService {
 		final var dto = importConfigurationMapper.toDto(entity);
 		dto.setAttributes(exportOriginalDataConfiguration(project).getConfigurations());
 		return dto;
+	}
+
+	/**
+	 * Creates an overview of the attribute matching of the original data of the given project.
+	 *
+	 * @param project The project.
+	 * @return The overview.
+	 * @throws BadStateException   If the data configuration is not available.
+	 * @throws InternalIOException If writing the configuration failed.
+	 */
+	@Transactional(readOnly = true)
+	public AttributeImportOverview getAttributeImportOverview(final ProjectEntity project)
+			throws BadStateException, InternalIOException {
+		final var unmatchedAttributes = project.getOriginalData().getImportConfiguration().getUnmatchedAttributes();
+		return new AttributeImportOverview(exportImportConfiguration(project),
+		                                   unmatchedAttributes == null
+		                                   ? List.of()
+		                                   : unmatchedAttributes.getConfigurations(),
+		                                   getDataOnlyAttributes(project));
 	}
 
 	/**
@@ -315,6 +354,9 @@ public class DatabaseService {
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
 		final var attributeNames = dataProcessor.getAttributeNames(file.getLobStream(), fileConfiguration);
 		fileEntity.setAttributeNames(attributeNames);
+
+		// Re-match the attributes against the new file, mismatches are shown to the user instead of failing
+		matchAttributes(project);
 	}
 
 	/**
@@ -544,130 +586,184 @@ public class DatabaseService {
 		return estimation;
 	}
 
-
 	/**
-	 * Update the import configuration using the currently stored file and file configuration.
-	 * The attributes will be matched based on the defined matching strategy.
-	 * Depending on the strategy for handling unmatched attributes, the attributes will be added or removed from the import configuration.
+	 * Matches all known attribute configurations against the attributes in the currently stored file.
+	 * Known attribute configurations are the data configuration of the original dataset and the unmatched attributes
+	 * of the import configuration, so attributes that were previously unmatched can be matched again,
+	 * e.g., after the file or the matching strategy has changed.
+	 * <p>
+	 * Afterward, the data configuration only contains attributes present in the data, ordered by their index.
+	 * Attributes only present in the configuration are stored in {@link ImportConfigurationEntity#getUnmatchedAttributes()}.
+	 * Attributes only present in the data are not stored, see {@link #getDataOnlyAttributes(ProjectEntity)}.
+	 * If {@link HandleDataOnlyStrategy#ESTIMATE_CONFIG} is selected, configurations for those attributes are estimated.
+	 * <p>
+	 * Does not enforce the {@link HandleConfigOnlyStrategy#ERROR} and {@link HandleDataOnlyStrategy#ERROR} strategies,
+	 * see {@link #throwOnAttributeMismatch(ProjectEntity, List)}.
+	 * Does nothing if the file, the file configuration, or the data configuration is not available.
 	 *
-	 * @param project
+	 * @param project The project of which the attributes should be matched.
+	 * @return The matching results for all attributes or an empty list if the matching was not performed.
+	 * @throws InternalIOException              If reading the file failed.
+	 * @throws InternalMissingHandlingException If no processor for the file type of the file could be found.
 	 */
 	@Transactional
-	protected void updateImportConfiguration(final ProjectEntity project) throws BadDataConfigurationException, InternalMissingHandlingException, InternalIOException {
-		// Check if the file and the file configuration are available
+	protected List<AttributeMatchingResult> matchAttributes(final ProjectEntity project)
+			throws InternalIOException, InternalMissingHandlingException {
 		final FileEntity fileEntity = project.getOriginalData().getFile();
 		final LobWrapperEntity file = fileEntity.getFile();
-		if (file == null) {
-			return;
-		}
 		final FileConfigurationEntity fileConfiguration = fileEntity.getFileConfiguration();
-		if (fileConfiguration == null) {
-			return;
+		final List<String> attributesInData = fileEntity.getAttributeNames();
+		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
+		if (file == null || fileConfiguration == null || attributesInData == null || dataSet == null ||
+		    dataSet.getDataConfiguration() == null) {
+			return List.of();
 		}
 
-		if (project.getOriginalData().getDataSet() == null) {
-			return;
+		final ImportConfigurationEntity importConfiguration = project.getOriginalData().getImportConfiguration();
+
+		// Collect all known attribute configurations, previously matched ones first
+		final List<ColumnConfiguration> candidates = new ArrayList<>(dataSet.getDataConfiguration().getConfigurations());
+		if (importConfiguration.getUnmatchedAttributes() != null) {
+			candidates.addAll(importConfiguration.getUnmatchedAttributes().getConfigurations());
 		}
 
-		final Set<AttributeMatchingResult> configOnlyErrors = new HashSet<>();
-		final Set<AttributeMatchingResult> dataOnlyErrors = new HashSet<>();
-
-		// Match attributes
-		var importConfiguration = project.getOriginalData().getImportConfiguration();
-		var attributesInData = project.getOriginalData().getFile().getAttributeNames();
-		var dataConfiguration = project.getOriginalData().getDataSet().getDataConfiguration();
-
-		if (attributesInData == null || dataConfiguration == null) {
-			return;
+		// Matching by name is not possible if the file has no header
+		AttributeMatchingStrategy strategy = importConfiguration.getAttributeMatching();
+		if (strategy == AttributeMatchingStrategy.NAME && attributesInData.stream().allMatch(String::isEmpty)) {
+			strategy = AttributeMatchingStrategy.INDEX;
 		}
 
-		switch (importConfiguration.getAttributeMatching()) {
-			case INDEX -> {
-				for (int i = 0; i < dataConfiguration.getConfigurations().size(); i++) {
-					var columnConfig = dataConfiguration.getConfigurations().get(i);
-					var index = columnConfig.getIndex();
+		final List<AttributeMatchingResult> results = new ArrayList<>();
+		final List<ColumnConfiguration> matched = new ArrayList<>();
+		final List<ColumnConfiguration> configOnly = new ArrayList<>();
+		final boolean[] isMatched = new boolean[attributesInData.size()];
 
-					if (index < attributesInData.size()) {
-						// Attribute is in the data, update the name in the configuration
-						columnConfig.setName(attributesInData.get(index));
-					} else {
-						// No attribute in the data for this index, mark as config only
-						configOnlyErrors.add(new AttributeMatchingResult(index, null, AttributeMatchOutcome.CONFIG_ONLY));
-					}
-				}
+		for (final ColumnConfiguration candidate : candidates) {
+			final int dataIndex = switch (strategy) {
+				case NAME -> candidate.getName() == null ? -1 : attributesInData.indexOf(candidate.getName());
+				case INDEX -> candidate.getIndex() != null && candidate.getIndex() >= 0 &&
+				              candidate.getIndex() < attributesInData.size() ? candidate.getIndex() : -1;
+			};
 
-				if (attributesInData.size() > dataConfiguration.getConfigurations().size()) {
-					// There are attributes in the data that are not in the configuration
-					for (int i = dataConfiguration.getConfigurations().size(); i < attributesInData.size(); i++) {
-						dataOnlyErrors.add(new AttributeMatchingResult(i, null, AttributeMatchOutcome.DATA_ONLY));
-					}
+			// Each attribute in the data can only be matched once
+			if (dataIndex >= 0 && !isMatched[dataIndex]) {
+				isMatched[dataIndex] = true;
+				candidate.setIndex(dataIndex);
+				if (strategy == AttributeMatchingStrategy.NAME || !attributesInData.get(dataIndex).isEmpty()) {
+					candidate.setName(attributesInData.get(dataIndex));
 				}
-			}
-			case NAME -> {
-				Map<String, ColumnConfiguration> nameToConfig = dataConfiguration.getConfigurations().stream().collect(
-						Collectors.toMap(ColumnConfiguration::getName, c -> c));
-
-				for (int i = 0; i < attributesInData.size(); i++) {
-					String attributeName = attributesInData.get(i);
-					if (nameToConfig.containsKey(attributeName)) {
-						// Attribute is in the configuration, update the index
-						ColumnConfiguration columnConfig = nameToConfig.get(attributeName);
-						columnConfig.setIndex(i);
-					} else {
-						// No configuration for this attribute, mark as data only
-						dataOnlyErrors.add(
-								new AttributeMatchingResult(null, attributeName, AttributeMatchOutcome.DATA_ONLY));
-					}
-				}
-
-				for (ColumnConfiguration columnConfig : dataConfiguration.getConfigurations()) {
-					if (!attributesInData.contains(columnConfig.getName())) {
-						// Configuration has no matching attribute in the data
-						configOnlyErrors.add(new AttributeMatchingResult(null, columnConfig.getName(),
-						                                                 AttributeMatchOutcome.CONFIG_ONLY));
-					}
-				}
+				matched.add(candidate);
+				results.add(createMatchingResult(strategy, candidate, AttributeMatchOutcome.MATCHED));
+			} else {
+				configOnly.add(candidate);
+				results.add(createMatchingResult(strategy, candidate, AttributeMatchOutcome.CONFIG_ONLY));
 			}
 		}
 
-		Set<AttributeMatchingResult> errors = new HashSet<>();
-		switch (importConfiguration.getHandleConfigOnly()) {
-			case ERROR -> errors.addAll(configOnlyErrors);
-			case IGNORE -> {
-				for (AttributeMatchingResult result : configOnlyErrors) {
-					dataConfiguration.getConfigurations().removeIf(
-							c -> c.getName().equals(result.getName()) || c.getIndex().equals(result.getIndex()));
-				}
+		// Estimate configurations for attributes only present in the data
+		if (importConfiguration.getHandleDataOnly() == HandleDataOnlyStrategy.ESTIMATE_CONFIG) {
+			boolean hasDataOnly = false;
+			for (final boolean m : isMatched) {
+				hasDataOnly |= !m;
 			}
-		}
 
-		switch (importConfiguration.getHandleDataOnly()) {
-			case ERROR -> errors.addAll(dataOnlyErrors);
-			case ESTIMATE_CONFIG -> {
-				// TODO estimate only attributes that are missing
+			if (hasDataOnly) {
 				final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
-				DataConfigurationEstimation estimation = dataProcessor.estimateDataConfiguration(file.getLobStream(),
-				                                                                                 fileConfiguration,
-				                                                                                 DatatypeEstimationAlgorithm.MOST_ESTIMATED);
-				for (final var dataOnlyError : dataOnlyErrors) {
-					for (final var estimatedAttribute: estimation.getDataConfiguration().getConfigurations()) {
-						if (Objects.equals(dataOnlyError.getName(), estimatedAttribute.getName())
-						    || Objects.equals(dataOnlyError.getIndex(), estimatedAttribute.getIndex())) {
-							dataConfiguration.getConfigurations().add(estimatedAttribute);
-							break;
-						}
+				final DataConfigurationEstimation estimation = dataProcessor.estimateDataConfiguration(
+						file.getLobStream(), fileConfiguration, DatatypeEstimationAlgorithm.MOST_ESTIMATED);
+				for (final ColumnConfiguration estimated : estimation.getDataConfiguration().getConfigurations()) {
+					final Integer index = estimated.getIndex();
+					if (index != null && index < isMatched.length && !isMatched[index]) {
+						isMatched[index] = true;
+						matched.add(estimated);
+						results.add(createMatchingResult(strategy, estimated, AttributeMatchOutcome.MATCHED));
 					}
 				}
 			}
-			case REMOVE_ATTRIBUTE -> { }
+		}
+
+		for (int i = 0; i < isMatched.length; i++) {
+			if (!isMatched[i]) {
+				results.add(strategy == AttributeMatchingStrategy.NAME
+				            ? new AttributeMatchingResult(null, attributesInData.get(i), AttributeMatchOutcome.DATA_ONLY)
+				            : new AttributeMatchingResult(i, null, AttributeMatchOutcome.DATA_ONLY));
+			}
+		}
+
+		// Store the partition
+		matched.sort(Comparator.comparing(ColumnConfiguration::getIndex));
+		final DataConfiguration dataConfiguration = new DataConfiguration();
+		dataConfiguration.setConfigurations(matched);
+		dataSet.setDataConfiguration(dataConfiguration);
+
+		final DataConfiguration unmatchedAttributes = new DataConfiguration();
+		unmatchedAttributes.setConfigurations(configOnly);
+		importConfiguration.setUnmatchedAttributes(unmatchedAttributes);
+
+		return results;
+	}
+
+	/**
+	 * Determines the attributes in the data that are not covered by the data configuration of the original data.
+	 *
+	 * @param project The project.
+	 * @return The data-only attributes, empty if the file or the data configuration is not available.
+	 */
+	@Transactional(readOnly = true)
+	public List<AttributeMatchingResult> getDataOnlyAttributes(final ProjectEntity project) {
+		final List<String> attributesInData = project.getOriginalData().getFile().getAttributeNames();
+		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
+		if (attributesInData == null || dataSet == null || dataSet.getDataConfiguration() == null) {
+			return List.of();
+		}
+
+		final Set<Integer> matchedIndices = dataSet.getDataConfiguration().getConfigurations().stream()
+		                                           .map(ColumnConfiguration::getIndex)
+		                                           .filter(Objects::nonNull)
+		                                           .collect(Collectors.toSet());
+
+		final List<AttributeMatchingResult> dataOnly = new ArrayList<>();
+		for (int i = 0; i < attributesInData.size(); i++) {
+			if (!matchedIndices.contains(i)) {
+				dataOnly.add(new AttributeMatchingResult(i, attributesInData.get(i), AttributeMatchOutcome.DATA_ONLY));
+			}
+		}
+		return dataOnly;
+	}
+
+	/**
+	 * Throws an exception if the given matching results contain mismatches that are not allowed by the import configuration.
+	 *
+	 * @param project The project containing the import configuration.
+	 * @param results The results of {@link #matchAttributes(ProjectEntity)}.
+	 * @throws BadDataConfigurationException If the mismatches are not allowed.
+	 */
+	private void throwOnAttributeMismatch(final ProjectEntity project, final List<AttributeMatchingResult> results)
+			throws BadDataConfigurationException {
+		final ImportConfigurationEntity importConfiguration = project.getOriginalData().getImportConfiguration();
+		final Set<AttributeMatchingResult> errors = new HashSet<>();
+		for (final AttributeMatchingResult result : results) {
+			if ((result.getOutcome() == AttributeMatchOutcome.CONFIG_ONLY &&
+			     importConfiguration.getHandleConfigOnly() == HandleConfigOnlyStrategy.ERROR) ||
+			    (result.getOutcome() == AttributeMatchOutcome.DATA_ONLY &&
+			     importConfiguration.getHandleDataOnly() == HandleDataOnlyStrategy.ERROR)) {
+				errors.add(result);
+			}
 		}
 
 		if (!errors.isEmpty()) {
-			var errorDetails = new ErrorDetails().withAttributeMismatches(errors);
-			throw new BadDataConfigurationException(BadDataConfigurationException.UNDEFINED_DATA_TYPE,
+			throw new BadDataConfigurationException(BadDataConfigurationException.ATTRIBUTE_MISMATCH,
 			                                        "Attribute matching between the data and the configuration failed.",
-			                                        errorDetails);
+			                                        new ErrorDetails().withAttributeMismatches(errors));
 		}
+	}
+
+	private AttributeMatchingResult createMatchingResult(final AttributeMatchingStrategy strategy,
+	                                                     final ColumnConfiguration columnConfiguration,
+	                                                     final AttributeMatchOutcome outcome) {
+		return strategy == AttributeMatchingStrategy.NAME
+		       ? new AttributeMatchingResult(null, columnConfiguration.getName(), outcome)
+		       : new AttributeMatchingResult(columnConfiguration.getIndex(), null, outcome);
 	}
 
 	/**
@@ -1509,6 +1605,7 @@ public class DatabaseService {
 		project.getOriginalData().getFile().setFileConfiguration(null);
 		project.getOriginalData().getFile().setCompatibility(null);
 		project.getOriginalData().getFile().setFile(null);
+		project.getOriginalData().getImportConfiguration().setUnmatchedAttributes(null);
 
 		project.getOriginalData().getDatasetConfiguration().setCreateHoldOutSplit(false);
 		project.getOriginalData().getDatasetConfiguration().setHoldOutSplitPercentage(0.0f);

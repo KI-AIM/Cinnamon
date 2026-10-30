@@ -256,6 +256,30 @@ public class DataController {
 		return databaseService.exportFileConfiguration(projectEntity);
 	}
 
+	@Operation(summary = "Returns the matching between the uploaded attribute configurations and the data.",
+	           description = "Returns the matched attributes, the attributes only present in the configuration, " +
+	                         "and the attributes only present in the data.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+			             description = "Returns the attribute matching overview.",
+			             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+			                                schema = @Schema(implementation = AttributeImportOverview.class))),
+			@ApiResponse(responseCode = "400",
+			             description = "The data configuration does not exist.",
+			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+			                                schema = @Schema(implementation = ErrorResponse.class))),
+	})
+	@GetMapping(value = "/configuration/matching",
+	            produces = MediaType.APPLICATION_JSON_VALUE)
+	public AttributeImportOverview getAttributeMatching(
+			@PathVariable final String projectId,
+			@AuthenticationPrincipal final UserEntity requestUser
+	) throws ApiException {
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
+		return databaseService.getAttributeImportOverview(projectEntity);
+	}
+
 	@Operation(summary = "Estimates the data configuration of a given data set.",
 	           description = "Estimates the data configuration of a given data set.")
 	@ApiResponses(value = {

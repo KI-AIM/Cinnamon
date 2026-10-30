@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.configuration.ExternalConfigurationWrapper;
 import de.kiaim.cinnamon.model.configuration.algorithms.AlgorithmSelector;
 import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.ImportConfigurationDTO;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.pipeline.PipelinesConfigurationDTO;
@@ -198,6 +199,8 @@ public class ConfigurationService {
 						importDataSourceConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.FILE_CONFIGURATION_KEY ->
 						importFileConfiguration(project, configEntry, importSummary);
+				case ConfigurationFile.IMPORT_CONFIGURATION_KEY ->
+						importImportConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.DATA_CONFIGURATION_KEY ->
 						importDataConfiguration(project, configEntry, importSummary);
 				case ConfigurationFile.DATASET_CONFIGURATION_KEY ->
@@ -267,6 +270,9 @@ public class ConfigurationService {
 			}
 			case ConfigurationFile.FILE_CONFIGURATION_KEY -> {
 				return databaseService.exportFileConfiguration(project);
+			}
+			case ConfigurationFile.IMPORT_CONFIGURATION_KEY -> {
+				return databaseService.exportImportConfiguration(project);
 			}
 			case ConfigurationFile.DATA_CONFIGURATION_KEY -> {
 				return databaseService.exportOriginalDataConfiguration(project);
@@ -435,6 +441,41 @@ public class ConfigurationService {
 			outImportSummary.addSuccess(ConfigurationFile.FILE_CONFIGURATION_KEY);
 		} catch (final ApiException e) {
 			outImportSummary.addError(ConfigurationFile.FILE_CONFIGURATION_KEY, e.getErrorCode(), e.getMessage());
+		}
+	}
+
+	/**
+	 * Imports the import configuration including its attribute configurations from the given JsonNode.
+	 * Adds the result to the import summary.
+	 *
+	 * @param project          The project to import the configuration to.
+	 * @param config           The configuration JsonNode.
+	 * @param outImportSummary The import summary to update with the result of the import.
+	 */
+	private void importImportConfiguration(final ProjectEntity project,
+	                                       final JsonNode config,
+	                                       final ConfigurationImportSummary outImportSummary) {
+		// 1. Convert the tree into an ImportConfigurationDTO object
+		final ImportConfigurationDTO importConfiguration;
+		try {
+			importConfiguration = yamlMapper.treeToValue(config, ImportConfigurationDTO.class);
+		} catch (final JacksonException e) {
+			final ApiException cause = new BadConfigurationFileException(
+					BadConfigurationFileException.IMPORT_CONFIGURATION_DESERIALIZATION,
+					"Failed to deserialize the import configuration!", e);
+			outImportSummary.addError(ConfigurationFile.IMPORT_CONFIGURATION_KEY, cause.getErrorCode(),
+			                          cause.getMessage());
+			return;
+		}
+
+		// 2. No validation of the attributes to allow manual editing of the attribute configuration
+
+		// 3. Import the ImportConfiguration
+		try {
+			databaseService.storeImportConfiguration(project, importConfiguration);
+			outImportSummary.addSuccess(ConfigurationFile.IMPORT_CONFIGURATION_KEY);
+		} catch (final ApiException e) {
+			outImportSummary.addError(ConfigurationFile.IMPORT_CONFIGURATION_KEY, e.getErrorCode(), e.getMessage());
 		}
 	}
 

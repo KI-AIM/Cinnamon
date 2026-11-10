@@ -1,0 +1,96 @@
+name: pategan
+version: "0.1"
+type: cross-sectional
+display_name: PATE-GAN (Private Aggregation of Teacher Ensembles)
+description: A differentially private GAN for synthesizing cross-sectional data.
+URL: /start_synthetization_process/pategan
+
+processing_capabilities:
+  supports_structured_data: true
+  supports_free_text_data: false
+
+configurations:
+  model_parameter:
+    display_name: Model Architecture
+    description: Define the model architecture.
+    parameters:
+      - name: number_of_layers
+        type: integer
+        label: Hidden Layers
+        description: Number of hidden layers used in both generator and discriminator.
+        default_value: 2
+        min_value: 1
+        max_value: 10
+
+      - name: number_of_units_in_layers
+        type: integer
+        label: Hidden Units
+        description: Width of hidden layers used in both generator and discriminator.
+        default_value: 256
+        min_value: 16
+        max_value: 4096
+
+  model_fitting:
+    display_name: Training Parameters
+    description: Define the training and privacy parameters.
+    parameters:
+      - name: batch_size
+        type: integer
+        label: Batch Size
+        description: Number of samples used per training step.
+        default_value: 128
+        min_value: 1
+        max_value: 1024
+
+      - name: epochs
+        type: integer
+        label: Maximum Iterations
+        description: Maximum number of PATE-GAN training iterations.
+        default_value: 100
+        min_value: 1
+        max_value: 10000
+
+      - name: epsilon
+        type: float
+        label: Epsilon
+        description: Differential privacy budget. Smaller values provide stronger privacy.
+        default_value: 1.0
+        min_value: 0.1
+        max_value: 100.0
+
+      - name: n_teachers
+        type: integer
+        label: Number of Teachers
+        description: Number of teacher models trained on separate subsets of the original dataset.
+        default_value: 10
+        min_value: 1
+        max_value: 200
+
+
+      - name: lamda
+        type: float
+        label: PATE Lambda
+        description: Controls the Laplace noise used when aggregating the teacher predictions.
+        default_value: 0.001
+        min_value: 0.000001
+        max_value: 1.0
+
+      - name: alpha
+        type: integer
+        label: Moments Accountant Orders
+        description: Number of moment orders used by the privacy accountant.
+        default_value: 100
+        min_value: 10
+        max_value: 500
+
+  sampling:
+    display_name: Sampling
+    description: Define the sampling parameters used to generate synthetic data.
+    parameters:
+      - name: num_samples
+        type: integer
+        label: Samples
+        description: The number of synthetic data samples to generate.
+        default_value: $dataset.original.numberRows
+        min_value: 1
+        max_value: 1000000

@@ -6,8 +6,7 @@ description: A differentially private GAN for synthesizing cross-sectional data.
 URL: /start_synthetization_process/pategan
 
 processing_capabilities:
-  supports_structured_data: true
-  supports_free_text_data: false
+  data_modality: structured_only
 
 configurations:
   model_parameter:

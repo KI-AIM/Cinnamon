@@ -26,7 +26,7 @@
                                [skip]="!hasAlgorithmSelection" [stepIndex]="2" [invalid]="selectedAlgorithm == null">
                 <app-configuration-selection #selection [algorithms]="getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)"
                                              [disabled]="data.locked || !oneEnabled"
-                                             [initialValue]="data.configurationData.selectedAlgorithm"
+                                             [initialValue]="getEffectiveSelectedAlgorithm(data.algorithms, data.dataConfiguration)"
                                              (change)="onSelectionChange($event)">
                 </app-configuration-selection>
             </app-workstep-item>
@@ -152,7 +152,7 @@
 
         <app-workstep-box [header]="getSelectionStepHeader(data.dataConfiguration)" [class.d-none]="!hasAlgorithmSelection">
             <app-configuration-selection #selection [algorithms]="getPrimaryAlgorithms(data.algorithms, data.dataConfiguration)"
-                                         [initialValue]="data.configurationData.selectedAlgorithm"
+                                         [initialValue]="getEffectiveSelectedAlgorithm(data.algorithms, data.dataConfiguration)"
                                          [disabled]="data.locked || !oneEnabled"
                                          (change)="onSelectionChange($event)">
             </app-configuration-selection>
@@ -275,6 +275,13 @@
                 </ng-container>
             </div>
         </ng-container>
+        <div *ngIf="shouldShowStructuredSynthesisToggle(data.dataConfiguration)" class="mt-2">
+            <mat-checkbox color="primary" [ngModel]="structuredSynthesisEnabled"
+                          [disabled]="data.locked || !processEnabled['synthetization']"
+                          (ngModelChange)="onStructuredSynthesisToggle($event)">
+                Generate synthetic structured data
+            </mat-checkbox>
+        </div>
     </ng-template>
 
 </ng-container>

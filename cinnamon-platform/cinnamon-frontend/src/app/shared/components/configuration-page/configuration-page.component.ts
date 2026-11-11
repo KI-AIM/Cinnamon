@@ -101,6 +101,9 @@ export class ConfigurationPageComponent implements OnInit {
      */
     protected processEnabled: Record<string, boolean> = {};
 
+    /** Whether mixed datasets should synthesize structured columns before generating TEXT. */
+    protected structuredSynthesisEnabled = true;
+
     /**
      * If an algorithm is selected and the corresponding form is valid.
      * @protected
@@ -161,10 +164,6 @@ export class ConfigurationPageComponent implements OnInit {
         return this.isSynthetizationConfiguration ? 6 : 4;
     }
 
-    protected get hasFreeTextConfiguration(): boolean {
-        return this.forms?.form?.get("text_synthesis_configuration") != null;
-    }
-
     protected get structuredConfigurationInvalid(): boolean {
         if (!this.isSynthetizationConfiguration) {
             return !this.formValid;
@@ -221,7 +220,7 @@ export class ConfigurationPageComponent implements OnInit {
             return true;
         }
 
-        if (!this.hasFreeTextConfiguration) {
+        if (!this.currentDataConfiguration || !this.shouldShowFreeTextSteps(this.currentDataConfiguration)) {
             return false;
         }
 
@@ -255,7 +254,29 @@ export class ConfigurationPageComponent implements OnInit {
         if (isTextOnlyDataConfiguration(dataConfiguration)) {
             return this.getTextOnlyAlgorithms(algorithms);
         }
+        if (isMixedDataConfiguration(dataConfiguration) && !this.structuredSynthesisEnabled) {
+            return this.getFreeTextAlgorithms(algorithms);
+        }
         return this.getStructuredAlgorithms(algorithms);
+    }
+
+    protected shouldShowStructuredSynthesisToggle(dataConfiguration: DataConfiguration): boolean {
+        return this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration);
+    }
+
+    protected onStructuredSynthesisToggle(enabled: boolean): void {
+        this.structuredSynthesisEnabled = enabled;
+        this.configurationService.setProcessStatus("synthetization_configuration", "structured_synthesis", enabled);
+
+        if (!this.currentDataConfiguration) {
+            return;
+        }
+        const algorithms = this.getPrimaryAlgorithms(this.currentAlgorithms, this.currentDataConfiguration);
+        this.hasAlgorithmSelection = algorithms.length > 1;
+        if (this.selectedAlgorithm && !algorithms.some(item => item.name === this.selectedAlgorithm!.name)) {
+            this.selectedAlgorithm = null;
+        }
+        this.changeDetectorRef.detectChanges();
     }
 
     protected getEffectiveSelectedAlgorithm(
@@ -300,11 +321,13 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected shouldShowIntermediateStep(dataConfiguration: DataConfiguration): boolean {
-        return this.intermediateStep != null && hasStructuredColumns(dataConfiguration);
+        return this.intermediateStep != null && hasStructuredColumns(dataConfiguration)
+            && (!this.isSynthetizationConfiguration || this.structuredSynthesisEnabled);
     }
 
     protected shouldShowFreeTextSteps(dataConfiguration: DataConfiguration): boolean {
-        return this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration);
+        return this.isSynthetizationConfiguration && isMixedDataConfiguration(dataConfiguration)
+            && this.structuredSynthesisEnabled;
     }
 
     protected getFreeTextAlgorithmDefinition(
@@ -341,6 +364,9 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected getSelectionStepHeader(dataConfiguration: DataConfiguration): string {
+        if (this.shouldShowStructuredSynthesisToggle(dataConfiguration) && !this.structuredSynthesisEnabled) {
+            return "Select the free-text synthesizer";
+        }
         if (this.isSynthetizationConfiguration && isTextOnlyDataConfiguration(dataConfiguration)) {
             return "Select the free-text synthesizer";
         }
@@ -351,6 +377,9 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     protected getConfigurationStepHeader(dataConfiguration: DataConfiguration): string {
+        if (this.shouldShowStructuredSynthesisToggle(dataConfiguration) && !this.structuredSynthesisEnabled) {
+            return "Configure the free-text synthesizer";
+        }
         if (this.isSynthetizationConfiguration && isTextOnlyDataConfiguration(dataConfiguration)) {
             return "Configure the free-text synthesizer";
         }
@@ -407,17 +436,31 @@ export class ConfigurationPageComponent implements OnInit {
 
                 return this.algorithmService.fetchConfiguration().pipe(
                     tap(value => {
+                        const configuredStage = (value.config as any)?.structured_synthesis_enabled;
+                        const cachedStage = this.configurationService.getProcessStatus(
+                            this.algorithmService.getConfigurationName(), "structured_synthesis",
+                        );
+                        if (this.isSynthetizationConfiguration) {
+                            this.structuredSynthesisEnabled = configuredStage ?? cachedStage ?? true;
+                            this.configurationService.setProcessStatus(
+                                this.algorithmService.getConfigurationName(),
+                                "structured_synthesis",
+                                this.structuredSynthesisEnabled,
+                            );
+                        }
+                        const availableAlgorithms = this.getPrimaryAlgorithms(pageData.algorithms, pageData.dataConfiguration);
+                        this.hasAlgorithmSelection = availableAlgorithms.length > 1;
                         const hasCurrentSelection = this.selectedAlgorithm != null
-                            && primaryAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
+                            && availableAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
 
-                        if (value.selectedAlgorithm != null && primaryAlgorithms.some(item => item.name === value.selectedAlgorithm!.name)) {
+                        if (value.selectedAlgorithm != null && availableAlgorithms.some(item => item.name === value.selectedAlgorithm!.name)) {
                             this.selectedAlgorithm = value.selectedAlgorithm
                             this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), value.selectedAlgorithm);
                         } else if (hasCurrentSelection) {
                             value.selectedAlgorithm = this.selectedAlgorithm;
-                        } else if (!this.hasAlgorithmSelection && primaryAlgorithms.length > 0) {
-                            this.selectedAlgorithm = primaryAlgorithms[0];
-                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), primaryAlgorithms[0]);
+                        } else if (!this.hasAlgorithmSelection && availableAlgorithms.length > 0) {
+                            this.selectedAlgorithm = availableAlgorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), availableAlgorithms[0]);
                             value.selectedAlgorithm = this.selectedAlgorithm;
                         } else {
                             this.selectedAlgorithm = null;
@@ -430,14 +473,15 @@ export class ConfigurationPageComponent implements OnInit {
                     catchError(error => {
                         this.errorHandlingService.addError(error);
                         const value: ConfigData = {config: {}, selectedAlgorithm: null};
+                        const availableAlgorithms = this.getPrimaryAlgorithms(pageData.algorithms, pageData.dataConfiguration);
                         const hasCurrentSelection = this.selectedAlgorithm != null
-                            && primaryAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
+                            && availableAlgorithms.some(item => item.name === this.selectedAlgorithm!.name);
 
                         if (hasCurrentSelection) {
                             value.selectedAlgorithm = this.selectedAlgorithm;
-                        } else if (!this.hasAlgorithmSelection && primaryAlgorithms.length > 0) {
-                            this.selectedAlgorithm = primaryAlgorithms[0];
-                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), primaryAlgorithms[0]);
+                        } else if (!this.hasAlgorithmSelection && availableAlgorithms.length > 0) {
+                            this.selectedAlgorithm = availableAlgorithms[0];
+                            this.configurationService.setSelectedAlgorithm(this.algorithmService.getConfigurationName(), availableAlgorithms[0]);
                             value.selectedAlgorithm = this.selectedAlgorithm;
                         }
 
@@ -532,7 +576,9 @@ export class ConfigurationPageComponent implements OnInit {
     protected updateConfigCache(): void {
         const selectedAlgorithm = this.getEffectiveSelectedAlgorithm();
         if (selectedAlgorithm && this.forms)  {
-            this.configurationService.setConfiguration(this.algorithmService.getConfigurationName(), selectedAlgorithm, this.forms.formData);
+            this.configurationService.setConfiguration(
+                this.algorithmService.getConfigurationName(), selectedAlgorithm, this.forms.formData,
+            );
         }
     }
 
@@ -554,6 +600,16 @@ export class ConfigurationPageComponent implements OnInit {
     public readFromCache(): void {
         const selectedAlgorithm = this.configurationService.getSelectedAlgorithm(this.algorithmService.getConfigurationName());
         this.selectedAlgorithm = selectedAlgorithm;
+        if (this.isSynthetizationConfiguration) {
+            const config = this.configurationService.getSelectedConfiguration(this.algorithmService.getConfigurationName());
+            const cachedStage = this.configurationService.getProcessStatus(
+                this.algorithmService.getConfigurationName(), "structured_synthesis",
+            );
+            this.structuredSynthesisEnabled = (config as any)?.structured_synthesis_enabled ?? cachedStage ?? true;
+            this.configurationService.setProcessStatus(
+                this.algorithmService.getConfigurationName(), "structured_synthesis", this.structuredSynthesisEnabled,
+            );
+        }
         if (selectedAlgorithm && this.selection) {
             this.selection.selectedOption = selectedAlgorithm;
             if (this.forms) {
@@ -657,7 +713,10 @@ export class ConfigurationPageComponent implements OnInit {
         } else {
             const config = this.hideAlgorithmConfigForm
                 ? {}
-                : (this.forms ? this.forms.formData : '');
+                : (this.forms ? {...this.forms.formData} : {});
+            if (this.isSynthetizationConfiguration && config && typeof config === "object") {
+                (config as any)["structured_synthesis_enabled"] = this.structuredSynthesisEnabled;
+            }
             this.postConfig(config, selectedAlgorithm).pipe(
                 switchMap(() => {
                     return this.configureJobs();

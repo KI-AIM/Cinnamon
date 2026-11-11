@@ -82,10 +82,13 @@ export class SynthetizationService extends AlgorithmService {
     public override createConfiguration(arg: Object, selectedAlgorithm: Algorithm): Object {
         const formData = {...(arg as any)};
         const textSynthesisConfiguration = formData["text_synthesis_configuration"];
+        const structuredSynthesisEnabled = formData["structured_synthesis_enabled"] ?? true;
         delete formData["text_synthesis_configuration"];
+        delete formData["structured_synthesis_enabled"];
 
         const config: any = {
             synthetization_configuration: {
+                structured_synthesis_enabled: structuredSynthesisEnabled,
                 algorithm: {
                     id: selectedAlgorithm.name,
                     synthesizer: selectedAlgorithm.name,
@@ -109,6 +112,7 @@ export class SynthetizationService extends AlgorithmService {
     public override readConfiguration(arg: any, configurationName: string): ReadConfigResult {
         const selectedAlgorithm = this.getAlgorithmByName(arg[configurationName]["algorithm"]["synthesizer"]);
         const config = {...arg[configurationName]["algorithm"]};
+        config["structured_synthesis_enabled"] = arg[configurationName]["structured_synthesis_enabled"] ?? true;
         const textSynthesisConfiguration =
             arg[configurationName]["text_synthesis_configuration"]
             ?? arg["text_synthesis_configuration"];

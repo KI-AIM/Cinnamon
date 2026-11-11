@@ -334,6 +334,11 @@ def run_pipeline(synthesizer_name, file_path_status, attribute_config, algorithm
     """Return synthetic data and the exported model after updating pipeline status."""
     structured_configs, text_configs = configuration.split_attribute_configurations(attribute_config)
     data_modality = configuration.get_data_modality(synthesizer_name)
+    generate_structured_data = algorithm_config.get("synthetization_configuration", {}).get(
+        "structured_synthesis_enabled", True,
+    )
+    if not isinstance(generate_structured_data, bool):
+        raise ValueError("structured_synthesis_enabled must be a boolean.")
     text_reference_data = original_data if original_data is not None else data
 
     print(
@@ -353,7 +358,57 @@ def run_pipeline(synthesizer_name, file_path_status, attribute_config, algorithm
     final_samples = None
     final_model = None
 
-    if structured_configs:
+    if structured_configs and not generate_structured_data:
+        if data_modality != configuration.PROCESSING_MODALITY_MIXED or not text_configs:
+            raise ValueError("Disabling structured synthesis requires a mixed-data text synthesizer and TEXT columns.")
+
+        print("Pipeline mode: text generation with existing structured data.")
+        update_component_status(
+            file_path_status,
+            "structured_synthesis",
+            synthesizer_name="Input data reused",
+            completed=True,
+            remaining_time="0",
+        )
+        structured_names = [cfg["name"] for cfg in structured_configs]
+        final_samples = data[structured_names].copy().reset_index(drop=True)
+        text_models = {}
+
+        for text_column_config in text_configs:
+            text_column = text_column_config["name"]
+            stage_configs = structured_configs + [text_column_config]
+            stage_columns = structured_names + [text_column]
+            text_input = data.reindex(columns=stage_columns)
+            text_algorithm_config = configuration.build_text_synthesis_algorithm_config(
+                algorithm_config, synthesizer_name, len(text_input),
+            )
+            announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
+            text_samples, text_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
+                stage_label="TEXT_SYNTHESIS",
+                synthesizer_name=synthesizer_name,
+                stage_attribute_config={**attribute_config, "configurations": stage_configs},
+                stage_algorithm_config=text_algorithm_config,
+                input_data=text_input,
+                reference_data=text_reference_data.reindex(columns=stage_columns),
+                file_path_status=file_path_status,
+                replace_text_with_pending=False,
+                fill_text_with_pending=False,
+                preserve_structured_values=True,
+                session_key=session_key,
+                status_component_name="llm_synthesis",
+            )
+            if len(text_samples) != len(final_samples):
+                raise ValueError("Text synthesis must return exactly one text per input row.")
+            if not text_samples[structured_names].reset_index(drop=True).equals(final_samples):
+                raise ValueError("Text synthesis changed the existing structured values.")
+            final_samples[text_column] = text_samples[text_column].reset_index(drop=True)
+            text_models[text_column] = text_model
+            total_init_duration += init_duration
+            total_fit_duration += fit_duration
+            total_sample_duration += sample_duration
+
+        final_model = cloudpickle.dumps({"structured_synthesis": None, "text_synthesis": text_models})
+    elif structured_configs:
         if data_modality != configuration.PROCESSING_MODALITY_STRUCTURED_ONLY:
             raise ValueError(
                 "Structured columns require a structured synthesizer first. Select CTGAN, TVAE, "

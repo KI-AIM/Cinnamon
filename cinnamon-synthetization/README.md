@@ -111,6 +111,9 @@ synthetization_configuration:
 
 For two-stage jobs, the serialized model contains `structured_synthesis` (the structured
 model bytes) and `text_synthesis` (a mapping from TEXT column names to model bytes).
+When structured synthesis is disabled for a mixed dataset, existing structured values are
+reused and the serialized model contains `structured_synthesis: null` with the generated
+TEXT models under `text_synthesis`.
 
 ## Project Structure
 

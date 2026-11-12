@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.anonymization.helper;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class DatasetAnalyzer {
      * @return An array containing two elements: [min, max].
      *         If the column is empty or contains no valid numerical data, it returns [null, null].
      */
-    public static Number[] findMinMaxForColumn(DataSet dataSet, int columnIndex) {
+    public static @Nullable Number[] findMinMaxForColumn(DataSet dataSet, int columnIndex) {
         List<DataRow> rows = dataSet.getDataRows();
 
         Number min = null;

@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ public class ConfigurationListEntity {
 
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Associated configuration Name.

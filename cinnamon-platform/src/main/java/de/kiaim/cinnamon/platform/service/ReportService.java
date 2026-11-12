@@ -12,7 +12,7 @@ import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.StepInputEncoding;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -57,9 +57,9 @@ public class ReportService {
 	 * @throws InternalRequestException         If making the request failed.
 	 */
 	@Transactional
-	public Map<String, ModuleReportContent> fetchReportData(final ProjectEntity project)
+	public Map<String, @Nullable ModuleReportContent> fetchReportData(final ProjectEntity project)
 			throws InternalIOException, InternalMissingHandlingException, InternalRequestException {
-		final Map<String, ModuleReportContent> reportData = new HashMap<>();
+		final Map<String, @Nullable ModuleReportContent> reportData = new HashMap<>();
 
 		for (final ExecutionStepEntity executionStep : project.getPipelines().get(0).getStages()) {
 			for (final ExternalProcessEntity externalProcess : executionStep.getProcesses()) {

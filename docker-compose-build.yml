@@ -39,4 +39,4 @@ services:
 
 secrets:
   mvn_settings:
-    file: ~/.m2/settings.xml
+    file: ./secrets/mvn_settings.xml

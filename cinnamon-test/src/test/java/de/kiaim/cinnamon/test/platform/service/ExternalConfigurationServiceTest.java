@@ -76,7 +76,7 @@ public class ExternalConfigurationServiceTest extends ContextRequiredTest {
 		// Test request
 		RecordedRequest recordedRequest = mockBackEnd.takeRequest();
 		assertEquals("GET", recordedRequest.getMethod());
-		assertEquals("/algorithmA", recordedRequest.getPath());
+		assertEquals("/algorithmA", recordedRequest.getUrl().encodedPath());
 	}
 
 	@Test

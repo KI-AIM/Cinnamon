@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.model.entity.admin;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Table for storing the email settings of the application.
@@ -13,7 +14,7 @@ public class EmailSettingsEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Host of the application mailer.
@@ -44,13 +45,13 @@ public class EmailSettingsEntity {
 	 * Only required if SMTP authentication is enabled.
 	 */
 	@Column
-	private String mailUsername;
+	private @Nullable String mailUsername;
 
 	/**
 	 * Password of the application mailer.
 	 */
 	@Column
-	private String mailPassword;
+	private @Nullable String mailPassword;
 
 	/**
 	 * Sender of the emails sent from the application mailer.

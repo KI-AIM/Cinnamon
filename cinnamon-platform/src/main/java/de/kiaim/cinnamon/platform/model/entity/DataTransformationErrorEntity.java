@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Class to represent a transformation error in the database.
@@ -16,7 +17,7 @@ public class DataTransformationErrorEntity {
 
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * DataSet this transformation error corresponds to.

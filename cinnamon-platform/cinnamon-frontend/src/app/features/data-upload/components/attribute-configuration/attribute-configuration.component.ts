@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { FormArray, FormGroup } from '@angular/forms';
 import { MatDialog } from "@angular/material/dialog";
 import { FileType } from "@shared/model/file-configuration";
@@ -9,6 +9,7 @@ import { DataType, DataTypeMetadata } from 'src/app/shared/model/data-type';
     selector: 'app-attribute-configuration',
     templateUrl: './attribute-configuration.component.html',
     styleUrls: ['./attribute-configuration.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AttributeConfigurationComponent implements AfterViewInit {

@@ -1,7 +1,5 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.model.configuration.ConfigurationFile;
 import de.kiaim.cinnamon.model.configuration.algorithms.Algorithm;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
@@ -13,7 +11,7 @@ import de.kiaim.cinnamon.model.dto.ErrorRequest;
 import de.kiaim.cinnamon.model.dto.ExternalProcessResponse;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.model.enumeration.StageStatus;
-import de.kiaim.cinnamon.model.serialization.mapper.JsonMapper;
+import de.kiaim.cinnamon.model.serialization.mapper.CinnamonJsonMapper;
 import de.kiaim.cinnamon.model.status.synthetization.SynthetizationStatus;
 import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.*;
@@ -42,7 +40,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -56,6 +54,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import reactor.netty.http.client.HttpClient;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -86,8 +87,8 @@ public class ProcessService {
 	private final int port;
 	private final String contextPath;
 
-	private final ObjectMapper jsonMapper;
-	private final ObjectMapper yamlMapper;
+	private final JsonMapper jsonMapper;
+	private final YAMLMapper yamlMapper;
 
 	private final CinnamonConfiguration cinnamonConfiguration;
 
@@ -757,7 +758,7 @@ public class ProcessService {
 					abc.setCompleted("True");
 				}
 				externalProcess.setStatus(jsonMapper.writeValueAsString(synthStatus));
-			} catch (JsonProcessingException e) {
+			} catch (JacksonException e) {
 				log.warn("Failed to update detailed status!", e);
 			}
 		}
@@ -1286,7 +1287,7 @@ public class ProcessService {
 	                           final StepInputConfiguration stepInputConfiguration, final DataSet dataSet)
 			throws InternalIOException {
 		try {
-			final String dataSetString = JsonMapper.jsonMapper().writeValueAsString(dataSet);
+			final String dataSetString = CinnamonJsonMapper.jsonMapper().writeValueAsString(dataSet);
 			bodyBuilder.part(stepInputConfiguration.getPartName(),
 			                 new ByteArrayResource(dataSetString.getBytes(StandardCharsets.UTF_8)) {
 				@Override
@@ -1294,7 +1295,7 @@ public class ProcessService {
 					return stepInputConfiguration.getFileName();
 				}
 			}).contentType(MediaType.APPLICATION_JSON);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			throw new InternalIOException(InternalIOException.DATA_SET_SERIALIZATION,
 			                              "Could not convert dataset to json!", e);
 		}
@@ -1323,13 +1324,13 @@ public class ProcessService {
 					return stepInputConfiguration.getDataConfigurationName() + ".yaml";
 				}
 			});
-		} catch (JsonProcessingException e) {
+		} catch (JacksonException e) {
 			throw new InternalIOException(InternalIOException.DATA_CONFIGURATION_SERIALIZATION,
 			                              "Failed to create the data configuration!", e);
 		}
 	}
 
-	public void setProcessError(final BackgroundProcessEntity process, final String message) {
+	public void setProcessError(final BackgroundProcessEntity process, @Nullable final String message) {
 		log.debug("Aborted process '{}' due to an error", process.getUuid());
 		process.setExternalProcessStatus(ProcessStatus.ERROR);
 		process.setServerInstance(null);
@@ -1345,7 +1346,7 @@ public class ProcessService {
 		}
 	}
 
-	private void setProcessError(final ExecutionStepEntity executionStep, final String message) {
+	private void setProcessError(final ExecutionStepEntity executionStep, @Nullable final String message) {
 		final var currentProcess = executionStep.getCurrentProcess();
 		if (currentProcess != null) {
 			currentProcess.setExternalProcessStatus(ProcessStatus.ERROR);
@@ -1456,7 +1457,7 @@ public class ProcessService {
 		final ConfigurationFile configurationFile;
 		try {
 			configurationFile = yamlMapper.readValue(configuration, ConfigurationFile.class);
-		} catch (final JsonProcessingException e) {
+		} catch (final JacksonException e) {
 			throw new InternalIOException(InternalIOException.CONFIGURATION_SERIALIZATION,
 			                              "Failed to serialize configuration!", e);
 		}

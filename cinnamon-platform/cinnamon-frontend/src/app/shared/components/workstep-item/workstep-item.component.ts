@@ -1,10 +1,11 @@
-import { booleanAttribute, Component, EventEmitter, Input, Output } from '@angular/core';
+import { booleanAttribute, Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { WorkstepService } from "@shared/services/workstep.service";
 
 @Component({
   selector: 'app-workstep-item',
   standalone: false,
   templateUrl: './workstep-item.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './workstep-item.component.less'
 })
 export class WorkstepItemComponent {

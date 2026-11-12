@@ -6,8 +6,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Getter @Setter
 @EqualsAndHashCode
-public class MetricConfiguration {
+public class MetricConfiguration implements Serializable {
 
 	/**
 	 * Color scheme to be used for visualizations.
@@ -44,6 +45,6 @@ public class MetricConfiguration {
 	 * Contains the metrics provided by the statistics endpoint.
 	 */
 	@Schema(description = "Map of user-defined metric importance. Contains the metrics provided by the statistics endpoint.")
-	private final Map<String, MetricImportance> userDefinedImportance = new HashMap<>();
+	private Map<String, MetricImportance> userDefinedImportance = new HashMap<>();
 
 }

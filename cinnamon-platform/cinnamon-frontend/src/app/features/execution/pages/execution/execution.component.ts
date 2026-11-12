@@ -1,4 +1,4 @@
-import { Component, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { Component, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { StateManagementService } from "@core/services/state-management.service";
 import { plainToInstance } from "class-transformer";
@@ -18,6 +18,7 @@ import { ExecutionService } from "../../services/execution.service";
     selector: 'app-execution',
     templateUrl: './execution.component.html',
     styleUrls: ['./execution.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ExecutionComponent implements OnInit {

@@ -1,7 +1,8 @@
 import {
-    Component,
-    Input, OnInit,
-    TemplateRef,
+  Component,
+  Input, OnInit,
+  TemplateRef,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { areEnumValuesEqual } from "src/app/shared/helper/enum-helper";
@@ -17,6 +18,7 @@ import { ProjectConfigurationService } from "../../services/project-configuratio
     selector: 'app-data-inspection-attribute',
     templateUrl: './data-inspection-attribute.component.html',
     styleUrls: ['./data-inspection-attribute.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DataInspectionAttributeComponent implements OnInit {

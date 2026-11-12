@@ -11,6 +11,7 @@ import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.mapper.PipelineMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.log4j.Log4j2;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,7 +94,7 @@ public class WorkflowService {
 	 * @throws InternalRequestException                  If the request to the external server for starting the process failed.
 	 */
 	@Transactional
-	public UUID startWorkflow(final String userEmail, MultipartFile dataFile,
+	public UUID startWorkflow(final String userEmail, @Nullable MultipartFile dataFile,
 	                          final MultipartFile configurationFile)
 			throws BadAlgorithmException, BadArgumentException, BadConfigurationFileException,
 					       BadConfigurationNameException, BadDataConfigurationException, BadDatasetException,

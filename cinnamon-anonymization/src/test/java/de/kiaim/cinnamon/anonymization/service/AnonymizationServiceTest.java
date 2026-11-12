@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.anonymization.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.kiaim.cinnamon.anonymization.AbstractAnonymizationTests;
 import de.kiaim.cinnamon.anonymization.model.AnonymizationRequest;
 import de.kiaim.cinnamon.model.configuration.anonymization.frontend.FrontendAnonConfigWrapper;
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -27,7 +27,7 @@ public class AnonymizationServiceTest extends AbstractAnonymizationTests {
     private AnonymizationService anonymizationService;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonMapper objectMapper;
 
     private FrontendAnonConfigWrapper heartFrontendAnonConfigMissingAttr;
 

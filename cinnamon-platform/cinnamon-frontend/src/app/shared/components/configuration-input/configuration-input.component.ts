@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import {AbstractControl, FormArray, FormControl, FormGroup, Validators} from "@angular/forms";
@@ -15,6 +15,7 @@ import { ColumnConfiguration } from '../../model/column-configuration';
     selector: 'app-configuration-input',
     templateUrl: './configuration-input.component.html',
     styleUrls: ['./configuration-input.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationInputComponent implements OnInit, OnDestroy {

@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef } from '@angular/core';
+import { Component, Input, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { ConfigurationInputDefinition } from "../../model/configuration-input-definition";
 import { MatDialog } from "@angular/material/dialog";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
@@ -12,6 +12,7 @@ import { ConfigurationInputType } from "../../model/configuration-input-type";
     selector: 'app-configuration-input-info',
     templateUrl: './configuration-input-info.component.html',
     styleUrls: ['./configuration-input-info.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfigurationInputInfoComponent {

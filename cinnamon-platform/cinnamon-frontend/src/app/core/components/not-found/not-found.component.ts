@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from "@angular/router";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 
 @Component({
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: ''
 })
 export class NotFoundComponent implements OnInit {

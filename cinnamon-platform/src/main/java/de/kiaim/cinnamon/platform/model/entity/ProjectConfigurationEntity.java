@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Entity containing all configurations for a project.
@@ -26,7 +26,7 @@ public class ProjectConfigurationEntity {
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
 	@Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Name of the dataset.
@@ -57,7 +57,7 @@ public class ProjectConfigurationEntity {
 	 */
 	@Type(JsonType.class)
 	@Column(columnDefinition = "json")
-	private MetricConfiguration metricConfiguration;
+	private @Nullable MetricConfiguration metricConfiguration;
 
 	/**
 	 * The corresponding project.

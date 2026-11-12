@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ProcessStatus } from "@core/enums/process-status";
 import { ProjectSettings } from "@shared/model/project-settings";
 import { RiskEvaluation, RiskResults } from "@shared/model/risk-evaluation";
@@ -15,6 +15,7 @@ import { combineLatest, map, Observable } from "rxjs";
   selector: 'app-data-inspection-risks',
   standalone: false,
   templateUrl: './data-inspection-risks.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './data-inspection-risks.component.less'
 })
 export class DataInspectionRisksComponent implements OnInit {

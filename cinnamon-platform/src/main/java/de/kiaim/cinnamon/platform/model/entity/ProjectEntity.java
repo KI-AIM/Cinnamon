@@ -8,7 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.hibernate.annotations.Type;
 
 import java.sql.Timestamp;
@@ -31,7 +31,7 @@ public class ProjectEntity {
 	 */
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * ID of the project for external identification.
@@ -121,7 +121,7 @@ public class ProjectEntity {
 	 * User that owns this configuration and the corresponding data set.
 	 */
 	@ManyToOne(fetch = FetchType.EAGER)
-	private UserEntity user;
+	private @Nullable UserEntity user;
 
 	/**
 	 * Creates a new project with the given seed.

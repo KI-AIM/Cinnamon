@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 /**
  * Configuration for retrieving the data from a server.
  *
@@ -16,7 +18,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter @Setter
-public class DataSourceServerConfiguration {
+public class DataSourceServerConfiguration implements Serializable {
 
 	/**
 	 * URL of the server where the file is located.

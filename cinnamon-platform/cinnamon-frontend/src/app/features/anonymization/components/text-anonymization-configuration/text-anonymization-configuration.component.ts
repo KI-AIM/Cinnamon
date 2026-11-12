@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { AdditionalConfigurationGroup } from '@shared/interfaces/AdditionalConfigurationGroup';
 import { DataType } from '@shared/model/data-type';
@@ -12,6 +12,7 @@ import { ConfigurationInputType } from '@shared/model/configuration-input-type';
 @Component({
     selector: 'app-text-anonymization-configuration',
     templateUrl: './text-anonymization-configuration.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false,
 })
 export class TextAnonymizationConfigurationComponent implements AdditionalConfigurationGroup, OnChanges, OnInit, OnDestroy {

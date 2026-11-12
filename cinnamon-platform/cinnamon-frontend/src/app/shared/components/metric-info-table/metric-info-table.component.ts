@@ -1,4 +1,4 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Component, TemplateRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { StatisticsMetaData } from "../../model/statistics";
 import { MatDialog } from "@angular/material/dialog";
 import { ProjectConfigurationService } from "../../services/project-configuration.service";
@@ -8,6 +8,7 @@ import { StatisticsService } from "../../services/statistics.service";
     selector: 'app-metric-info-table',
     templateUrl: './metric-info-table.component.html',
     styleUrls: ['./metric-info-table.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MetricInfoTableComponent {

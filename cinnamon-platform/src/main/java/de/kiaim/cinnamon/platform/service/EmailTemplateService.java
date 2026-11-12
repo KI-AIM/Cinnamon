@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.platform.model.entity.admin.EmailTemplateEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.SupportedLanguage;
 import de.kiaim.cinnamon.platform.model.mapper.EmailTemplateMapper;
 import de.kiaim.cinnamon.platform.repository.EmailTemplateRepository;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -146,7 +147,7 @@ public class EmailTemplateService {
 	 * @param id   The ID of the template that should get the name or null if the template does not exist yet.
 	 * @throws BadEmailTemplateException If another template with the given name already exists.
 	 */
-	private void validateNameIsAvailable(final String name, final Long id) throws BadEmailTemplateException {
+	private void validateNameIsAvailable(final String name, @Nullable final Long id) throws BadEmailTemplateException {
 		final var conflictingTemplate = emailTemplateRepository.findByName(name);
 
 		if (conflictingTemplate.isPresent() && !conflictingTemplate.get().getId().equals(id)) {

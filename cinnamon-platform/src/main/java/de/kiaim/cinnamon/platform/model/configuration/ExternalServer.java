@@ -3,7 +3,7 @@ package de.kiaim.cinnamon.platform.model.configuration;
 import de.kiaim.cinnamon.platform.helper.CinnamonConfigurationPostProcessor;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;

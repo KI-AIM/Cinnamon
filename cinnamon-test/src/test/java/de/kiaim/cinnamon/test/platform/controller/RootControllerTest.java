@@ -16,7 +16,7 @@ public class RootControllerTest extends ControllerTest {
 	public void getConfig() throws Exception {
 		mockMvc.perform(get("/config.json"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{isDemoInstance: false, version: " + version + "}"))
+		       .andExpect(content().json("{isDemoInstance: false, isInvitationRequired: false, version: " + version + "}"))
 		       .andExpect(jsonPath("$.demoInstance").doesNotExist());
 	}
 

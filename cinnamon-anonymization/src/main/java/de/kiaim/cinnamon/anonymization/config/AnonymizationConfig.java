@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.anonymization.config;
 
 import lombok.*;
 import org.bihmi.jal.anon.JALConfig;
+import org.jspecify.annotations.Nullable;
 import org.bihmi.jal.anon.privacyModels.PrivacyModel;
 import org.bihmi.jal.config.AttributeConfig;
 import org.bihmi.jal.config.QualityModelConfig;
@@ -55,7 +56,7 @@ public class AnonymizationConfig {
 
 
     // TODO (KO): move to converter?
-    public JALConfig toJalConfig(String name){
+    public @Nullable JALConfig toJalConfig(String name){
 
 
         try {

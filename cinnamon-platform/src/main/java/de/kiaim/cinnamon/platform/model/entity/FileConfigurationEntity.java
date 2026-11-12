@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.model.entity;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import jakarta.persistence.*;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Entity class for the file configuration.
@@ -18,7 +19,7 @@ public abstract class FileConfigurationEntity {
 	 */
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	@Id
-	private Long id;
+	private @Nullable Long id;
 
 	/**
 	 * Type of the file.

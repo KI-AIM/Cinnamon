@@ -28,7 +28,7 @@ public class PipelineConfigurationDTO {
 	 * Uses a list for deterministic order during serialization.
 	 */
 	@Schema(description = "Set of jobs to be executed in the pipeline.")
-	@NotNull @Valid
-	private final List<JobConfigurationDTO> jobs = new ArrayList<>();
+	@NotNull
+	private List<@Valid JobConfigurationDTO> jobs = new ArrayList<>();
 
 }

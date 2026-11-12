@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup } from "@angular/forms";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { MetricImportance, MetricImportanceData } from "../../model/project-settings";
@@ -8,6 +8,7 @@ import { StatisticsService } from "../../services/statistics.service";
     selector: 'app-metric-configuration',
     templateUrl: './metric-configuration.component.html',
     styleUrls: ['./metric-configuration.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MetricConfigurationComponent {

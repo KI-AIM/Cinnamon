@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from "@angular/router";
 import { StepConfiguration } from "@core/enums/steps";
 import { StateManagementService } from "@core/services/state-management.service";
@@ -10,6 +10,7 @@ import { switchMap } from "rxjs";
 @Component({
     selector: 'app-project-shell',
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './project-shell.component.html',
 })
 export class ProjectShellComponent implements OnInit, OnDestroy {

@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { MatTableDataSource } from "@angular/material/table";
 import { UserInvitationInfo, UserRole } from "@shared/model/user";
 import { Observable, tap } from "rxjs";
@@ -9,6 +9,7 @@ import { environments } from "src/environments/environment";
   selector: 'app-user-invitations',
   standalone: false,
   templateUrl: './user-invitations.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './user-invitations.component.less'
 })
 export class UserInvitationsComponent implements OnInit {

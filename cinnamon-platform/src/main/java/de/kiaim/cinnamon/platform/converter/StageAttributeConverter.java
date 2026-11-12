@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Stage;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Converter a {@link Stage} to a string and back when persisting the stage in the database.
@@ -24,7 +25,7 @@ public class StageAttributeConverter implements AttributeConverter<Stage, String
 		return attribute.getStageName();
 	}
 
-	@Override public Stage convertToEntityAttribute(final String dbData) {
+	@Override public @Nullable Stage convertToEntityAttribute(final String dbData) {
 		return cinnamonConfiguration.getStages().get(dbData);
 	}
 }

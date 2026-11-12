@@ -46,10 +46,10 @@ public class MockWebServerExtension implements BeforeAllCallback, BeforeEachCall
 	}
 
 	@Override
-	public void afterEach(final ExtensionContext context) throws IOException {
+	public void afterEach(final ExtensionContext context) {
 		MockWebServer mockBackEnd = getStore(context).remove(MOCK_BACK_END_KEY, MockWebServer.class);
 		if (mockBackEnd != null) {
-			mockBackEnd.shutdown();
+			mockBackEnd.close();
 		}
 	}
 

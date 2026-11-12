@@ -329,7 +329,11 @@ export class StateManagementService {
             params: {target: target},
         };
 
-        return this.http.delete<void>(environments.apiUrl + "/api/project/reset", options).pipe(
+        return this.projectService.projectIdRequiredOnce$.pipe(
+            switchMap(projectId => this.http.delete<void>(
+                environments.apiUrl + "/api/project/" + projectId + "/reset",
+                options,
+            )),
             tap(() => {
                 this.initPipeline();
                 this.clearCaches();

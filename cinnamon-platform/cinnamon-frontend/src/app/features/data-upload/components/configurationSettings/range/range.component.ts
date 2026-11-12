@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { DataType } from 'src/app/shared/model/data-type';
 import { FormGroup } from "@angular/forms";
 
@@ -6,6 +6,7 @@ import { FormGroup } from "@angular/forms";
     selector: 'app-range',
     templateUrl: './range.component.html',
     styleUrls: ['./range.component.less'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class RangeComponent {

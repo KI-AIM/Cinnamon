@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.enumeration.DataType;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -101,7 +102,7 @@ public class AnonymizedDatasetProcessor {
      * @param type The expected data type of the value.
      * @return The corrected value, or null if the value was "NULL" or "*".
      */
-    private static String checkAndCorrectValue(String value, DataType type) {
+    private static @Nullable String checkAndCorrectValue(String value, DataType type) {
         // Check if value is NULL, "*" or contains only "*"
         if (isNullOrStar(value)) {
             return null;
@@ -176,7 +177,7 @@ public class AnonymizedDatasetProcessor {
      * @return The parsed object corresponding to the value and type.
      * @throws IllegalArgumentException if the value is invalid for the specified type.
      */
-    private static Object parseValueByType(String value, DataType type) {
+    private static @Nullable Object parseValueByType(@Nullable String value, DataType type) {
         if (value == null) {
             return switch (type) {
                 case BOOLEAN -> null;

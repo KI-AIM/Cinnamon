@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.model.configuration.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -14,6 +15,7 @@ import lombok.Setter;
  * @author Daniel Preciado-Marquez
  */
 @Schema(description = "Configuration of a job.")
+@JsonPropertyOrder({"name", "enabled", "configuration"})
 @NoArgsConstructor
 @Getter @Setter
 public class JobConfigurationDTO {

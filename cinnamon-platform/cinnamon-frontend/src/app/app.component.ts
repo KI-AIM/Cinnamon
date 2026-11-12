@@ -1,12 +1,11 @@
-import { animate, style, transition, trigger } from "@angular/animations";
-import { Component, OnInit, TemplateRef } from '@angular/core';
+import { Component, OnInit, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { Steps } from "@core/enums/steps";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
 import { StatusService } from "@shared/services/status.service";
 import { TitleService } from './core/services/title-service.service';
 import { AppConfig, AppConfigService } from "./shared/services/app-config.service";
-import { Observable, switchMap, tap } from "rxjs";
+import { Observable, switchMap } from "rxjs";
 import { LockedInformation, LockedReason, StateManagementService } from "./core/services/state-management.service";
 import { ErrorHandlingService } from "./shared/services/error-handling.service";
 import {UserService} from "@shared/services/user.service";
@@ -18,17 +17,18 @@ import { User, UserRole } from "@shared/model/user";
     styleUrls: ['./app.component.less'],
     providers: [],
     standalone: false,
-    animations: [
-        trigger('slideInFromTop', [
-            transition(':enter', [
-                style({ transform: 'translateY(-100%)', opacity: 0 }),
-                animate('300ms ease-out', style({ transform: 'translateY(0)', opacity: 1 }))
-            ]),
-            transition(':leave', [
-                animate('300ms ease-in', style({ transform: 'translateY(-100%)', opacity: 0 }))
-            ]),
-        ]),
-    ],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    // animations: [
+    //     trigger('slideInFromTop', [
+    //         transition(':enter', [
+    //             style({ transform: 'translateY(-100%)', opacity: 0 }),
+    //             animate('300ms ease-out', style({ transform: 'translateY(0)', opacity: 1 }))
+    //         ]),
+    //         transition(':leave', [
+    //             animate('300ms ease-in', style({ transform: 'translateY(-100%)', opacity: 0 }))
+    //         ]),
+    //     ]),
+    // ],
 })
 export class AppComponent implements OnInit {
     title = "cinnamon-frontend"

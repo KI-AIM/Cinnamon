@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ColumnConfiguration } from "@shared/model/column-configuration";
 import { EChartsCoreOption } from "echarts/core";
 import { ChartComponent, Entries } from "src/app/shared/components/chart/chart.component";
@@ -8,6 +8,7 @@ import { CorrelationPlotData, OverallCorrelation, StatisticsData } from "src/app
     selector: 'app-chart-correlation',
     standalone: false,
     templateUrl: '../chart/chart.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['../chart/chart.component.less'],
 })
 export class ChartCorrelationComponent extends ChartComponent {

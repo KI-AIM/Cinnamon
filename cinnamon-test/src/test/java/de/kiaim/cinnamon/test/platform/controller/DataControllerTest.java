@@ -211,7 +211,7 @@ class DataControllerTest extends ControllerTest {
 
 		RecordedRequest recordedRequest = mockBackEnd.takeRequest(1, TimeUnit.SECONDS);
 		assertEquals("GET", recordedRequest.getMethod());
-		assertEquals(url, recordedRequest.getRequestUrl().toString());
+		assertEquals(url, recordedRequest.getUrl().toString());
 
 		var project = getTestProject();
 		var file = project.getOriginalData().getFile().getFile();

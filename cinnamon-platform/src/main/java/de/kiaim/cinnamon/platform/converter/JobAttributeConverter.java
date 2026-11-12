@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
 import de.kiaim.cinnamon.platform.model.configuration.Job;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Converter a {@link Job} to a string and back when persisting the job in the database.
@@ -27,7 +28,7 @@ public class JobAttributeConverter implements AttributeConverter<Job, String> {
 	}
 
 	@Override
-	public Job convertToEntityAttribute(final String dbData) {
+	public @Nullable Job convertToEntityAttribute(final String dbData) {
 		return cinnamonConfiguration.getSteps().get(dbData);
 	}
 }

@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef, ViewChild } from "@angular/core";
+import { Component, Input, TemplateRef, ViewChild, ChangeDetectionStrategy } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 
 /**
@@ -10,6 +10,7 @@ import { MatDialog } from "@angular/material/dialog";
     selector: "app-information-dialog",
     templateUrl: "./information-dialog.component.html",
     styleUrls: ["./information-dialog.component.less"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false,
 })
 export class InformationDialogComponent {

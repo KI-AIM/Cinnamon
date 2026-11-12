@@ -9,7 +9,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 
 import java.time.Instant;
-import java.util.Date;
 import java.util.concurrent.ScheduledFuture;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +38,6 @@ public class TestTaskSchedulerConfig {
 
 		// Mock all the schedule methods
 		Mockito.doAnswer(executeImmediately).when(mockScheduler).schedule(any(Runnable.class), any(Instant.class));
-		Mockito.doAnswer(executeImmediately).when(mockScheduler).schedule(any(Runnable.class), any(Date.class));
 		Mockito.doAnswer(executeImmediately).when(mockScheduler).schedule(any(Runnable.class), any(Trigger.class));
 
 		return mockScheduler;

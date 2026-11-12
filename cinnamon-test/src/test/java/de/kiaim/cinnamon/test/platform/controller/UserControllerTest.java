@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithUserDetails;
@@ -79,6 +80,23 @@ public class UserControllerTest extends ControllerTest {
 	public void loginUnauthorized() throws Exception {
 		mockMvc.perform(get("/api/user/login"))
 		       .andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	public void logoutClearsTheCsrfCookie() throws Exception {
+		mockMvc.perform(post("/api/user/logout"))
+		       .andExpect(status().isOk())
+		       .andExpect(cookie().maxAge("XSRF-TOKEN", 0));
+	}
+
+	@Test
+	public void logoutInvalidatesTheSession() throws Exception {
+		final MockHttpSession session = new MockHttpSession();
+
+		mockMvc.perform(post("/api/user/logout").session(session))
+		       .andExpect(status().isOk());
+
+		assertTrue(session.isInvalid(), "Logout did not invalidate the session!");
 	}
 
 	@Test

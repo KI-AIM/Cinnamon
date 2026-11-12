@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.anonymization.helper;
 
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,7 +39,7 @@ public class DataGeneration {
      * @return A Data object of the specified DataType, initialized with either the provided value or a default value.
      * @throws IllegalArgumentException If the DataType is unsupported or if the value, when non-null, is not compatible.
      */
-    public static Data createDataByTypeAndValue(DataType type, Object value) {
+    public static Data createDataByTypeAndValue(DataType type, @Nullable Object value) {
         if (value == null) {
             // TODO : discuss default values
             return switch (type) {

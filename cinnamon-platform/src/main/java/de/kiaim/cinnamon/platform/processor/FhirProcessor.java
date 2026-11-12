@@ -159,7 +159,7 @@ public class FhirProcessor implements DataProcessor {
 	 * @return The CSV format.
 	 */
 	private CSVFormat buildCsvFormat() {
-		return CSVFormat.Builder.create(CSVFormat.DEFAULT).setHeader().build();
+		return CSVFormat.Builder.create(CSVFormat.DEFAULT).setHeader().get();
 	}
 
 	/**

@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.model.entity.admin;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,7 +22,7 @@ public class EmailTemplateEntity {
 	 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private @Nullable Long id;
 
 	/**
 	 * The display name of the email template.
@@ -43,7 +44,7 @@ public class EmailTemplateEntity {
 	 *
 	 * @param item The item to add.
 	 */
-	public void addItem(final EmailTemplateItemEntity item) {
+	public void addItem(final @Nullable EmailTemplateItemEntity item) {
 		if (item == null) {
 			return;
 		}
@@ -68,7 +69,7 @@ public class EmailTemplateEntity {
 	 *
 	 * @param item The item to remove.
 	 */
-	public void removeItem(final EmailTemplateItemEntity item) {
+	public void removeItem(final @Nullable EmailTemplateItemEntity item) {
 		if (item == null || !items.remove(item)) {
 			return;
 		}

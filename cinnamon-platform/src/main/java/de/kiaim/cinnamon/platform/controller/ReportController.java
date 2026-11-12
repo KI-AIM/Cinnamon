@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.ReportService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.jspecify.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -53,7 +54,7 @@ public class ReportController {
 					             additionalPropertiesSchema = @Schema(implementation = ModuleReportContent.class))),
 	})
 	@GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
-	public Map<String, ModuleReportContent> getReportData(
+	public Map<String, @Nullable ModuleReportContent> getReportData(
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal final UserEntity requestUser
 	) throws ApiException {

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { UtilityMetricData2, UtilityMetricData3, UtilityMetricDataObject } from "@shared/model/statistics";
 
 /**
@@ -10,6 +10,7 @@ import { UtilityMetricData2, UtilityMetricData3, UtilityMetricDataObject } from 
     selector: 'app-data-inspection-utility',
     standalone: false,
     templateUrl: './data-inspection-utility.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './data-inspection-utility.component.less'
 })
 export class DataInspectionUtilityComponent {

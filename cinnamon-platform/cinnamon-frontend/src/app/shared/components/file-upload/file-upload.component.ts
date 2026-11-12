@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { AppConfig, AppConfigService } from "@shared/services/app-config.service";
 import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { Observable, take } from "rxjs";
@@ -7,6 +7,7 @@ import { Observable, take } from "rxjs";
     selector: 'app-file-upload',
     templateUrl: './file-upload.component.html',
     styleUrl: './file-upload.component.less',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false,
 })
 export class FileUploadComponent implements OnInit {

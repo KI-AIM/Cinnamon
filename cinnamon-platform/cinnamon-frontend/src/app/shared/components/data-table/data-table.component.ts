@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { AfterViewInit, Component, Input, OnInit, ViewChild } from "@angular/core";
+import { AfterViewInit, Component, Input, OnInit, ViewChild, ChangeDetectionStrategy } from "@angular/core";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatTableDataSource } from "@angular/material/table";
 import { HoldOutSelector } from "@core/enums/hold-out-selector";
@@ -17,6 +17,7 @@ import { environments } from "src/environments/environment";
     selector: "app-data-table",
     templateUrl: "./data-table.component.html",
     styleUrls: ["./data-table.component.less"],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DataTableComponent implements OnInit, AfterViewInit {

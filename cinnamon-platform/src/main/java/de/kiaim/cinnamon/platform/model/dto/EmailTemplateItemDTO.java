@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The content of an email template for a single language.
@@ -20,7 +21,7 @@ public class EmailTemplateItemDTO {
 	                      + "updating a template.",
 	        example = "1",
 	        accessMode = Schema.AccessMode.READ_ONLY)
-	private Long id;
+	private @Nullable Long id;
 
 	@Schema(description = "The language of the content.", example = "ENGLISH")
 	@NotNull(message = "Language must not be null.")

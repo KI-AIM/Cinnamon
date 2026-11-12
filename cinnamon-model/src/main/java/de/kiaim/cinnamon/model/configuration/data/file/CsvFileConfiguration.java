@@ -1,5 +1,6 @@
 package de.kiaim.cinnamon.model.configuration.data.file;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.Setter;
 
 @AllArgsConstructor @NoArgsConstructor
 @Getter @Setter
+@JsonPropertyOrder({"columnSeparator", "lineSeparator", "quoteChar", "hasHeader"})
 @Schema(description = "Configurations specific for CSV files.")
 public class CsvFileConfiguration {
 

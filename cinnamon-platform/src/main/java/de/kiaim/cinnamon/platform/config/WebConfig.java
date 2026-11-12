@@ -2,11 +2,9 @@ package de.kiaim.cinnamon.platform.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.HttpMessageConverters;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.util.List;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -21,9 +19,8 @@ public class WebConfig implements WebMvcConfigurer {
 	}
 
 	@Override
-	public void extendMessageConverters(final List<HttpMessageConverter<?>> converters) {
-		converters.add(formatBasedMessageConverter);
-		WebMvcConfigurer.super.extendMessageConverters(converters);
+	public void configureMessageConverters(final HttpMessageConverters.ServerBuilder builder) {
+		builder.configureMessageConvertersList(converters -> converters.add(formatBasedMessageConverter));
 	}
 
 	@Override
@@ -31,6 +28,9 @@ public class WebConfig implements WebMvcConfigurer {
 		registry.addMapping("/**")
 		        .allowedHeaders("*")
 		        .allowedMethods("GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS")
-		        .allowedOrigins(corsAllowedOrigins);
+		        .allowedOrigins(corsAllowedOrigins)
+		        // Needed so the browser both accepts the XSRF-TOKEN cookie set by the backend and sends it
+		        // back on cross-origin requests (e.g. the Angular dev server on a different port).
+		        .allowCredentials(true);
 	}
 }

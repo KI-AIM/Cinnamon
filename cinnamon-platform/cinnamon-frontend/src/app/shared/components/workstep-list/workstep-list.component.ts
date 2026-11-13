@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, EventEmitter, Input, OnDestroy, OnInit, Output, ChangeDetectionStrategy } from '@angular/core';
+import { booleanAttribute, Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { Steps } from "@core/enums/steps";
 import { StatusService } from "@shared/services/status.service";
 import { WorkstepService } from "@shared/services/workstep.service";
@@ -10,7 +10,7 @@ import { WorkstepService } from "@shared/services/workstep.service";
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './workstep-list.component.less',
 })
-export class WorkstepListComponent implements OnInit, OnDestroy {
+export class WorkstepListComponent implements OnChanges, OnInit, OnDestroy {
 
     @Input() public confirmLabel!: string;
     @Input({transform: booleanAttribute}) public invalid: boolean = false;
@@ -30,6 +30,12 @@ export class WorkstepListComponent implements OnInit, OnDestroy {
 
     public ngOnInit() {
         this.workstepService.init(this.step, this.numberSteps, this.resetFollowing, this.statusService.isStepCompleted(this.step), this.resetSteps);
+    }
+
+    public ngOnChanges(changes: SimpleChanges): void {
+        if (changes['numberSteps'] && !changes['numberSteps'].firstChange) {
+            this.workstepService.updateStepCount(this.numberSteps);
+        }
     }
 
     public ngOnDestroy() {

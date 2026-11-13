@@ -382,6 +382,7 @@ def run_pipeline(synthesizer_name, file_path_status, attribute_config, algorithm
             text_algorithm_config = configuration.build_text_synthesis_algorithm_config(
                 algorithm_config, synthesizer_name, len(text_input),
             )
+            text_algorithm_config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] = len(text_input)
             announce_component_synthesis(file_path_status, "llm_synthesis", synthesizer_name)
             text_samples, text_model, init_duration, fit_duration, sample_duration = run_synthesizer_stage(
                 stage_label="TEXT_SYNTHESIS",
@@ -407,6 +408,11 @@ def run_pipeline(synthesizer_name, file_path_status, attribute_config, algorithm
             total_fit_duration += fit_duration
             total_sample_duration += sample_duration
 
+        # Nullable integers must serialize as 55, not 55.0, for the platform's INTEGER parser.
+        for column_config in structured_configs:
+            if column_config["type"].upper() == "INTEGER":
+                name = column_config["name"]
+                final_samples[name] = final_samples[name].astype("Int64")
         final_model = cloudpickle.dumps({"structured_synthesis": None, "text_synthesis": text_models})
     elif structured_configs:
         if data_modality != configuration.PROCESSING_MODALITY_STRUCTURED_ONLY:
@@ -427,18 +433,6 @@ def run_pipeline(synthesizer_name, file_path_status, attribute_config, algorithm
             raise ValueError("Select a mixed-data free-text synthesizer in text_synthesis_configuration.")
 
         structured_algorithm_config = algorithm_config
-        if text_configs and text_name == "llm_mixed_data_embedding_nearest_neighbor_synthesis":
-            requested_samples = text_config["synthetization_configuration"]["algorithm"].get("sampling", {}).get("num_samples")
-            if requested_samples is not None:
-                if (isinstance(requested_samples, bool)
-                        or not str(requested_samples).strip().isdigit()
-                        or int(requested_samples) <= 0):
-                    raise ValueError("Retrieval-guided num_samples must be a positive integer.")
-                structured_algorithm_config = deepcopy(algorithm_config)
-                structured_algorithm_config["synthetization_configuration"]["algorithm"].setdefault(
-                    "sampling", {},
-                )["num_samples"] = int(requested_samples)
-
         print("Pipeline mode: structured synthesis followed by text generation." if text_configs
               else "Pipeline mode: single-stage synthesis.")
         structured_names = [cfg["name"] for cfg in structured_configs]

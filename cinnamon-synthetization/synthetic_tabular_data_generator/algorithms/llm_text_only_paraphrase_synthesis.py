@@ -56,7 +56,7 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
         self._text_columns = [cfg["name"] for cfg in ordered_configs]
 
     def _initialize_dataset(self, df: pd.DataFrame) -> None:
-        self.dataset = self._drop_header_like_rows(df.copy())
+        self.dataset = df.copy()
 
     def initialize_reference_dataset(self, df: pd.DataFrame) -> None:
         self.reference_dataset = self._drop_header_like_rows(df.copy())
@@ -84,8 +84,6 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
             raise ValueError("LLM client is not initialized.")
 
         source = self.dataset.copy().reset_index(drop=True)
-        num_samples = self._resolve_num_samples(len(source), allow_exceed_default=False)
-        source = source.head(num_samples)
 
         rows = source.to_dict(orient="records")
         total = len(rows)
@@ -194,7 +192,9 @@ class LlmTextOnlyParaphraseSynthesisSynthesizer(ConfiguredLlmSynthesizerBase):
         return failed_row
 
     def _row_has_no_rewritable_text(self, row: Dict[str, Any]) -> bool:
-        return all(self._is_missing_text(row.get(column_name)) for column_name in self._text_columns)
+        return self._row_looks_like_header_or_placeholder(row) or all(
+            self._is_missing_text(row.get(column_name)) for column_name in self._text_columns
+        )
 
     def _is_verbatim_copy(self, base_row: Dict[str, Any], rewritten_row: Dict[str, Any]) -> bool:
         rewritable_columns = [

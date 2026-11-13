@@ -1,3 +1,4 @@
+import { of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ProjectService } from "@shared/services/project.service";
 import { SynthetizationService } from './synthetization.service';
@@ -106,10 +107,39 @@ describe('SynthetizationService', () => {
       };
       const serialized = service.createConfiguration(values, algorithm);
       const restored = service.readConfiguration(serialized, 'synthetization_configuration');
-      expect(restored.config).toEqual(values);
+      expect(restored.config).toEqual({...values, structured_synthesis_enabled: true});
       expect(restored.selectedAlgorithm).toEqual(algorithm);
       expect(service.getHyperparameterConfig()).toEqual(tuning);
     });
   }
 
+});
+
+describe('SynthetizationService input row preservation', () => {
+  it('removes an imported sample count only when reusing structured input rows', () => {
+    const service = new SynthetizationService({} as any, {configImport$: of()} as any, {} as any);
+    const sampling = {num_samples: 5, temperature: 0.8};
+    for (const [name, enabled, expectedCount] of [
+      ['llm_mixed_data_embedding_nearest_neighbor_synthesis', false, undefined],
+      ['llm_text_only_paraphrase_synthesis', false, undefined],
+      ['llm_text_only_embedding_nearest_neighbor_synthesis', false, 5],
+      ['ctgan', true, 5],
+    ] as const) {
+      const result = service.createConfiguration({structured_synthesis_enabled: enabled, sampling}, {name} as any) as any;
+      expect(result.synthetization_configuration.algorithm.sampling.num_samples).toBe(expectedCount);
+      expect(result.synthetization_configuration.algorithm.sampling.temperature).toBe(0.8);
+    }
+    expect(sampling.num_samples).toBe(5);
+  });
+});
+
+describe('Mixed-data sample count ownership', () => {
+  it('keeps the structured count and removes a conflicting imported text count', () => {
+    const service = new SynthetizationService({} as any, {configImport$: of()} as any, {} as any);
+    const text = {synthetization_configuration: {algorithm: {sampling: {num_samples: 13, temperature: 0.8}}}};
+    const result = service.createConfiguration({sampling: {num_samples: 100}, text_synthesis_configuration: text}, {name: 'ctgan'} as any) as any;
+    expect(result.synthetization_configuration.algorithm.sampling.num_samples).toBe(100);
+    expect(result.synthetization_configuration.text_synthesis_configuration.synthetization_configuration.algorithm.sampling).toEqual({temperature: 0.8});
+    expect(text.synthetization_configuration.algorithm.sampling.num_samples).toBe(13);
+  });
 });

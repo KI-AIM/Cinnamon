@@ -97,6 +97,10 @@ export class WorkstepService {
         }
     }
 
+    public updateStepCount(numberSteps: number): void {
+        this.numberSteps = numberSteps;
+    }
+
     /**
      * Marks the given step as completed.
      * @param stepIndex

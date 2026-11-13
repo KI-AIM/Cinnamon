@@ -958,7 +958,7 @@ def test_structured_then_text_pipeline_preserves_config_rows_and_models(monkeypa
     monkeypatch.setattr(synthesizer_registry, "synthesizer_classes", {structured_name: {}, text_name: {}})
     monkeypatch.setattr(configuration, "get_data_modality", lambda name: "mixed" if name == text_name else "structured_only")
     monkeypatch.setattr(app_module, "send_callback_error", lambda *args: pytest.fail(str(args)))
-    count = text_samples or 3
+    count = 3
     synthetic = pd.DataFrame({"age": pd.Series(([65, 42, None] * 2)[:count], dtype="Int64")})
 
     def run_stage(**kwargs):
@@ -1426,3 +1426,40 @@ def test_shared_initialization_rejects_unsupported_reference_data(monkeypatch):
             "no_reference", {}, {}, app_module.pd.DataFrame(),
             app_module.pd.DataFrame(), lambda *_: None,
         )
+
+
+def test_text_generation_reuses_all_rows_and_exports_nullable_integers(monkeypatch, tmp_path):
+    import csv
+    import pandas as pd
+
+    name = "llm_mixed_data_embedding_nearest_neighbor_synthesis"
+    data = pd.DataFrame({"age": [55.0, None, 40.0], "score": [1.25, None, 2.75],
+                         "note": ["first", "second", "third"]})
+    attrs = {"configurations": [{"name": "age", "type": "INTEGER", "index": 0},
+                                {"name": "score", "type": "DECIMAL", "index": 1},
+                                {"name": "note", "type": "TEXT", "index": 2}]}
+    config = {"synthetization_configuration": {
+        "structured_synthesis_enabled": False,
+        "algorithm": {"synthesizer": name, "sampling": {"num_samples": 1, "temperature": 0.8}},
+    }}
+    monkeypatch.setattr(configuration, "get_data_modality", lambda _: configuration.PROCESSING_MODALITY_MIXED)
+    monkeypatch.setattr(configuration, "load_text_synthesis_defaults", lambda _: {})
+
+    def stage(**kwargs):
+        sampling = kwargs["stage_algorithm_config"]["synthetization_configuration"]["algorithm"]["sampling"]
+        assert sampling == {"num_samples": 3, "temperature": 0.8}
+        assert kwargs["preserve_structured_values"] is True
+        samples = kwargs["input_data"].copy()
+        samples["note"] = ["new first", "new second", "new third"]
+        return samples, b"model", 0, 0, 0
+
+    monkeypatch.setattr(pipeline, "run_synthesizer_stage", stage)
+    status = str(tmp_path / "status.yaml")
+    initialize_status_file(status, "nullable-integers", name)
+    samples, model = pipeline.run_pipeline(name, status, attrs, config, data, None, "nullable-integers")
+    files = app_module.prepare_callback_data(samples, model)
+    rows = list(csv.DictReader(io.StringIO(files["synthetic_data"][1].getvalue().decode())))
+    assert [row["age"] for row in rows] == ["55", "", "40"]
+    assert [row["score"] for row in rows] == ["1.25", "", "2.75"]
+    assert [row["note"] for row in rows] == ["new first", "new second", "new third"]
+    assert config["synthetization_configuration"]["algorithm"]["sampling"]["num_samples"] == 1

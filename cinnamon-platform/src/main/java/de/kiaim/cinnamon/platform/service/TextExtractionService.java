@@ -1,8 +1,8 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.Configuration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
@@ -341,7 +341,7 @@ public class TextExtractionService {
 		for (final Map.Entry<String, JsonNode> object : objectFields.entrySet()) {
 			for (int occurrence = 1; occurrence <= maximumOccurrences.get(object.getKey()); occurrence++) {
 				for (final JsonNode nestedField : object.getValue().path("fields")) {
-					final ObjectNode wideField = nestedField.deepCopy();
+					final ObjectNode wideField = (ObjectNode) nestedField.deepCopy();
 					wideField.put("name", wideFieldName(object.getKey(), occurrence,
 					                                      nestedField.path("name").asText()));
 					wideFields.add(wideField);
@@ -517,7 +517,7 @@ public class TextExtractionService {
 			                               "Text extraction requires a source column of type TEXT.");
 		}
 
-		final ObjectNode request = configuration.deepCopy();
+		final ObjectNode request = (ObjectNode) configuration.deepCopy();
 		final var rows = request.putArray("rows");
 		final int firstRow = hasUnrecognizedTextHeader(sourceData, configuration.path("source_column").asText())
 		                     ? 1 : 0;
@@ -610,7 +610,7 @@ public class TextExtractionService {
 	private JsonNode failedResult(final JsonNode fields, final JsonNode inputRow, final Exception exception) {
 		final ObjectNode result = emptyResult(fields);
 		final ObjectNode row = result.withArray("rows").addObject();
-		final ObjectNode evidenceRow = result.with("evidence").withArray("rows").addObject();
+		final ObjectNode evidenceRow = result.withObject("evidence").withArray("rows").addObject();
 		final ObjectNode evidenceFields = evidenceRow.putObject("fields");
 		row.put("text_extraction_id",
 		        inputRow.path("text_extraction_id").asInt(inputRow.path("row_index").intValue() + 1));
@@ -664,8 +664,8 @@ public class TextExtractionService {
 			}
 			evidenceRow.put("row_index", rowIndex);
 			evidenceRow.put("source_row_index", sourceRowIndex);
-			evidenceRow.with("fields").set("text_extraction_id", emptyEvidence());
-			result.with("evidence").withArray("rows").add(evidenceRow);
+			evidenceRow.withObject("fields").set("text_extraction_id", emptyEvidence());
+			result.withObject("evidence").withArray("rows").add(evidenceRow);
 		}
 		for (final JsonNode error : partialResult.path("errors")) {
 			result.withArray("errors").add(error.deepCopy());

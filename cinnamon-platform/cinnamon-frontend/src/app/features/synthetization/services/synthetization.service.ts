@@ -5,7 +5,7 @@ import { HttpClient } from "@angular/common/http";
 import { ConfigurationRegisterData } from "../../../shared/model/configuration-register-data";
 import { Steps } from "../../../core/enums/steps";
 import { ConfigurationService } from "../../../shared/services/configuration.service";
-import { Algorithm, isStructuredOnlySynthesizer } from "../../../shared/model/algorithm";
+import { Algorithm, isMixedDataSynthesizer, isStructuredOnlySynthesizer } from "../../../shared/model/algorithm";
 import { AlgorithmDefinition } from "../../../shared/model/algorithm-definition";
 import { map, Observable, ReplaySubject } from "rxjs";
 import { parse } from "yaml";
@@ -85,6 +85,11 @@ export class SynthetizationService extends AlgorithmService {
         const structuredSynthesisEnabled = formData["structured_synthesis_enabled"] ?? true;
         delete formData["text_synthesis_configuration"];
         delete formData["structured_synthesis_enabled"];
+        if ((isMixedDataSynthesizer(selectedAlgorithm)
+            || selectedAlgorithm.name === "llm_text_only_paraphrase_synthesis") && formData.sampling) {
+            formData.sampling = {...formData.sampling};
+            delete formData.sampling.num_samples;
+        }
 
         const config: any = {
             synthetization_configuration: {
@@ -103,7 +108,9 @@ export class SynthetizationService extends AlgorithmService {
         };
 
         if (textSynthesisConfiguration) {
-            config["synthetization_configuration"]["text_synthesis_configuration"] = textSynthesisConfiguration;
+            const textConfig = structuredClone(textSynthesisConfiguration);
+            delete textConfig.synthetization_configuration?.algorithm?.sampling?.num_samples;
+            config["synthetization_configuration"]["text_synthesis_configuration"] = textConfig;
         }
 
         return config;

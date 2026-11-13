@@ -1,4 +1,5 @@
 <form *ngIf="configurationData$ | async" [formGroup]="form">
+    <p *ngIf="preservesInputRows">One text is generated for each input row. The number of rows is preserved.</p>
     <ng-container *ngIf="algorithmDefinition">
         <app-configuration-group [form]="form" [fromGroupName]="''" [group]="algorithmDefinition" [disabled]="disabled"
                                  [isOption]="false" [additionalConfigs]="applicableAdditionalConfigs"

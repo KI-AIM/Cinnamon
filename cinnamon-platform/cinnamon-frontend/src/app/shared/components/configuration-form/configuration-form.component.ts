@@ -19,7 +19,7 @@ import { catchError, Observable, of, tap } from "rxjs";
 import { ConfigurationInputType } from "../../model/configuration-input-type";
 import { AlgorithmDefinition } from "../../model/algorithm-definition";
 import { AlgorithmService, ConfigData } from "../../services/algorithm.service";
-import { Algorithm } from "../../model/algorithm";
+import { Algorithm, isMixedDataSynthesizer } from "../../model/algorithm";
 import {
     ConfigurationGroupDefinition,
 } from "../../model/configuration-group-definition";
@@ -393,7 +393,19 @@ export class ConfigurationFormComponent implements OnChanges, OnInit {
         }
     }
 
+    protected get preservesInputRows(): boolean {
+        return this.anonService.getConfigurationName() === "synthetization_configuration"
+            && (isMixedDataSynthesizer(this.algorithm)
+                || this.algorithm.name === "llm_text_only_paraphrase_synthesis");
+    }
+
     private getVisibleAlgorithmDefinition(definition: AlgorithmDefinition): AlgorithmDefinition {
+        const sampling = definition.configurations?.["sampling"];
+        if (this.preservesInputRows && sampling) {
+            return {...definition, configurations: {...definition.configurations,
+                sampling: {...sampling, parameters: sampling.parameters.filter(parameter => parameter.name !== "num_samples")},
+            }};
+        }
         if (
             this.anonService.getConfigurationName() !== "anonymization"
             || !isTextOnlyDataConfiguration(this.dataConfiguration)

@@ -87,13 +87,6 @@ configurations:
     display_name: Sampling
     description: Configure the total number of synthetic records and LLM decoding.
     parameters:
-      - name: num_samples
-        type: integer
-        label: Number of Samples
-        description: Total number of synthetic records to generate, including beyond the source dataset size. Overrides the structured sampling count so every text receives a newly synthesized structured row.
-        default_value: ${original.dataset.numberRows}
-        min_value: 1
-        max_value: 1000000
       - name: temperature
         type: float
         label: Temperature

@@ -22,13 +22,6 @@ configurations:
     display_name: Sampling
     description: Configure how many input rows are rewritten and how deterministic the LLM output should be.
     parameters:
-      - name: num_samples
-        type: integer
-        label: Number of Samples
-        description: Number of input rows to rewrite. Cannot exceed the number of provided rows.
-        default_value: ${original.dataset.numberRows}
-        min_value: 1
-        max_value: ${original.dataset.numberRows}
       - name: temperature
         type: float
         label: Temperature

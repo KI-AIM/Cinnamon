@@ -231,7 +231,7 @@ def test_llm_text_only_paraphrase_synthesis_rejects_header_like_placeholder_inpu
         synthesizer.fit()
 
 
-def test_llm_text_only_paraphrase_synthesis_skips_header_like_first_row_before_prompting(monkeypatch):
+def test_llm_text_only_paraphrase_synthesis_preserves_header_like_row_without_prompting(monkeypatch):
     _set_shared_llm_env(monkeypatch)
 
     dataset = pd.DataFrame(
@@ -278,7 +278,22 @@ def test_llm_text_only_paraphrase_synthesis_skips_header_like_first_row_before_p
     sample = synthesizer.sample()
 
     assert sample.to_dict(orient="records") == [
+        {"summary": "dokument_text"},
         {
             "summary": "The patient is stable after treatment and is expected to be discharged tomorrow.",
         }
     ]
+
+
+@pytest.mark.parametrize("requested", [1, 100])
+def test_paraphrase_preserves_all_input_rows_despite_legacy_sample_count(monkeypatch, requested):
+    _set_shared_llm_env(monkeypatch)
+    synth = LlmTextOnlyParaphraseSynthesisSynthesizer()
+    synth.dataset = pd.DataFrame({"summary": ["First source", "Second source", "Third source"]})
+    synth._llm_client = object()
+    synth._ordered_column_configs = _attribute_config()["configurations"]
+    synth._initialize_anonymization_configuration(_algorithm_config())
+    monkeypatch.setattr(synth, "_resolve_num_samples", lambda *a, **k: requested)
+    monkeypatch.setattr(synth, "_rewrite_row", lambda row, *_: {"summary": "Rewritten " + row["summary"]})
+    result = synth._sample()
+    assert result["summary"].tolist() == ["Rewritten First source", "Rewritten Second source", "Rewritten Third source"]

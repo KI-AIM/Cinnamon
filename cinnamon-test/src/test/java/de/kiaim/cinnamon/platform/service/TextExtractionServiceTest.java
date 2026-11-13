@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.service;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,7 +32,7 @@ class TextExtractionServiceTest {
 		assertFalse(wide.result().path("columns").toString().contains("procedures_4_name"));
 	}
 
-	private void addProcedureRows(final com.fasterxml.jackson.databind.node.ArrayNode rows,
+	private void addProcedureRows(final tools.jackson.databind.node.ArrayNode rows,
 	                              final int sourceRowIndex, final int count) {
 		for (int occurrence = 1; occurrence <= count; occurrence++) {
 			final ObjectNode row = rows.addObject();

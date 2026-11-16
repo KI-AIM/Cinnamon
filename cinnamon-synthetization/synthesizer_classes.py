@@ -23,6 +23,8 @@ from synthetic_tabular_data_generator.algorithms.llm_text_only_indirect_identifi
 )
 from synthetic_tabular_data_generator.algorithms.rtvae import RtvaeSynthesizer
 from synthetic_tabular_data_generator.algorithms.tvae import TvaeSynthesizer
+from synthetic_tabular_data_generator.algorithms.dpgan import DpganSynthesizer
+from synthetic_tabular_data_generator.algorithms.pategan import PateganSynthesizer
 
 synthesizer_classes = {
     'ctgan': {
@@ -128,6 +130,22 @@ synthesizer_classes = {
         'display_name': 'LLM Text-only Indirect Identifier Rewrite Synthesis',
         'description': 'Rewrite a single TEXT input column with an LLM while preserving medically relevant content and generalizing direct or indirect identifiers. This synthesizer expects exactly one free-text column and produces exactly one rewritten output row per input row.',
         'URL': '/synthetic_tabular_data_generator/synthesizer_config/llm_text_only_indirect_identifier_rewrite_synthesis.yaml'
+    },
+    'dpgan': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': DpganSynthesizer,
+        'display_name': 'DP-GAN (Differentially Private Gan)',
+        'description': 'A differentially private GAN that trains its discriminator with DP-SGD to give the generated data a formal (epsilon, delta) privacy guarantee',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/dpgan.yaml'
+    },
+    'pategan': {
+        'version': '0.1',
+        'type': 'cross-sectional',
+        'class': PateganSynthesizer,
+        'display_name': 'PATE-GAN (Private Aggregation of Teacher Ensembles)',
+        'description': 'A differentially private GAN that uses an ensemble of teacher models trained on disjoint subsets of the original data. Their predictions are privately aggregated to train the generator while providing a formal (epsilon, delta) privacy guarantee.',
+        'URL': '/synthetic_tabular_data_generator/synthesizer_config/pategan.yaml'
     }
 }
 

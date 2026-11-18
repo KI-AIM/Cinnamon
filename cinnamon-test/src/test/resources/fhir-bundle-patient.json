@@ -1,7 +1,6 @@
 {
   "resourceType": "Bundle",
   "entry": [ {
-    "fullUrl": "https://hapi.fhir.org/baseR4/Patient/30209",
     "resource": {
       "resourceType": "Patient",
       "id": "30163",

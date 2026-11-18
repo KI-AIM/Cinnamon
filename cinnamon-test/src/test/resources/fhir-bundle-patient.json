@@ -10,8 +10,7 @@
         "source": "#084xwFTmqJH0RTYf"
       },
       "text": {
-        "status": "generated",
-        "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><div class=\"hapiHeaderText\">JOHN STEVE <b>SMITH </b></div><table class=\"hapiPropertyTable\"><tbody><tr><td>Identifier</td><td>urn:id:999991</td></tr><tr><td>Date of birth</td><td><span>01 January 1950</span></td></tr></tbody></table></div>"
+        "status": "generated"
       },
       "identifier": [ {
         "system": "coolGym101",

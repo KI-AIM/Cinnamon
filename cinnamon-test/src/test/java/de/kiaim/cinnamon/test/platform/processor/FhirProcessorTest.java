@@ -106,7 +106,9 @@ public class FhirProcessorTest extends ContextRequiredTest {
 		assertDoesNotThrow(() -> fhirProcessor.write(stream, dataset));
 
 		String content = stream.toString(StandardCharsets.UTF_8);
-		String expectedContent = ResourceHelper.loadFileAsString("fhir-bundle-patient.json").replaceAll(",2023-11-20,", ",20.11.2023,");
+		String expectedContent = ResourceHelper.loadFileAsString("fhir-bundle-patient.json")
+		                                       .replace(",2023-11-20,", ",20.11.2023,")
+		                                       .replace("\r\n", "\n");
 		assertEquals(expectedContent, content);
 	}
 

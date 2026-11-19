@@ -160,8 +160,8 @@
                         <mat-select [(ngModel)]="datasetFileType">
                             <mat-option [value]="FileType.CSV">CSV</mat-option>
                             <mat-option [value]="FileType.XLSX">XLSX</mat-option>
-                            @if (datasetFileType === FileType.FHIR) {
-                                <mat-option [value]="FileType.FHIR">FHIR</mat-option>
+                            @if (datasetFileType === FileType.FHIR_BUNDLE) {
+                                <mat-option [value]="FileType.FHIR_BUNDLE">FHIR</mat-option>
                             }
                         </mat-select>
                     </mat-form-field>

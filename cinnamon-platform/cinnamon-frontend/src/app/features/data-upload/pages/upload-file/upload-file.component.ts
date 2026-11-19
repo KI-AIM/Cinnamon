@@ -167,8 +167,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @private
      */
     protected isFileConfigurationInvalid(): boolean {
-        if (this.fileConfiguration.fileType === FileType.FHIR) {
-            if (this.fileConfiguration.fhirFileConfiguration == null || this.fileConfiguration.fhirFileConfiguration.resourceType == null) {
+        if (this.fileConfiguration.fileType === FileType.FHIR_BUNDLE) {
+            if (this.fileConfiguration.fhirBundleFileConfiguration == null || this.fileConfiguration.fhirBundleFileConfiguration.resourceType == null) {
                 return true;
             }
         }
@@ -392,7 +392,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                 this.fileConfiguration.fileType = FileType.CSV;
                 break;
             case "json":
-                this.fileConfiguration.fileType = FileType.FHIR;
+                this.fileConfiguration.fileType = FileType.FHIR_BUNDLE;
                 break;
             case "xlsx":
                 this.fileConfiguration.fileType = FileType.XLSX;
@@ -423,7 +423,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
         this.loadingEstimation = false;
 
-        if (openDialog && value.estimation.fileType === FileType.FHIR) {
+        if (openDialog && value.estimation.fileType === FileType.FHIR_BUNDLE) {
             this.openDialog(this.fileConfigurationDialog);
         }
     }

@@ -1,13 +1,7 @@
 package de.kiaim.cinnamon.platform.model.mapper;
 
-import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.XlsxFileConfiguration;
-import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
+import de.kiaim.cinnamon.model.configuration.data.file.*;
+import de.kiaim.cinnamon.platform.model.entity.*;
 import org.jspecify.annotations.Nullable;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
@@ -16,7 +10,7 @@ import org.mapstruct.MappingConstants;
 		componentModel = MappingConstants.ComponentModel.SPRING,
 		uses = {
 				CsvFileConfigurationMapper.class,
-				FhirFileConfigurationMapper.class,
+				FhirBundleFileConfigurationMapper.class,
 				XlsxFileConfigurationMapper.class
 		}
 )
@@ -34,8 +28,8 @@ public abstract class FileConfigurationMapper {
 			dto.setCsvFileConfiguration(toDto(csvEntity));
 		} else if (entity instanceof XlsxFileConfigurationEntity xlsxEntity) {
 			dto.setXlsxFileConfiguration(toDto(xlsxEntity));
-		} else if (entity instanceof FhirFileConfigurationEntity fhirEntity) {
-			dto.setFhirFileConfiguration(toDto(fhirEntity));
+		} else if (entity instanceof FhirBundleFileConfigurationEntity fhirEntity) {
+			dto.setFhirBundleFileConfiguration(toDto(fhirEntity));
 		}
 
 		return dto;
@@ -53,7 +47,7 @@ public abstract class FileConfigurationMapper {
 		var result = switch (configuration.getFileType()) {
 			case CSV -> toEntity(configuration.getCsvFileConfiguration());
 			case XLSX -> toEntity(configuration.getXlsxFileConfiguration());
-			case FHIR -> toEntity(configuration.getFhirFileConfiguration());
+			case FHIR_BUNDLE -> toEntity(configuration.getFhirBundleFileConfiguration());
 		};
 
 		return result;
@@ -63,11 +57,11 @@ public abstract class FileConfigurationMapper {
 
 	protected abstract XlsxFileConfiguration toDto(XlsxFileConfigurationEntity entity);
 
-	protected abstract FhirFileConfiguration toDto(FhirFileConfigurationEntity entity);
+	protected abstract FhirBundleFileConfiguration toDto(FhirBundleFileConfigurationEntity entity);
 
 	protected abstract CsvFileConfigurationEntity toEntity(CsvFileConfiguration configuration);
 
 	protected abstract XlsxFileConfigurationEntity toEntity(XlsxFileConfiguration configuration);
 
-	protected abstract FhirFileConfigurationEntity toEntity(FhirFileConfiguration configuration);
+	protected abstract FhirBundleFileConfigurationEntity toEntity(FhirBundleFileConfiguration configuration);
 }

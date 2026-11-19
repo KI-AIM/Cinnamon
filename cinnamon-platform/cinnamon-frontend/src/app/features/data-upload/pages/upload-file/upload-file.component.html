@@ -340,7 +340,7 @@
                     <mat-icon class="icon-enabled" (click)="hasHeaderInfo.handleClick($event)">info</mat-icon>
                 </div>
             </div>
-        } @else if (this.fileConfiguration.fileType === FileType.FHIR) {
+        } @else if (this.fileConfiguration.fileType === FileType.FHIR_BUNDLE) {
 
             <div class="config-input-row">
                 <div class="config-input-row-label">
@@ -349,7 +349,7 @@
                 <mat-form-field class="config-input-row-field">
                     <mat-label>FHIR Resource Type</mat-label>
                     <mat-select [disabled]="pageData.locked.isLocked"
-                                [(ngModel)]="this.fileConfiguration.fhirFileConfiguration!.resourceType" required>
+                                [(ngModel)]="this.fileConfiguration.fhirBundleFileConfiguration!.resourceType" required>
                         @for (resourceType of fhirResourceTypes; track resourceType) {
                             <mat-option [value]="resourceType">{{ resourceType }}</mat-option>
                         }

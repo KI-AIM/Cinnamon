@@ -5,7 +5,7 @@ import de.kiaim.cinnamon.model.configuration.data.DataSourceServerConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.*;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.model.entity.CsvFileConfigurationEntity;
-import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
+import de.kiaim.cinnamon.platform.model.entity.FhirBundleFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.XlsxFileConfigurationEntity;
 
@@ -40,7 +40,7 @@ public class FileConfigurationTestHelper {
 				fileType,
 				new CsvFileConfiguration(",", "\n", '"', hasHeader),
 				new XlsxFileConfiguration(hasHeader),
-				new FhirFileConfiguration("Observation")
+				new FhirBundleFileConfiguration("Observation")
 		);
 	}
 
@@ -49,7 +49,7 @@ public class FileConfigurationTestHelper {
 
 		return switch (fileType) {
 			case CSV -> new CsvFileConfigurationEntity(dto.getCsvFileConfiguration());
-			case FHIR -> new FhirFileConfigurationEntity(dto.getFhirFileConfiguration());
+			case FHIR_BUNDLE -> new FhirBundleFileConfigurationEntity(dto.getFhirBundleFileConfiguration());
 			case XLSX -> new XlsxFileConfigurationEntity(dto.getXlsxFileConfiguration());
 		};
 	}

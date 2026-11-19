@@ -2,11 +2,11 @@ package de.kiaim.cinnamon.test.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.data.DataSet;
-import de.kiaim.cinnamon.platform.model.entity.FhirFileConfigurationEntity;
+import de.kiaim.cinnamon.platform.model.entity.FhirBundleFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
-import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.platform.processor.FhirProcessor;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import de.kiaim.cinnamon.test.util.ResourceHelper;
@@ -33,7 +33,7 @@ public class FhirProcessorTest extends ContextRequiredTest {
 		var fileCompatibility = new FileCompatibilityEntity();
 		assertDoesNotThrow(() -> fhirProcessor.checkFileCompatibility(lobWrapper, fileCompatibility));
 
-		assertTrue(fileCompatibility.getCompatibleFileTypes().contains(FileType.FHIR));
+		assertTrue(fileCompatibility.getCompatibleFileTypes().contains(FileType.FHIR_BUNDLE));
 		assertNotNull(fileCompatibility.getFhirResourceTypes());
 		assertEquals(2, fileCompatibility.getFhirResourceTypes().size());
 		assertTrue(fileCompatibility.getFhirResourceTypes().contains("Patient"));
@@ -49,15 +49,15 @@ public class FhirProcessorTest extends ContextRequiredTest {
 		var estimation = assertDoesNotThrow(
 				() -> fhirProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
-		assertEquals(FileType.FHIR, estimation.getEstimation().getFileType());
+		assertEquals(FileType.FHIR_BUNDLE, estimation.getEstimation().getFileType());
 	}
 
 	@Test
 	public void read() throws IOException {
 		var bundle = ResourceHelper.loadFhirBundleAsString();
 
-		var fhirFileConfiguration = new FhirFileConfiguration("Patient");
-		var fileConfiguration = new FhirFileConfigurationEntity(fhirFileConfiguration);
+		var fhirFileConfiguration = new FhirBundleFileConfiguration("Patient");
+		var fileConfiguration = new FhirBundleFileConfigurationEntity(fhirFileConfiguration);
 
 		var estimation = assertDoesNotThrow(
 				() -> fhirProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
@@ -75,8 +75,8 @@ public class FhirProcessorTest extends ContextRequiredTest {
 	public void estimateDataConfiguration() throws IOException {
 		var bundle = ResourceHelper.loadFhirBundleAsString();
 
-		var fhirFileConfiguration = new FhirFileConfiguration("Patient");
-		var fileConfiguration = new FhirFileConfigurationEntity(fhirFileConfiguration);
+		var fhirFileConfiguration = new FhirBundleFileConfiguration("Patient");
+		var fileConfiguration = new FhirBundleFileConfigurationEntity(fhirFileConfiguration);
 
 		var estimation = assertDoesNotThrow(
 				() -> fhirProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
@@ -90,8 +90,8 @@ public class FhirProcessorTest extends ContextRequiredTest {
 	public void write() throws IOException {
 		var bundle = ResourceHelper.loadFileAsString("fhir-bundle-patient.json");
 
-		var fhirFileConfiguration = new FhirFileConfiguration("Patient");
-		var fileConfiguration = new FhirFileConfigurationEntity(fhirFileConfiguration);
+		var fhirFileConfiguration = new FhirBundleFileConfiguration("Patient");
+		var fileConfiguration = new FhirBundleFileConfigurationEntity(fhirFileConfiguration);
 
 		var estimation = assertDoesNotThrow(
 				() -> fhirProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
@@ -113,7 +113,7 @@ public class FhirProcessorTest extends ContextRequiredTest {
 
 	private static FileCompatibilityEntity getFileCompatibility() {
 		FileCompatibilityEntity compatibility = new FileCompatibilityEntity();
-		compatibility.getCompatibleFileTypes().add(FileType.FHIR);
+		compatibility.getCompatibleFileTypes().add(FileType.FHIR_BUNDLE);
 		compatibility.setFhirResourceTypes(Set.of("Patient", "Observation"));
 		return compatibility;
 	}

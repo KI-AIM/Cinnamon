@@ -4,7 +4,7 @@ import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "@shared/
 import {
     DataSourceConfiguration,
     DataSourceType,
-    FhirFileConfiguration,
+    FhirBundleFileConfiguration,
     FileConfiguration,
     FileConfigurationEstimation
 } from "@shared/model/file-configuration";
@@ -61,7 +61,7 @@ export class FileService {
             null,
             new CsvFileConfiguration(Delimiter.COMMA, LineEnding.LF, QuoteChar.DOUBLE_QUOTE, true),
             new XlsxFileConfiguration(true),
-            new FhirFileConfiguration(""));
+            new FhirBundleFileConfiguration(""));
     }
 
     public get fileInfo$(): Observable<FileInformation> {

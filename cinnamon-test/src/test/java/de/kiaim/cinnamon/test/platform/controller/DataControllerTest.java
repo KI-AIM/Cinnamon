@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.test.platform.controller;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.model.enumeration.DataType;
@@ -10,11 +11,9 @@ import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
-import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
-import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -356,7 +355,7 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void postFileConfigurationOtherInvalidFileConfiguration() throws Exception {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		fileConfiguration.setFhirFileConfiguration(new FhirFileConfiguration());
+		fileConfiguration.setFhirBundleFileConfiguration(new FhirBundleFileConfiguration());
 
 		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration",

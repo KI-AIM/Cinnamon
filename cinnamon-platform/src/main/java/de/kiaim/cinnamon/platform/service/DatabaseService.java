@@ -1691,7 +1691,7 @@ public class DatabaseService {
 
 		// Validate that column names match the paths of the FHIR bundle
 		final FileType fileType = fileConfiguration.getFileType();
-		if (fileType == FileType.FHIR) {
+		if (fileType == FileType.FHIR_BUNDLE) {
 			final List<String> expectedColumns = fhirProcessor.getAttributeNames(file.getLobStream(),
 			                                                                     fileConfiguration);
 

@@ -1,7 +1,7 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
 
-import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -14,9 +14,9 @@ import org.jspecify.annotations.Nullable;
  * Contains metadata required to read a file.
  */
 @Entity
-@DiscriminatorValue(value = FileType.Values.FHIR)
+@DiscriminatorValue(value = FileType.Values.FHIR_BUNDLE)
 @Getter @Setter
-public class FhirFileConfigurationEntity extends FileConfigurationEntity {
+public class FhirBundleFileConfigurationEntity extends FileConfigurationEntity {
 
 	/**
 	 * The resource type to export from the bundle.
@@ -27,8 +27,8 @@ public class FhirFileConfigurationEntity extends FileConfigurationEntity {
 	/**
 	 * Default constructor for Spring.
 	 */
-	public FhirFileConfigurationEntity() {
-		this.fileType = FileType.FHIR;
+	public FhirBundleFileConfigurationEntity() {
+		this.fileType = FileType.FHIR_BUNDLE;
 	}
 
 	/**
@@ -36,8 +36,8 @@ public class FhirFileConfigurationEntity extends FileConfigurationEntity {
 	 *
 	 * @param configuration The configuration.
 	 */
-	public FhirFileConfigurationEntity(final FhirFileConfiguration configuration) {
+	public FhirBundleFileConfigurationEntity(final FhirBundleFileConfiguration configuration) {
 		this.resourceType = configuration.getResourceType();
-		this.fileType = FileType.FHIR;
+		this.fileType = FileType.FHIR_BUNDLE;
 	}
 }

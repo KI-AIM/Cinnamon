@@ -34,7 +34,7 @@ public class FileCompatibilityEntity {
 
     /**
      * The resource types contained in the FHIR bundle.
-     * Only relevant for files of type {@link de.kiaim.cinnamon.model.configuration.data.file.FileType#FHIR}
+     * Only relevant for files of type {@link de.kiaim.cinnamon.model.configuration.data.file.FileType#FHIR_BUNDLE}
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "json")

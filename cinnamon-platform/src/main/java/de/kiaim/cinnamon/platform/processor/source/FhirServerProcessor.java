@@ -65,6 +65,6 @@ public class FhirServerProcessor implements DataSourceProcessor {
 		}
 
 		var file = new StringMultipartFile(content, "fhir_bundle.json", CustomMediaType.APPLICATION_FHIR_JSON);
-		return Pair.of(FileType.FHIR, file);
+		return Pair.of(FileType.FHIR_BUNDLE, file);
 	}
 }

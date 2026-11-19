@@ -10,7 +10,7 @@ import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
-import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.unimuenster.imi.fhir.columns_parser.Column;
@@ -46,7 +46,7 @@ public class FhirProcessor implements DataProcessor {
 	 */
 	@Override
 	public FileType getSupportedDataType() {
-		return FileType.FHIR;
+		return FileType.FHIR_BUNDLE;
 	}
 
 	@Override
@@ -61,22 +61,22 @@ public class FhirProcessor implements DataProcessor {
 			return;
 		}
 
-		fileCompatibility.getCompatibleFileTypes().add(FileType.FHIR);
+		fileCompatibility.getCompatibleFileTypes().add(FileType.FHIR_BUNDLE);
 		fileCompatibility.setFhirResourceTypes(resourceTypes);
 	}
 
 	@Override
 	public FileConfigurationEstimation estimateFileConfiguration(final LobWrapperEntity data,
 	                                                             final FileCompatibilityEntity fileCompatibility) {
-		final var fhirFileConfiguration = new FhirFileConfiguration();
+		final var fhirFileConfiguration = new FhirBundleFileConfiguration();
 		if (fileCompatibility.getFhirResourceTypes() != null && fileCompatibility.getFhirResourceTypes().size() == 1) {
 			fhirFileConfiguration.setResourceType(fileCompatibility.getFhirResourceTypes().iterator().next());
 		}
 
 		final var fileConfiguration = new FileConfiguration();
 
-		fileConfiguration.setFileType(FileType.FHIR);
-		fileConfiguration.setFhirFileConfiguration(fhirFileConfiguration);
+		fileConfiguration.setFileType(FileType.FHIR_BUNDLE);
+		fileConfiguration.setFhirBundleFileConfiguration(fhirFileConfiguration);
 
 		return new FileConfigurationEstimation(fileConfiguration);
 	}
@@ -87,7 +87,7 @@ public class FhirProcessor implements DataProcessor {
 	@Override
 	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration
 	) throws InternalIOException {
-		final FhirFileConfigurationEntity fhirFileConfiguration = (FhirFileConfigurationEntity) fileConfiguration;
+		final FhirBundleFileConfigurationEntity fhirFileConfiguration = (FhirBundleFileConfigurationEntity) fileConfiguration;
 		if (fhirFileConfiguration.getResourceType() == null) {
 			// The resource type can be null after the estimation
 			return 0;
@@ -108,7 +108,7 @@ public class FhirProcessor implements DataProcessor {
 	                                 final DataConfiguration configuration
 	) throws BadDatasetException, InternalIOException {
 		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, (FhirFileConfigurationEntity) fileConfiguration, csvFormat);
+		final String csvString = getCsvString(data, (FhirBundleFileConfigurationEntity) fileConfiguration, csvFormat);
 		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
 		return csvProcessor.read(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration, configuration);
 	}
@@ -123,7 +123,7 @@ public class FhirProcessor implements DataProcessor {
 			final DatatypeEstimationAlgorithm algorithm
 	) throws InternalIOException {
 		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, (FhirFileConfigurationEntity) fileConfiguration, csvFormat);
+		final String csvString = getCsvString(data, (FhirBundleFileConfigurationEntity) fileConfiguration, csvFormat);
 		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
 		return csvProcessor.estimateDataConfiguration(new ByteArrayInputStream(csvString.getBytes()),
 		                                              csvFileConfiguration, algorithm);
@@ -164,7 +164,7 @@ public class FhirProcessor implements DataProcessor {
 	public List<String> getAttributeNames(final InputStream data,
 	                                      final FileConfigurationEntity fileConfiguration) throws InternalIOException {
 		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, (FhirFileConfigurationEntity) fileConfiguration, csvFormat);
+		final String csvString = getCsvString(data, (FhirBundleFileConfigurationEntity) fileConfiguration, csvFormat);
 		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
 		return csvProcessor.getFirstRow(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
 	}
@@ -187,7 +187,7 @@ public class FhirProcessor implements DataProcessor {
 	 * @return The CSV string.
 	 * @throws InternalIOException If reading the FHIR bundle failed.
 	 */
-	private String getCsvString(final InputStream fhirBundle, final FhirFileConfigurationEntity fileConfiguration,
+	private String getCsvString(final InputStream fhirBundle, final FhirBundleFileConfigurationEntity fileConfiguration,
 	                            final CSVFormat csvFormat) throws InternalIOException {
 		final FhirContext fhirContext = FhirContext.forR4();
 		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);

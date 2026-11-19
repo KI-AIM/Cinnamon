@@ -15,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor @NoArgsConstructor
 @Getter @Setter
 @Schema(description = "Configurations specific for FHIR bundles.")
-public class FhirFileConfiguration {
+public class FhirBundleFileConfiguration {
 
 	/**
 	 * The resource type to export from the bundle.

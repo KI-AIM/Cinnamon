@@ -34,7 +34,7 @@ public class FileInformation {
 
 	/**
 	 * List the resource types contained in the FHIR bundle,
-	 * if the estimated file configuration has type {@link FileType#FHIR}
+	 * if the estimated file configuration has type {@link FileType#FHIR_BUNDLE}
 	 * Otherwise the value is null.
 	 */
 	@Schema(description = "Resource types of the FHIR bundle. Null if the file was not a FHIR bundle.",

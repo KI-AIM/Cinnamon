@@ -150,7 +150,7 @@
                     Select the file containing the dataset you want to anonymize:
                 </div>
                 <div class="config-input-row-field">
-                    <app-file-upload accept=".csv,.json,.xlsx" [disabled]="pageData.locked.isLocked"
+                    <app-file-upload accept=".csv,.json,.ndjson,.xlsx" [disabled]="pageData.locked.isLocked"
                                      (input)="onFileInput($event, showFileConfigButton)"></app-file-upload>
                 </div>
 
@@ -172,7 +172,7 @@
             @if (loadingEstimation) {
                 <mat-spinner [diameter]="24"></mat-spinner>
             } @else {
-                @if (pageData.fileInfo.name) {
+                @if (pageData.fileInfo.name && pageData.fileConfiguration.fileType !== FileType.FHIR_NDJSON) {
                     <a title="Additional Settings" (click)="openDialog(fileConfigurationDialog)"
                        class="icon icon-enabled" [class.icon-error]="isFileConfigurationInvalid()">
                         <mat-icon fontIcon="settings"></mat-icon>
@@ -219,13 +219,13 @@
                 <li>CSV Files</li>
                 <li>XLSX Files</li>
                 <li>FHIR Bundles (with limitations)</li>
+                <li>FHIR NDJSON (with limitations)</li>
             </ul>
             <p>
                 The support for FHIR bundles is still in development and has some limitations.
                 Currently, only one resource contained in the bundle can be imported and anonymized at a time.
                 If the bundle contains multiple resources, each one must be anonymized in a separate project.
-                Furthermore, FHIR bundles can only be exported in tabular form as CSV or XLSX files.
-                The column names correspond to the values' FHIR path and cannot be changed.
+                Furthermore, the column names correspond to the values' FHIR path and cannot be changed.
             </p>
 
             <p>

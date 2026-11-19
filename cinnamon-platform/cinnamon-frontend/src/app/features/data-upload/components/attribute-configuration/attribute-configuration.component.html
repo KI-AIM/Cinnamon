@@ -87,7 +87,7 @@
             <br>
             Each name must be unique and must not contain spaces.
             <br>
-            <span [class.text-warn]="fileType === FileType.FHIR_BUNDLE">
+            <span [class.text-warn]="fileType === FileType.FHIR_BUNDLE || fileType === FileType.FHIR_NDJSON">
                 The attributes of FHIR bundles cannot be renamed, because the name contains the FHIR path to the
                 field which will be required for exporting the dataset as a FHIR bundle.
             </span>

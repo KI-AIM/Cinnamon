@@ -394,6 +394,9 @@ export class UploadFileComponent implements OnInit, OnDestroy {
             case "json":
                 this.fileConfiguration.fileType = FileType.FHIR_BUNDLE;
                 break;
+            case "ndjson":
+                this.fileConfiguration.fileType = FileType.FHIR_NDJSON;
+                break;
             case "xlsx":
                 this.fileConfiguration.fileType = FileType.XLSX;
                 break;

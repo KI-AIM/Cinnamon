@@ -16,6 +16,7 @@ export class DataSourceConfiguration {
 export enum FileType {
 	CSV = "CSV",
     FHIR_BUNDLE = "FHIR_BUNDLE",
+    FHIR_NDJSON = "FHIR_NDJSON",
     XLSX = "XLSX",
 }
 

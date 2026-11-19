@@ -326,7 +326,7 @@ export class DataConfigurationComponent implements OnInit {
 
             const columnGroup = this.formBuilder.group({
                 index: [columnConfiguration.index],
-                name: [{value: columnConfiguration.name, disabled: this.locked || fileType === FileType.FHIR_BUNDLE}, {
+                name: [{value: columnConfiguration.name, disabled: this.locked || fileType === FileType.FHIR_BUNDLE || fileType === FileType.FHIR_NDJSON}, {
                     validators: [Validators.required, noSpaceValidator()]
                 }],
                 type: [{

@@ -220,7 +220,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                 switchMap(() => this.statusService.updateNextStep(Steps.UPLOAD)),
                 switchMap(() => this.fileService.refreshDataSourceConfiguration()),
                 take(1),
-                switchMap(() => this.fileService.estimateFileConfiguration())
+                switchMap(() => this.fileService.estimateFileConfiguration()),
             ).subscribe({
                 next: (value) => {
                     this.handleFileConfigurationEstimation(value, showFileConfig);

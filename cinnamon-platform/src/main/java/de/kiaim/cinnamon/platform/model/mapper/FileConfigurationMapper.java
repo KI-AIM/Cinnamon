@@ -24,6 +24,7 @@ public abstract class FileConfigurationMapper {
 		FileConfiguration dto = new FileConfiguration();
 		dto.setFileType(entity.getFileType());
 
+		// No conversion for FhirNdjsonFileConfigurationEntity needed
 		if (entity instanceof CsvFileConfigurationEntity csvEntity) {
 			dto.setCsvFileConfiguration(toDto(csvEntity));
 		} else if (entity instanceof XlsxFileConfigurationEntity xlsxEntity) {
@@ -48,6 +49,7 @@ public abstract class FileConfigurationMapper {
 			case CSV -> toEntity(configuration.getCsvFileConfiguration());
 			case XLSX -> toEntity(configuration.getXlsxFileConfiguration());
 			case FHIR_BUNDLE -> toEntity(configuration.getFhirBundleFileConfiguration());
+			case FHIR_NDJSON -> new FhirNdjsonFileConfigurationEntity();
 		};
 
 		return result;

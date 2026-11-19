@@ -10,6 +10,7 @@ import java.util.Set;
 public enum FileType {
 	CSV(new HashSet<>(List.of(".csv"))),
 	FHIR_BUNDLE(new HashSet<>(List.of(".json", ".xml"))),
+	FHIR_NDJSON(new HashSet<>(List.of(".ndjson"))),
 	XLSX(new HashSet<>(List.of(".xlsx")));
 
 	/**
@@ -24,6 +25,7 @@ public enum FileType {
 	public static class Values {
 		public static final String CSV = "CSV";
 		public static final String FHIR_BUNDLE = "FHIR_BUNDLE";
+		public static final String FHIR_NDJSON = "FHIR_NDJSON";
 		public static final String XLSX = "XLSX";
 	}
 }

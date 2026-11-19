@@ -9,6 +9,7 @@ import java.util.Set;
 /**
  * Validates if the corresponding file configuration for the file type defined {@link FileConfiguration#getFileType()} is set.
  * Additionally, validates only the configuration that matches the selected file type.
+ * For FHIR NDJSON files, no specific configuration is required, so this validation is always true.
  *
  * @author Daniel Preciado-Marquez
  */
@@ -26,6 +27,7 @@ public class FileConfigurationSetValidator implements ConstraintValidator<FileCo
 			                                      "CSV file configuration must be set for CSV files!");
 			case FHIR_BUNDLE -> validateFileConfiguration(value.getFhirBundleFileConfiguration(), "fhirFileConfiguration", context,
 			                                              "FHIR file configuration must be set for FHIR bundles!");
+			case FHIR_NDJSON -> true;
 			case XLSX -> validateFileConfiguration(value.getXlsxFileConfiguration(), "xlsxFileConfiguration", context,
 			                                       "XLSX file configuration must be set for XLSX files!");
 		};

@@ -36,9 +36,11 @@ import java.util.Set;
 public class FhirBundleProcessor implements DataProcessor {
 
 	private final CsvProcessor csvProcessor;
+	private final FhirContext fhirContext;
 
-	public FhirBundleProcessor(final CsvProcessor csvProcessor) {
+	public FhirBundleProcessor(final CsvProcessor csvProcessor, final FhirContext fhirContext) {
 		this.csvProcessor = csvProcessor;
+		this.fhirContext = fhirContext;
 	}
 
 	/**
@@ -51,12 +53,9 @@ public class FhirBundleProcessor implements DataProcessor {
 
 	@Override
 	public void checkFileCompatibility(final LobWrapperEntity data, final FileCompatibilityEntity fileCompatibility) {
-		final FhirContext fhirContext = FhirContext.forR4();
-		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
-
 		final Set<String> resourceTypes;
 		try {
-			resourceTypes = bundleTransformer.getResourceTypesInBundle(data.getLobString());
+			resourceTypes = getRessourceTypes(data.getLobString());
 		} catch (final Exception ignored) {
 			return;
 		}
@@ -143,7 +142,6 @@ public class FhirBundleProcessor implements DataProcessor {
 		CsvToFhirTransformer csvToFhirTransformer = new CsvToFhirTransformer();
 		final Bundle bundle = csvToFhirTransformer.parseCsvToBundle(csvString);
 
-		final FhirContext fhirContext = FhirContext.forR4();
 		try {
 			fhirContext.newJsonParser()
 			           .setPrettyPrint(true)
@@ -170,6 +168,18 @@ public class FhirBundleProcessor implements DataProcessor {
 	}
 
 	/**
+	 * Returns the resource types contained in the FHIR bundle.
+	 * If the FHIR bundle is invalid, an exception is thrown.
+	 *
+	 * @param data The FHIR bundle.
+	 * @return Set of resource types.
+	 */
+	public Set<String> getRessourceTypes(final String data) {
+		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
+		return bundleTransformer.getResourceTypesInBundle(data);
+	}
+
+	/**
 	 * Returns the CSVFormat for converting the FHIR bundle into a CSV file.
 	 *
 	 * @return The CSV format.
@@ -189,7 +199,6 @@ public class FhirBundleProcessor implements DataProcessor {
 	 */
 	private String getCsvString(final InputStream fhirBundle, final FhirBundleFileConfigurationEntity fileConfiguration,
 	                            final CSVFormat csvFormat) throws InternalIOException {
-		final FhirContext fhirContext = FhirContext.forR4();
 		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
 
 		final ResourceExtractor extractor = ResourceExtractor.Companion.forR4();
@@ -198,7 +207,7 @@ public class FhirBundleProcessor implements DataProcessor {
 		try {
 			content = new String(fhirBundle.readAllBytes());
 		} catch (IOException e) {
-			throw new InternalIOException(InternalIOException.FHIR_READING, "Failed to convert FHIR bundle into a CSV.",
+			throw new InternalIOException(InternalIOException.FHIR_BUNDLE_READING, "Failed to convert FHIR bundle into a CSV.",
 			                              e);
 		}
 

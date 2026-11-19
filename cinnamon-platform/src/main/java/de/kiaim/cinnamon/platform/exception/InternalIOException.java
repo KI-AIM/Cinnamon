@@ -1,5 +1,7 @@
 package de.kiaim.cinnamon.platform.exception;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Exception wrapper for IOExceptions.
  */
@@ -48,7 +50,7 @@ public class InternalIOException extends InternalException {
 	/**
 	 * Exception code for failed FHIR bundle reading.
 	 */
-	public static final String FHIR_READING = "9";
+	public static final String FHIR_BUNDLE_READING = "9";
 
 	/**
 	 * Exception code for failed CSV file reading.
@@ -70,7 +72,17 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String FHIR_WRITING = "13";
 
-	public InternalIOException(final String exceptionCode, final String message, final Exception cause) {
+	/**
+	 * Exception code for failed FHIR NDJSON reading.
+	 */
+	public static final String FHIR_NDJSON_READING = "14";
+
+	/**
+	 * Exception code for a failed FHIR NDJSON writing.
+	 */
+	public static final String FHIR_NDJSON_WRITING = "15";
+
+	public InternalIOException(final String exceptionCode, final String message, @Nullable final Exception cause) {
 		super(exceptionCode, message, cause);
 	}
 

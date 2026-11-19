@@ -7,7 +7,7 @@ import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
-import de.kiaim.cinnamon.platform.processor.FhirProcessor;
+import de.kiaim.cinnamon.platform.processor.FhirBundleProcessor;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import de.kiaim.cinnamon.test.util.ResourceHelper;
 import org.junit.jupiter.api.Test;
@@ -21,9 +21,9 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class FhirProcessorTest extends ContextRequiredTest {
+public class FhirBundleProcessorTest extends ContextRequiredTest {
 
-	@Autowired private FhirProcessor fhirProcessor;
+	@Autowired private FhirBundleProcessor fhirBundleProcessor;
 
 	@Test
 	public void checkFileCompatibility() throws IOException {
@@ -31,7 +31,7 @@ public class FhirProcessorTest extends ContextRequiredTest {
 		var lobWrapper = new LobWrapperEntity(bundle);
 
 		var fileCompatibility = new FileCompatibilityEntity();
-		assertDoesNotThrow(() -> fhirProcessor.checkFileCompatibility(lobWrapper, fileCompatibility));
+		assertDoesNotThrow(() -> fhirBundleProcessor.checkFileCompatibility(lobWrapper, fileCompatibility));
 
 		assertTrue(fileCompatibility.getCompatibleFileTypes().contains(FileType.FHIR_BUNDLE));
 		assertNotNull(fileCompatibility.getFhirResourceTypes());
@@ -47,7 +47,7 @@ public class FhirProcessorTest extends ContextRequiredTest {
 		var fileCompatibility = getFileCompatibility();
 
 		var estimation = assertDoesNotThrow(
-				() -> fhirProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
+				() -> fhirBundleProcessor.estimateFileConfiguration(lobWrapper, fileCompatibility));
 
 		assertEquals(FileType.FHIR_BUNDLE, estimation.getEstimation().getFileType());
 	}
@@ -60,12 +60,12 @@ public class FhirProcessorTest extends ContextRequiredTest {
 		var fileConfiguration = new FhirBundleFileConfigurationEntity(fhirFileConfiguration);
 
 		var estimation = assertDoesNotThrow(
-				() -> fhirProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
-				                                              fileConfiguration,
-				                                              DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+				() -> fhirBundleProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
+				                                                    fileConfiguration,
+				                                                    DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 		var data = assertDoesNotThrow(
-				() -> fhirProcessor.read(new ByteArrayInputStream(bundle.getBytes()), fileConfiguration,
-				                         estimation.getDataConfiguration()));
+				() -> fhirBundleProcessor.read(new ByteArrayInputStream(bundle.getBytes()), fileConfiguration,
+				                               estimation.getDataConfiguration()));
 
 		assertEquals(1, data.getDataSet().getDataRows().size());
 		assertEquals(0, data.getTransformationErrors().size());
@@ -79,9 +79,9 @@ public class FhirProcessorTest extends ContextRequiredTest {
 		var fileConfiguration = new FhirBundleFileConfigurationEntity(fhirFileConfiguration);
 
 		var estimation = assertDoesNotThrow(
-				() -> fhirProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
-				                                              fileConfiguration,
-				                                              DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+				() -> fhirBundleProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
+				                                                    fileConfiguration,
+				                                                    DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 
 		assertEquals(13, estimation.getDataConfiguration().getConfigurations().size());
 	}
@@ -94,16 +94,16 @@ public class FhirProcessorTest extends ContextRequiredTest {
 		var fileConfiguration = new FhirBundleFileConfigurationEntity(fhirFileConfiguration);
 
 		var estimation = assertDoesNotThrow(
-				() -> fhirProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
-				                                              fileConfiguration,
-				                                              DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+				() -> fhirBundleProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
+				                                                    fileConfiguration,
+				                                                    DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 		var data = assertDoesNotThrow(
-				() -> fhirProcessor.read(new ByteArrayInputStream(bundle.getBytes()), fileConfiguration,
-				                         estimation.getDataConfiguration()));
+				() -> fhirBundleProcessor.read(new ByteArrayInputStream(bundle.getBytes()), fileConfiguration,
+				                               estimation.getDataConfiguration()));
 		DataSet dataset = data.getDataSet();
 
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		assertDoesNotThrow(() -> fhirProcessor.write(stream, dataset));
+		assertDoesNotThrow(() -> fhirBundleProcessor.write(stream, dataset));
 
 		String content = stream.toString(StandardCharsets.UTF_8);
 		String expectedContent = ResourceHelper.loadFileAsString("fhir-bundle-patient.json")

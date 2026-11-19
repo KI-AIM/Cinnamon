@@ -33,11 +33,11 @@ import java.util.Set;
  * @author Daniel Preciado-Marquez
  */
 @Service
-public class FhirProcessor implements DataProcessor {
+public class FhirBundleProcessor implements DataProcessor {
 
 	private final CsvProcessor csvProcessor;
 
-	public FhirProcessor(final CsvProcessor csvProcessor) {
+	public FhirBundleProcessor(final CsvProcessor csvProcessor) {
 		this.csvProcessor = csvProcessor;
 	}
 

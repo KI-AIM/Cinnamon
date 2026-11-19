@@ -20,7 +20,7 @@ import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.mapper.DataSourceConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.DatasetConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.FileConfigurationMapper;
-import de.kiaim.cinnamon.platform.processor.FhirProcessor;
+import de.kiaim.cinnamon.platform.processor.FhirBundleProcessor;
 import de.kiaim.cinnamon.platform.repository.DataProcessingRepository;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.repository.DataTransformationErrorRepository;
@@ -87,7 +87,7 @@ public class DatabaseService {
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSourceProcessorService dataSourceProcessorService;
-	private final FhirProcessor fhirProcessor;
+	private final FhirBundleProcessor fhirBundleProcessor;
 	private final StepService stepService;
 
 	@Autowired
@@ -102,7 +102,7 @@ public class DatabaseService {
 	                       final DataSetService dataSetService,
 	                       final DataProcessorService dataProcessorService,
 	                       final DataSourceProcessorService dataSourceProcessorService,
-	                       final FhirProcessor fhirProcessor,
+	                       final FhirBundleProcessor fhirBundleProcessor,
 	                       final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.dataProcessingRepository = dataProcessingRepository;
@@ -117,7 +117,7 @@ public class DatabaseService {
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSourceProcessorService = dataSourceProcessorService;
-		this.fhirProcessor = fhirProcessor;
+		this.fhirBundleProcessor = fhirBundleProcessor;
 		this.stepService = stepService;
 	}
 
@@ -1692,8 +1692,8 @@ public class DatabaseService {
 		// Validate that column names match the paths of the FHIR bundle
 		final FileType fileType = fileConfiguration.getFileType();
 		if (fileType == FileType.FHIR_BUNDLE) {
-			final List<String> expectedColumns = fhirProcessor.getAttributeNames(file.getLobStream(),
-			                                                                     fileConfiguration);
+			final List<String> expectedColumns = fhirBundleProcessor.getAttributeNames(file.getLobStream(),
+			                                                                           fileConfiguration);
 
 			for (int i = 0; i < fileEntity.getNumberOfAttributes(); i++) {
 				final String columnName = dataConfiguration.getConfigurations().get(i).getName();

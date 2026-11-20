@@ -55,8 +55,12 @@ public class DateTimeData extends Data {
 				"MM-dd-yyyy HH:mm:ss",
 				"yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
 				"yyyy-MM-dd'T'HH:mm:ss",
+				// xxx must be listed before XXX: Both match explicit offsets, the first one wins ties.
+				// xxx prints UTC as +00:00, XXX prints it as Z and is the only one that also parses Z.
+				"yyyy-MM-dd'T'HH:mm:ssxxx",
 				"yyyy-MM-dd'T'HH:mm:ssXXX",
 				"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+				"yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
 				"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
 		);
 

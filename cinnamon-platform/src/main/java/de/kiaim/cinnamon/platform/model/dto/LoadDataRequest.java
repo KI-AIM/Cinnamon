@@ -84,6 +84,16 @@ public class LoadDataRequest {
 	@Nullable
 	private String valueNotInRangeEncoding = null;
 
+	@Parameter(description = "If time zone patterns of date-time formats should be kept. Date-times are stored in UTC, so time zones are printed as UTC. If false, time zone patterns are removed from the format.",
+	           required = false,
+	           content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+	                              schema = @Schema(implementation = Boolean.class),
+	                              examples = {
+			                              @ExampleObject("false"),
+			                              @ExampleObject("true")
+	                              }))
+	private boolean keepTimeZones = false;
+
 	public List<String> getColumnNames() {
 		return !columns.isBlank()
 		       ? List.of(columns.split(","))

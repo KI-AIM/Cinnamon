@@ -136,7 +136,8 @@ public class FhirProcessor implements DataProcessor {
 	public void write(OutputStream outputStream, DataSet dataset) throws InternalIOException {
 		// First, convert the dataset into a CSV string
 		final OutputStream csvOutputStream = new ByteArrayOutputStream();
-		csvProcessor.write(csvOutputStream, dataset);
+		// Keep time zones, as FHIR requires them for instants and date-times with a time
+		csvProcessor.write(csvOutputStream, dataset, true);
 		String csvString = csvOutputStream.toString();
 
 		CsvToFhirTransformer csvToFhirTransformer = new CsvToFhirTransformer();

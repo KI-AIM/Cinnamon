@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.platform.processor;
 import ca.uhn.fhir.context.FhirContext;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -78,6 +80,21 @@ public class FhirBundleProcessor implements DataProcessor {
 		fileConfiguration.setFhirBundleFileConfiguration(fhirFileConfiguration);
 
 		return new FileConfigurationEstimation(fileConfiguration);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * Validates that column names match the paths of the FHIR bundle.
+	 */
+	@Override
+	public void validateFileAndConfig(FileEntity file, DataConfiguration dataConfiguration)
+			throws BadDataConfigurationException, InternalIOException {
+		final var fileData = Objects.requireNonNull(file.getFile());
+		final var fileConfiguration = Objects.requireNonNull(file.getFileConfiguration());
+
+		final List<String> expectedColumns = getAttributeNames(fileData.getLobStream(), fileConfiguration);
+
+		compareColumnNames(dataConfiguration, expectedColumns);
 	}
 
 	/**
@@ -165,6 +182,28 @@ public class FhirBundleProcessor implements DataProcessor {
 		final String csvString = getCsvString(data, (FhirBundleFileConfigurationEntity) fileConfiguration, csvFormat);
 		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
 		return csvProcessor.getFirstRow(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
+	}
+
+	/**
+	 * Compares the column names of the given DataConfiguration with the given expected ones.
+	 * Throws an exception if they do not match.
+	 *
+	 * @param dataConfiguration   The DataConfiguration to be compared.
+	 * @param expectedColumnNames The column names to compare against.
+	 * @throws BadDataConfigurationException If the column names do not match.
+	 */
+	public void compareColumnNames(final DataConfiguration dataConfiguration, final List<String> expectedColumnNames)
+			throws BadDataConfigurationException {
+		for (int i = 0; i < dataConfiguration.getConfigurations().size(); i++) {
+			final String columnName = dataConfiguration.getConfigurations().get(i).getName();
+			final String fhirColumnName = expectedColumnNames.get(i);
+			if (!Objects.equals(columnName, fhirColumnName)) {
+				throw new BadDataConfigurationException(BadDataConfigurationException.FHIR_ATTRIBUTE_MISMATCH,
+				                                        "Attribute number " + (i + 1) + " with name '" + columnName +
+				                                        "' does not match the column name of the FHIR bundle '" +
+				                                        fhirColumnName + "'");
+			}
+		}
 	}
 
 	/**

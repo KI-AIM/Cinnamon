@@ -20,7 +20,6 @@ import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.mapper.DataSourceConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.DatasetConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.FileConfigurationMapper;
-import de.kiaim.cinnamon.platform.processor.FhirBundleProcessor;
 import de.kiaim.cinnamon.platform.repository.DataProcessingRepository;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.repository.DataTransformationErrorRepository;
@@ -87,7 +86,6 @@ public class DatabaseService {
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSourceProcessorService dataSourceProcessorService;
-	private final FhirBundleProcessor fhirBundleProcessor;
 	private final StepService stepService;
 
 	@Autowired
@@ -102,7 +100,6 @@ public class DatabaseService {
 	                       final DataSetService dataSetService,
 	                       final DataProcessorService dataProcessorService,
 	                       final DataSourceProcessorService dataSourceProcessorService,
-	                       final FhirBundleProcessor fhirBundleProcessor,
 	                       final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
 		this.dataProcessingRepository = dataProcessingRepository;
@@ -117,7 +114,6 @@ public class DatabaseService {
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSourceProcessorService = dataSourceProcessorService;
-		this.fhirBundleProcessor = fhirBundleProcessor;
 		this.stepService = stepService;
 	}
 
@@ -597,11 +593,13 @@ public class DatabaseService {
 	 * @throws BadStateException                   If no file for the original data has been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored.
 	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
+	 * @throws InternalMissingHandlingException    If no processor is available for the currently stored file.
 	 */
 	@Transactional
 	public Long storeOriginalTransformationResult(final TransformationResult transformationResult,
 	                                              final ProjectEntity project)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException,
+					       InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
 
@@ -638,12 +636,13 @@ public class DatabaseService {
 	 * @throws BadStateException                   If the file for the dataset has not been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
 	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
+	 * @throws InternalMissingHandlingException    If no processor is available for the currently stored file.
 	 */
 	@Transactional
 	public void storeTransformationResult(final TransformationResult transformationResult,
 	                                      final DataProcessingEntity dataProcessingEntity,
 	                                      final List<Job> processed)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		final ProjectEntity project = dataProcessingEntity.getExecutionStep().getPipeline().getProject();
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
@@ -1668,7 +1667,7 @@ public class DatabaseService {
 	}
 
 	private void checkFile(final ProjectEntity project, final DataConfiguration dataConfiguration
-	) throws BadStateException, BadDataConfigurationException, InternalIOException {
+	) throws BadStateException, BadDataConfigurationException, InternalIOException, InternalMissingHandlingException {
 		// Check if the file and the file configuration are available
 		final FileEntity fileEntity = project.getOriginalData().getFile();
 		final LobWrapperEntity file = fileEntity.getFile();
@@ -1682,6 +1681,7 @@ public class DatabaseService {
 			                            "Storing a dataset requires the file configuration!");
 		}
 
+		// Check if the number of attributes match
 		if (dataConfiguration.getConfigurations().size() != fileEntity.getNumberOfAttributes()) {
 			throw new BadDataConfigurationException(BadDataConfigurationException.INVALID_NUMBER_OF_ATTRIBUTES,
 			                                        "Dataset contains " + fileEntity.getNumberOfAttributes() +
@@ -1689,23 +1689,10 @@ public class DatabaseService {
 			                                        dataConfiguration.getConfigurations().size() + " attributes!");
 		}
 
-		// Validate that column names match the paths of the FHIR bundle
+		// Do file type dependent checks
 		final FileType fileType = fileConfiguration.getFileType();
-		if (fileType == FileType.FHIR_BUNDLE) {
-			final List<String> expectedColumns = fhirBundleProcessor.getAttributeNames(file.getLobStream(),
-			                                                                           fileConfiguration);
-
-			for (int i = 0; i < fileEntity.getNumberOfAttributes(); i++) {
-				final String columnName = dataConfiguration.getConfigurations().get(i).getName();
-				final String fhirColumnName = expectedColumns.get(i);
-				if (!columnName.equals(fhirColumnName)) {
-					throw new BadDataConfigurationException(BadDataConfigurationException.FHIR_ATTRIBUTE_MISMATCH,
-					                                        "Attribute number " + (i + 1) + " with name '" + columnName +
-					                                        "' does not match the column name of the FHIR bundle '" +
-					                                        fhirColumnName + "'");
-				}
-			}
-		}
+		final var processor = dataProcessorService.getDataProcessor(fileType);
+		processor.validateFileAndConfig(fileEntity, dataConfiguration);
 	}
 
 	private DataSetEntity storeDataSet(final DataSet dataSet, final DataSetEntity dataSetEntity)

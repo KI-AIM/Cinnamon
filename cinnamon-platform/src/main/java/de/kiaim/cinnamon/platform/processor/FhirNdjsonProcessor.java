@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -69,6 +72,28 @@ public class FhirNdjsonProcessor implements DataProcessor {
 		final var fileConfiguration = new FileConfiguration();
 		fileConfiguration.setFileType(FileType.FHIR_NDJSON);
 		return new FileConfigurationEstimation(fileConfiguration);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * Validates that column names match the paths of the FHIR bundle.
+	 */
+	@Override
+	public void validateFileAndConfig(FileEntity file, DataConfiguration dataConfiguration)
+			throws BadDataConfigurationException, InternalIOException {
+		final var fileData = Objects.requireNonNull(file.getFile());
+
+		final String ndjson = readNdjson(fileData.getLobStream());
+		final String bundle = convertNdjsonToBundle(ndjson);
+		final String ressourceType = getRessourceType(ndjson);
+
+		final var fhirBundleFileConfiguration = new FhirBundleFileConfigurationEntity();
+		fhirBundleFileConfiguration.setResourceType(ressourceType);
+
+		final List<String> expectedColumns = fhirBundleProcessor.getAttributeNames(
+				new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)), fhirBundleFileConfiguration);
+
+		fhirBundleProcessor.compareColumnNames(dataConfiguration, expectedColumns);
 	}
 
 	@Override

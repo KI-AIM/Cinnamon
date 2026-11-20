@@ -1,8 +1,10 @@
 package de.kiaim.cinnamon.test.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
+import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import de.kiaim.cinnamon.platform.model.entity.FhirNdjsonFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
+import de.kiaim.cinnamon.platform.model.entity.FileEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.processor.FhirNdjsonProcessor;
@@ -72,6 +74,44 @@ public class FhirNdjsonProcessorTest extends ContextRequiredTest {
 		var lines = output.toString(StandardCharsets.UTF_8).lines().toList();
 		assertEquals(20, lines.size());
 		assertTrue(lines.stream().allMatch(line -> line.startsWith("{\"resourceType\":\"Observation\"")));
+	}
+
+	@Test
+	public void validateFileAndConfig() throws IOException {
+		var ndjson = ResourceHelper.loadFileAsString("observations.ndjson");
+		var fileConfiguration = new FhirNdjsonFileConfigurationEntity();
+
+		var estimation = assertDoesNotThrow(
+				() -> fhirNdjsonProcessor.estimateDataConfiguration(toStream(ndjson), fileConfiguration,
+				                                                    DatatypeEstimationAlgorithm.MOST_GENERAL));
+
+		var file = createFileEntity(ndjson, fileConfiguration);
+		assertDoesNotThrow(() -> fhirNdjsonProcessor.validateFileAndConfig(file, estimation.getDataConfiguration()));
+	}
+
+	@Test
+	public void validateFileAndConfigColumnNameMismatch() throws IOException {
+		var ndjson = ResourceHelper.loadFileAsString("observations.ndjson");
+		var fileConfiguration = new FhirNdjsonFileConfigurationEntity();
+
+		var estimation = assertDoesNotThrow(
+				() -> fhirNdjsonProcessor.estimateDataConfiguration(toStream(ndjson), fileConfiguration,
+				                                                    DatatypeEstimationAlgorithm.MOST_GENERAL));
+		var dataConfiguration = estimation.getDataConfiguration();
+		dataConfiguration.getConfigurations().get(0).setName("renamedColumn");
+
+		var file = createFileEntity(ndjson, fileConfiguration);
+		var exception = assertThrows(BadDataConfigurationException.class,
+		                             () -> fhirNdjsonProcessor.validateFileAndConfig(file, dataConfiguration));
+		assertEquals("PLATFORM_1_9_3", exception.getErrorCode(), "Unexpected error code!");
+	}
+
+	private static FileEntity createFileEntity(final String content,
+	                                           final FhirNdjsonFileConfigurationEntity fileConfiguration) {
+		var file = new FileEntity();
+		file.setFile(new LobWrapperEntity(content));
+		file.setFileConfiguration(fileConfiguration);
+		return file;
 	}
 
 	private static ByteArrayInputStream toStream(final String content) {

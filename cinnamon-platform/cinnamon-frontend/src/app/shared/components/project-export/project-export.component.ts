@@ -1,4 +1,3 @@
-import { HttpClient } from "@angular/common/http";
 import { AfterViewInit, Component, OnInit, QueryList, TemplateRef, ViewChild, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatDialog } from "@angular/material/dialog";
@@ -14,11 +13,9 @@ import { ExecutionStep } from "@shared/model/execution-step";
 import { FileType } from "@shared/model/file-configuration";
 import { FileInformation } from "@shared/model/file-information";
 import { ConfigurationService } from "@shared/services/configuration.service";
-import { ProjectService } from "@shared/services/project.service";
+import { ExportService } from "@shared/services/export.service";
 import { StatusService } from "@shared/services/status.service";
-import { UserService } from "@shared/services/user.service";
-import { distinctUntilChanged, Observable, switchMap } from "rxjs";
-import { environments } from "src/environments/environment";
+import { distinctUntilChanged, Observable } from "rxjs";
 
 @Component({
   selector: 'app-project-export',
@@ -44,6 +41,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
     protected dataSetInfo$: Observable<DataSetInfo>;
     protected evaluationInfo$: Observable<ExecutionStep | null>;
     protected executionInfo$: Observable<ExecutionStep | null>;
+    protected exportStatus$: Observable<boolean>;
 
     @ViewChild('projectExportDialog') dialogWrap: TemplateRef<any>;
     @ViewChildren('resource') resources: QueryList<MatCheckbox>;
@@ -54,11 +52,9 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
         private readonly dialog: MatDialog,
         protected readonly evaluationService: EvaluationService,
         protected readonly executionService: ExecutionService,
+        private readonly exportService: ExportService,
         private readonly fileService: FileService,
-        private readonly  http: HttpClient,
-        private readonly projectService: ProjectService,
         protected readonly statusService: StatusService,
-        private readonly userService: UserService,
     ) {
     }
 
@@ -78,6 +74,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
         this.executionInfo$ = this.executionService.status$.pipe(
             distinctUntilChanged((previous, current) => this.areStagesEqual(previous, current)),
         );
+        this.exportStatus$ = this.exportService.exportStatus$();
     }
 
     public ngAfterViewInit(): void {
@@ -117,71 +114,7 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
      * @protected
      */
     protected exportProject(): void {
-        this.projectService.projectIdRequiredOnce$.pipe(
-            switchMap(projectId => this.http.get(`${environments.apiUrl}/api/project/${projectId}/zip`, {
-                observe: 'response',
-                params: {
-                    bundleConfigurations: this.bundleConfigurations,
-                    datasetFileType: this.datasetFileType,
-                    holdOutSelector: this.holdOutSelector,
-                    resources: this.getResources(),
-                },
-                responseType: 'arraybuffer'
-            })),
-        ).subscribe({
-            next: response => {
-                const contentType = response.headers.get("Content-Type");
-                const contentDisposition = response.headers.get("Content-Disposition");
-                let fileName = this.extractFileNameFromContentDisposition(contentDisposition);
-
-                const blob = new Blob([response.body!], {
-                    type: contentType!,
-                });
-
-                if (!fileName) {
-                    const now = new Date();
-                    const year = now.getFullYear().toString().padStart(4, '0');
-                    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-                    const day = now.getDate().toString().padStart(2, '0');
-                    const hours = now.getHours().toString().padStart(2, '0');
-                    const minutes = now.getMinutes().toString().padStart(2, '0');
-                    const seconds = now.getSeconds().toString().padStart(2, '0');
-                    const localDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-                    fileName = this.userService.getUser().userInfo.username + "_" + localDateTime + "_Cinnamon.zip";
-                }
-
-                const element = document.createElement('a');
-                element.href = URL.createObjectURL(blob);
-                element.download = fileName;
-                document.body.appendChild(element);
-                element.click();
-            }
-        });
-    }
-
-    /**
-     * Extracts the file name from the Content-Disposition header.
-     * @param contentDisposition The Content-Disposition header value.
-     * @returns The extracted file name, or null if extraction fails.
-     */
-    private extractFileNameFromContentDisposition(contentDisposition: string | null): string | null {
-        if (!contentDisposition) {
-            return null;
-        }
-
-        // Try to match filename*= (RFC 5987) first
-        let match = contentDisposition.match(/filename\*=(?:UTF-8'')?(?:"([^"]+)"|([^;,\s]+))/i);
-        if (match) {
-            return decodeURIComponent(match[1] || match[2]);
-        }
-
-        // Fall back to filename= (RFC 2183)
-        match = contentDisposition.match(/filename=(?:"([^"]+)"|([^;,\s]+))/i);
-        if (match) {
-            return match[1] || match[2];
-        }
-
-        return null;
+        this.exportService.exportProject(this.bundleConfigurations, this.datasetFileType, this.holdOutSelector, this.getResources());
     }
 
     /**

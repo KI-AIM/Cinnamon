@@ -1,13 +1,22 @@
-.notification {
-    justify-self: anchor-center;
+.notification-stack {
     position: absolute;
     left: 0;
     right: 0;
-    font-size: var(--bs-body-font-size);
     top: 20px;
+    margin: 0 auto;
     width: 60%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     // Lower z-index than the title-wrapper
     z-index: 10;
+    // Let clicks pass through the empty area of the stack
+    pointer-events: none;
+}
+
+.notification {
+    font-size: var(--bs-body-font-size);
+    pointer-events: auto;
 }
 
 .slide-in-from-top {

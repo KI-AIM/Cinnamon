@@ -202,10 +202,13 @@
             </button>
         </div>
         <div class="ms-auto">
-            <button mat-raised-button color="primary" [disabled]="numberChecked <= 0" (click)="exportProject()">
-                <mat-icon>file_download</mat-icon>
-                Download
-            </button>
+            @if ({exportStatus: exportStatus$ | async }; as data) {
+                <button mat-raised-button color="primary" [disabled]="numberChecked <= 0 || data.exportStatus"
+                        (click)="exportProject()">
+                    <mat-icon>file_download</mat-icon>
+                    Download
+                </button>
+            }
             <button mat-raised-button mat-dialog-close color="primary">Close</button>
         </div>
     </mat-dialog-actions>

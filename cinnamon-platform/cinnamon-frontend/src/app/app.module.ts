@@ -17,11 +17,11 @@ import { DataService } from './shared/services/data.service';
 import { DataConfigurationService } from './shared/services/data-configuration.service';
 import { DataUploadModule } from './features/data-upload/data-upload.module';
 import { StartModule } from './features/start/start.module';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatButtonModule } from "@angular/material/button";
 import { UserService } from './shared/services/user.service';
 import { XhrInterceptor } from './core/interceptor/xhr.interceptor';
+import { AuthInterceptor } from './core/interceptor/auth.interceptor';
 import { MatIconModule } from '@angular/material/icon';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './features/auth/auth.module';
@@ -64,7 +64,6 @@ import { UserCenterComponent } from '@core/components/user-center/user-center.co
         RiskAssessmentModule,
         DataUploadModule,
         NgbModule,
-        BrowserAnimationsModule,
         MatIconModule,
         MatButtonModule,
         MatCheckboxModule,
@@ -82,6 +81,7 @@ import { UserCenterComponent } from '@core/components/user-center/user-center.co
         DataService,
         DataConfigurationService,
         { provide: HTTP_INTERCEPTORS, useClass: XhrInterceptor, multi: true },
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
         provideHttpClient(withXhr(), withInterceptorsFromDi()),
     ],
     bootstrap: [AppComponent]

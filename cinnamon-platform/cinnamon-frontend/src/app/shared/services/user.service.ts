@@ -67,16 +67,49 @@ export class UserService {
         return this.logoutSubject.asObservable();
     }
 
-    public routeToUser$(): Observable<boolean> {
+    public routeToUser$(returnUrl?: string | null): Observable<boolean> {
         let routing;
 
         if (this.isAuthenticated()) {
-            routing = this.router.navigate(["/user/-/home"]);
+            const safeReturnUrl = this.sanitizeReturnUrl(returnUrl);
+            routing = safeReturnUrl !== null
+                ? this.router.navigateByUrl(safeReturnUrl)
+                : this.router.navigate(["/user/-/home"]);
         } else {
             routing = this.router.navigate(["/"]);
         }
 
         return from(routing);
+    }
+
+    /**
+     * Validates that the given return URL is a safe, same-app relative path to redirect to after
+     * login, guarding against open-redirect attacks via a crafted "returnUrl" query param (e.g.
+     * "https://evil.com" or "//evil.com") and against pointless redirects back to "/" or "/login".
+     */
+    private sanitizeReturnUrl(returnUrl?: string | null): string | null {
+        // Rejects ASCII control characters (codes 0-31, e.g., newlines/CR) that could smuggle extra header/URL content
+        const hasControlCharacter = returnUrl != null && Array.from(returnUrl).some(char => char.charCodeAt(0) < 0x20);
+        if (!returnUrl || hasControlCharacter || returnUrl.includes("\\") || !/^\/(?!\/)/.test(returnUrl)) {
+            return null;
+        }
+
+        let parsed;
+        try {
+            // Rejects malformed URLs the router itself can't make sense of.
+            parsed = this.router.parseUrl(returnUrl);
+        } catch {
+            return null;
+        }
+
+        // Re-serializing the parsed UrlTree canonicalizes the string (e.g., resolves "/a/../b" to "/b"),
+        // so the "/" and "/login" checks below can't be bypassed by an equivalent but differently-written URL.
+        const safeUrl = this.router.serializeUrl(parsed);
+        if (safeUrl === "/" || safeUrl === "/login") {
+            return null;
+        }
+
+        return safeUrl;
     }
 
     login(
@@ -124,6 +157,7 @@ export class UserService {
      */
     public logout(mode: LogoutMode) {
         const user = this.getUser().userInfo.username || null;
+        const returnUrl = mode === "expired" ? this.sanitizeReturnUrl(this.router.url) : null;
 
         // Tells the backend to end the session and clear its cookies (see SecurityConfig#appFilterChain).
         // The user is logged out locally regardless of whether this succeeds, e.g., if the
@@ -149,7 +183,8 @@ export class UserService {
 
         this.logoutSubject.next();
 
-        this.router.navigate(['/']).then(() => {
+        const queryParams = returnUrl !== null ? { returnUrl } : {};
+        this.router.navigate(["/login"], { queryParams }).then(() => {
             const notification = new AppNotification(message, type);
             notification.user = user;
             this.notificationService.addNotification(notification);

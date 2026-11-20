@@ -18,6 +18,8 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 @Getter
 @AllArgsConstructor
@@ -48,9 +50,13 @@ public class DateData extends Data {
 		 */
 		private static final List<String> FORMATS = List.of(
 				"EEEE, MMMM d, yyyy",
+				"MMM d, yyyy",
+				"d MMMM yyyy",
 				"yyyy-MM-dd",
 				"yyyy:MM:dd",
 				"yyyy.MM.dd",
+				"yyyy/MM/dd",
+				"yyyyMMdd",
 				"dd-MM-yyyy",
 				"dd:MM:yyyy",
 				"dd.MM.yyyy",
@@ -136,11 +142,46 @@ public class DateData extends Data {
 					columnConfiguration.setType(DataType.DATE);
 					break;
 				} catch (final DateTimeParseException ignored) {
-					var i = 1;
 				}
 			}
 
 			return columnConfiguration;
+		}
+
+		/**
+		 * Estimates the best-fitting date format for a whole column of samples by testing every known format
+		 * against every sample and choosing the format that matches the most samples.
+		 * <p>
+		 * This resolves ambiguous numeric formats (e.g. {@code dd/MM/yyyy} vs. {@code MM/dd/yyyy}) using evidence
+		 * from the whole column instead of the order-dependent, per-sample first match used by
+		 * {@link #estimateColumnConfiguration(String)}. List order is only used to break ties between formats
+		 * that match the same number of samples.
+		 *
+		 * @param samples The samples belonging to a single column.
+		 * @return The best-fitting format, or empty if no format matches any sample.
+		 */
+		public Optional<String> estimateFormatForSamples(final List<String> samples) {
+			String bestFormat = null;
+			int bestCount = 0;
+
+			for (final String format : FORMATS) {
+				final DateTimeFormatter formatter = buildFormatter(format);
+				int count = 0;
+				for (final String sample : samples) {
+					try {
+						LocalDate.parse(sample, formatter);
+						count++;
+					} catch (final DateTimeParseException ignored) {
+					}
+				}
+
+				if (count > bestCount) {
+					bestCount = count;
+					bestFormat = format;
+				}
+			}
+
+			return Optional.ofNullable(bestFormat);
 		}
 
 		/**
@@ -184,7 +225,7 @@ public class DateData extends Data {
 					.appendPattern(format)
 					.parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)
 					.parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
-					.toFormatter();
+					.toFormatter(Locale.ENGLISH);
 		}
 	}
 }

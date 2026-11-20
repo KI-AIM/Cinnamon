@@ -19,6 +19,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 @Getter
 @AllArgsConstructor
@@ -46,11 +48,16 @@ public class DateTimeData extends Data {
 		private static final List<String> FORMATS = List.of(
 				"E, y-M-d 'at' h:m:s a z",
 				"E yyyy.MM.dd 'at' hh:mm:ss a zzz",
-				"yyyy-MM-dd hh:mm:ss",
+				"yyyy-MM-dd HH:mm:ss",
+				"yyyy/MM/dd HH:mm:ss",
+				"yyyyMMdd'T'HHmmss",
+				"dd-MM-yyyy HH:mm:ss",
+				"MM-dd-yyyy HH:mm:ss",
 				"yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
 				"yyyy-MM-dd'T'HH:mm:ss",
 				"yyyy-MM-dd'T'HH:mm:ssXXX",
-				"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+				"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+				"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
 		);
 
 		private LocalDateTime value;
@@ -123,7 +130,7 @@ public class DateTimeData extends Data {
 
 			for (final String format : FORMATS) {
 				try {
-					LocalDateTime.parse(value, DateTimeFormatter.ofPattern(format));
+					LocalDateTime.parse(value, buildFormatter(format));
 					columnConfiguration.addConfiguration(new DateTimeFormatConfiguration(format));
 					columnConfiguration.setType(DataType.DATE_TIME);
 					break;
@@ -132,6 +139,41 @@ public class DateTimeData extends Data {
 			}
 
 			return columnConfiguration;
+		}
+
+		/**
+		 * Estimates the best-fitting date-time format for a whole column of samples by testing every known format
+		 * against every sample and choosing the format that matches the most samples.
+		 * <p>
+		 * This resolves ambiguous numeric formats using evidence from the whole column instead of the
+		 * order-dependent, per-sample first match used by {@link #estimateColumnConfiguration(String)}.
+		 * List order is only used to break ties between formats that match the same number of samples.
+		 *
+		 * @param samples The samples belonging to a single column.
+		 * @return The best-fitting format, or empty if no format matches any sample.
+		 */
+		public Optional<String> estimateFormatForSamples(final List<String> samples) {
+			String bestFormat = null;
+			int bestCount = 0;
+
+			for (final String format : FORMATS) {
+				final DateTimeFormatter formatter = buildFormatter(format);
+				int count = 0;
+				for (final String sample : samples) {
+					try {
+						LocalDateTime.parse(sample, formatter);
+						count++;
+					} catch (final DateTimeParseException ignored) {
+					}
+				}
+
+				if (count > bestCount) {
+					bestCount = count;
+					bestFormat = format;
+				}
+			}
+
+			return Optional.ofNullable(bestFormat);
 		}
 
 		/**
@@ -171,7 +213,7 @@ public class DateTimeData extends Data {
 		 * @return The formatter.
 		 */
 		public DateTimeFormatter buildFormatter(final String format) {
-			return DateTimeFormatter.ofPattern(format);
+			return DateTimeFormatter.ofPattern(format, Locale.ENGLISH);
 		}
 
 		/**

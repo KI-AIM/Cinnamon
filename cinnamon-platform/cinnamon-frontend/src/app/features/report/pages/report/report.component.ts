@@ -36,7 +36,7 @@ import { ProjectConfigurationService } from "@shared/services/project-configurat
 import { ProjectService } from "@shared/services/project.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
-import { catchError, combineLatest, map, Observable, of, switchMap } from "rxjs";
+import { catchError, combineLatest, map, Observable, of, switchMap, take } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { environments } from "src/environments/environment";
 
@@ -226,6 +226,7 @@ export class ReportComponent implements OnInit {
         this.http.get("/app/assets/report.css", {responseType: 'text'}).pipe(
             switchMap(value => {
                 return this.appConfigService.appConfig$.pipe(
+                    take(1),
                     map((config: AppConfig) => {
                         return {style: value, appConfig: config};
                     }),

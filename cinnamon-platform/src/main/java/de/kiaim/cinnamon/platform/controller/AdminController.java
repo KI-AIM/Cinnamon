@@ -2,12 +2,14 @@ package de.kiaim.cinnamon.platform.controller;
 
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.platform.exception.ApiException;
+import de.kiaim.cinnamon.platform.exception.InternalInvalidStateException;
 import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserInvitationEntity;
 import de.kiaim.cinnamon.platform.service.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -379,6 +381,28 @@ public class AdminController {
 
 		final var invitationLink = userInvitationService.assembleInvitationLink(httpRequest, "<token>");
 		return resourceSelectorService.replaceSelectorsInString(request.getText(), project, invitation, invitationLink);
+	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Imprint ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+	/**
+	 * Update the imprint.
+	 *
+	 * @param newImprint The new imprint to be set.
+	 * @throws InternalInvalidStateException If no app settings are stored in the database.
+	 */
+	@Operation(summary = "Updates the imprint.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Successfully update the imprint."),
+			@ApiResponse(responseCode = "500", description = "The application is in an invalid state"),
+	})
+	@PutMapping(value = "/settings/imprint", consumes = MediaType.TEXT_PLAIN_VALUE)
+	public void updateImprint(
+			@Parameter(description = "The new imprint to be set")
+			@RequestBody(required = false) final String newImprint
+	) throws InternalInvalidStateException {
+		appSettingsService.updateImprint(newImprint);
 	}
 
 }

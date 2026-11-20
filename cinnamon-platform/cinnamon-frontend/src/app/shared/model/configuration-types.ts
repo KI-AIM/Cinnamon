@@ -18,15 +18,15 @@ export enum ConfigurationType {
  */
 export function getConfigurationTypeForConfigurationName(configurationName: string): ConfigurationType | null {
     switch (configurationName) {
-        case DateFormatConfiguration.name:
+        case DateFormatConfiguration.NAME:
             return ConfigurationType.DATEFORMAT;
-        case DateTimeFormatConfiguration.name:
+        case DateTimeFormatConfiguration.NAME:
             return ConfigurationType.DATETIMEFORMAT;
-        case RangeConfiguration.name:
+        case RangeConfiguration.NAME:
             return ConfigurationType.RANGE;
-        case StringPatternConfiguration.name:
+        case StringPatternConfiguration.NAME:
             return ConfigurationType.STRINGPATTERN;
-        case TextLanguageConfiguration.name:
+        case TextLanguageConfiguration.NAME:
             return ConfigurationType.TEXTLANGUAGE;
         default:
                 return null;
@@ -66,14 +66,14 @@ export function getConfigurationForConfigurationType(
 ): String {
 	switch (type) {
 		case ConfigurationType.DATEFORMAT:
-			return DateFormatConfiguration.name;
+			return DateFormatConfiguration.NAME;
 		case ConfigurationType.DATETIMEFORMAT:
-			return DateTimeFormatConfiguration.name;
+			return DateTimeFormatConfiguration.NAME;
 		case ConfigurationType.RANGE:
-			return RangeConfiguration.name;
+			return RangeConfiguration.NAME;
 		case ConfigurationType.STRINGPATTERN:
-			return StringPatternConfiguration.name;
+			return StringPatternConfiguration.NAME;
 		case ConfigurationType.TEXTLANGUAGE:
-			return TextLanguageConfiguration.name;
+			return TextLanguageConfiguration.NAME;
 	}
 }

@@ -46,16 +46,16 @@ function transformConfigurations(params: TransformFnParams): Configuration[] {
     for (const obj of params.value) {
         const name = obj.getName() as string;
         switch (name) {
-            case DateFormatConfiguration.name:
+            case DateFormatConfiguration.NAME:
                 result.push(plainToInstance(DateFormatConfiguration, obj));
                 break;
-            case DateTimeFormatConfiguration.name:
+            case DateTimeFormatConfiguration.NAME:
                 result.push(plainToInstance(DateTimeFormatConfiguration, obj));
                 break;
-            case RangeConfiguration.name:
+            case RangeConfiguration.NAME:
                 result.push(plainToInstance(RangeConfiguration, obj));
                 break;
-            case StringPatternConfiguration.name:
+            case StringPatternConfiguration.NAME:
                 result.push(plainToInstance(StringPatternConfiguration, obj));
                 break;
             default:

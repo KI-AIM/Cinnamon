@@ -32,7 +32,7 @@ public class DateTimeDataTest {
 
 		Configuration config = estimation.getConfigurations().get(0);
 		DateTimeFormatConfiguration dateFormat = assertInstanceOf(DateTimeFormatConfiguration.class, config);
-		assertEquals("yyyy-MM-dd'T'HH:mm:ssXXX", dateFormat.getDateTimeFormatter());
+		assertEquals("yyyy-MM-dd'T'HH:mm:ssxxx", dateFormat.getDateTimeFormatter());
 	}
 
 	@Test
@@ -71,7 +71,23 @@ public class DateTimeDataTest {
 
 		Configuration config = estimation.getConfigurations().get(0);
 		DateTimeFormatConfiguration dateTimeFormat = assertInstanceOf(DateTimeFormatConfiguration.class, config);
-		assertEquals("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", dateTimeFormat.getDateTimeFormatter());
+		assertEquals("yyyy-MM-dd'T'HH:mm:ss.SSSxxx", dateTimeFormat.getDateTimeFormatter());
+	}
+
+	@Test
+	public void estimateFormatForSamplesPrefersNumericOffset() {
+		// Both xxx and XXX match numeric offsets, xxx wins the tie so +00:00 is written back as +00:00
+		var samples = List.of("2024-01-01T14:30:00.123+00:00", "2024-01-02T14:30:00.123+02:00");
+
+		assertEquals(Optional.of("yyyy-MM-dd'T'HH:mm:ss.SSSxxx"), builder.estimateFormatForSamples(samples));
+	}
+
+	@Test
+	public void estimateFormatForSamplesMixedZAndOffset() {
+		// Only XXX parses both Z and numeric offsets
+		var samples = List.of("2024-01-01T14:30:00Z", "2024-01-02T14:30:00+00:00", "2024-01-03T14:30:00+02:00");
+
+		assertEquals(Optional.of("yyyy-MM-dd'T'HH:mm:ssXXX"), builder.estimateFormatForSamples(samples));
 	}
 
 	@Test

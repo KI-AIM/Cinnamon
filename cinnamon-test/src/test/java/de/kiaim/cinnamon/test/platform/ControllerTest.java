@@ -192,7 +192,7 @@ public class ControllerTest extends DatabaseTest {
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{name: 'file.json', type: 'FHIR', fhirResourceTypes: ['Patient', 'Observation'], numberOfAttributes: 13}"));
+		       .andExpect(content().json("{name: 'file.json', type: 'FHIR', fhirResourceTypes: ['Patient', 'Observation'], numberOfAttributes: 14}"));
 	}
 
 	protected void estimateDataConfiguration() throws Exception {

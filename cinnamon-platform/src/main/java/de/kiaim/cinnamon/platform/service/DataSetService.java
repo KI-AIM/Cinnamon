@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -45,13 +46,19 @@ public class DataSetService {
 	/**
 	 * Encodes the given dataset.
 	 * All columns are included, and transformation errors are not injected.
+	 * Date-time values are stored normalized to UTC.
+	 * If keepTimeZones is true, time zone patterns of the date-time formats are kept and filled with UTC,
+	 * otherwise they are stripped from the format.
 	 *
-	 * @param dataSet The dataset to encode.
+	 * @param dataSet       The dataset to encode.
+	 * @param keepTimeZones If time zone patterns of date-time formats should be kept.
 	 * @return Encoded native values of the dataset
 	 */
-	public List<List<Object>> encodeDataRowsSimple(final DataSet dataSet) {
+	public List<List<Object>> encodeDataRowsSimple(final DataSet dataSet, final boolean keepTimeZones) {
 		final Map<Integer, Integer> columnIndexMapping = getColumnIndexMapping(dataSet.getDataConfiguration());
-		return encodeDataRows(dataSet, new HashSet<>(), columnIndexMapping, new LoadDataRequest());
+		final LoadDataRequest loadDataRequest = new LoadDataRequest();
+		loadDataRequest.setKeepTimeZones(keepTimeZones);
+		return encodeDataRows(dataSet, new HashSet<>(), columnIndexMapping, loadDataRequest);
 	}
 
 	/**
@@ -90,7 +97,7 @@ public class DataSetService {
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
 
-		final List<List<Object>> data = printDataRows(dataSet);
+		final List<List<Object>> data = printDataRows(dataSet, loadDataRequest.isKeepTimeZones());
 
 		String defaultNullEncoding = loadDataRequest.getDefaultNullEncoding();
 		String missingValueEncoding = loadDataRequest.getMissingValueEncoding() == null
@@ -135,13 +142,15 @@ public class DataSetService {
 	 * Converts the dataset into a row-major list of the underlying values.
 	 * The values are converted into their original values before parsing.
 	 *
-	 * @param dataSet The dataset
+	 * @param dataSet       The dataset
+	 * @param keepTimeZones If time zone patterns of date-time formats should be kept and filled with UTC.
 	 * @return The converted dataset.
 	 */
-	private List<List<Object>> printDataRows(final DataSet dataSet) {
+	private List<List<Object>> printDataRows(final DataSet dataSet, final boolean keepTimeZones) {
 		final List<List<Object>> result = new ArrayList<>(dataSet.getData().size());
 
-		final PrintDataRowsContext context = PrintDataRowsContext.createFor(dataSet.getDataConfiguration());
+		final PrintDataRowsContext context = PrintDataRowsContext.createFor(dataSet.getDataConfiguration(),
+		                                                                    keepTimeZones);
 
 		for (final DataRow row : dataSet.getDataRows()) {
 			result.add(printDataRow(row, dataSet.getDataConfiguration(), context));
@@ -152,7 +161,7 @@ public class DataSetService {
 
 	/**
 	 * Prepares the values of a row to be printed.
-	 * See {@link #printDataRows(DataSet)} for more information.
+	 * See {@link #printDataRows(DataSet, boolean)} for more information.
 	 *
 	 * @param row               The row.
 	 * @param dataConfiguration The data configuration defining the attributes and their format.
@@ -193,9 +202,9 @@ public class DataSetService {
 				if (config == null || dateTimeValue == null) {
 					result.add(value.getValue());
 				} else {
-					final String format = context.getDateTimeFormatter().get(columnConfiguration.getIndex());
-					final DateTimeFormatter formatter = new DateTimeData.DateTimeDataBuilder().buildFormatter(format);
-					result.add(formatter.format(dateTimeValue));
+					// Values are normalized to UTC on import, see DateTimeData.DateTimeDataBuilder#parseAndNormalize
+					final DateTimeFormatter formatter = context.getDateTimeFormatter().get(columnConfiguration.getIndex());
+					result.add(formatter.format(dateTimeValue.atZone(ZoneOffset.UTC)));
 				}
 			} else {
 				result.add(value.getValue());
@@ -486,41 +495,48 @@ public class DataSetService {
 	}
 
 	/**
-	 * Helper class for {@link DataSetService#printDataRows(DataSet)}.
+	 * Helper class for {@link DataSetService#printDataRows(DataSet, boolean)}.
 	 * Contains preprocessed data for printing the data rows.
 	 */
 	@Getter
 	private static final class PrintDataRowsContext {
 		/**
-		 * Formatters date time columns with striped time zone patterns.
+		 * Formatters for date time columns.
+		 * Time zone patterns are stripped unless time zones should be kept.
 		 */
-		private final Map<Integer, String> dateTimeFormatter = new HashMap<>();
+		private final Map<Integer, DateTimeFormatter> dateTimeFormatter = new HashMap<>();
 
 		/**
 		 * Creates a new context for printing the data rows.
 		 *
 		 * @param dataConfiguration The data configuration of the dataset to be printed.
+		 * @param keepTimeZones     If time zone patterns of date-time formats should be kept.
 		 * @return The initialized context.
 		 */
-		public static PrintDataRowsContext createFor(final DataConfiguration dataConfiguration) {
+		public static PrintDataRowsContext createFor(final DataConfiguration dataConfiguration,
+		                                             final boolean keepTimeZones) {
 			final PrintDataRowsContext context = new PrintDataRowsContext();
-			context.init(dataConfiguration);
+			context.init(dataConfiguration, keepTimeZones);
 			return context;
 		}
 
 		/**
 		 * Prepares the context for printing the data rows.
-		 * Stripes the time zone patterns from the date formatters.
+		 * Builds the date-time formatters, stripping the time zone patterns if time zones should not be kept.
 		 *
 		 * @param dataConfiguration The data configuration of the dataset to be printed.
+		 * @param keepTimeZones     If time zone patterns of date-time formats should be kept.
 		 */
-		private void init(final DataConfiguration dataConfiguration) {
+		private void init(final DataConfiguration dataConfiguration, final boolean keepTimeZones) {
+			final var builder = new DateTimeData.DateTimeDataBuilder();
 			for (final ColumnConfiguration columnConfiguration : dataConfiguration.getConfigurations()) {
 				if (columnConfiguration.getType() == DataType.DATE_TIME) {
 					final var config = columnConfiguration.getConfiguration(DateTimeFormatConfiguration.class);
 					if (config != null) {
-						final String format = stripTimeZonePatterns(config.getDateTimeFormatter());
-						this.dateTimeFormatter.put(columnConfiguration.getIndex(), format);
+						final String format = keepTimeZones
+						                      ? config.getDateTimeFormatter()
+						                      : stripTimeZonePatterns(config.getDateTimeFormatter());
+						this.dateTimeFormatter.put(columnConfiguration.getIndex(), builder.buildFormatter(format));
 					}
 				}
 			}

@@ -10,6 +10,7 @@ import {
     AnonymizationService
 } from "@features/anonymization/services/anonymization.service";
 import { DataSetInfoService } from "@features/data-upload/services/data-set-info.service";
+import { ReportRenderService } from "@features/report/services/report-render.service";
 import { RiskAssessmentService } from "@features/risk-assessment/services/risk-assessment.service";
 import { SynthetizationService } from "@features/synthetization/services/synthetization.service";
 import { ChartFrequencyComponent } from "@shared/components/chart-frequency/chart-frequency.component";
@@ -65,6 +66,11 @@ import { environments } from "src/environments/environment";
 export class ReportComponent implements OnInit {
 
     private readonly PAGE_HEIGHT = 1122;
+
+    /**
+     * Maximum time to wait for charts to finish rendering in render mode.
+     */
+    private readonly CHART_RENDER_TIMEOUT_MS = 10_000;
 
     protected readonly CHART_BAR = 740;
     protected readonly CHART_MARGIN = 25;
@@ -128,6 +134,7 @@ export class ReportComponent implements OnInit {
         protected readonly platform: Platform,
         private projectConfigService: ProjectConfigurationService,
         private readonly projectService: ProjectService,
+        private readonly reportRenderService: ReportRenderService,
         private readonly riskAssessmentService: RiskAssessmentService,
         private readonly stateManagementService: StateManagementService,
         private statisticsService: StatisticsService,
@@ -137,30 +144,33 @@ export class ReportComponent implements OnInit {
     }
 
     ngOnInit() {
+        // In render mode, the sources are tracked, so a stuck rendering reports which source never emitted
+        const track = <T>(name: string, source: Observable<T>) => this.reportRenderService.track(name, source);
+
         this.pageData$ = combineLatest({
-            anonymizationConfig: this.anonymizationService.getAlgorithmData$(),
-            appConfig: this.appConfigService.appConfig$,
-            dataConfiguration: this.dataConfigurationService.dataConfiguration$,
-            datasetInfoOriginal: this.datasetInfoService.getDataSetInfo("VALIDATION"),
-            datasetInfoProtected: this.datasetInfoService.getDataSetInfo("PROTECTED"),
-            mc: this.projectConfigService.projectSettings$,
-            pipeline: this.stateManagementService.pipelineInformation$,
-            reportData: this.getReportData(),
-            riskAssessmentConfig: this.riskAssessmentService.fetchConfiguration().pipe(
+            anonymizationConfig: track("anonymization configuration", this.anonymizationService.getAlgorithmData$()),
+            appConfig: track("app config", this.appConfigService.appConfig$),
+            dataConfiguration: track("data configuration", this.dataConfigurationService.dataConfiguration$),
+            datasetInfoOriginal: track("original dataset info", this.datasetInfoService.getDataSetInfo("VALIDATION")),
+            datasetInfoProtected: track("protected dataset info", this.datasetInfoService.getDataSetInfo("PROTECTED")),
+            mc: track("project settings", this.projectConfigService.projectSettings$),
+            pipeline: track("pipeline", this.stateManagementService.pipelineInformation$),
+            reportData: track("module report content", this.getReportData()),
+            riskAssessmentConfig: track("risk assessment configuration", this.riskAssessmentService.fetchConfiguration().pipe(
                 map(value => (value.config as any) as RiskAssessmentConfig),
-            ),
-            risks: this.statisticsService.fetchRisks('RISK_EVALUATION').pipe(
+            )),
+            risks: track("risks", this.statisticsService.fetchRisks('RISK_EVALUATION').pipe(
                 catchError(_ => {
                     return of(null);
                 }),
-            ),
-            risksOriginal: this.statisticsService.fetchRisks('RISK_EVALUATION_O').pipe(
+            )),
+            risksOriginal: track("risks of the original dataset", this.statisticsService.fetchRisks('RISK_EVALUATION_O').pipe(
                 catchError(_ => {
                     return of(null);
                 }),
-            ),
-            statistics: this.statisticsService.fetchResult(),
-            synthetizationConfig: this.synthetizationService.getAlgorithmData$(),
+            )),
+            statistics: track("statistics", this.statisticsService.fetchResult()),
+            synthetizationConfig: track("synthetization configuration", this.synthetizationService.getAlgorithmData$()),
         }).pipe(
             switchMap(value => {
                 // Fetch information about the anonymized dataset if anonymization was applied
@@ -194,8 +204,11 @@ export class ReportComponent implements OnInit {
                 }
             }),
             catchError(error => {
-                this.errorHanldingService.addError(error, "Failed to load report data");
-                this.setRenderStatus('error');
+                if (this.renderMode) {
+                    this.reportRenderService.fail("Failed to load the report data.", error);
+                } else {
+                    this.errorHanldingService.addError(error, "Failed to load report data");
+                }
                 return of(null);
             }),
         );
@@ -258,14 +271,16 @@ export class ReportComponent implements OnInit {
     /**
      * Replaces the current page with the printable report for the headless browser of the server side PDF generation.
      * The resulting document is identical to the one opened by {@link printReport}.
-     * Gotenberg waits until `window.cinnamonReportStatus` is `'ready'` and prints the page afterward.
+     * Signals the result via the {@link ReportRenderService}, which Gotenberg waits for.
      */
     private async renderForHeadlessBrowser(): Promise<void> {
+        const render = this.reportRenderService;
+
         try {
             // Charts must be rendered completely before converting them into images
-            await Promise.all(this.charts.map(chart => chart.whenRendered()));
+            await render.step("charts", () => this.waitForCharts());
             const chartImages = this.collectChartImages();
-            const value = await firstValueFrom(this.loadPrintStyle());
+            const value = await render.step("report style sheet", () => firstValueFrom(this.loadPrintStyle()));
 
             // Replace the Angular app with the printable report
             document.open();
@@ -273,24 +288,37 @@ export class ReportComponent implements OnInit {
             document.close();
 
             // Wait for the chart images so the page splitting uses the final heights
-            await Promise.all(Array.from(document.images).map(image => image.decode().catch(() => undefined)));
+            await render.step("chart images", () => Promise.all(
+                Array.from(document.images).map(image => image.decode().catch(() => {
+                    render.recordProblem(`Failed to decode image ${image.src.substring(0, 50)}`);
+                })),
+            ));
             this.splitOversizedElements(document);
 
-            this.setRenderStatus('ready');
+            render.markReady();
         } catch (error) {
-            console.error("Failed to render the report", error);
-            this.setRenderStatus('error');
+            await render.fail("Failed to create the printable report.", error);
         }
     }
 
     /**
-     * Signals the state of the rendering to the headless browser.
-     * @param status The status.
+     * Waits until all charts are rendered.
+     * Charts that do not report their completion in time are converted anyway,
+     * as a missing completion event should not block the entire report.
      * @private
      */
-    private setRenderStatus(status: 'ready' | 'error'): void {
-        if (this.renderMode) {
-            (window as any).cinnamonReportStatus = status;
+    private async waitForCharts(): Promise<void> {
+        const charts = this.charts.toArray();
+        let finished = 0;
+
+        const timeout = new Promise<'timeout'>(resolve =>
+            setTimeout(() => resolve('timeout'), this.CHART_RENDER_TIMEOUT_MS));
+        const allRendered = Promise.all(charts.map(chart => chart.whenRendered().then(() => finished++)));
+
+        if (await Promise.race([allRendered, timeout]) === 'timeout') {
+            this.reportRenderService.recordProblem(
+                `Only ${finished} of ${charts.length} charts reported their completion within ` +
+                `${this.CHART_RENDER_TIMEOUT_MS / 1000}s; converting the remaining ones as they are.`);
         }
     }
 

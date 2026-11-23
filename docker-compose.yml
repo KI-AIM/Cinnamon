@@ -97,12 +97,15 @@ services:
         image: gotenberg/gotenberg:8
         container_name: cinnamon-pdf
         restart: unless-stopped
+        ports:
+            - "127.0.0.1:3000:3000"
         networks:
             - report-network
         command:
             - gotenberg
-            - --chromium-allow-list=^http://cinnamon-platform:8080/.*
-            - --api-timeout=90s
+#            - --chromium-allow-list=^http://cinnamon-platform:8080/.*
+            # Between the page timeout (90s) and cinnamon.report-renderer.timeout (120s)
+            - --api-timeout=110s
     cinnamon-synthetization:
         image: ghcr.io/ki-aim/cinnamon-synthetization:latest
         container_name: cinnamon-synthetization

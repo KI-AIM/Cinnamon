@@ -88,7 +88,12 @@ public class SecurityConfig {
 	@Order(2)
 	public SecurityFilterChain appFilterChain(final HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-		                              .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+		                              .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+		                              // Requests of the headless browser are authenticated by a token header
+		                              // instead of a cookie, so they are not vulnerable to CSRF.
+		                              // ReportRenderTokenFilter rejects them if the token is invalid.
+		                              .ignoringRequestMatchers(request -> request.getHeader(
+				                              ReportRenderTokenService.HEADER_NAME) != null))
 		            .cors(Customizer.withDefaults())
 		            .authorizeHttpRequests(authz -> authz.requestMatchers("/api/doc",
 		                                                                  "/api/swagger-ui/**",

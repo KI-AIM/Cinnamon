@@ -30,20 +30,38 @@ public class ReportRendererConfiguration {
 	private String platformUrl = null;
 
 	/**
-	 * How long a render token is valid.
-	 * Must cover the entire rendering of the report.
+	 * Maximum time the platform waits for Gotenberg to return the PDF.
+	 * <p>
+	 * The timeouts are staggered so that the most specific error wins:
+	 * <ol>
+	 *     <li>The report page gives up after {@link #getPageTimeout()} and reports what it was still waiting for.</li>
+	 *     <li>Gotenberg's {@code --api-timeout} should lie between the page timeout and this timeout.</li>
+	 *     <li>The platform gives up after this timeout.</li>
+	 * </ol>
 	 */
-	private Duration tokenValidity = Duration.ofMinutes(2);
+	private Duration timeout = Duration.ofSeconds(120);
 
 	/**
-	 * Timeout for the request to Gotenberg.
+	 * How much earlier than {@link #timeout} the report page gives up.
+	 * Leaves time for reporting the error and for Gotenberg to respond.
 	 */
-	private Duration timeout = Duration.ofSeconds(90);
+	private Duration pageTimeoutMargin = Duration.ofSeconds(30);
 
 	/**
 	 * Maximum size of the generated PDF in bytes.
 	 */
 	private int maxPdfSize = 50 * 1024 * 1024;
+
+	/**
+	 * Returns the time after which the report page itself gives up and reports an error.
+	 *
+	 * @return The page timeout, at least 10 seconds.
+	 */
+	public Duration getPageTimeout() {
+		final Duration pageTimeout = timeout.minus(pageTimeoutMargin);
+		final Duration minimum = Duration.ofSeconds(10);
+		return pageTimeout.compareTo(minimum) < 0 ? minimum : pageTimeout;
+	}
 
 	/**
 	 * Returns if server side rendering is configured.

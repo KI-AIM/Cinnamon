@@ -21,7 +21,8 @@ import java.util.Set;
 /**
  * Authenticates requests of the headless browser that renders the report.
  * Requests carrying the {@link ReportRenderTokenService#HEADER_NAME} header are authenticated as the owner of the
- * project the token was issued for, but are restricted to read-only requests of the endpoints the report page uses.
+ * project the token was issued for, but are restricted to read-only requests of the endpoints the report page uses,
+ * and to reporting rendering errors.
  * The authentication is only stored for the current request and never persisted into a session.
  * <p>
  * Intentionally not a {@code @Component}, so it is not registered as a servlet filter by Spring Boot,
@@ -32,6 +33,11 @@ import java.util.Set;
 public class ReportRenderTokenFilter extends OncePerRequestFilter {
 
 	private static final Set<String> ALLOWED_METHODS = Set.of("GET", "HEAD");
+
+	/**
+	 * Path relative to the project for reporting errors of the report page.
+	 */
+	private static final String RENDER_ERROR_PATH = "/report/render-error";
 
 	private final ReportRenderTokenService reportRenderTokenService;
 	private final UserService userService;
@@ -61,7 +67,7 @@ public class ReportRenderTokenFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		if (!ALLOWED_METHODS.contains(request.getMethod()) || !isAllowedPath(path, grant.projectId())) {
+		if (!isAllowedRequest(request.getMethod(), path, grant.projectId())) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN);
 			return;
 		}
@@ -87,14 +93,22 @@ public class ReportRenderTokenFilter extends OncePerRequestFilter {
 	}
 
 	/**
-	 * Checks if the report page is allowed to request the given path.
+	 * Checks if the report page is allowed to make the given request.
+	 * Allows reading the project and the step definitions, and reporting rendering errors.
 	 *
+	 * @param method    The HTTP method.
 	 * @param path      The request path without the context path.
 	 * @param projectId The project the token was issued for.
-	 * @return True if the path can be requested.
+	 * @return True if the request is allowed.
 	 */
-	private boolean isAllowedPath(final String path, final String projectId) {
+	public static boolean isAllowedRequest(final String method, final String path, final String projectId) {
 		final String projectPath = "/api/project/" + projectId;
-		return path.equals(projectPath) || path.startsWith(projectPath + "/") || path.startsWith("/api/step/");
+
+		if (method.equals("POST")) {
+			return path.equals(projectPath + RENDER_ERROR_PATH);
+		}
+
+		return ALLOWED_METHODS.contains(method) &&
+		       (path.equals(projectPath) || path.startsWith(projectPath + "/") || path.startsWith("/api/step/"));
 	}
 }

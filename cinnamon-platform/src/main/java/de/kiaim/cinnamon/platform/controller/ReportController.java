@@ -7,8 +7,10 @@ import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.service.ProjectService;
 import de.kiaim.cinnamon.platform.service.ReportPdfService;
+import de.kiaim.cinnamon.platform.service.ReportRenderTokenService;
 import de.kiaim.cinnamon.platform.service.ReportService;
 import de.kiaim.cinnamon.platform.service.UserService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import org.jspecify.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,6 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,13 +44,16 @@ public class ReportController {
 
 	private final ProjectService projectService;
 	private final ReportPdfService reportPdfService;
+	private final ReportRenderTokenService reportRenderTokenService;
 	private final ReportService reportService;
 	private final UserService userService;
 
 	public ReportController(final ProjectService projectService, final ReportPdfService reportPdfService,
+	                        final ReportRenderTokenService reportRenderTokenService,
 	                        final ReportService reportService, final UserService userService) {
 		this.projectService = projectService;
 		this.reportPdfService = reportPdfService;
+		this.reportRenderTokenService = reportRenderTokenService;
 		this.reportService = reportService;
 		this.userService = userService;
 	}
@@ -96,5 +104,19 @@ public class ReportController {
 		                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"report.pdf\"")
 		                     .contentType(MediaType.APPLICATION_PDF)
 		                     .body(pdf);
+	}
+
+	/**
+	 * Receives errors of the report page rendered by the headless browser.
+	 * Only accessible with a render token, see {@link de.kiaim.cinnamon.platform.config.ReportRenderTokenFilter}.
+	 * Internal endpoint, therefore hidden from the API documentation.
+	 */
+	@Hidden
+	@PostMapping(value = "/render-error", consumes = MediaType.TEXT_PLAIN_VALUE)
+	public void reportRenderError(
+			@RequestHeader(ReportRenderTokenService.HEADER_NAME) final String token,
+			@RequestBody final String message
+	) {
+		reportRenderTokenService.recordError(token, message);
 	}
 }

@@ -1,8 +1,9 @@
-import { AsyncPipe, NgIf } from "@angular/common";
+import { AsyncPipe } from "@angular/common";
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from "@angular/router";
 import { StateManagementService } from "@core/services/state-management.service";
 import { ReportComponent } from "@features/report/pages/report/report.component";
+import { ReportRenderService } from "@features/report/services/report-render.service";
 import { ProjectService } from "@shared/services/project.service";
 import { StatusService } from "@shared/services/status.service";
 import { catchError, map, Observable, of, switchMap, tap } from "rxjs";
@@ -19,18 +20,27 @@ import { catchError, map, Observable, of, switchMap, tap } from "rxjs";
     selector: 'app-report-render',
     imports: [
         AsyncPipe,
-        NgIf,
         ReportComponent,
     ],
-    template: `<app-report *ngIf="projectLoaded$ | async" [renderMode]="true"></app-report>`,
+    template: `
+        @if (projectLoaded$ | async) {
+            <app-report [renderMode]="true"></app-report>
+        }
+    `,
     changeDetection: ChangeDetectionStrategy.Eager,
 })
 export class ReportRenderComponent implements OnInit, OnDestroy {
+
+    /**
+     * Used if the platform does not pass a timeout.
+     */
+    private static readonly DEFAULT_TIMEOUT_MS = 60_000;
 
     protected projectLoaded$: Observable<boolean>;
 
     constructor(
         private readonly projectService: ProjectService,
+        private readonly reportRenderService: ReportRenderService,
         private readonly route: ActivatedRoute,
         private readonly stateManagementService: StateManagementService,
         private readonly statusService: StatusService,
@@ -39,15 +49,16 @@ export class ReportRenderComponent implements OnInit, OnDestroy {
 
     public ngOnInit(): void {
         const projectId = this.route.snapshot.params['projectId'];
+        const timeout = Number(this.route.snapshot.queryParams['timeout']);
+        this.reportRenderService.start(projectId, timeout > 0 ? timeout : ReportRenderComponent.DEFAULT_TIMEOUT_MS);
 
         // Same initialization as the ProjectShellComponent, but without routing to the current step
-        this.projectLoaded$ = this.projectService.openProjectId(projectId).pipe(
-            switchMap(() => this.statusService.updateStatus()),
+        this.projectLoaded$ = this.reportRenderService.track("project", this.projectService.openProjectId(projectId)).pipe(
+            switchMap(() => this.reportRenderService.track("project status", this.statusService.updateStatus())),
             tap(() => this.stateManagementService.initPipeline()),
             map(() => true),
             catchError(error => {
-                console.error("Failed to open the project for rendering the report", error);
-                (window as any).cinnamonReportStatus = 'error';
+                this.reportRenderService.fail("Failed to open the project.", error);
                 return of(false);
             }),
         );

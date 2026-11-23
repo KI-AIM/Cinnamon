@@ -247,6 +247,7 @@ export class ReportComponent implements OnInit {
      */
     protected printReport(): void {
         const chartImages = this.collectChartImages();
+        const printableReport = this.getPrintableReport();
 
         this.loadPrintStyle().subscribe({
             next: value => {
@@ -255,7 +256,7 @@ export class ReportComponent implements OnInit {
                     return;
                 }
 
-                this.writePrintDocument(mywindow.document, value.style, value.appConfig, chartImages);
+                this.writePrintDocument(mywindow.document, printableReport, value.style, value.appConfig, chartImages);
 
                 // Required to load the images
                 setTimeout(() => {
@@ -282,9 +283,11 @@ export class ReportComponent implements OnInit {
             const chartImages = this.collectChartImages();
             const value = await render.step("report style sheet", () => firstValueFrom(this.loadPrintStyle()));
 
-            // Replace the Angular app with the printable report
+            // Replace the Angular app with the printable report.
+            // The report must be read beforehand, as opening the document clears it.
+            const printableReport = this.getPrintableReport();
             document.open();
-            this.writePrintDocument(document, value.style, value.appConfig, chartImages, false);
+            this.writePrintDocument(document, printableReport, value.style, value.appConfig, chartImages, false);
             document.close();
 
             // Wait for the chart images so the page splitting uses the final heights
@@ -369,9 +372,41 @@ export class ReportComponent implements OnInit {
     }
 
     /**
+     * Returns the HTML of the rendered report, prepared for the printable document.
+     * Must be called before writing the printable document, as writing into the current document removes the report.
+     * <p>
+     * The printable document has neither the `<base>` element nor the icons of the app,
+     * so relative image URLs would resolve against the URL of the page (e.g. `/report-render/...`)
+     * and the browser would request the non-existing `/favicon.ico`.
+     * Therefore, image URLs are made absolute and the icon links are copied.
+     * A `<base>` element is not used, as it would break the anchor links of the report.
+     * @private
+     */
+    private getPrintableReport(): PrintableReport {
+        const report = document.getElementById("report");
+        if (report == null) {
+            throw new Error("The report element is not rendered.");
+        }
+
+        // The clone belongs to the current document, so URLs are still resolved against its base
+        const clone = report.cloneNode(true) as HTMLElement;
+        clone.querySelectorAll("img").forEach(image => {
+            image.setAttribute("src", image.src);
+            image.removeAttribute("srcset");
+        });
+
+        const iconLinks = Array.from(document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']"))
+            .map(link => `<link rel="${link.rel}" href="${link.href}">`)
+            .join("");
+
+        return {html: clone.innerHTML, head: iconLinks};
+    }
+
+    /**
      * Writes the printable report into the given document.
      *
      * @param target The document to write into, e.g. the one of a new window.
+     * @param report The prepared report, see {@link getPrintableReport}.
      * @param styleString The preprocessed style sheet.
      * @param appConfig The app config.
      * @param chartImages The charts converted into images.
@@ -379,15 +414,13 @@ export class ReportComponent implements OnInit {
      *                      Should be false if the layout is not final yet, e.g. because images are still loading.
      * @private
      */
-    private writePrintDocument(target: Document, styleString: string, appConfig: AppConfig,
+    private writePrintDocument(target: Document, report: PrintableReport, styleString: string, appConfig: AppConfig,
                                chartImages: ChartImage[], splitElements: boolean = true): void {
-        // Must be read before writing, as the target can be the current document
-        const reportHtml = document.getElementById("report")!.innerHTML;
-
         target.write(`<html><head><title>Privacy-Report by Cinnamon ${appConfig.version}</title>`);
+        target.write(report.head);
         target.write(`<style>${styleString}</style>`);
         target.write('</head><body >');
-        target.write(reportHtml);
+        target.write(report.html);
         target.write('</body></html>');
 
         // Fix links for PDF
@@ -603,6 +636,20 @@ export class ReportComponent implements OnInit {
 
         return firstNumericalAttributes;
     }
+}
+
+/**
+ * The report prepared for writing it into the printable document.
+ */
+interface PrintableReport {
+    /**
+     * HTML of the report.
+     */
+    html: string;
+    /**
+     * Additional elements for the head of the printable document.
+     */
+    head: string;
 }
 
 /**

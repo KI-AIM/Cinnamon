@@ -755,23 +755,17 @@ public class ProcessService {
 		if (externalProcess != null && externalProcess.getJob().isFixStatus()) {
 			try {
 				updateProcessStatus(externalProcess);
-				final var synthStatus = jsonMapper.readValue(externalProcess.getStatus(), SynthetizationStatus.class);
-				for (final var abc : synthStatus.getStatus()) {
-					abc.setCompleted("True");
-				}
-				externalProcess.setStatus(jsonMapper.writeValueAsString(synthStatus));
-			} catch (JacksonException e) {
 				// Synthetization reports a callback step which needs to be marked
 				// complete. Other jobs only need the status refresh.
 				if ("synthetization".equals(externalProcess.getJob().getName())) {
 					final var synthStatus = jsonMapper.readValue(
 							externalProcess.getStatus(), SynthetizationStatus.class);
-					for (final var abc : synthStatus.getStatus()) {
-						abc.setCompleted("True");
+					for (final var stepStatus : synthStatus.getStatus()) {
+						stepStatus.setCompleted("True");
 					}
 					externalProcess.setStatus(jsonMapper.writeValueAsString(synthStatus));
 				}
-			} catch (JsonProcessingException e) {
+			} catch (JacksonException e) {
 				log.warn("Failed to update detailed status!", e);
 			}
 		}

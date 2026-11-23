@@ -4,8 +4,12 @@ import { AdditionalConfigurationGroup } from '@shared/interfaces/AdditionalConfi
 import { DataType } from '@shared/model/data-type';
 import { DataConfigurationService } from '@shared/services/data-configuration.service';
 import { Subscription } from 'rxjs';
-import { TextAnonymizationConfigurationService } from '../../services/text-anonymization-configuration.service';
-import { AnonymizationMode, ModelType, TextAnonymizationType } from '@shared/model/text-anonymization.types';
+import { LlmProfileConfiguration, TextAnonymizationConfigurationService} from '../../services/text-anonymization-configuration.service';
+import {
+    AnonymizationMode,
+    ModelType,
+    TextAnonymizationType,
+} from '@shared/model/text-anonymization.types';
 import { ConfigurationInputDefinition } from '@shared/model/configuration-input-definition';
 import { ConfigurationInputType } from '@shared/model/configuration-input-type';
 
@@ -57,7 +61,7 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
         name: 'llmProfile',
         type: ConfigurationInputType.STRING,
         label: 'LLM profile',
-        description: 'Profile name configured through CINNAMON_LLM_PROFILE_* environment variables.',
+        description: 'Select a configured LLM profile. Its non-secret settings are stored with this configuration; the API key remains service-side.',
         default_value: '',
         mandatory: false,
         invert: null,
@@ -99,7 +103,10 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
     private dataConfigurationSubscription?: Subscription;
     private modelTypeSubscription?: Subscription;
     private enabledSubscription?: Subscription;
+    private llmProfileSubscription?: Subscription;
+    private llmProfilesSubscription?: Subscription;
     private textColumnsInitialized = false;
+    private availableLlmProfiles: LlmProfileConfiguration[] = [];
 
     constructor(
         private readonly dataConfigurationService: DataConfigurationService,
@@ -120,6 +127,14 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
         });
         this.updateLlmProfileValidation(modelTypeControl?.value);
 
+        this.llmProfileSubscription = this.textConfigGroup.get('llmProfile')?.valueChanges.subscribe(value => {
+            this.updateLlmProfileConfiguration(value, false);
+        });
+        this.llmProfilesSubscription = this.textAnonymizationConfigurationService.llmProfiles$.subscribe(profiles => {
+            this.availableLlmProfiles = profiles;
+            this.updateLlmProfileConfiguration(this.textConfigGroup.get('llmProfile')?.value);
+        });
+
         this.enabledSubscription = this.textConfigGroup.get('enabled')?.valueChanges.subscribe(() => {
             this.updateEnabledFieldState();
         });
@@ -137,6 +152,8 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
         this.dataConfigurationSubscription?.unsubscribe();
         this.modelTypeSubscription?.unsubscribe();
         this.enabledSubscription?.unsubscribe();
+        this.llmProfileSubscription?.unsubscribe();
+        this.llmProfilesSubscription?.unsubscribe();
     }
 
     private updateFormDisabledState(): void {
@@ -187,6 +204,7 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
             {emitEvent: false},
         );
         this.updateLlmProfileValidation(this.textConfigGroup.get('modelType')?.value);
+        this.updateLlmProfileConfiguration(this.textConfigGroup.get('llmProfile')?.value);
         this.updateEnabledFieldState();
         this.selectAllTextColumnsIfEmpty();
     }
@@ -232,6 +250,32 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
             control.clearValidators();
         }
         control.updateValueAndValidity({emitEvent: false});
+    }
+
+    private updateLlmProfileConfiguration(
+        selectedProfile: unknown,
+        preserveExisting = true,
+    ): void {
+        const configurationControl = this.textConfigGroup?.get('llmProfileConfiguration');
+        if (!configurationControl) {
+            return;
+        }
+
+        const selected = typeof selectedProfile === 'string' ? selectedProfile.trim() : '';
+        if (!selected) {
+            configurationControl.setValue(null, {emitEvent: false});
+            return;
+        }
+
+        const profile = this.availableLlmProfiles.find(candidate =>
+            candidate.id.toLowerCase() === selected.toLowerCase()
+            || candidate.name.toLowerCase() === selected.toLowerCase(),
+        );
+        if (profile != null) {
+            configurationControl.setValue(profile, {emitEvent: false});
+        } else if (!preserveExisting) {
+            configurationControl.setValue(null, {emitEvent: false});
+        }
     }
 
     private selectAllTextColumnsIfEmpty(): void {

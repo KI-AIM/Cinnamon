@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -181,7 +182,7 @@ class LlmResult(BaseModel):
 
 @dataclass(frozen=True)
 class LlmProfile:
-    """Stores one OpenAI-compatible endpoint configuration."""
+    """Stores one LLM endpoint configuration."""
 
     profile_id: str
     name: str
@@ -189,6 +190,7 @@ class LlmProfile:
     model_name: str
     base_url: str
     endpoint_path: str
+    healthcheck_path: str
     api_key: str
     timeout_seconds: float
     max_retries: int
@@ -209,8 +211,63 @@ def _parse_bool(value: str) -> bool:
     return value.lower() not in {"0", "false", "no", "off"}
 
 
+def _configuration_value(configuration: Mapping[str, Any], name: str, default: Any = "") -> Any:
+    value = configuration.get(name, default)
+    return default if value is None else value
+
+
+def _profile_from_configuration(
+    profile_name: str,
+    configuration: Mapping[str, Any],
+) -> LlmProfile:
+    """Builds a profile from platform-supplied non-secret details.
+
+    The API key is deliberately read only from the text-anonymization
+    service's environment. It is never accepted from the platform request.
+    """
+    profile_id = str(_configuration_value(configuration, "id", profile_name)).strip()
+    name = str(_configuration_value(configuration, "name", profile_name)).strip()
+    provider = str(_configuration_value(configuration, "provider")).strip().lower()
+    model_name = str(_configuration_value(configuration, "modelName")).strip()
+    base_url = str(_configuration_value(configuration, "baseUrl")).strip().rstrip("/")
+    endpoint_path = str(_configuration_value(
+        configuration,
+        "endpointPath",
+        "/api/generate" if provider == "ollama" else "/v1/chat/completions",
+    )).strip()
+    healthcheck_path = str(_configuration_value(
+        configuration,
+        "healthcheckPath",
+        "/api/tags" if provider == "ollama" else "/v1/models",
+    )).strip()
+
+    if provider not in {"ollama", "openai_compatible"} or not model_name or not base_url:
+        raise ValueError(f"Incomplete LLM profile details supplied for {profile_name!r}.")
+
+    api_key = _profile_value(_env_token(profile_id), "API_KEY")
+    return LlmProfile(
+        profile_id=profile_id,
+        name=name,
+        provider=provider,
+        model_name=model_name,
+        base_url=base_url,
+        endpoint_path=endpoint_path,
+        healthcheck_path=healthcheck_path,
+        api_key=api_key,
+        timeout_seconds=float(_configuration_value(configuration, "timeoutSeconds", 120)),
+        max_retries=max(0, int(_configuration_value(configuration, "maxRetries", 3))),
+        verify_ssl=_parse_bool(str(_configuration_value(configuration, "verifySsl", True))),
+        max_tokens=max(1, int(_configuration_value(configuration, "maxTokens", DEFAULT_LLM_MAX_TOKENS))),
+        enable_thinking=_parse_bool(str(_configuration_value(configuration, "enableThinking", False))),
+    )
+
+
 def load_llm_profiles() -> dict[str, LlmProfile]:
-    """Loads LLM profiles from the shared Cinnamon environment variables."""
+    """Loads profiles for the standalone evaluation scripts.
+
+    Platform-started anonymization jobs never call this function; they use
+    the profile object supplied by the platform request.
+    """
     profiles: dict[str, LlmProfile] = {}
     for profile_id in os.getenv(PROFILE_IDS_ENV, "").split(","):
         profile_id = profile_id.strip()
@@ -239,6 +296,11 @@ def load_llm_profiles() -> dict[str, LlmProfile]:
                 "ENDPOINT_PATH",
                 "/api/generate" if provider == "ollama" else "/v1/chat/completions",
             ),
+            healthcheck_path=_profile_value(
+                token,
+                "HEALTHCHECK_PATH",
+                "/api/tags" if provider == "ollama" else "/v1/models",
+            ),
             api_key=_profile_value(token, "API_KEY"),
             timeout_seconds=float(_profile_value(token, "TIMEOUT_SECONDS", "120")),
             max_retries=max(0, int(_profile_value(token, "MAX_RETRIES", "3"))),
@@ -259,6 +321,29 @@ def load_llm_profiles() -> dict[str, LlmProfile]:
         profiles[profile_id] = profile
         profiles[name] = profile
     return profiles
+
+
+def profile_to_configuration(profile: LlmProfile) -> dict[str, Any]:
+    """Converts a locally loaded profile to the platform wire format.
+
+    This is intended for standalone evaluation scripts. Platform requests
+    already provide this object and do not use environment profile loading.
+    The API key is deliberately excluded.
+    """
+    return {
+        "id": profile.profile_id,
+        "name": profile.name,
+        "provider": profile.provider,
+        "modelName": profile.model_name,
+        "baseUrl": profile.base_url,
+        "endpointPath": profile.endpoint_path,
+        "healthcheckPath": profile.healthcheck_path,
+        "timeoutSeconds": profile.timeout_seconds,
+        "maxRetries": profile.max_retries,
+        "verifySsl": profile.verify_ssl,
+        "maxTokens": profile.max_tokens,
+        "enableThinking": profile.enable_thinking,
+    }
 
 
 def _openai_base_url(profile: LlmProfile) -> str:
@@ -284,6 +369,14 @@ def _response_text(response: Any) -> str | None:
 
 
 def _write_llm_response(response: Any) -> None:
+    """Write a raw LLM response only when debug logging is explicitly enabled.
+
+    Responses can contain the exact personal or medical text returned by the
+    model, so they must not be persisted during normal (INFO) operation.
+    """
+    if not logger.isEnabledFor(logging.DEBUG):
+        return
+
     response_text = _response_text(response)
     if not response_text:
         return
@@ -392,22 +485,17 @@ class LlmInferenceModel:
         batch_size: int = 1,
         anonymization_type: str = "PII",
         prompt: str | None = None,
+        profile_configuration: Mapping[str, Any] | None = None,
     ) -> None:
         profile_name = (profile_name or "").strip()
         if not profile_name:
-            raise ValueError(
-                "llmProfile is required when modelType is 'LLM'. "
-                "It must match a configured CINNAMON_LLM_PROFILE_* profile."
-            )
+            raise ValueError("llmProfile is required when modelType is 'LLM'.")
 
-        profiles = load_llm_profiles()
-        profile = profiles.get(profile_name)
-        if profile is None:
-            available = sorted(set(profiles))
+        if profile_configuration is None:
             raise ValueError(
-                f"Unknown LLM profile {profile_name!r}. "
-                f"Available profiles: {', '.join(available) or 'none'}."
+                "llmProfileConfiguration is required when creating an LLM model."
             )
+        profile = _profile_from_configuration(profile_name, profile_configuration)
 
         self.profile = profile
         self.batch_size = batch_size
@@ -476,16 +564,16 @@ class LlmInferenceModel:
         for entity in result.entities:
             label = prepare_entity_label(entity.label, self.allowed_labels)
             if label is None:
-                logger.warning("Ignoring unsupported LLM label %r.", entity.label)
+                # Do not emit model-selected labels at INFO/WARNING: the label
+                # may reveal sensitive clinical content and unsupported labels
+                # are expected when a model over-predicts across task types.
+                logger.debug("Ignoring unsupported LLM entity label.")
                 continue
             start = _find_entity_occurrence(
                 text, entity.text, entity.occurrence, used_spans
             )
             if start is None:
-                logger.warning(
-                    "Ignoring LLM entity %r because no unused exact match was found.",
-                    entity.text,
-                )
+                logger.debug("Ignoring LLM entity without an unused exact match.")
                 continue
             end = start + len(entity.text)
             predictions.append({
@@ -512,7 +600,7 @@ class LlmInferenceModel:
             retry_size = max(MIN_RETRY_CHUNK_SIZE, len(text) // 2)
             retry_overlap = min(self.chunk_overlap, retry_size - 1)
             logger.warning(
-                "LLM output was truncated; retrying %s characters in smaller windows.",
+                "LLM output was truncated; retrying in smaller windows (%s characters).",
                 len(text),
             )
             predictions = []
@@ -531,8 +619,15 @@ class LlmInferenceModel:
             for entity in predictions
         ]
 
-    def predict(self, texts: list[str]) -> list[list[Entity]]:
-        """Runs structured LLM extraction and restores document offsets."""
+    def predict(self,
+                texts: list[str],
+                progress_callback: Callable[[int], None] | None = None
+                ) -> list[list[Entity]]:
+        """Runs structured LLM extraction and restores document offsets.
+
+        The optional callback is invoked once after each complete text has
+        been processed, including all of that text's inference windows.
+        """
         if not texts:
             return []
 
@@ -554,4 +649,6 @@ class LlmInferenceModel:
                         self._predict_window(client, chunk_text, chunk_start)
                     )
                 results.append(_merge_chunk_predictions(predictions))
+                if progress_callback is not None:
+                    progress_callback(1)
             return results

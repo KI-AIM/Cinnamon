@@ -35,10 +35,13 @@
                 <mat-label>LLM profile</mat-label>
                 <mat-select formControlName="llmProfile">
                     <mat-option *ngFor="let profile of textAnonymizationConfigurationService.llmProfiles$ | async"
-                                [value]="profile">
-                        {{ profile }}
+                                [value]="profile.name">
+                        {{ profile.name }}
                     </mat-option>
                 </mat-select>
+                <mat-hint *ngIf="(textAnonymizationConfigurationService.llmProfiles$ | async)?.length === 0">
+                    No LLM profiles found. Check with your administrator.
+                </mat-hint>
                 <mat-error>An LLM profile is required for the LLM model.</mat-error>
             </mat-form-field>
             <div class="config-input-row-button d-flex flex-column justify-content-center input-height">

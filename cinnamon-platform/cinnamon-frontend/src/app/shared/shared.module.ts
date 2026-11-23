@@ -104,6 +104,7 @@ import { RiskConfidenceIntervalPipe } from './pipes/risk-confidence-interval.pip
 import { StatisticsFilterPipe } from './pipes/statistics-filter.pipe';
 import { PasswordInputComponent } from './components/password-input/password-input.component';
 import { PlaceholderInputComponent } from './components/placeholder-input/placeholder-input.component';
+import { ProcessProgressComponent } from './components/process-progress/process-progress.component';
 
 @NgModule({
     declarations: [
@@ -169,6 +170,7 @@ import { PlaceholderInputComponent } from './components/placeholder-input/placeh
         StatisticsFilterPipe,
         PasswordInputComponent,
         PlaceholderInputComponent,
+        ProcessProgressComponent,
     ],
     imports: [
         CommonModule,
@@ -233,6 +235,8 @@ import { PlaceholderInputComponent } from './components/placeholder-input/placeh
         WorkstepItemComponent,
         WorkstepListComponent,
         WorkstepTitleComponent,
+        MatProgressBarModule,
+        MatProgressSpinnerModule,
         // Directives
         ExpansionPanelOverflowDirective,
         NoSpaceValidatorDirective,
@@ -244,6 +248,7 @@ import { PlaceholderInputComponent } from './components/placeholder-input/placeh
         FormatNumberPipe,
         PasswordInputComponent,
         PlaceholderInputComponent,
+        ProcessProgressComponent,
     ],
 })
 export class SharedModule {}

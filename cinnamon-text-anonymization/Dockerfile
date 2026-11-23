@@ -18,4 +18,7 @@ EXPOSE 5060
 ENV FLASK_APP=app.py
 
 # Run the application using Gunicorn when the container launches, timeout is set to one day
-CMD ["sh", "-c", "exec gunicorn --workers=4 --bind=0.0.0.0:5060 --timeout=86400 app:app"]
+# Cancellation currently uses the in-memory process handle. Keep one worker so
+# the start and cancel requests reach the same owner until shared cancellation
+# coordination is added.
+CMD ["sh", "-c", "exec gunicorn --workers=1 --bind=0.0.0.0:5060 --timeout=86400 app:app"]

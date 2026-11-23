@@ -46,11 +46,13 @@ In the root of the project, in `.env` the following environmental variables shou
 `TEXT_ANONYMIZATION_STATUS_HOST_PATH` remains read-write in both modes because job status and cancellation state are stored there.
 
 Raw assistant responses from the LLM are appended as plain text to a new,
-timestamped file for each application process, for example
+timestamped file only when debug logging is explicitly enabled with
+`LOG_LEVEL=DEBUG`. For example:
 `cinnamon-text-anonymization/outputs/llm_responses_20261014_153045_123456.log`.
 When running in Docker, `TEXT_ANONYMIZATION_STATUS_DIR` points this file to the
-mounted status directory. These responses can contain personal data, so
-protect or remove them when they are no longer needed. 
+mounted status directory. These responses can contain personal or medical data;
+do not enable `LOG_LEVEL=DEBUG` in production, and protect or remove response
+logs when they are no longer needed.
 
 Long texts are sent to the LLM in overlapping character windows. The defaults
 are suitable for the current remote profiles and avoid exceeding their context
@@ -108,6 +110,20 @@ Example configuration:
         "enabled": true,
         "modelType": "LLM",
         "llmProfile": "BIH GPU",
+        "llmProfileConfiguration": {
+          "id": "bih-gpu",
+          "name": "BIH GPU",
+          "provider": "openai_compatible",
+          "modelName": "gpt-oss-120b",
+          "baseUrl": "https://llm.example",
+          "endpointPath": "/v1/chat/completions",
+          "healthcheckPath": "/v1/models",
+          "timeoutSeconds": 120,
+          "maxRetries": 3,
+          "verifySsl": true,
+          "maxTokens": 8192,
+          "enableThinking": false
+        },
         "columns": ["dokument_text"],
         "confidenceThreshold": 0.9,
         "anonymizationMode": "redact"

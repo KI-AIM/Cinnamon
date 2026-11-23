@@ -20,6 +20,23 @@ export class TextAnonymizationConfiguration extends ConfigurationObject {
     anonymizationMode: AnonymizationMode = AnonymizationMode.Redact;
     modelType: ModelType = ModelType.XLM_ROBERTA;
     llmProfile: string = '';
+    llmProfileConfiguration: LlmProfileConfiguration | null = null;
+}
+
+/** Non-secret profile settings stored with the anonymization configuration. */
+export interface LlmProfileConfiguration extends ConfigurationObject {
+    id: string;
+    name: string;
+    provider: string;
+    modelName: string;
+    baseUrl: string;
+    endpointPath: string;
+    healthcheckPath: string;
+    timeoutSeconds: number;
+    maxRetries: number;
+    verifySsl: boolean;
+    maxTokens: number;
+    enableThinking: boolean;
 }
 
 /**
@@ -38,13 +55,16 @@ export class TextAnonymizationConfigurationService {
     ) {
     }
 
-    public readonly llmProfiles$: Observable<string[]> = this.http.get<{
-        profiles?: Array<{name: string}>
+    public readonly llmProfiles$: Observable<LlmProfileConfiguration[]> = this.http.get<{
+        profiles?: LlmProfileConfiguration[]
     }>(
         `${environments.apiUrl}/api/llm-profiles`,
     ).pipe(
-        map(response => (response.profiles ?? []).map(profile => profile.name)),
-        catchError(() => of([])),
+        map(response => response.profiles ?? []),
+        catchError(error => {
+            console.error('Could not load LLM profiles from the backend. Check the backend logs.', error);
+            return of([]);
+        }),
         shareReplay({bufferSize: 1, refCount: true}),
     );
 
@@ -69,7 +89,11 @@ export class TextAnonymizationConfigurationService {
             enabled: new FormControl({value: value.enabled ?? defaultEnabled, disabled}),
             modelType: new FormControl({value: value.modelType ?? ModelType.XLM_ROBERTA, disabled}, [Validators.required]),
             llmProfile: new FormControl({
-                value: value.llmProfile ?? (value as any).llm_profile ?? '',
+                value: value.llmProfile ?? '',
+                disabled,
+            }),
+            llmProfileConfiguration: new FormControl({
+                value: value.llmProfileConfiguration ?? null,
                 disabled,
             }),
             columns: new FormControl({value: value.columns ?? [], disabled}),

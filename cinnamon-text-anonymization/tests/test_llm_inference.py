@@ -1,23 +1,35 @@
 from __future__ import annotations
 
+import logging
+
 import pytest
 
 import cinnamon_text_anonymization.inference.llm_inference as llm_inference
 
 
-def _set_profile(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_IDS", "local-llm")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_LOCAL_LLM_NAME", "Local LLM")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_LOCAL_LLM_PROVIDER", "openai_compatible")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_LOCAL_LLM_MODEL_NAME", "test-model")
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_LOCAL_LLM_BASE_URL", "http://llm:8000")
+def _profile_configuration() -> dict[str, object]:
+    return {
+        "id": "local-llm",
+        "name": "Local LLM",
+        "provider": "openai_compatible",
+        "modelName": "test-model",
+        "baseUrl": "http://llm:8000",
+        "endpointPath": "/v1/chat/completions",
+        "healthcheckPath": "/v1/models",
+        "timeoutSeconds": 120,
+        "maxRetries": 3,
+        "verifySsl": True,
+        "maxTokens": 2048,
+        "enableThinking": False,
+    }
 
 
 def test_predict_resolves_exact_entity_occurrence(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    _set_profile(monkeypatch)
+    caplog.set_level(logging.DEBUG, logger=llm_inference.__name__)
     response_log = tmp_path / "llm-responses.log"
     monkeypatch.setattr(llm_inference, "DEFAULT_LLM_RESPONSE_LOG_FILE", response_log)
 
@@ -55,7 +67,9 @@ def test_predict_resolves_exact_entity_occurrence(
         lambda *_args, **_kwargs: FakeClient(),
     )
 
-    model = llm_inference.LlmInferenceModel("Local LLM")
+    model = llm_inference.LlmInferenceModel(
+        "Local LLM", profile_configuration=_profile_configuration()
+    )
     result = model.predict(["Maria spoke to Maria."])
 
     assert result == [[{
@@ -68,11 +82,23 @@ def test_predict_resolves_exact_entity_occurrence(
     assert response_log.read_text(encoding="utf-8") == FakeMessage.content + "\n"
 
 
+def test_raw_llm_response_is_not_logged_at_info_level(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO, logger=llm_inference.__name__)
+    response_log = tmp_path / "llm-responses.log"
+    monkeypatch.setattr(llm_inference, "DEFAULT_LLM_RESPONSE_LOG_FILE", response_log)
+
+    llm_inference._write_llm_response("contains patient data")
+
+    assert not response_log.exists()
+
+
 def test_entity_with_global_occurrence_number_uses_first_unused_match(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _set_profile(monkeypatch)
-
     class FakeClient:
         def create(self, **_kwargs):
             return llm_inference.LlmResult(entities=[
@@ -106,7 +132,9 @@ def test_entity_with_global_occurrence_number_uses_first_unused_match(
     )
 
     text = "Frau Maria Müller wurde nach Berlin überwiesen."
-    result = llm_inference.LlmInferenceModel("Local LLM").predict([text])
+    result = llm_inference.LlmInferenceModel(
+        "Local LLM", profile_configuration=_profile_configuration()
+    ).predict([text])
 
     assert [(entity["text"], entity["start"]) for entity in result[0]] == [
         ("Maria Müller", text.index("Maria Müller")),
@@ -115,9 +143,6 @@ def test_entity_with_global_occurrence_number_uses_first_unused_match(
 
 
 def test_openai_compatible_passes_thinking_setting(monkeypatch: pytest.MonkeyPatch) -> None:
-    _set_profile(monkeypatch)
-    monkeypatch.setenv("CINNAMON_LLM_PROFILE_LOCAL_LLM_MODEL_NAME", "Qwen/Qwen3-8B")
-
     class FakeClient:
         def __init__(self):
             self.options = None
@@ -145,7 +170,9 @@ def test_openai_compatible_passes_thinking_setting(monkeypatch: pytest.MonkeyPat
         lambda *_args, **_kwargs: fake_client,
     )
 
-    llm_inference.LlmInferenceModel("Local LLM").predict(["Keine Entität."])
+    llm_inference.LlmInferenceModel(
+        "Local LLM", profile_configuration=_profile_configuration()
+    ).predict(["Keine Entität."])
 
     assert fake_client.options is not None
     assert fake_client.options["extra_body"] == {
@@ -154,10 +181,44 @@ def test_openai_compatible_passes_thinking_setting(monkeypatch: pytest.MonkeyPat
     assert fake_client.options["temperature"] == 0
 
 
+def test_platform_profile_details_override_local_profile_configuration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CINNAMON_LLM_PROFILE_REMOTE_LLM_API_KEY", "local-secret")
+
+    model = llm_inference.LlmInferenceModel(
+        "Remote LLM",
+        profile_configuration={
+            "id": "remote-llm",
+            "name": "Remote LLM",
+            "provider": "openai_compatible",
+            "modelName": "remote-model",
+            "baseUrl": "https://llm.example",
+            "endpointPath": "/v1/chat/completions",
+            "healthcheckPath": "/v1/models",
+            "timeoutSeconds": 45,
+            "maxRetries": 2,
+            "verifySsl": False,
+            "maxTokens": 4096,
+            "enableThinking": True,
+            "apiKey": "request-must-not-supply-secrets",
+        },
+    )
+
+    assert model.profile.profile_id == "remote-llm"
+    assert model.profile.model_name == "remote-model"
+    assert model.profile.base_url == "https://llm.example"
+    assert model.profile.timeout_seconds == 45
+    assert model.profile.max_retries == 2
+    assert model.profile.verify_ssl is False
+    assert model.profile.max_tokens == 4096
+    assert model.profile.enable_thinking is True
+    assert model.profile.api_key == "local-secret"
+
+
 def test_predict_uses_german_prompt_and_merges_overlapping_chunks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _set_profile(monkeypatch)
     monkeypatch.setenv(llm_inference.LLM_CHUNK_SIZE_ENV, "24")
     monkeypatch.setenv(llm_inference.LLM_CHUNK_OVERLAP_ENV, "8")
 
@@ -199,7 +260,9 @@ def test_predict_uses_german_prompt_and_merges_overlapping_chunks(
         lambda *_args, **_kwargs: fake_client,
     )
 
-    model = llm_inference.LlmInferenceModel("Local LLM")
+    model = llm_inference.LlmInferenceModel(
+        "Local LLM", profile_configuration=_profile_configuration()
+    )
     text = "Maria besuchte die Klinik. Danach sprach Maria mit dem Arzt."
     result = model.predict([text])
 
@@ -239,8 +302,6 @@ def test_text_windows_cover_text_and_overlap() -> None:
 def test_predict_does_not_add_entities_without_model_predictions(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _set_profile(monkeypatch)
-
     class FakeClient:
         def create(self, **_kwargs):
             return llm_inference.LlmResult(entities=[])
@@ -262,7 +323,9 @@ def test_predict_does_not_add_entities_without_model_predictions(
         lambda *_args, **_kwargs: FakeClient(),
     )
 
-    result = llm_inference.LlmInferenceModel("Local LLM").predict(
+    result = llm_inference.LlmInferenceModel(
+        "Local LLM", profile_configuration=_profile_configuration()
+    ).predict(
         ["Frau Müller wurde am 12.03.2029 aufgenommen."]
     )
 
@@ -272,8 +335,6 @@ def test_predict_does_not_add_entities_without_model_predictions(
 def test_sensitive_configuration_uses_sensitive_prompt_and_labels(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _set_profile(monkeypatch)
-
     class FakeClient:
         def __init__(self):
             self.prompt = ""
@@ -315,6 +376,7 @@ def test_sensitive_configuration_uses_sensitive_prompt_and_labels(
     result = llm_inference.LlmInferenceModel(
         "Local LLM",
         anonymization_type="SENSITIVE",
+        profile_configuration=_profile_configuration(),
     ).predict(["Maria nimmt Ramipril."])
 
     assert "medizinische Entitäten" in fake_client.prompt
@@ -322,7 +384,5 @@ def test_sensitive_configuration_uses_sensitive_prompt_and_labels(
 
 
 def test_llm_profile_is_required(monkeypatch: pytest.MonkeyPatch) -> None:
-    _set_profile(monkeypatch)
-
     with pytest.raises(ValueError, match="llmProfile is required"):
         llm_inference.LlmInferenceModel(None)

@@ -182,10 +182,11 @@ class InferenceModel:
         for (document_index, char_start, _), entities in zip(window_requests, window_results, strict=True):
             for entity in entities:
                 # Add the character offset in the original text
-                entity["start"] = int(entity["start"]) + char_start
-                entity["end"] = int(entity["end"]) + char_start
-
-                entities_by_text[document_index].append(entity)
+                entities_by_text[document_index].append({
+                    **entity,
+                    "start": int(entity["start"]) + char_start,
+                    "end": int(entity["end"]) + char_start,
+                })
 
         return [
             merge_entities(entities, text)

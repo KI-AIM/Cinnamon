@@ -21,6 +21,11 @@ def client():
 @pytest.fixture(autouse=True)
 def isolated_status_directory(tmp_path, monkeypatch):
     monkeypatch.setattr(status_store, "STATUS_DIRECTORY", tmp_path / "status")
+    with app_module._running_processes_lock:
+        app_module._running_processes.clear()
+    yield
+    with app_module._running_processes_lock:
+        app_module._running_processes.clear()
 
 
 def request_data(*,
@@ -123,17 +128,23 @@ def test_start_endpoint_rejects_invalid_json(client) -> None:
 
 def test_cancel_endpoint_requests_cancellation(client) -> None:
     assert app_module.register_job("session-1")
+    fake_process = Mock()
+    fake_process.pid = 1234
+    with app_module._running_processes_lock:
+        app_module._running_processes["session-1"] = fake_process
 
-    response = client.post(
-        "/cancel_anonymization_process",
-        data={"session_key": "session-1", "pid": "1234"},
-    )
+    with patch.object(app_module, "_terminate_process") as terminate_process:
+        response = client.post(
+            "/cancel_anonymization_process",
+            data={"session_key": "session-1", "pid": "1234"},
+        )
 
     assert response.status_code == app_module.StatusCode.OK
     assert response.get_json() == {
-        "message": "Cancellation requested",
+        "message": "Anonymization process cancelled",
         "session_key": "session-1",
     }
+    terminate_process.assert_called_once_with(fake_process)
     assert app_module.is_cancellation_requested("session-1")
 
     status_response = client.get("/status/session-1")
@@ -169,10 +180,14 @@ def test_cancelled_job_does_not_send_callback() -> None:
 
 
 def test_start_endpoint_parses_csv_and_starts_background_job(client) -> None:
-    fake_thread = Mock()
-    fake_thread.ident = 1234
+    fake_process = Mock()
+    fake_process.pid = 1234
+    fake_reaper = Mock()
 
-    with patch.object(app_module.threading, "Thread", return_value=fake_thread) as thread_factory:
+    with (
+        patch.object(app_module.PROCESS_CONTEXT, "Process", return_value=fake_process) as process_factory,
+        patch.object(app_module.threading, "Thread", return_value=fake_reaper),
+    ):
         response = client.post(
             "/start_anonymization_process",
             data=request_data(),
@@ -185,21 +200,94 @@ def test_start_endpoint_parses_csv_and_starts_background_job(client) -> None:
         "session_key": "session-1",
         "pid": "1234",
     }
-    thread_factory.assert_called_once()
-    thread_kwargs = thread_factory.call_args.kwargs
-    assert thread_kwargs["target"] is app_module.run_anonymization_job
-    assert thread_kwargs["daemon"] is True
-    assert thread_kwargs["args"][0:2] == (
+    process_factory.assert_called_once()
+    process_kwargs = process_factory.call_args.kwargs
+    assert process_kwargs["target"] is app_module.run_anonymization_job
+    assert process_kwargs["args"][0:2] == (
         "session-1",
         "http://platform/api/process/session-1/callback",
     )
     pd.testing.assert_frame_equal(
-        thread_kwargs["args"][2],
+        process_kwargs["args"][2],
         pd.DataFrame({"text": ["Jane"]}),
     )
-    ano_config = thread_kwargs["args"][3]["anonymization"]["textAnonymizationConfigurations"]["pii"]
+    ano_config = process_kwargs["args"][3]["anonymization"]["textAnonymizationConfigurations"]["pii"]
     assert ano_config["modelType"] == "XLM ROBERTA"
-    fake_thread.start.assert_called_once_with()
+    fake_process.start.assert_called_once_with()
+    assert app_module.get_job_status("session-1") == {
+        "session_key": "session-1",
+        "status": app_module.JobStatus.RUNNING.value,
+    }
+
+
+def test_cancel_endpoint_terminates_local_process_handle(client) -> None:
+    assert app_module.register_job("session-1")
+    fake_process = Mock()
+    fake_process.pid = 1234
+    with app_module._running_processes_lock:
+        app_module._running_processes["session-1"] = fake_process
+
+    with patch.object(app_module, "_terminate_process") as terminate_process:
+        response = client.post(
+            "/cancel_anonymization_process",
+            data={"session_key": "session-1"},
+        )
+
+    assert response.status_code == app_module.StatusCode.OK
+    assert response.get_json() == {
+        "message": "Anonymization process cancelled",
+        "session_key": "session-1",
+    }
+    terminate_process.assert_called_once_with(fake_process)
+
+
+def test_terminate_process_gracefully_joins_after_termination() -> None:
+    process = Mock()
+    process.is_alive.side_effect = [True, False, False]
+
+    app_module._terminate_process(process)
+
+    process.terminate.assert_called_once_with()
+    process.join.assert_called_once_with(app_module.PROCESS_TERMINATION_GRACE_SECONDS)
+    process.kill.assert_not_called()
+
+
+def test_terminate_process_kills_process_after_grace_period() -> None:
+    process = Mock()
+    process.is_alive.side_effect = [True, True, False]
+
+    app_module._terminate_process(process)
+
+    process.terminate.assert_called_once_with()
+    process.join.assert_any_call(app_module.PROCESS_TERMINATION_GRACE_SECONDS)
+    process.kill.assert_called_once_with()
+    process.join.assert_any_call()
+
+
+def test_canceled_status_cannot_be_overwritten() -> None:
+    assert app_module.register_job("session-1")
+    assert app_module.cancel_job("session-1")
+
+    app_module.set_job_status("session-1", app_module.JobStatus.FINISHED)
+
+    assert app_module.get_job_status("session-1") == {
+        "session_key": "session-1",
+        "status": app_module.JobStatus.CANCELED.value,
+    }
+
+
+def test_job_progress_is_persisted_in_shared_status_file() -> None:
+    assert app_module.register_job("session-1")
+    app_module.set_job_progress("session-1", processed=3, total=10, phase="processing")
+
+    assert app_module.get_job_status("session-1") == {
+        "session_key": "session-1",
+        "status": app_module.JobStatus.RUNNING.value,
+        "progress": "30",
+        "processed": "3",
+        "total": "10",
+        "phase": "processing",
+    }
 
 
 def test_run_anonymization_job_posts_success_callback() -> None:
@@ -245,19 +333,47 @@ def test_run_anonymization_job_processes_enabled_pii_and_sensitive_configs() -> 
     }
     assert app_module.register_job("session-1")
 
+    def anonymize(configuration, frame, progress_callback):
+        progress_callback(1)
+        return pii_result if configuration["anonymizationType"] == "PII" else sensitive_result
+
     with (
-        patch.object(app_module, "run_anonymization", side_effect=[pii_result, sensitive_result]) as anonymize,
+        patch.object(app_module, "run_anonymization", side_effect=anonymize) as anonymize_mock,
         patch.object(app_module, "post_success_callback") as success_callback,
     ):
         app_module.run_anonymization_job("session-1", "http://callback", data, config)
 
-    assert anonymize.call_count == 2
-    assert anonymize.call_args_list[0].args[0]["anonymizationType"] == "PII"
-    assert anonymize.call_args_list[1].args[0]["anonymizationType"] == "SENSITIVE"
+    assert anonymize_mock.call_count == 2
+    assert anonymize_mock.call_args_list[0].args[0]["anonymizationType"] == "PII"
+    assert anonymize_mock.call_args_list[1].args[0]["anonymizationType"] == "SENSITIVE"
     success_callback.assert_called_once_with(
         "http://callback",
         b"text\n[DIAGNOSIS]\n",
     )
+    assert app_module.get_job_status("session-1") == {
+        "session_key": "session-1",
+        "status": app_module.JobStatus.FINISHED.value,
+        "processed": "2",
+        "total": "2",
+        "progress": "100",
+        "phase": "callback",
+        "model_progress": json.dumps([
+            {
+                "model": "PII / XLM ROBERTA",
+                "processed": 1,
+                "total": 1,
+                "progress": 100,
+                "status": "finished",
+            },
+            {
+                "model": "SENSITIVE / GELECTRA",
+                "processed": 1,
+                "total": 1,
+                "progress": 100,
+                "status": "finished",
+            },
+        ]),
+    }
 
 
 def test_run_anonymization_job_posts_error_callback_when_processing_fails() -> None:

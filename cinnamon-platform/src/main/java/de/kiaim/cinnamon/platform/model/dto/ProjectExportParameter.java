@@ -41,6 +41,7 @@ public class ProjectExportParameter {
 	 *     <li>configuration.['project' | 'dataSource' | 'file' | 'configurations' | 'dataset' | 'pipeline' | external-configuration]</li>
 	 *     <li>pipeline.[stage].[job].['dataset' | 'statistics' | 'other']</li>
 	 *     <li>original.['file' | 'dataset' | 'statistics']</li>
+	 *     <li>report (the report as a PDF, rendered on demand)</li>
 	 * </ul>
 	 */
 	private @Nullable List<String> resources = new ArrayList<>();

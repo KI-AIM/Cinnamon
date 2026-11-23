@@ -1,7 +1,7 @@
 import { Platform } from "@angular/cdk/platform";
 import { AsyncPipe, DecimalPipe, KeyValuePipe, LowerCasePipe, NgForOf, NgIf, NgOptimizedImage } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
-import { Component, ElementRef, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, QueryList, ViewChildren, ChangeDetectionStrategy } from '@angular/core';
 import { MatButton } from "@angular/material/button";
 import { ProcessStatus } from "@core/enums/process-status";
 import { StateManagementService } from "@core/services/state-management.service";
@@ -36,7 +36,7 @@ import { ProjectConfigurationService } from "@shared/services/project-configurat
 import { ProjectService } from "@shared/services/project.service";
 import { Color, StatisticsService } from "@shared/services/statistics.service";
 import { SharedModule } from "@shared/shared.module";
-import { catchError, combineLatest, map, Observable, of, switchMap } from "rxjs";
+import { catchError, combineLatest, firstValueFrom, map, Observable, of, switchMap, take, tap } from "rxjs";
 import { AppConfig, AppConfigService } from "src/app/shared/services/app-config.service";
 import { environments } from "src/environments/environment";
 
@@ -78,6 +78,14 @@ export class ReportComponent implements OnInit {
     protected readonly RangeConfiguration = RangeConfiguration;
     protected readonly StatisticsService = StatisticsService;
     protected readonly StringPatternConfiguration = StringPatternConfiguration;
+
+    /**
+     * If true, the report is rendered for the headless browser of the server side PDF generation.
+     * Hides all controls and replaces the page with the printable report once everything is loaded.
+     * Signals completion via `window.cinnamonReportStatus`.
+     */
+    @Input() public renderMode: boolean = false;
+    private renderStarted = false;
 
     /**
      * Date of the report creation.
@@ -177,8 +185,17 @@ export class ReportComponent implements OnInit {
                    numericalAttributes: this.createNumericAttribute(value.statistics.statistics),
                };
             }),
+            tap(() => {
+                // pageData$ can emit multiple times, e.g. if the pipeline status updates
+                if (this.renderMode && !this.renderStarted) {
+                    this.renderStarted = true;
+                    // Wait for the view to be rendered with the data
+                    setTimeout(() => this.renderForHeadlessBrowser());
+                }
+            }),
             catchError(error => {
                 this.errorHanldingService.addError(error, "Failed to load report data");
+                this.setRenderStatus('error');
                 return of(null);
             }),
         );
@@ -216,92 +233,175 @@ export class ReportComponent implements OnInit {
      * All charts in the report a converted to image and must have the `#chart` tag and must have a unique ID.
      */
     protected printReport(): void {
-        // Preprocess the report
-        // Assign IDs to all charts
-        for (let i = 0; i < this.chartDivs.length; i++) {
-            const chart = this.chartDivs.get(i);
-            chart!.nativeElement.id = "chart" + i;
-        }
+        const chartImages = this.collectChartImages();
 
-        this.http.get("/app/assets/report.css", {responseType: 'text'}).pipe(
-            switchMap(value => {
-                return this.appConfigService.appConfig$.pipe(
-                    map((config: AppConfig) => {
-                        return {style: value, appConfig: config};
-                    }),
-                );
-            }),
-            switchMap(value => {
-                return this.projectConfigService.projectSettings2$.pipe(
-                    map((projectSettings: ProjectSettings) => {
-                        return {
-                            style: value.style,
-                            appConfig: value.appConfig,
-                            projectSettings: projectSettings,
-                        };
-                    }),
-                )
-            }),
-            map(value => {
-                return {
-                    style: this.preprocessStyle(value.style, value.appConfig, value.projectSettings),
-                    appConfig: value.appConfig
-                };
-            })
-        ).subscribe({
+        this.loadPrintStyle().subscribe({
             next: value => {
-                this.doPrintReport(value.style, value.appConfig);
+                const mywindow = window.open('_', 'PRINT', 'height=650,width=900,top=100,left=150');
+                if (!mywindow) {
+                    return;
+                }
+
+                this.writePrintDocument(mywindow.document, value.style, value.appConfig, chartImages);
+
+                // Required to load the images
+                setTimeout(() => {
+                    mywindow.document.close(); // necessary for IE >= 10
+                    mywindow.focus(); // necessary for IE >= 10*/
+
+                    mywindow.print();
+                }, 0);
             }
         });
     }
 
-    private doPrintReport(styleString: string, appConfig: AppConfig): void {
-        const mywindow = window.open('_', 'PRINT', 'height=650,width=900,top=100,left=150');
+    /**
+     * Replaces the current page with the printable report for the headless browser of the server side PDF generation.
+     * The resulting document is identical to the one opened by {@link printReport}.
+     * Gotenberg waits until `window.cinnamonReportStatus` is `'ready'` and prints the page afterward.
+     */
+    private async renderForHeadlessBrowser(): Promise<void> {
+        try {
+            // Charts must be rendered completely before converting them into images
+            await Promise.all(this.charts.map(chart => chart.whenRendered()));
+            const chartImages = this.collectChartImages();
+            const value = await firstValueFrom(this.loadPrintStyle());
 
-        if (!mywindow) {
-            return;
+            // Replace the Angular app with the printable report
+            document.open();
+            this.writePrintDocument(document, value.style, value.appConfig, chartImages, false);
+            document.close();
+
+            // Wait for the chart images so the page splitting uses the final heights
+            await Promise.all(Array.from(document.images).map(image => image.decode().catch(() => undefined)));
+            this.splitOversizedElements(document);
+
+            this.setRenderStatus('ready');
+        } catch (error) {
+            console.error("Failed to render the report", error);
+            this.setRenderStatus('error');
         }
+    }
 
-        mywindow.document.write(`<html><head><title>Privacy-Report by Cinnamon ${appConfig.version}</title>`);
-        mywindow.document.write(`<style>${styleString}</style>`);
-        mywindow.document.write('</head><body >');
-        mywindow.document.write(document.getElementById("report")!.innerHTML);
-        mywindow.document.write('</body></html>');
+    /**
+     * Signals the state of the rendering to the headless browser.
+     * @param status The status.
+     * @private
+     */
+    private setRenderStatus(status: 'ready' | 'error'): void {
+        if (this.renderMode) {
+            (window as any).cinnamonReportStatus = status;
+        }
+    }
 
-        // Fix links for PDF
-        mywindow.document.querySelectorAll("a.report-anchor-link").forEach(a => {
-            a.getAttributeNode("href")!.value = '#' + a.getAttributeNode("href")!.value.split("#")[1];
-        });
+    /**
+     * Loads the style sheet of the report and replaces the contained variables.
+     * @private
+     */
+    private loadPrintStyle(): Observable<{ style: string, appConfig: AppConfig }> {
+        return combineLatest({
+            style: this.http.get("/app/assets/report.css", {responseType: 'text'}),
+            appConfig: this.appConfigService.appConfig$,
+            projectSettings: this.projectConfigService.projectSettings2$,
+        }).pipe(
+            take(1),
+            map(value => ({
+                style: this.preprocessStyle(value.style, value.appConfig, value.projectSettings),
+                appConfig: value.appConfig,
+            })),
+        );
+    }
 
-        // Convert charts to images
+    /**
+     * Assigns IDs to all charts and converts them into images.
+     * Must be called while the charts are still part of the DOM.
+     * @private
+     */
+    private collectChartImages(): ChartImage[] {
+        const images: ChartImage[] = [];
+
         for (let i = 0; i < this.chartDivs.length; i++) {
             const chart = this.charts.get(i);
             const chartDiv = this.chartDivs.get(i);
 
-            if (chart == null || chartDiv == null) {
+            if (chart == null || chartDiv == null || chart.dataUrl == null) {
                 continue;
             }
 
-            const image = document.createElement("img");
-            image.src = chart.dataUrl!;
-            image.width = chartDiv.nativeElement.getBoundingClientRect().width;
+            const id = "chart" + i;
+            chartDiv.nativeElement.id = id;
+            images.push({
+                id: id,
+                dataUrl: chart.dataUrl,
+                width: chartDiv.nativeElement.getBoundingClientRect().width,
+            });
+        }
 
-            const id = chartDiv.nativeElement.id;
-            const newChart = mywindow.document.getElementById(id);
-            newChart!.style.display = 'none';
+        return images;
+    }
+
+    /**
+     * Writes the printable report into the given document.
+     *
+     * @param target The document to write into, e.g. the one of a new window.
+     * @param styleString The preprocessed style sheet.
+     * @param appConfig The app config.
+     * @param chartImages The charts converted into images.
+     * @param splitElements If oversized elements should be split directly.
+     *                      Should be false if the layout is not final yet, e.g. because images are still loading.
+     * @private
+     */
+    private writePrintDocument(target: Document, styleString: string, appConfig: AppConfig,
+                               chartImages: ChartImage[], splitElements: boolean = true): void {
+        // Must be read before writing, as the target can be the current document
+        const reportHtml = document.getElementById("report")!.innerHTML;
+
+        target.write(`<html><head><title>Privacy-Report by Cinnamon ${appConfig.version}</title>`);
+        target.write(`<style>${styleString}</style>`);
+        target.write('</head><body >');
+        target.write(reportHtml);
+        target.write('</body></html>');
+
+        // Fix links for PDF
+        target.querySelectorAll("a.report-anchor-link").forEach(a => {
+            a.getAttributeNode("href")!.value = '#' + a.getAttributeNode("href")!.value.split("#")[1];
+        });
+
+        // Convert charts to images
+        for (const chartImage of chartImages) {
+            const newChart = target.getElementById(chartImage.id);
+            if (newChart == null) {
+                continue;
+            }
+
+            const image = target.createElement("img");
+            image.src = chartImage.dataUrl;
+            image.width = chartImage.width;
+
+            newChart.style.display = 'none';
 
             // Center images again because of potential page margin changes
-            const chartWrapper = document.createElement("div");
+            const chartWrapper = target.createElement("div");
             chartWrapper.style.width = '100%';
             chartWrapper.style.display = 'flex'
             chartWrapper.style.justifyContent = 'center'
             chartWrapper.appendChild(image);
 
-            newChart!.parentElement!.insertBefore(chartWrapper, newChart);
+            newChart.parentElement!.insertBefore(chartWrapper, newChart);
         }
 
-        // Handle elements that do not fit on one page
-        mywindow.document.querySelectorAll(".report-keep-together").forEach(e => {
+        if (splitElements) {
+            this.splitOversizedElements(target);
+        }
+    }
+
+    /**
+     * Splits elements that do not fit on one page.
+     * @param target The document containing the report.
+     * @private
+     */
+    private splitOversizedElements(target: Document): void {
+        target.querySelectorAll(".report-keep-together").forEach(e => {
             if (e.clientHeight > this.PAGE_HEIGHT) {
                 // Allow page breaks in big elements to prevent bit gaps.
                 // e.classList.remove("report-keep-together");
@@ -310,14 +410,6 @@ export class ReportComponent implements OnInit {
                 this.breakTable(e as HTMLElement);
             }
         });
-
-        // Required to load the images
-        setTimeout(() => {
-            mywindow.document.close(); // necessary for IE >= 10
-            mywindow.focus(); // necessary for IE >= 10*/
-
-            mywindow.print();
-        }, 0);
     }
 
     /**
@@ -483,6 +575,15 @@ export class ReportComponent implements OnInit {
 
         return firstNumericalAttributes;
     }
+}
+
+/**
+ * A chart of the report converted into an image.
+ */
+interface ChartImage {
+    id: string;
+    dataUrl: string;
+    width: number;
 }
 
 interface ReportData {

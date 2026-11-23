@@ -55,6 +55,12 @@ public class BadStateException extends BadRequestException {
 	 */
 	public static final String NO_EXTERNAL_DATA_SOURCE = "11";
 
+	/**
+	 * Exception code for requesting the report while it cannot be generated,
+	 * e.g. because the technical evaluation is not finished or no renderer is configured.
+	 */
+	public static final String REPORT_NOT_AVAILABLE = "12";
+
 	public BadStateException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

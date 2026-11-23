@@ -72,4 +72,10 @@ public class CinnamonConfiguration {
 
 	@NestedConfigurationProperty
 	private PipelineConfiguration pipeline = new PipelineConfiguration();
+
+	/**
+	 * Configuration for rendering the report as a PDF on the server side.
+	 */
+	@NestedConfigurationProperty
+	private ReportRendererConfiguration reportRenderer = new ReportRendererConfiguration();
 }

@@ -3,6 +3,7 @@ networks:
     synthetization-network:
     anonymization-network:
     evaluation-network:
+    report-network:
 
 services:
     cinnamon-db:
@@ -34,6 +35,7 @@ services:
             - synthetization-network
             - anonymization-network
             - evaluation-network
+            - report-network
         environment:
             SPRING.SERVLET.MULTIPART.MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
             CINNAMON_MAX-FILE-SIZE: ${MAX_FILE_SIZE_BYTES:-52428800}
@@ -75,14 +77,32 @@ services:
             # Risk Assessment
             CINNAMON.EXTERNAL-SERVER.risk-assessment-server.CALLBACK-HOST: cinnamon-platform
             CINNAMON.EXTERNAL-SERVER.risk-assessment-server.INSTANCES.0.HOST-NAME: risk-assessment-host
+
+            # Report rendering
+            CINNAMON_REPORT-RENDERER_URL: http://cinnamon-pdf:3000
+            CINNAMON_REPORT-RENDERER_PLATFORM-URL: http://cinnamon-platform:8080
         depends_on:
             - cinnamon-db
+            - cinnamon-pdf
         healthcheck:
             test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
             interval: 30s
             timeout: 3s
             retries: 3
             start_period: 20s
+    cinnamon-pdf:
+        # Renders the report page of the frontend into a PDF.
+        # Must not be exposed: it renders arbitrary URLs unless restricted by the allow list.
+        # TODO Pin an exact version
+        image: gotenberg/gotenberg:8
+        container_name: cinnamon-pdf
+        restart: unless-stopped
+        networks:
+            - report-network
+        command:
+            - gotenberg
+            - --chromium-allow-list=^http://cinnamon-platform:8080/.*
+            - --api-timeout=90s
     cinnamon-synthetization:
         image: ghcr.io/ki-aim/cinnamon-synthetization:latest
         container_name: cinnamon-synthetization

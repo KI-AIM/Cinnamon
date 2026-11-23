@@ -1,113 +1,117 @@
-<app-info-card typeClass="card-warn">
-    The report is currently in development and should not be used for assessing privacy risks of the dataset.
-</app-info-card>
-
-<ng-container *ngIf="!platform.BLINK || platform.ANDROID">
+@if (!renderMode) {
     <app-info-card typeClass="card-warn">
-
-        <ng-container *ngIf="platform.ANDROID; else noAndroidDisclaimer">
-            Background images are not compatible with Android and will not be visible in the exported PDF.
-        </ng-container>
-        <ng-template #noAndroidDisclaimer>
-            <ng-container *ngIf="!platform.FIREFOX">
-                The report generator might not be fully compatible with your browser.
-            </ng-container>
-
-            <ng-container *ngIf="platform.FIREFOX">
-                Custom headers and footers are not compatible with Firefox and will not be visible in the exported PDF.
-            </ng-container>
-        </ng-template>
-
-        Please use a Chromium based browser (e.g. Google Chrome, Microsoft Edge) on a PC to save the report as a PDF
-        file.
-
+        The report is currently in development and should not be used for assessing privacy risks of the dataset.
     </app-info-card>
-</ng-container>
+
+    <ng-container *ngIf="!platform.BLINK || platform.ANDROID">
+        <app-info-card typeClass="card-warn">
+
+            <ng-container *ngIf="platform.ANDROID; else noAndroidDisclaimer">
+                Background images are not compatible with Android and will not be visible in the exported PDF.
+            </ng-container>
+            <ng-template #noAndroidDisclaimer>
+                <ng-container *ngIf="!platform.FIREFOX">
+                    The report generator might not be fully compatible with your browser.
+                </ng-container>
+
+                <ng-container *ngIf="platform.FIREFOX">
+                    Custom headers and footers are not compatible with Firefox and will not be visible in the exported PDF.
+                </ng-container>
+            </ng-template>
+
+            Please use a Chromium based browser (e.g. Google Chrome, Microsoft Edge) on a PC to save the report as a PDF
+            file.
+
+        </app-info-card>
+    </ng-container>
+}
 
 <div class="vertical-boxes">
-    <div class="box">
-        <div class="mb-3">
-            <div class="mb-2">
-                The workflow is finished. The report below describes the applied workflow and displays the results.
-                If the privacy or utility is not satisfactory, you can adjust the configurations and rerun the workflow.
-                Otherwise you can export the project results and the report.
+    @if (!renderMode) {
+        <div class="box">
+            <div class="mb-3">
+                <div class="mb-2">
+                    The workflow is finished. The report below describes the applied workflow and displays the results.
+                    If the privacy or utility is not satisfactory, you can adjust the configurations and rerun the workflow.
+                    Otherwise you can export the project results and the report.
+                </div>
+                <div>
+                    <button mat-button mat-raised-button color="primary" (click)="projectExport.open()">Export Project</button>
+                </div>
             </div>
+
             <div>
-                <button mat-button mat-raised-button color="primary" (click)="projectExport.open()">Export Project</button>
+                In order to save the report as a PDF file, please follow these steps:
+                <div *ngIf="platform.ANDROID; else noAndroidInstructions">
+                    <ol class="mb-2">
+                        <li>
+                            Click on the <q>Save Report</q> button below. A new browser window with a print dialog should
+                            open.
+                        </li>
+                        <li>
+                            Click on the three dots in the top right corner and select <q>Save as PDF</q>.
+                        </li>
+                        <li>
+                            Enter a name, click on <q>Save</q> and close the browser window.
+                        </li>
+                    </ol>
+                </div>
+                <ng-template #noAndroidInstructions>
+                    <ng-container *ngIf="platform.BLINK">
+                        <ol class="mb-2">
+                            <li>
+                                Click on the <q>Save Report</q> button below. A new browser window with a print dialog
+                                should open.
+                            </li>
+                            <li>
+                                Select the Destination <q>Save as PDF</q>.
+                            </li>
+                            <li>
+                                Check the option <q>Background graphics</q>
+                            </li>
+                            <li>
+                                Click on <q>Save</q> and close the browser window.
+                            </li>
+                        </ol>
+                    </ng-container>
+                    <ng-container *ngIf="platform.FIREFOX">
+                        <ol class="mb-2">
+                            <li>
+                                Click on the <q>Save Report</q> button below. A new browser window with a print dialog
+                                should open.
+                            </li>
+                            <li>
+                                Select the Destination <q>Save to PDF</q>.
+                            </li>
+                            <li>
+                                Open <q>More settings</q> and check the option <q>Print backgrounds</q>.
+                            </li>
+                            <li>
+                                Optionally, you can also check <q>Print headers and footers</q> for Firefox's default
+                                headers and footers.
+                            </li>
+                            <li>
+                                Click on <q>Save</q> and close the browser window.
+                            </li>
+                        </ol>
+                    </ng-container>
+                    <ng-container *ngIf="!platform.BLINK && !platform.FIREFOX">
+                        <ol class="mb-2">
+                            <li>
+                                Click on the <q>Save Report</q> button below.
+                            </li>
+                        </ol>
+                    </ng-container>
+
+                </ng-template>
             </div>
-        </div>
 
-        <div>
-            In order to save the report as a PDF file, please follow these steps:
-            <div *ngIf="platform.ANDROID; else noAndroidInstructions">
-                <ol class="mb-2">
-                    <li>
-                        Click on the <q>Save Report</q> button below. A new browser window with a print dialog should
-                        open.
-                    </li>
-                    <li>
-                        Click on the three dots in the top right corner and select <q>Save as PDF</q>.
-                    </li>
-                    <li>
-                        Enter a name, click on <q>Save</q> and close the browser window.
-                    </li>
-                </ol>
+            <div>
+                <button mat-button mat-raised-button color="primary" (click)="printReport()">Save Report</button>
             </div>
-            <ng-template #noAndroidInstructions>
-                <ng-container *ngIf="platform.BLINK">
-                    <ol class="mb-2">
-                        <li>
-                            Click on the <q>Save Report</q> button below. A new browser window with a print dialog
-                            should open.
-                        </li>
-                        <li>
-                            Select the Destination <q>Save as PDF</q>.
-                        </li>
-                        <li>
-                            Check the option <q>Background graphics</q>
-                        </li>
-                        <li>
-                            Click on <q>Save</q> and close the browser window.
-                        </li>
-                    </ol>
-                </ng-container>
-                <ng-container *ngIf="platform.FIREFOX">
-                    <ol class="mb-2">
-                        <li>
-                            Click on the <q>Save Report</q> button below. A new browser window with a print dialog
-                            should open.
-                        </li>
-                        <li>
-                            Select the Destination <q>Save to PDF</q>.
-                        </li>
-                        <li>
-                            Open <q>More settings</q> and check the option <q>Print backgrounds</q>.
-                        </li>
-                        <li>
-                            Optionally, you can also check <q>Print headers and footers</q> for Firefox's default
-                            headers and footers.
-                        </li>
-                        <li>
-                            Click on <q>Save</q> and close the browser window.
-                        </li>
-                    </ol>
-                </ng-container>
-                <ng-container *ngIf="!platform.BLINK && !platform.FIREFOX">
-                    <ol class="mb-2">
-                        <li>
-                            Click on the <q>Save Report</q> button below.
-                        </li>
-                    </ol>
-                </ng-container>
 
-            </ng-template>
         </div>
-
-        <div>
-            <button mat-button mat-raised-button color="primary" (click)="printReport()">Save Report</button>
-        </div>
-
-    </div>
+    }
 
     <ng-container *ngIf="pageData$ | async as reportData">
 

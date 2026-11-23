@@ -21,6 +21,7 @@ export class ChartComponent implements OnInit, OnChanges {
     constructor(
         protected statisticsService: StatisticsService,
     ) {
+        this.renderedPromise = new Promise(resolve => this.resolveRendered = resolve);
     }
 
     ngOnInit() {
@@ -31,9 +32,24 @@ export class ChartComponent implements OnInit, OnChanges {
         this.options = this.createChartOptions();
     }
 
+    /**
+     * Resolves once the chart has finished its first render, including animations.
+     */
+    private readonly renderedPromise: Promise<void>;
+    private resolveRendered: () => void;
+
     protected onChartInit(event: EChartsType) {
         this.chartInstances = event;
+        event.on('finished', () => this.resolveRendered());
         this.afterChartInit();
+    }
+
+    /**
+     * Returns a promise that resolves once the chart has been rendered completely.
+     * Used to wait for all charts before converting them into images for the report.
+     */
+    public whenRendered(): Promise<void> {
+        return this.renderedPromise;
     }
 
     protected afterChartInit(): void {

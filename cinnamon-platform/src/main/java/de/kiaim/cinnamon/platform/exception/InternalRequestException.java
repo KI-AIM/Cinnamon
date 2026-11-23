@@ -47,6 +47,11 @@ public class InternalRequestException extends InternalException {
 	 */
 	public static final String FHIR_SERVER = "8";
 
+	/**
+	 * Exception code for failed rendering of the report PDF.
+	 */
+	public static final String REPORT_RENDERING = "9";
+
 	public InternalRequestException(final String exceptionCode, final String message) {
 		super(exceptionCode, message);
 	}

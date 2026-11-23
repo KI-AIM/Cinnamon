@@ -128,6 +128,17 @@ export class ProjectExportComponent implements OnInit, AfterViewInit {
     }
 
     /**
+     * Checks if the report can be exported.
+     * The report requires the results of the technical evaluation.
+     * @param evaluationInfo The status of the evaluation stage.
+     * @protected
+     */
+    protected isReportAvailable(evaluationInfo: ExecutionStep): boolean {
+        return evaluationInfo.processes.some(process =>
+            process.step === 'technical_evaluation' && process.externalProcessStatus === ProcessStatus.FINISHED);
+    }
+
+    /**
      * Checks if the statuses of both stages are equal.
      * @param stageA Stage to be compared.
      * @param stageB Stage to be compared.

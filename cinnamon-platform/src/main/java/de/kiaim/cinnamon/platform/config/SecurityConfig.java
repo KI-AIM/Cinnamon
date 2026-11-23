@@ -2,6 +2,7 @@ package de.kiaim.cinnamon.platform.config;
 
 import de.kiaim.cinnamon.platform.controller.ProcessController;
 import de.kiaim.cinnamon.platform.controller.UserController;
+import de.kiaim.cinnamon.platform.service.ReportRenderTokenService;
 import de.kiaim.cinnamon.platform.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +31,17 @@ public class SecurityConfig {
 	private final PasswordEncoder passwordEncoder;
 	private final UserService userService;
 	private final ProjectLogContextFilter projectLogContextFilter;
+	private final ReportRenderTokenService reportRenderTokenService;
 
 	@Autowired
 	public SecurityConfig(final PasswordEncoder passwordEncoder,
 	                      final UserService userService,
-	                      final ProjectLogContextFilter projectLogContextFilter) {
+	                      final ProjectLogContextFilter projectLogContextFilter,
+	                      final ReportRenderTokenService reportRenderTokenService) {
 		this.passwordEncoder = passwordEncoder;
 		this.userService = userService;
 		this.projectLogContextFilter = projectLogContextFilter;
+		this.reportRenderTokenService = reportRenderTokenService;
 	}
 
 	/**
@@ -77,6 +81,8 @@ public class SecurityConfig {
 	 * {@code GET /api/user/login} (Basic Auth, see {@link UserController}), and the resulting authentication is
 	 * persisted into an {@link jakarta.servlet.http.HttpSession} so subsequent requests are authenticated via the
 	 * {@code JSESSIONID} cookie the browser then sends automatically.
+	 * Additionally, the headless browser rendering the report authenticates via a short-lived token,
+	 * see {@link ReportRenderTokenFilter}.
 	 */
 	@Bean
 	@Order(2)
@@ -101,6 +107,8 @@ public class SecurityConfig {
 		                                    .logoutSuccessHandler(
 				                                    (request, response, authentication) -> response.setStatus(
 						                                    HttpServletResponse.SC_OK)))
+		            .addFilterBefore(new ReportRenderTokenFilter(reportRenderTokenService, userService),
+		                             BasicAuthenticationFilter.class)
 		            .addFilterAfter(projectLogContextFilter, BasicAuthenticationFilter.class)
 		            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class);
 		return httpSecurity.build();

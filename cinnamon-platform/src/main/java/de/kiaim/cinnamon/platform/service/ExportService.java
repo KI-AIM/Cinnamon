@@ -38,21 +38,31 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ExportService {
 
+	/**
+	 * Selector for the report PDF.
+	 * Not handled by the {@link ResourceSelectorService}, as rendering the report is expensive
+	 * and the result is not a stored resource.
+	 */
+	public static final String REPORT_RESOURCE = "report";
+
 	private final YAMLMapper yamlMapper;
 
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
+	private final ReportPdfService reportPdfService;
 	private final ResourceSelectorService resourceSelectorService;
 
 	public ExportService(
 			final YAMLMapper yamlMapper,
 			final DatabaseService databaseService,
 			final DataProcessorService dataProcessorService,
+			final ReportPdfService reportPdfService,
 			final ResourceSelectorService resourceSelectorService
 	) {
 		this.yamlMapper = yamlMapper;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
+		this.reportPdfService = reportPdfService;
 		this.resourceSelectorService = resourceSelectorService;
 	}
 
@@ -125,6 +135,11 @@ public class ExportService {
 			}
 		}
 
+		// Add the report
+		if (reportPdfService.isReportAvailable(project)) {
+			resources.add(REPORT_RESOURCE);
+		}
+
 		return resources;
 	}
 
@@ -143,6 +158,7 @@ public class ExportService {
 	 * @throws InternalIOException                 If the dataset could not be serialized.
 	 *                                             If adding a resource to the ZIP file failed.
 	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
+	 * @throws InternalRequestException            If the report should be exported, but rendering it failed.
 	 */
 	@Transactional
 	public ResponseEntity<StreamingResponseBody> createZipFile(final ProjectEntity project,
@@ -150,7 +166,7 @@ public class ExportService {
 	                                                           final ProjectExportParameter projectExportParameter)
 			throws BadConfigurationNameException, BadStateException, BadStepNameException,
 					       InternalDataSetPersistenceException, InternalInvalidStateException, InternalIOException,
-					       InternalMissingHandlingException {
+					       InternalMissingHandlingException, InternalRequestException {
 
 		response.setContentType("application/zip");
 		response.setHeader("Content-Disposition",
@@ -183,24 +199,40 @@ public class ExportService {
 	 * @throws InternalIOException                 If the dataset could not be serialized.
 	 *                                             If adding a resource to the ZIP file failed.
 	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
+	 * @throws InternalRequestException            If the report should be exported, but rendering it failed.
 	 */
 	@Transactional
 	public void createZipFile(final ProjectEntity project, final OutputStream outputStream,
 	                          final ProjectExportParameter projectExportParameter)
 			throws BadConfigurationNameException, BadStateException, BadStepNameException,
 					       InternalDataSetPersistenceException, InternalInvalidStateException,
-					       InternalIOException, InternalMissingHandlingException {
+					       InternalIOException, InternalMissingHandlingException, InternalRequestException {
+		List<String> resources = projectExportParameter.getResources();
+		if (resources == null || resources.isEmpty()) {
+			resources = getAvailableExportResources(project);
+		}
+
+		// Render the report before writing to the output stream,
+		// so a failed rendering still results in a proper error response instead of a broken ZIP file.
+		byte[] reportPdf = null;
+		if (resources.contains(REPORT_RESOURCE)) {
+			if (!reportPdfService.isReportAvailable(project) || project.getUser() == null) {
+				throw new BadStateException(BadStateException.REPORT_NOT_AVAILABLE,
+				                            "The report is not available for this project!");
+			}
+			reportPdf = reportPdfService.renderReport(project, project.getUser());
+		}
+
 		try (final ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
 
 			final Map<String, Integer> zipEntryCounter = new HashMap<>();
 
-			List<String> resources = projectExportParameter.getResources();
-			if (resources == null || resources.isEmpty()) {
-				resources = getAvailableExportResources(project);
-			}
-
 			final List<ConfigurationDTO> configurationDTOs = new ArrayList<>();
 			for (final String resourceSelector : resources) {
+				if (resourceSelector.equals(REPORT_RESOURCE)) {
+					continue;
+				}
+
 				Object resource = resourceSelectorService.selectResource(resourceSelector, project, null, null);
 
 				if (resource instanceof ConfigurationDTO) {
@@ -229,6 +261,12 @@ public class ExportService {
 
 			if (!configurationDTOs.isEmpty()) {
 				addConfigurationsToZip(projectExportParameter, zipOut, configurationDTOs);
+			}
+
+			if (reportPdf != null) {
+				zipOut.putNextEntry(new ZipEntry("report.pdf"));
+				zipOut.write(reportPdf);
+				zipOut.closeEntry();
 			}
 
 			zipOut.finish();

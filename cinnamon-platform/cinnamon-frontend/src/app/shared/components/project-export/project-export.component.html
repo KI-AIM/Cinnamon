@@ -183,6 +183,18 @@
                         {{ evaluationService.getJobName(process.step) }}
                         </mat-checkbox>
                     </div>
+
+                    <!-- Report, rendered on the server side -->
+                    <div class="box-name">Report</div>
+                    <div>
+                        <mat-checkbox #resource color="primary"
+                                      [value]="'report'"
+                                      [checked]="selectedResources.includes('report')"
+                                      [disabled]="!isReportAvailable(evaluationInfo)"
+                                      (input)="updateChecked()">
+                            Report (PDF)
+                        </mat-checkbox>
+                    </div>
                 </ng-container>
 
             </div>

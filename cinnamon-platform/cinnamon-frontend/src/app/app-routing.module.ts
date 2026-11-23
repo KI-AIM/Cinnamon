@@ -32,6 +32,7 @@ import {
     RiskAssessmentConfigurationComponent
 } from "./features/risk-assessment/pages/risk-assessment-configuration/risk-assessment-configuration.component";
 import { ReportComponent } from "./features/report/pages/report/report.component";
+import { ReportRenderComponent } from "./features/report/pages/report-render/report-render.component";
 
 const routes: Routes = [
     {path: '', redirectTo: 'login', pathMatch: 'full'},
@@ -76,6 +77,9 @@ const routes: Routes = [
             {path: 'report', component: ReportComponent},
         ],
     },
+
+    // Opened by the headless browser rendering the report PDF, authenticated via a token header, see ReportPdfService
+    {path: 'report-render/:projectId', component: ReportRenderComponent},
 
     {path: '**', component: NotFoundComponent},
 ];

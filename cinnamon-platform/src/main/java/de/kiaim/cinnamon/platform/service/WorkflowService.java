@@ -189,13 +189,15 @@ public class WorkflowService {
 	 * @throws InternalIOException                 If the dataset could not be serialized.
 	 *                                             If adding a resource to the ZIP file failed.
 	 * @throws InternalMissingHandlingException    If no data processor for the target file type could be found.
+	 * @throws InternalRequestException            If rendering the report failed.
 	 */
 	@Transactional
 	public ResponseEntity<StreamingResponseBody> deleteWorkflow(final String userEmail, final String workflowId,
 	                                                            final HttpServletResponse response)
 			throws BadArgumentException, BadConfigurationNameException, BadStateException, BadStepNameException,
 					       BadUserException, BadProjectException, InternalDataSetPersistenceException,
-					       InternalInvalidStateException, InternalIOException, InternalMissingHandlingException {
+					       InternalInvalidStateException, InternalIOException, InternalMissingHandlingException,
+					       InternalRequestException {
 		final UserEntity user = userService.getUserByUsernameOrThrow(userEmail);
 		final ProjectEntity project = projectService.getProject(user, workflowId);
 

@@ -47,6 +47,15 @@ public class RootController {
         return "index.html";
     }
 
+    /**
+     * Serves the frontend for the page opened directly by the headless browser rendering the report PDF.
+     * The Angular router then handles the route.
+     */
+    @RequestMapping(method = RequestMethod.GET, path = "/report-render/{projectId}")
+    public String reportRender() {
+        return "forward:/index.html";
+    }
+
     @Operation(summary = "Returns information about Cinnamon.",
                description = "Returns information about Cinnamon.")
     @ApiResponses(value = {

@@ -49,7 +49,9 @@ public class DataTransformationErrorEntity {
 
 	/**
 	 * The original value in the corresponding data set.
+	 * Can be null if the original value was null.
 	 */
 	@Setter
+	@Nullable
 	private String originalValue;
 }

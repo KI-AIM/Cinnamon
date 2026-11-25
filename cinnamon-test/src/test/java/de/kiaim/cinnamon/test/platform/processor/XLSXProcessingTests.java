@@ -7,7 +7,10 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.DateFormatConfigura
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
+import de.kiaim.cinnamon.model.enumeration.TransformationErrorType;
 import de.kiaim.cinnamon.platform.PlatformApplication;
+import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.platform.model.DataTransformationError;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
@@ -18,6 +21,8 @@ import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.XlsxProcessor;
 import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;
+import org.dhatim.fastexcel.Workbook;
+import org.dhatim.fastexcel.Worksheet;
 import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
@@ -111,6 +116,37 @@ public class XLSXProcessingTests {
         assertEquals(actualResult, expectedResult);
     }
 
+
+    @Test
+    void testReadWithBlankCell() throws IOException {
+        final ByteArrayOutputStream xlsx = new ByteArrayOutputStream();
+        try (final Workbook workbook = new Workbook(xlsx, "Test", "1.0")) {
+            final Worksheet worksheet = workbook.newWorksheet("data");
+            worksheet.value(0, 0, 1);
+            worksheet.value(0, 1, "Alice");
+            worksheet.value(0, 2, "true");
+            // Cell (1, 1) is left blank
+            worksheet.value(1, 0, 2);
+            worksheet.value(1, 2, "false");
+        }
+
+        final FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
+        final DataConfiguration config = new DataConfiguration();
+        config.setConfigurations(List.of(
+                new ColumnConfiguration(0, "id", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()),
+                new ColumnConfiguration(1, "name", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()),
+                new ColumnConfiguration(2, "smoker", DataType.BOOLEAN, DataScale.NOMINAL, new ArrayList<>())
+        ));
+
+        final TransformationResult result = assertDoesNotThrow(
+                () -> xlsxProcessor.read(new ByteArrayInputStream(xlsx.toByteArray()), fileConfiguration, config));
+
+        assertEquals(2, result.getDataSet().getDataRows().size());
+        assertEquals(new StringData(null), result.getDataSet().getDataRows().get(1).getData().get(1));
+        assertEquals(List.of(new DataRowTransformationError(
+                             1, List.of(new DataTransformationError(1, TransformationErrorType.MISSING_VALUE, null)))),
+                     result.getTransformationErrors());
+    }
 
     private TransformationResult testReadMethodOfXlsxProcessor_getExpectedTransformationResult() {
         List<DataRow> dataRows =

@@ -26,7 +26,7 @@ public class DataTransformationHelper {
      * @throws DataBuildingException if anything is faulty when creating the object
      */
     @Nullable
-    public Data transformData(String value, ColumnConfiguration configuration) throws DataBuildingException {
+    public Data transformData(@Nullable String value, ColumnConfiguration configuration) throws DataBuildingException {
         if (isValueEmpty(value)) {
             throw new MissingValueException();
         }
@@ -76,12 +76,14 @@ public class DataTransformationHelper {
     }
 
     /**
-     * Checks whether a value is empty
+     * Checks whether a value is empty.
+     * Null is treated as empty.
      * @param value to be checked
      * @return true if value is empty; false otherwise
      */
-    public boolean isValueEmpty(String value) {
-        return value.isEmpty() ||
+    public boolean isValueEmpty(@Nullable String value) {
+        return value == null ||
+                value.isEmpty() ||
                 "N/A".equals(value) ||
                 "NaN".equals(value) ||
                 "null".equals(value);
@@ -93,7 +95,7 @@ public class DataTransformationHelper {
      * @param value to be checked
      * @return true if value is not empty; false otherwise
      */
-    public boolean isValueNotEmpty(String value) {
+    public boolean isValueNotEmpty(@Nullable String value) {
         return !isValueEmpty(value);
     }
 }

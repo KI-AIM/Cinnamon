@@ -1,6 +1,5 @@
 package de.kiaim.cinnamon.platform.service;
 
-import de.kiaim.cinnamon.platform.controller.ApiExceptionHandler;
 import de.kiaim.cinnamon.platform.model.dto.LlmProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,14 +44,15 @@ public class LlmProfileService {
 
 	private Optional<LlmProfile> readProfile(final String profileId) {
 		final String token = profileToken(profileId);
-		final String provider = value(token, "PROVIDER").toLowerCase(Locale.ROOT);
-		final String modelName = value(token, "MODEL_NAME");
-		final String baseUrl = value(token, "BASE_URL");
-		if (!("ollama".equals(provider) || "openai_compatible".equals(provider))
-				|| modelName.isEmpty() || baseUrl.isEmpty()) {
-			return Optional.empty();
-		}
 		try {
+			final String provider = value(token, "PROVIDER").toLowerCase(Locale.ROOT);
+			final String modelName = value(token, "MODEL_NAME");
+			final String baseUrl = value(token, "BASE_URL");
+			if (!("ollama".equals(provider) || "openai_compatible".equals(provider))
+					|| modelName.isEmpty() || baseUrl.isEmpty()) {
+				return Optional.empty();
+			}
+
 			return Optional.of(new LlmProfile(
 					profileId,
 					value(token, "NAME"),
@@ -74,7 +74,11 @@ public class LlmProfileService {
 	}
 
 	private String value(final String token, final String property) {
-		return environment.getProperty(profileVariable(token, property)).trim()
+		final String configured = environment.getProperty(profileVariable(token, property));
+		if (configured == null) {
+			return "";
+		}
+		return configured.trim()
 				.replaceAll("^([\"'])|([\"'])$", "");
 	}
 

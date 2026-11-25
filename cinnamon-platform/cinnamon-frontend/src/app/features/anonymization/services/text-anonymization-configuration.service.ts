@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ConfigurationObject } from '@shared/model/anonymization-attribute-config';
 import { AnonymizationMode, ModelType } from '@shared/model/text-anonymization.types';
-import { catchError, map, Observable, of, shareReplay } from 'rxjs';
+import { catchError, map, Observable, of, shareReplay, tap } from 'rxjs';
 import { environments } from 'src/environments/environment';
 
 /**
@@ -40,6 +40,25 @@ export interface LlmProfileConfiguration extends ConfigurationObject {
 }
 
 /**
+ * Checks the runtime shape of a profile received from the platform.
+ *
+ * Configuration values can come from an older saved configuration, where the
+ * profile was stored as a string.  A TypeScript interface cannot protect the
+ * runtime JSON value, so this guard must be used before forwarding it.
+ */
+export function isLlmProfileConfiguration(value: unknown): value is LlmProfileConfiguration {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        return false;
+    }
+
+    const profile = value as Record<string, unknown>;
+    return typeof profile['id'] === 'string'
+        && typeof profile['provider'] === 'string'
+        && typeof profile['modelName'] === 'string'
+        && typeof profile['baseUrl'] === 'string';
+}
+
+/**
  * Builds the form for the text-anonymization worker's configuration.
  */
 @Injectable({
@@ -48,6 +67,7 @@ export interface LlmProfileConfiguration extends ConfigurationObject {
 export class TextAnonymizationConfigurationService {
     public readonly piiFormGroupName = 'piiTextAnonymizationConfiguration';
     public readonly sensitiveFormGroupName = 'sensitiveTextAnonymizationConfiguration';
+    private availableLlmProfiles: LlmProfileConfiguration[] = [];
 
     constructor(
         private readonly formBuilder: FormBuilder,
@@ -61,12 +81,28 @@ export class TextAnonymizationConfigurationService {
         `${environments.apiUrl}/api/llm-profiles`,
     ).pipe(
         map(response => response.profiles ?? []),
+        tap(profiles => {
+            this.availableLlmProfiles = profiles;
+        }),
         catchError(error => {
+            this.availableLlmProfiles = [];
             console.error('Could not load LLM profiles from the backend. Check the backend logs.', error);
             return of([]);
         }),
         shareReplay({bufferSize: 1, refCount: true}),
     );
+
+    /** Resolves a profile from the last successful backend response. */
+    public resolveLlmProfile(profileName: string | null | undefined): LlmProfileConfiguration | null {
+        const selected = typeof profileName === 'string' ? profileName.trim().toLowerCase() : '';
+        if (!selected) {
+            return null;
+        }
+
+        return this.availableLlmProfiles.find(profile =>
+            profile.id.toLowerCase() === selected || profile.name.toLowerCase() === selected,
+        ) ?? null;
+    }
 
     public initForm(
         form: FormGroup,
@@ -93,7 +129,9 @@ export class TextAnonymizationConfigurationService {
                 disabled,
             }),
             llmProfileConfiguration: new FormControl({
-                value: value.llmProfileConfiguration ?? null,
+                value: isLlmProfileConfiguration(value.llmProfileConfiguration)
+                    ? value.llmProfileConfiguration
+                    : null,
                 disabled,
             }),
             columns: new FormControl({value: value.columns ?? [], disabled}),

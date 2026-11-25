@@ -1,10 +1,14 @@
 import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
-import { FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { AdditionalConfigurationGroup } from '@shared/interfaces/AdditionalConfigurationGroup';
 import { DataType } from '@shared/model/data-type';
 import { DataConfigurationService } from '@shared/services/data-configuration.service';
 import { Subscription } from 'rxjs';
-import { LlmProfileConfiguration, TextAnonymizationConfigurationService} from '../../services/text-anonymization-configuration.service';
+import {
+    isLlmProfileConfiguration,
+    LlmProfileConfiguration,
+    TextAnonymizationConfigurationService,
+} from '../../services/text-anonymization-configuration.service';
 import {
     AnonymizationMode,
     ModelType,
@@ -107,6 +111,9 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
     private llmProfilesSubscription?: Subscription;
     private textColumnsInitialized = false;
     private availableLlmProfiles: LlmProfileConfiguration[] = [];
+    private readonly llmProfileConfigurationValidator: ValidatorFn = (
+        control: AbstractControl,
+    ): ValidationErrors | null => isLlmProfileConfiguration(control.value) ? null : {required: true};
 
     constructor(
         private readonly dataConfigurationService: DataConfigurationService,
@@ -240,16 +247,20 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
 
     private updateLlmProfileValidation(modelType: ModelType | null | undefined): void {
         const control = this.textConfigGroup?.get('llmProfile');
-        if (!control) {
+        const configurationControl = this.textConfigGroup?.get('llmProfileConfiguration');
+        if (!control || !configurationControl) {
             return;
         }
 
         if (modelType === ModelType.LLM) {
             control.setValidators([Validators.required]);
+            configurationControl.setValidators([this.llmProfileConfigurationValidator]);
         } else {
             control.clearValidators();
+            configurationControl.clearValidators();
         }
         control.updateValueAndValidity({emitEvent: false});
+        configurationControl.updateValueAndValidity({emitEvent: false});
     }
 
     private updateLlmProfileConfiguration(
@@ -273,7 +284,7 @@ export class TextAnonymizationConfigurationComponent implements AdditionalConfig
         );
         if (profile != null) {
             configurationControl.setValue(profile, {emitEvent: false});
-        } else if (!preserveExisting) {
+        } else if (!preserveExisting || !isLlmProfileConfiguration(configurationControl.value)) {
             configurationControl.setValue(null, {emitEvent: false});
         }
     }

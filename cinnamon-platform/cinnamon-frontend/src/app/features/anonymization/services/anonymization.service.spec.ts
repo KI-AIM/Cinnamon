@@ -4,6 +4,7 @@ import { ProjectService } from "@shared/services/project.service";
 import { AnonymizationAttributeConfigurationService } from './anonymization-attribute-configuration.service';
 import { AnonymizationService } from './anonymization.service';
 import { ConfigurationService } from 'src/app/shared/services/configuration.service';
+import { TextAnonymizationConfigurationService } from './text-anonymization-configuration.service';
 
 describe('AnonymizationService', () => {
     let service: AnonymizationService;
@@ -13,6 +14,7 @@ describe('AnonymizationService', () => {
 
         service = new AnonymizationService(
             new AnonymizationAttributeConfigurationService(new FormBuilder()),
+            new TextAnonymizationConfigurationService(new FormBuilder(), {} as HttpClient),
             {} as HttpClient,
             new ConfigurationService({} as HttpClient, projectService),
             projectService

@@ -42,7 +42,14 @@
                 <mat-hint *ngIf="(textAnonymizationConfigurationService.llmProfiles$ | async)?.length === 0">
                     No LLM profiles found. Check with your administrator.
                 </mat-hint>
-                <mat-error>An LLM profile is required for the LLM model.</mat-error>
+                <mat-error *ngIf="textConfigGroup.get('llmProfile')?.hasError('required')">
+                    An LLM profile is required for the LLM model.
+                </mat-error>
+                <mat-error
+                    *ngIf="textConfigGroup.get('llmProfile')?.value
+                        && textConfigGroup.get('llmProfileConfiguration')?.hasError('required')">
+                    The selected LLM profile could not be resolved. Select it again.
+                </mat-error>
             </mat-form-field>
             <div class="config-input-row-button d-flex flex-column justify-content-center input-height">
                 <a *ngIf="!disabled" title="Set to default" (click)="resetToDefault('llmProfile')" class="icon-enabled">

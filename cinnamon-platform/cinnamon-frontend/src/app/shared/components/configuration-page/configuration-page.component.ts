@@ -212,7 +212,11 @@ export class ConfigurationPageComponent implements OnInit {
             return true;
         }
 
-        if (!this.hideAlgorithmConfigForm && !this.formValid) {
+        // Check the live form as well as the cached flag. Some additional
+        // configuration controls are populated asynchronously (for example,
+        // the resolved LLM profile object), so the cached onChange value can
+        // briefly be stale.
+        if (!this.hideAlgorithmConfigForm && (!this.formValid || this.forms?.valid === false)) {
             return true;
         }
 

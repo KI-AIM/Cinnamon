@@ -14,7 +14,7 @@ class LlmProfileServiceTest {
 	@Test
 	void loadsOnlyCompleteProfilesInConfiguredOrder() {
 		final MockEnvironment environment = new MockEnvironment()
-				.withProperty("CINNAMON_LLM_PROFILE_IDS", "qwen3,incomplete,qwen3_copy")
+				.withProperty("CINNAMON_LLM_PROFILE_IDS", "qwen3,missing,incomplete,qwen3_copy")
 				.withProperty("CINNAMON_LLM_PROFILE_QWEN3_NAME", "BIH GPU")
 				.withProperty("CINNAMON_LLM_PROFILE_QWEN3_PROVIDER", "openai_compatible")
 				.withProperty("CINNAMON_LLM_PROFILE_QWEN3_MODEL_NAME", "Qwen/Qwen3-8B")

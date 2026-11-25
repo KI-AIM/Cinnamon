@@ -9,11 +9,16 @@ import {
     AnonymizationAttributeRowConfiguration,
     ConfigurationObject
 } from "@shared/model/anonymization-attribute-config";
-import { TextAnonymizationConfiguration } from "@features/anonymization/services/text-anonymization-configuration.service";
+import {
+    isLlmProfileConfiguration,
+    TextAnonymizationConfiguration,
+    TextAnonymizationConfigurationService,
+} from "@features/anonymization/services/text-anonymization-configuration.service";
 import { ConfigurationRegisterData } from "@shared/model/configuration-register-data";
 import { AlgorithmData, AlgorithmService, ReadConfigResult } from "@shared/services/algorithm.service";
 import { ConfigurationService } from "@shared/services/configuration.service";
 import { ProjectService } from "@shared/services/project.service";
+import { ModelType } from "@shared/model/text-anonymization.types";
 import { Observable } from "rxjs";
 
 /**
@@ -40,6 +45,7 @@ export class AnonymizationService extends AlgorithmService {
 
     constructor(
         private readonly attributeConfigurationService: AnonymizationAttributeConfigurationService,
+        private readonly textAnonymizationConfigurationService: TextAnonymizationConfigurationService,
         http: HttpClient,
         configurationService: ConfigurationService,
         projectService: ProjectService,
@@ -52,8 +58,8 @@ export class AnonymizationService extends AlgorithmService {
     }
 
     public override createConfiguration(arg: AnonymizationFormConfig, selectedAlgorithm: Algorithm): Object {
-        const piiConfiguration = arg.piiTextAnonymizationConfiguration;
-        const sensitiveConfiguration = arg.sensitiveTextAnonymizationConfiguration;
+        const piiConfiguration = this.resolveLlmProfile(arg.piiTextAnonymizationConfiguration);
+        const sensitiveConfiguration = this.resolveLlmProfile(arg.sensitiveTextAnonymizationConfiguration);
 
         return {
             anonymization: {
@@ -77,6 +83,24 @@ export class AnonymizationService extends AlgorithmService {
                         sensitive: sensitiveConfiguration,
                     },
             }
+        };
+    }
+
+    private resolveLlmProfile(
+        configuration: TextAnonymizationConfiguration | null,
+    ): TextAnonymizationConfiguration | null {
+        if (configuration == null
+            || configuration.modelType !== ModelType.LLM
+            || isLlmProfileConfiguration(configuration.llmProfileConfiguration)) {
+            return configuration;
+        }
+
+        const profile = this.textAnonymizationConfigurationService.resolveLlmProfile(
+            configuration.llmProfile,
+        );
+        return {
+            ...configuration,
+            llmProfileConfiguration: profile,
         };
     }
 

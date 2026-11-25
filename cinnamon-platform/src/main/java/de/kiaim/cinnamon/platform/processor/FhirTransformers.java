@@ -1,12 +1,15 @@
 package de.kiaim.cinnamon.platform.processor;
 
 import ca.uhn.fhir.context.FhirContext;
+import de.kiaim.cinnamon.platform.model.FhirTable;
 import de.unimuenster.imi.fhir.columns_parser.Column;
 import de.unimuenster.imi.fhir.transform.BundleTransformer;
 import de.unimuenster.imi.fhir.transform.CsvToFhirTransformer;
 import de.unimuenster.imi.fhir.transform.ResourceExtractor;
 import de.unimuenster.imi.fhir.transform.ResultTable;
+import de.unimuenster.imi.fhir.transform.SubTable;
 import de.unimuenster.imi.fhir.transform.TransformationParameters;
+import kotlin.Pair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.hl7.fhir.r4.model.Bundle;
@@ -16,7 +19,11 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -114,21 +121,24 @@ public class FhirTransformers {
 	 *
 	 * @param bundle       The FHIR bundle as JSON.
 	 * @param resourceType The resource type to be included in the table.
-	 * @param csvFormat    The CSV format used when serializing the result.
 	 * @return The flattened table.
 	 */
-	public ResultTable processBundle(final String bundle, final String resourceType, final CSVFormat csvFormat) {
+	public FhirTable processBundle(final String bundle, final String resourceType) {
 		final List<Column> columns;
 		synchronized (resourceExtractorLock) {
 			columns = getResourceExtractor().getResourceFieldsForEntriesInBundle(bundle);
 		}
 
+		// The CSV format is only used by the library when serializing the result, which is not done here
 		final TransformationParameters transformationParameters = new TransformationParameters(
-				csvFormat, Integer.MAX_VALUE, columns, false, true, true, List.of(resourceType));
+				CSVFormat.DEFAULT, Integer.MAX_VALUE, columns, false, true, true, List.of(resourceType));
 
+		final ResultTable resultTable;
 		synchronized (bundleTransformerLock) {
-			return getBundleTransformer().processBundle(bundle, transformationParameters);
+			resultTable = getBundleTransformer().processBundle(bundle, transformationParameters);
 		}
+
+		return toFhirTable(resultTable);
 	}
 
 	/**
@@ -142,6 +152,57 @@ public class FhirTransformers {
 		synchronized (csvToFhirTransformerLock) {
 			return getCsvToFhirTransformer().parseCsvToBundle(csv);
 		}
+	}
+
+	/**
+	 * Converts the result of the transformation into a table with one row per entry of the subtables.
+	 * <p>
+	 * Based on {@link ResultTable#print}, with one difference:
+	 * The library identifies columns by the pair (column index, name).
+	 * As the column index is counted per resource,
+	 * the same column can have different indices in different resources if a preceding field is missing or repeated
+	 * fewer times, which would result in duplicate columns.
+	 * Therefore, columns are identified by name only.
+	 * The columns are ordered by the smallest index they appear with.
+	 * <p>
+	 * Values of columns that are not present in a resource are null.
+	 * Subtables without columns do not contain any rows and are skipped.
+	 *
+	 * @param resultTable The result of the transformation.
+	 * @return The table.
+	 */
+	public static FhirTable toFhirTable(final ResultTable resultTable) {
+		final List<Pair<Integer, String>> columnKeys = new ArrayList<>();
+		for (final SubTable subTable : resultTable.getSubtables()) {
+			columnKeys.addAll(subTable.getData().keySet());
+		}
+		columnKeys.sort(Comparator.comparing(Pair::getFirst));
+
+		final List<String> columnNames = columnKeys.stream().map(Pair::getSecond).distinct().toList();
+
+		final List<List<@Nullable String>> rows = new ArrayList<>();
+		for (final SubTable subTable : resultTable.getSubtables()) {
+			if (subTable.getData().isEmpty()) {
+				continue;
+			}
+
+			final Map<String, List<String>> columnsByName = new HashMap<>();
+			for (final var entry : subTable.getData().entrySet()) {
+				columnsByName.putIfAbsent(entry.getKey().getSecond(), entry.getValue());
+			}
+
+			final int numberRows = subTable.getData().values().iterator().next().size();
+			for (int rowIndex = 0; rowIndex < numberRows; rowIndex++) {
+				final List<@Nullable String> row = new ArrayList<>(columnNames.size());
+				for (final String columnName : columnNames) {
+					final List<String> column = columnsByName.get(columnName);
+					row.add(column != null ? column.get(rowIndex) : null);
+				}
+				rows.add(row);
+			}
+		}
+
+		return new FhirTable(columnNames, rows);
 	}
 
 	private ResourceExtractor getResourceExtractor() {

@@ -2,10 +2,13 @@ package de.kiaim.cinnamon.platform.processor;
 
 import ca.uhn.fhir.context.FhirContext;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
+import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.platform.model.FhirTable;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.*;
@@ -14,23 +17,26 @@ import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
-import org.apache.commons.csv.CSVFormat;
 import org.hl7.fhir.r4.model.Bundle;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * Class for processing FHIR bundles.
- * Reading a FHIR bundle converts the bundle into a CSV string and uses the {@link CsvProcessor}.
+ * Reading a FHIR bundle flattens the resources of the configured type into a {@link FhirTable}.
+ * Writing a FHIR bundle converts the data set into a CSV string using the {@link CsvProcessor},
+ * because the library only supports converting CSV into FHIR.
  *
  * @author Daniel Preciado-Marquez
  */
 @Service
-public class FhirBundleProcessor implements DataProcessor {
+public class FhirBundleProcessor extends CommonDataProcessor implements DataProcessor {
 
 	private final CsvProcessor csvProcessor;
 	private final FhirContext fhirContext;
@@ -107,10 +113,7 @@ public class FhirBundleProcessor implements DataProcessor {
 			return 0;
 		}
 
-		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, fhirFileConfiguration, csvFormat);
-		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
-		return csvProcessor.getNumberColumns(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
+		return getTable(data, fhirFileConfiguration).columnNames().size();
 	}
 
 	/**
@@ -121,10 +124,26 @@ public class FhirBundleProcessor implements DataProcessor {
 	                                 final FileConfigurationEntity fileConfiguration,
 	                                 final DataConfiguration configuration
 	) throws BadDatasetException, InternalIOException {
-		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, (FhirBundleFileConfigurationEntity) fileConfiguration, csvFormat);
-		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
-		return csvProcessor.read(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration, configuration);
+		return read(getTable(data, (FhirBundleFileConfigurationEntity) fileConfiguration), configuration);
+	}
+
+	/**
+	 * Transforms the rows of the given table into a data set.
+	 *
+	 * @param table         The flattened FHIR resources.
+	 * @param configuration The data configuration.
+	 * @return The transformation result.
+	 * @throws BadDatasetException If the number of values in a row does not match the configuration.
+	 */
+	public TransformationResult read(final FhirTable table, final DataConfiguration configuration)
+			throws BadDatasetException {
+		final List<DataRow> dataRows = new ArrayList<>();
+		final List<DataRowTransformationError> errors = new ArrayList<>();
+		for (int rowIndex = 0; rowIndex < table.rows().size(); rowIndex++) {
+			transformRow(table.rows().get(rowIndex), rowIndex, configuration, dataRows, errors);
+		}
+
+		return new TransformationResult(new DataSet(dataRows, configuration), errors);
 	}
 
 	/**
@@ -136,11 +155,26 @@ public class FhirBundleProcessor implements DataProcessor {
 			final FileConfigurationEntity fileConfiguration,
 			final DatatypeEstimationAlgorithm algorithm
 	) throws InternalIOException {
-		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, (FhirBundleFileConfigurationEntity) fileConfiguration, csvFormat);
-		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
-		return csvProcessor.estimateDataConfiguration(new ByteArrayInputStream(csvString.getBytes()),
-		                                              csvFileConfiguration, algorithm);
+		return estimateDataConfiguration(getTable(data, (FhirBundleFileConfigurationEntity) fileConfiguration),
+		                                 algorithm);
+	}
+
+	/**
+	 * Estimates the data configuration for the given table.
+	 *
+	 * @param table     The flattened FHIR resources.
+	 * @param algorithm Algorithm how to select the datatype of a column.
+	 * @return The estimated data configuration.
+	 */
+	public DataConfigurationEstimation estimateDataConfiguration(final FhirTable table,
+	                                                             final DatatypeEstimationAlgorithm algorithm) {
+		final int numberColumns = table.columnNames().size();
+		if (numberColumns == 0) {
+			return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
+		}
+
+		final List<List<String>> samples = getAttributeSamples(table.rows().iterator(), numberColumns);
+		return estimateDataConfiguration(samples, algorithm, numberColumns, table.columnNames());
 	}
 
 	/**
@@ -175,10 +209,7 @@ public class FhirBundleProcessor implements DataProcessor {
 	 */
 	public List<String> getAttributeNames(final InputStream data,
 	                                      final FileConfigurationEntity fileConfiguration) throws InternalIOException {
-		final CSVFormat csvFormat = buildCsvFormat();
-		final String csvString = getCsvString(data, (FhirBundleFileConfigurationEntity) fileConfiguration, csvFormat);
-		final CsvFileConfigurationEntity csvFileConfiguration = new CsvFileConfigurationEntity(csvFormat);
-		return csvProcessor.getFirstRow(new ByteArrayInputStream(csvString.getBytes()), csvFileConfiguration);
+		return getTable(data, (FhirBundleFileConfigurationEntity) fileConfiguration).columnNames();
 	}
 
 	/**
@@ -215,33 +246,33 @@ public class FhirBundleProcessor implements DataProcessor {
 	}
 
 	/**
-	 * Returns the CSVFormat for converting the FHIR bundle into a CSV file.
+	 * Flattens the resources of the given type in the FHIR bundle into a table.
 	 *
-	 * @return The CSV format.
+	 * @param bundle       The FHIR bundle as JSON.
+	 * @param resourceType The resource type to be included in the table.
+	 * @return The table.
 	 */
-	private CSVFormat buildCsvFormat() {
-		return CSVFormat.Builder.create(CSVFormat.DEFAULT).setHeader().get();
+	public FhirTable getTable(final String bundle, final String resourceType) {
+		return fhirTransformers.processBundle(bundle, resourceType);
 	}
 
 	/**
-	 * Convert the given FHIR bundle string into a CSV string.
+	 * Reads the given FHIR bundle and flattens the resources of the configured type into a table.
 	 *
 	 * @param fhirBundle        The FHIR bundle.
 	 * @param fileConfiguration The FHIR configuration for importing the FHIR bundle.
-	 * @param csvFormat         The CSV format used for the output.
-	 * @return The CSV string.
+	 * @return The table.
 	 * @throws InternalIOException If reading the FHIR bundle failed.
 	 */
-	private String getCsvString(final InputStream fhirBundle, final FhirBundleFileConfigurationEntity fileConfiguration,
-	                            final CSVFormat csvFormat) throws InternalIOException {
+	private FhirTable getTable(final InputStream fhirBundle, final FhirBundleFileConfigurationEntity fileConfiguration)
+			throws InternalIOException {
 		final String content;
 		try {
-			content = new String(fhirBundle.readAllBytes());
+			content = new String(fhirBundle.readAllBytes(), StandardCharsets.UTF_8);
 		} catch (IOException e) {
-			throw new InternalIOException(InternalIOException.FHIR_BUNDLE_READING, "Failed to convert FHIR bundle into a CSV.",
-			                              e);
+			throw new InternalIOException(InternalIOException.FHIR_BUNDLE_READING, "Failed to read the FHIR bundle.", e);
 		}
 
-		return fhirTransformers.processBundle(content, fileConfiguration.getResourceType(), csvFormat).toString();
+		return getTable(content, fileConfiguration.getResourceType());
 	}
 }

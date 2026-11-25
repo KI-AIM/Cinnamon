@@ -1,6 +1,7 @@
 package de.kiaim.cinnamon.test.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
+import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.model.entity.FhirBundleFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
@@ -8,8 +9,11 @@ import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.platform.processor.FhirBundleProcessor;
+import de.kiaim.cinnamon.platform.processor.FhirTransformers;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import de.kiaim.cinnamon.test.util.ResourceHelper;
+import de.unimuenster.imi.fhir.transform.ResultTable;
+import de.unimuenster.imi.fhir.transform.SubTable;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -17,6 +21,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -109,6 +117,63 @@ public class FhirBundleProcessorTest extends ContextRequiredTest {
 		String expectedContent = ResourceHelper.loadFileAsString("fhir-bundle-patient.json")
 		                                       .replace("\r\n", "\n");
 		assertEquals(expectedContent, content);
+	}
+
+	@Test
+	public void toFhirTableKeysColumnsByName() {
+		// Column indices are counted per resource, so "status" has index 3 in the first and index 2 in the second
+		var first = new SubTable();
+		first.addColumn("id", "a");
+		first.addColumn("code[0]", "x");
+		first.addColumn("status", "active");
+		var second = new SubTable();
+		second.addColumn("id", "b");
+		second.addColumn("status", "inactive");
+		second.getData().put(new kotlin.Pair<>(3, "note"), Collections.singletonList(null));
+		var empty = new SubTable();
+
+		var table = FhirTransformers.toFhirTable(new ResultTable(List.of(first, second, empty)));
+
+		assertEquals(List.of("id", "code[0]", "status", "note"), table.columnNames());
+		assertEquals(2, table.rows().size());
+		assertEquals(Arrays.asList("a", "x", "active", null), table.rows().get(0));
+		assertEquals(Arrays.asList("b", null, "inactive", null), table.rows().get(1));
+	}
+
+	@Test
+	public void readResourcesWithDifferentFields() {
+		// The first patient has two identifiers and a birth date, the second one has a single identifier and none
+		var bundle = """
+				{"resourceType":"Bundle","type":"collection","entry":[
+				  {"resource":{"resourceType":"Patient","id":"p1",
+				    "identifier":[{"value":"a"},{"value":"b"}],"gender":"female","birthDate":"1990-01-01"}},
+				  {"resource":{"resourceType":"Patient","id":"p2",
+				    "identifier":[{"value":"c"}],"gender":"male"}}
+				]}""";
+
+		var fhirFileConfiguration = new FhirBundleFileConfiguration("Patient");
+		var fileConfiguration = new FhirBundleFileConfigurationEntity(fhirFileConfiguration);
+
+		var estimation = assertDoesNotThrow(
+				() -> fhirBundleProcessor.estimateDataConfiguration(
+						new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)), fileConfiguration,
+						DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+		var dataConfiguration = estimation.getDataConfiguration();
+		// The library assigns "gender" different column indices in both resources, which must not duplicate the column
+		assertEquals(List.of("Patient.id[0]", "Patient.identifier[0].value[0]", "Patient.identifier[1].value[0]",
+		                     "Patient.gender[0]", "Patient.birthDate[0]"),
+		             dataConfiguration.getColumnNames());
+
+		var result = assertDoesNotThrow(
+				() -> fhirBundleProcessor.read(new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)),
+				                               fileConfiguration, dataConfiguration));
+		var rows = result.getDataSet().getDataRows();
+		assertEquals(2, rows.size());
+
+		assertEquals(Arrays.asList("p1", "a", "b", "female", LocalDate.of(1990, 1, 1)),
+		             rows.get(0).getData().stream().map(Data::getValue).toList());
+		assertEquals(Arrays.asList("p2", "c", null, "male", null),
+		             rows.get(1).getData().stream().map(Data::getValue).toList());
 	}
 
 	private static FileCompatibilityEntity getFileCompatibility() {

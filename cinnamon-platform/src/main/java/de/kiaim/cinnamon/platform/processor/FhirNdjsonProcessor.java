@@ -10,6 +10,7 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
+import de.kiaim.cinnamon.platform.model.FhirTable;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
@@ -29,7 +30,7 @@ import java.util.stream.Stream;
 
 /**
  * Class for processing FHIR NDJSON files.
- * Reading a NDJSON file converts it into a FHIR bundle and uses the {@link FhirBundleProcessor}.
+ * Reading a NDJSON file converts it into a FHIR bundle and flattens it using the {@link FhirBundleProcessor}.
  *
  * @author Daniel Preciado-Marquez
  */
@@ -83,15 +84,7 @@ public class FhirNdjsonProcessor implements DataProcessor {
 			throws BadDataConfigurationException, InternalIOException {
 		final var fileData = Objects.requireNonNull(file.getFile());
 
-		final String ndjson = readNdjson(fileData.getLobStream());
-		final String bundle = convertNdjsonToBundle(ndjson);
-		final String ressourceType = getRessourceType(ndjson);
-
-		final var fhirBundleFileConfiguration = new FhirBundleFileConfigurationEntity();
-		fhirBundleFileConfiguration.setResourceType(ressourceType);
-
-		final List<String> expectedColumns = fhirBundleProcessor.getAttributeNames(
-				new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)), fhirBundleFileConfiguration);
+		final List<String> expectedColumns = getTable(fileData.getLobStream()).columnNames();
 
 		fhirBundleProcessor.compareColumnNames(dataConfiguration, expectedColumns);
 	}
@@ -99,29 +92,14 @@ public class FhirNdjsonProcessor implements DataProcessor {
 	@Override
 	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration
 	) throws InternalIOException {
-		final String ndjson = readNdjson(data);
-		final String bundle = convertNdjsonToBundle(ndjson);
-		final String ressourceType = getRessourceType(ndjson);
-
-		final var fhirBundleFileConfiguration = new FhirBundleFileConfigurationEntity();
-		fhirBundleFileConfiguration.setResourceType(ressourceType);
-
-		return fhirBundleProcessor.getNumberColumns(new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)), fhirBundleFileConfiguration);
+		return getTable(data).columnNames().size();
 	}
 
 	@Override
 	public TransformationResult read(final InputStream data, final FileConfigurationEntity fileConfiguration,
 	                                 final DataConfiguration configuration
 	) throws BadDatasetException, InternalIOException {
-		final String ndjson = readNdjson(data);
-		final String bundle = convertNdjsonToBundle(ndjson);
-		final String ressourceType = getRessourceType(ndjson);
-
-		final var fhirBundleFileConfiguration = new FhirBundleFileConfigurationEntity();
-		fhirBundleFileConfiguration.setResourceType(ressourceType);
-
-		return fhirBundleProcessor.read(new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)), fhirBundleFileConfiguration,
-		                                configuration);
+		return fhirBundleProcessor.read(getTable(data), configuration);
 	}
 
 	@Override
@@ -129,15 +107,7 @@ public class FhirNdjsonProcessor implements DataProcessor {
 	                                                             final FileConfigurationEntity fileConfiguration,
 	                                                             final DatatypeEstimationAlgorithm algorithm
 	) throws InternalIOException {
-		final String ndjson = readNdjson(data);
-		final String bundle = convertNdjsonToBundle(ndjson);
-		final String ressourceType = getRessourceType(ndjson);
-
-		final var fhirBundleFileConfiguration = new FhirBundleFileConfigurationEntity();
-		fhirBundleFileConfiguration.setResourceType(ressourceType);
-
-		return fhirBundleProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)),
-		                                                     fhirBundleFileConfiguration, algorithm);
+		return fhirBundleProcessor.estimateDataConfiguration(getTable(data), algorithm);
 	}
 
 	@Override
@@ -146,6 +116,21 @@ public class FhirNdjsonProcessor implements DataProcessor {
 		fhirBundleProcessor.write(bundleOutput, dataset);
 		final var bundle = new ByteArrayInputStream(bundleOutput.toByteArray());
 		convertBundleToNdjson(bundle, outputStream);
+	}
+
+	/**
+	 * Reads the NDJSON file and flattens the contained resources into a table.
+	 *
+	 * @param data The input stream containing the NDJSON file.
+	 * @return The table.
+	 * @throws InternalIOException If reading the file failed or it contains invalid resources.
+	 */
+	private FhirTable getTable(final InputStream data) throws InternalIOException {
+		final String ndjson = readNdjson(data);
+		final String bundle = convertNdjsonToBundle(ndjson);
+		final String ressourceType = getRessourceType(ndjson);
+
+		return fhirBundleProcessor.getTable(bundle, ressourceType);
 	}
 
 	/**

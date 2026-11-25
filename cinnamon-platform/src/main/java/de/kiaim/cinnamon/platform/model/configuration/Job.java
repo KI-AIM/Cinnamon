@@ -19,7 +19,8 @@ public class Job {
 	private Integer externalServerEndpointIndex;
 
 	/**
-	 * Hardcoded fix for synth status.
+	 * Fetches one final status from the external service before the callback is
+	 * marked as finished.
 	 */
 	boolean fixStatus = false;
 

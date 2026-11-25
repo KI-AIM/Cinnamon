@@ -749,15 +749,22 @@ public class ProcessService {
 			}
 		}
 
-		// Hardcoded fix for synthetization callback status
+		// Refresh the external status once before marking callback-based processes
+		// as finished. The text-anonymization service writes its final progress to
+		// its status endpoint immediately before sending this callback.
 		if (externalProcess != null && externalProcess.getJob().isFixStatus()) {
 			try {
 				updateProcessStatus(externalProcess);
-				final var synthStatus = jsonMapper.readValue(externalProcess.getStatus(), SynthetizationStatus.class);
-				for (final var abc : synthStatus.getStatus()) {
-					abc.setCompleted("True");
+				// Synthetization reports a callback step which needs to be marked
+				// complete. Other jobs only need the status refresh.
+				if ("synthetization".equals(externalProcess.getJob().getName())) {
+					final var synthStatus = jsonMapper.readValue(
+							externalProcess.getStatus(), SynthetizationStatus.class);
+					for (final var stepStatus : synthStatus.getStatus()) {
+						stepStatus.setCompleted("True");
+					}
+					externalProcess.setStatus(jsonMapper.writeValueAsString(synthStatus));
 				}
-				externalProcess.setStatus(jsonMapper.writeValueAsString(synthStatus));
 			} catch (JacksonException e) {
 				log.warn("Failed to update detailed status!", e);
 			}

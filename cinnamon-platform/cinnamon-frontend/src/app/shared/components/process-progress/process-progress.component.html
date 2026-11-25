@@ -1,0 +1,19 @@
+<ng-container *ngIf="progress as value; else unknownProgress">
+    <div class="process-progress">
+        <ng-container *ngIf="value.modelProgress as models">
+            <div *ngFor="let model of models" class="process-progress-model">
+                <span>
+                    {{ model.model }}: {{ model.processed }} / {{ model.total }} {{ unitLabel }}
+                    ({{ model.status }})
+                </span>
+                <mat-progress-bar mode="determinate" [value]="model.progress"></mat-progress-bar>
+            </div>
+        </ng-container>
+        <span>Overall: {{ value.processed }} / {{ value.total }} {{ unitLabel }}</span>
+        <mat-progress-bar mode="determinate" [value]="value.progress"></mat-progress-bar>
+    </div>
+</ng-container>
+
+<ng-template #unknownProgress>
+    <mat-progress-bar *ngIf="running" mode="indeterminate"></mat-progress-bar>
+</ng-template>

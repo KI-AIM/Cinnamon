@@ -18,6 +18,9 @@ dependencies = [
     "torch==2.2.2",
     "huggingface_hub==0.26.2",
     "filelock==3.16.1",
+    "instructor==1.16.0",
+    "openai==2.54.0",
+    "pydantic==2.13.5",
 ]
 
 [project.optional-dependencies]

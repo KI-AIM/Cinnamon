@@ -14,11 +14,6 @@ import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
-import de.unimuenster.imi.fhir.columns_parser.Column;
-import de.unimuenster.imi.fhir.transform.BundleTransformer;
-import de.unimuenster.imi.fhir.transform.CsvToFhirTransformer;
-import de.unimuenster.imi.fhir.transform.ResourceExtractor;
-import de.unimuenster.imi.fhir.transform.TransformationParameters;
 import org.apache.commons.csv.CSVFormat;
 import org.hl7.fhir.r4.model.Bundle;
 import org.springframework.stereotype.Service;
@@ -39,10 +34,13 @@ public class FhirBundleProcessor implements DataProcessor {
 
 	private final CsvProcessor csvProcessor;
 	private final FhirContext fhirContext;
+	private final FhirTransformers fhirTransformers;
 
-	public FhirBundleProcessor(final CsvProcessor csvProcessor, final FhirContext fhirContext) {
+	public FhirBundleProcessor(final CsvProcessor csvProcessor, final FhirContext fhirContext,
+	                           final FhirTransformers fhirTransformers) {
 		this.csvProcessor = csvProcessor;
 		this.fhirContext = fhirContext;
+		this.fhirTransformers = fhirTransformers;
 	}
 
 	/**
@@ -156,8 +154,7 @@ public class FhirBundleProcessor implements DataProcessor {
 		csvProcessor.write(csvOutputStream, dataset, true);
 		String csvString = csvOutputStream.toString();
 
-		CsvToFhirTransformer csvToFhirTransformer = new CsvToFhirTransformer();
-		final Bundle bundle = csvToFhirTransformer.parseCsvToBundle(csvString);
+		final Bundle bundle = fhirTransformers.parseCsvToBundle(csvString);
 
 		try {
 			fhirContext.newJsonParser()
@@ -214,8 +211,7 @@ public class FhirBundleProcessor implements DataProcessor {
 	 * @return Set of resource types.
 	 */
 	public Set<String> getRessourceTypes(final String data) {
-		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
-		return bundleTransformer.getResourceTypesInBundle(data);
+		return fhirTransformers.getResourceTypesInBundle(data);
 	}
 
 	/**
@@ -238,10 +234,6 @@ public class FhirBundleProcessor implements DataProcessor {
 	 */
 	private String getCsvString(final InputStream fhirBundle, final FhirBundleFileConfigurationEntity fileConfiguration,
 	                            final CSVFormat csvFormat) throws InternalIOException {
-		final BundleTransformer bundleTransformer = new BundleTransformer(fhirContext);
-
-		final ResourceExtractor extractor = ResourceExtractor.Companion.forR4();
-
 		final String content;
 		try {
 			content = new String(fhirBundle.readAllBytes());
@@ -250,10 +242,6 @@ public class FhirBundleProcessor implements DataProcessor {
 			                              e);
 		}
 
-		final List<Column> attributes = extractor.getResourceFieldsForEntriesInBundle(content);
-		final TransformationParameters transformationParameters = new TransformationParameters(
-				csvFormat, Integer.MAX_VALUE, attributes, false, true, true,
-				List.of(fileConfiguration.getResourceType()));
-		return bundleTransformer.processBundle(content, transformationParameters).toString();
+		return fhirTransformers.processBundle(content, fileConfiguration.getResourceType(), csvFormat).toString();
 	}
 }

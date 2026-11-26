@@ -95,6 +95,34 @@ public class FhirFlattenerTest {
 	}
 
 	@Test
+	public void flattenAndUnflattenPrimitiveExtensions() {
+		// Birth time on the birth date, an extension on the second given name,
+		// and a data absent reason on the gender, which has no value
+		final String json = """
+				{"resourceType":"Patient",\
+				"name":[{"given":["Jane","Mary"],"_given":[null,{"extension":[{"url":"http://example.org/nick","valueBoolean":true}]}]}],\
+				"_gender":{"extension":[{"url":"http://hl7.org/fhir/StructureDefinition/data-absent-reason","valueCode":"unknown"}]},\
+				"birthDate":"1990-01-01",\
+				"_birthDate":{"extension":[{"url":"http://hl7.org/fhir/StructureDefinition/patient-birthTime","valueDateTime":"1990-01-01T10:15:00+01:00"}]}}""";
+		final Resource patient = (Resource) FHIR_CONTEXT.newJsonParser().parseResource(json);
+
+		final FhirTable table = flattener.flatten(List.of(patient), "Patient");
+
+		assertEquals(List.of("Patient.name[0].given[0]", "Patient.name[0].given[1]",
+		                     "Patient.name[0].given[1].extension[0].url",
+		                     "Patient.name[0].given[1].extension[0].valueBoolean",
+		                     "Patient.gender.extension[0].url", "Patient.gender.extension[0].valueCode",
+		                     "Patient.birthDate",
+		                     "Patient.birthDate.extension[0].url", "Patient.birthDate.extension[0].valueDateTime"),
+		             table.columnNames());
+		assertEquals(List.of("string", "string", "uri", "boolean", "uri", "code", "date", "uri", "dateTime"),
+		             table.fhirTypes());
+
+		final Resource rebuilt = flattener.unflatten("Patient", table.columnNames(), table.rows().get(0));
+		assertEquals(json, FHIR_CONTEXT.newJsonParser().encodeResourceToString(rebuilt));
+	}
+
+	@Test
 	public void roundTripIsLossless() throws IOException {
 		final Bundle bundle = parse(ResourceHelper.loadFhirBundleAsString());
 

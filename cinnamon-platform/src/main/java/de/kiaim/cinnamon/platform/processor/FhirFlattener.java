@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.platform.model.FhirTable;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Base;
+import org.hl7.fhir.r4.model.Element;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Property;
 import org.hl7.fhir.r4.model.Resource;
@@ -30,10 +31,12 @@ import java.util.regex.Pattern;
  *     <li>Indices are only added for repeating elements and are the actual position in the list.</li>
  *     <li>Choice elements are named after the actual type, e.g. {@code Observation.valueQuantity.value}.</li>
  *     <li>The id of a resource contains only the id part, without the resource type, base URL or version.</li>
+ *     <li>Extensions of primitive values ({@code _birthDate} in JSON) are placed below the primitive,
+ *     e.g. {@code Patient.birthDate.extension[0].url}. They are also kept if the primitive has no value.</li>
  * </ul>
  * Each column carries the FHIR datatype of its values, which is used to derive the Cinnamon data type.
  * <p>
- * Not supported yet: contained resources and extensions on primitive values ({@code _birthDate}).
+ * Not supported yet: contained resources.
  * Narratives ({@code text.div}) are not part of the HAPI children and therefore never exported.
  * <p>
  * The class is thread-safe; HAPI model objects are created per call and the {@link FhirContext} is thread-safe.
@@ -202,6 +205,11 @@ public class FhirFlattener {
 						columns.putIfAbsent(childPath, new ColumnInfo(childKey, value.fhirType()));
 						values.put(childPath, primitiveValue);
 					}
+
+					// Primitives can carry extensions (_birthDate in JSON), even without a value
+					if (value instanceof Element element && element.hasExtension()) {
+						walk(value, childPath, childKey, values, columns);
+					}
 				} else {
 					walk(value, childPath, childKey, values, columns);
 				}
@@ -330,14 +338,42 @@ public class FhirFlattener {
 
 				final String typeSuffix = name.substring(baseName.length());
 				for (final String type : child.getTypeCode().split("\\|")) {
-					if (type.trim().equalsIgnoreCase(typeSuffix)) {
-						return new ResolvedProperty(childName, type.trim());
+					final String trimmedType = type.trim();
+					if (trimmedType.equalsIgnoreCase(typeSuffix)) {
+						return new ResolvedProperty(childName, trimmedType);
+					}
+
+					// Open types like Extension.value[x] allow any datatype
+					if (trimmedType.equals("*")) {
+						final String resolvedType = resolveDatatype(typeSuffix);
+						if (resolvedType != null) {
+							return new ResolvedProperty(childName, resolvedType);
+						}
 					}
 				}
 			}
 
 			throw new IllegalArgumentException("Unknown element '" + name + "' on " + parent.fhirType());
 		});
+	}
+
+	/**
+	 * Resolves the type part of a choice element name to the name of a FHIR datatype.
+	 * Complex types are capitalized ({@code Quantity}), primitive types are not ({@code dateTime}).
+	 *
+	 * @param typeSuffix The type part of the element name, e.g. {@code Quantity} or {@code DateTime}.
+	 * @return The FHIR datatype or null if there is no such datatype.
+	 */
+	@Nullable
+	private String resolveDatatype(final String typeSuffix) {
+		final String primitiveName = Character.toLowerCase(typeSuffix.charAt(0)) + typeSuffix.substring(1);
+		for (final String candidate : List.of(typeSuffix, primitiveName)) {
+			final BaseRuntimeElementDefinition<?> definition = fhirContext.getElementDefinition(candidate);
+			if (definition != null && definition.getName().equals(candidate)) {
+				return candidate;
+			}
+		}
+		return null;
 	}
 
 	/**

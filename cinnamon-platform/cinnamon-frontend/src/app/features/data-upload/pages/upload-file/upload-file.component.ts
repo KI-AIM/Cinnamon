@@ -427,7 +427,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
         this.loadingEstimation = false;
 
         if (openDialog && value.estimation.fileType === FileType.FHIR_BUNDLE) {
-            this.openDialog(this.fileConfigurationDialog);
+            // Wait until the pageData$ was updated so the resource types are present when opening the dialog
+            setTimeout(() => {
+                this.openDialog(this.fileConfigurationDialog);
+            });
         }
     }
 

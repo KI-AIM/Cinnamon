@@ -1,6 +1,8 @@
 package de.kiaim.cinnamon.platform.processor;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.DataFormatException;
+import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
@@ -18,35 +20,35 @@ import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfigurati
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Resource;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * Class for processing FHIR bundles.
- * Reading a FHIR bundle flattens the resources of the configured type into a {@link FhirTable}.
- * Writing a FHIR bundle converts the data set into a CSV string using the {@link CsvProcessor},
- * because the library only supports converting CSV into FHIR.
+ * Reading a FHIR bundle flattens the resources of the configured type into a {@link FhirTable} using the
+ * {@link FhirFlattener}. The data configuration is derived from the FHIR datatypes using the {@link FhirTypeMapper}.
+ * Writing a FHIR bundle creates one resource per row by reversing the flattening.
  *
  * @author Daniel Preciado-Marquez
  */
 @Service
 public class FhirBundleProcessor extends CommonDataProcessor implements DataProcessor {
 
-	private final CsvProcessor csvProcessor;
 	private final FhirContext fhirContext;
-	private final FhirTransformers fhirTransformers;
+	private final FhirFlattener fhirFlattener;
 
-	public FhirBundleProcessor(final CsvProcessor csvProcessor, final FhirContext fhirContext,
-	                           final FhirTransformers fhirTransformers) {
-		this.csvProcessor = csvProcessor;
+	public FhirBundleProcessor(final FhirContext fhirContext, final FhirFlattener fhirFlattener) {
 		this.fhirContext = fhirContext;
-		this.fhirTransformers = fhirTransformers;
+		this.fhirFlattener = fhirFlattener;
 	}
 
 	/**
@@ -160,21 +162,40 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 	}
 
 	/**
-	 * Estimates the data configuration for the given table.
+	 * Derives the data configuration for the given table from the FHIR datatypes of the columns.
+	 * No estimation based on samples is performed, as the FHIR datatypes are fixed by the specification.
+	 * Columns without a known FHIR datatype are configured as {@link de.kiaim.cinnamon.model.enumeration.DataType#STRING}.
 	 *
 	 * @param table     The flattened FHIR resources.
-	 * @param algorithm Algorithm how to select the datatype of a column.
-	 * @return The estimated data configuration.
+	 * @param algorithm Unused, the data types are derived from the FHIR datatypes.
+	 * @return The data configuration. The confidence is 1 for all columns.
 	 */
 	public DataConfigurationEstimation estimateDataConfiguration(final FhirTable table,
 	                                                             final DatatypeEstimationAlgorithm algorithm) {
 		final int numberColumns = table.columnNames().size();
-		if (numberColumns == 0) {
-			return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
+		final DataConfiguration dataConfiguration = new DataConfiguration();
+		final float[] confidences = new float[numberColumns];
+
+		for (int columnIndex = 0; columnIndex < numberColumns; columnIndex++) {
+			final List<String> values = new ArrayList<>();
+			for (final List<@Nullable String> row : table.rows()) {
+				final String value = row.get(columnIndex);
+				if (value != null && !value.isEmpty()) {
+					values.add(value);
+				}
+			}
+
+			final ColumnConfiguration columnConfiguration =
+					FhirTypeMapper.toColumnConfiguration(table.fhirTypes().get(columnIndex), values);
+			columnConfiguration.setIndex(columnIndex);
+			columnConfiguration.setName(table.columnNames().get(columnIndex));
+			columnConfiguration.setScale(Objects.requireNonNull(columnConfiguration.getType()).getDefaultScale());
+			dataConfiguration.addColumnConfiguration(columnConfiguration);
+
+			confidences[columnIndex] = 1.0f;
 		}
 
-		final List<List<String>> samples = getAttributeSamples(table.rows().iterator(), numberColumns);
-		return estimateDataConfiguration(samples, algorithm, numberColumns, table.columnNames());
+		return new DataConfigurationEstimation(dataConfiguration, confidences);
 	}
 
 	/**
@@ -182,21 +203,48 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 	 */
 	@Override
 	public void write(OutputStream outputStream, DataSet dataset) throws InternalIOException {
-		// First, convert the dataset into a CSV string
-		final OutputStream csvOutputStream = new ByteArrayOutputStream();
-		// Keep time zones, as FHIR requires them for instants and date-times with a time
-		csvProcessor.write(csvOutputStream, dataset, true);
-		String csvString = csvOutputStream.toString();
-
-		final Bundle bundle = fhirTransformers.parseCsvToBundle(csvString);
+		final Bundle bundle = toBundle(dataset);
 
 		try {
+			final Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
 			fhirContext.newJsonParser()
 			           .setPrettyPrint(true)
-			           .encodeResourceToWriter(bundle, new OutputStreamWriter(outputStream));
+			           .encodeResourceToWriter(bundle, writer);
+			writer.flush();
 		} catch (final IOException e) {
 			throw new InternalIOException(InternalIOException.FHIR_WRITING, "Failed to write FHIR bundle.", e);
 		}
+	}
+
+	/**
+	 * Converts the data set into a bundle containing one resource per row.
+	 *
+	 * @param dataset The data set with the FHIR paths as column names.
+	 * @return The FHIR bundle.
+	 * @throws InternalIOException If the column names are not FHIR paths of a single resource type.
+	 */
+	public Bundle toBundle(final DataSet dataset) throws InternalIOException {
+		final DataConfiguration dataConfiguration = dataset.getDataConfiguration();
+		final List<String> columnNames = dataConfiguration.getColumnNames();
+		final List<ColumnConfiguration> columnConfigurations = dataConfiguration.getConfigurations();
+
+		final String resourceType;
+		try {
+			resourceType = FhirFlattener.getResourceType(columnNames);
+		} catch (final IllegalArgumentException e) {
+			throw new InternalIOException(InternalIOException.FHIR_WRITING, "Failed to write FHIR bundle.", e);
+		}
+
+		final Bundle bundle = new Bundle();
+		for (final DataRow dataRow : dataset.getDataRows()) {
+			final List<@Nullable String> values = new ArrayList<>(columnNames.size());
+			for (int i = 0; i < columnNames.size(); i++) {
+				values.add(FhirTypeMapper.toFhirValue(dataRow.getData().get(i), columnConfigurations.get(i)));
+			}
+			bundle.addEntry().setResource(fhirFlattener.unflatten(resourceType, columnNames, values));
+		}
+
+		return bundle;
 	}
 
 	/**
@@ -240,9 +288,14 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 	 *
 	 * @param data The FHIR bundle.
 	 * @return Set of resource types.
+	 * @throws DataFormatException If the data is not a valid FHIR bundle.
 	 */
 	public Set<String> getRessourceTypes(final String data) {
-		return fhirTransformers.getResourceTypesInBundle(data);
+		final Set<String> resourceTypes = new LinkedHashSet<>();
+		for (final Resource resource : parseBundle(data)) {
+			resourceTypes.add(resource.fhirType());
+		}
+		return resourceTypes;
 	}
 
 	/**
@@ -251,9 +304,28 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 	 * @param bundle       The FHIR bundle as JSON.
 	 * @param resourceType The resource type to be included in the table.
 	 * @return The table.
+	 * @throws DataFormatException If the data is not a valid FHIR bundle.
 	 */
 	public FhirTable getTable(final String bundle, final String resourceType) {
-		return fhirTransformers.processBundle(bundle, resourceType);
+		return fhirFlattener.flatten(parseBundle(bundle), resourceType);
+	}
+
+	/**
+	 * Parses the FHIR bundle and returns the contained resources.
+	 *
+	 * @param bundle The FHIR bundle as JSON.
+	 * @return The resources of the bundle entries.
+	 * @throws DataFormatException If the data is not a valid FHIR bundle.
+	 */
+	private List<Resource> parseBundle(final String bundle) {
+		final Bundle parsedBundle = fhirContext.newJsonParser().parseResource(Bundle.class, bundle);
+		final List<Resource> resources = new ArrayList<>();
+		for (final Bundle.BundleEntryComponent entry : parsedBundle.getEntry()) {
+			if (entry.hasResource()) {
+				resources.add(entry.getResource());
+			}
+		}
+		return resources;
 	}
 
 	/**

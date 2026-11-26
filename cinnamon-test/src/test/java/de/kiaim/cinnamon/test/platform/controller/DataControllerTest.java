@@ -449,7 +449,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("configuration", string))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
+		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta.source'"))
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "9", "3")));
 	}
 

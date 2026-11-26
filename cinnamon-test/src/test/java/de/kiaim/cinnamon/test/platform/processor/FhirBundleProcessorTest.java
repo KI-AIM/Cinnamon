@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.test.platform.processor;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.model.entity.FhirBundleFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
@@ -91,7 +92,49 @@ public class FhirBundleProcessorTest extends ContextRequiredTest {
 				                                                    fileConfiguration,
 				                                                    DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 
-		assertEquals(13, estimation.getDataConfiguration().getConfigurations().size());
+		// The narrative (text.div) is not flattened
+		var dataConfiguration = estimation.getDataConfiguration();
+		assertEquals(12, dataConfiguration.getConfigurations().size());
+
+		// The data types are derived from the FHIR datatypes
+		assertEquals(DataType.STRING, dataConfiguration.getColumnConfigurationByColumnName("Patient.id").getType());
+		assertEquals(DataType.DATE_TIME,
+		             dataConfiguration.getColumnConfigurationByColumnName("Patient.meta.lastUpdated").getType());
+		assertEquals(DataType.STRING, dataConfiguration.getColumnConfigurationByColumnName("Patient.gender").getType());
+		assertEquals(DataType.DATE, dataConfiguration.getColumnConfigurationByColumnName("Patient.birthDate").getType());
+	}
+
+	@Test
+	public void readAndWriteObservations() throws IOException {
+		var bundle = ResourceHelper.loadFhirBundleAsString();
+
+		var fileConfiguration = new FhirBundleFileConfigurationEntity(new FhirBundleFileConfiguration("Observation"));
+		var estimation = assertDoesNotThrow(
+				() -> fhirBundleProcessor.estimateDataConfiguration(new ByteArrayInputStream(bundle.getBytes()),
+				                                                    fileConfiguration,
+				                                                    DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+		var dataConfiguration = estimation.getDataConfiguration();
+		assertEquals(DataType.DATE_TIME,
+		             dataConfiguration.getColumnConfigurationByColumnName("Observation.effectiveDateTime").getType());
+		assertEquals(DataType.DECIMAL,
+		             dataConfiguration.getColumnConfigurationByColumnName("Observation.valueQuantity.value").getType());
+
+		var data = assertDoesNotThrow(
+				() -> fhirBundleProcessor.read(new ByteArrayInputStream(bundle.getBytes()), fileConfiguration,
+				                               dataConfiguration));
+		assertEquals(20, data.getDataSet().getDataRows().size());
+		assertEquals(0, data.getTransformationErrors().size());
+
+		var stream = new ByteArrayOutputStream();
+		assertDoesNotThrow(() -> fhirBundleProcessor.write(stream, data.getDataSet()));
+
+		// Reading the written bundle results in the same data set
+		var written = stream.toString(StandardCharsets.UTF_8);
+		var reread = assertDoesNotThrow(
+				() -> fhirBundleProcessor.read(new ByteArrayInputStream(written.getBytes(StandardCharsets.UTF_8)),
+				                               fileConfiguration, dataConfiguration));
+		assertEquals(0, reread.getTransformationErrors().size());
+		assertEquals(data.getDataSet().getDataRows(), reread.getDataSet().getDataRows());
 	}
 
 	@Test
@@ -159,9 +202,8 @@ public class FhirBundleProcessorTest extends ContextRequiredTest {
 						new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)), fileConfiguration,
 						DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 		var dataConfiguration = estimation.getDataConfiguration();
-		// The library assigns "gender" different column indices in both resources, which must not duplicate the column
-		assertEquals(List.of("Patient.id[0]", "Patient.identifier[0].value[0]", "Patient.identifier[1].value[0]",
-		                     "Patient.gender[0]", "Patient.birthDate[0]"),
+		assertEquals(List.of("Patient.id", "Patient.identifier[0].value", "Patient.identifier[1].value",
+		                     "Patient.gender", "Patient.birthDate"),
 		             dataConfiguration.getColumnNames());
 
 		var result = assertDoesNotThrow(

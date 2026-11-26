@@ -92,9 +92,8 @@ public class FhirBundleProcessorTest extends ContextRequiredTest {
 				                                                    fileConfiguration,
 				                                                    DatatypeEstimationAlgorithm.MOST_ESTIMATED));
 
-		// The narrative (text.div) is not flattened
 		var dataConfiguration = estimation.getDataConfiguration();
-		assertEquals(12, dataConfiguration.getConfigurations().size());
+		assertEquals(13, dataConfiguration.getConfigurations().size());
 
 		// The data types are derived from the FHIR datatypes
 		assertEquals(DataType.STRING, dataConfiguration.getColumnConfigurationByColumnName("Patient.id").getType());
@@ -102,6 +101,8 @@ public class FhirBundleProcessorTest extends ContextRequiredTest {
 		             dataConfiguration.getColumnConfigurationByColumnName("Patient.meta.lastUpdated").getType());
 		assertEquals(DataType.STRING, dataConfiguration.getColumnConfigurationByColumnName("Patient.gender").getType());
 		assertEquals(DataType.DATE, dataConfiguration.getColumnConfigurationByColumnName("Patient.birthDate").getType());
+		// The narrative is free text
+		assertEquals(DataType.TEXT, dataConfiguration.getColumnConfigurationByColumnName("Patient.text.div").getType());
 	}
 
 	@Test

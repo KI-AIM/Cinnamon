@@ -123,6 +123,45 @@ public class FhirFlattenerTest {
 	}
 
 	@Test
+	public void flattenNarrativeAsPlainText() throws IOException {
+		final Bundle bundle = parse(ResourceHelper.loadFhirBundleAsString());
+
+		final FhirTable table = flattener.flatten(resources(bundle), "Patient");
+
+		final int index = table.columnNames().indexOf("Patient.text.div");
+		// The div follows the status, like in the specification
+		assertEquals("Patient.text.status", table.columnNames().get(index - 1));
+		assertEquals("xhtml", table.fhirTypes().get(index));
+		assertEquals("JOHN STEVE SMITH\nIdentifier urn:id:999991\nDate of birth 01 January 1950",
+		             table.rows().get(0).get(index));
+	}
+
+	@Test
+	public void unflattenNarrative() {
+		final Resource patient = flattener.unflatten("Patient", List.of("Patient.text.status", "Patient.text.div"),
+		                                             List.of("generated", "Smith & <Sons>\nSecond line"));
+
+		assertEquals("{\"resourceType\":\"Patient\",\"text\":{\"status\":\"generated\"," +
+		             "\"div\":\"<div xmlns=\\\"http://www.w3.org/1999/xhtml\\\">Smith &amp; &lt;Sons&gt;<br/>Second line</div>\"}}",
+		             FHIR_CONTEXT.newJsonParser().encodeResourceToString(patient));
+
+		// Flattening the result returns the original text
+		final FhirTable table = flattener.flatten(List.of(patient), "Patient");
+		assertEquals(List.of("generated", "Smith & <Sons>\nSecond line"), table.rows().get(0));
+	}
+
+	@Test
+	public void unflattenRemovesNarrativeWithoutText() {
+		// E.g. the text was removed by the anonymization, FHIR requires a div for narratives
+		final Resource patient = flattener.unflatten("Patient", List.of("Patient.text.status", "Patient.text.div",
+		                                                                "Patient.gender"),
+		                                             java.util.Arrays.asList("generated", null, "female"));
+
+		assertEquals("{\"resourceType\":\"Patient\",\"gender\":\"female\"}",
+		             FHIR_CONTEXT.newJsonParser().encodeResourceToString(patient));
+	}
+
+	@Test
 	public void roundTripIsLossless() throws IOException {
 		final Bundle bundle = parse(ResourceHelper.loadFhirBundleAsString());
 
@@ -156,6 +195,21 @@ public class FhirFlattenerTest {
 		// The value would be estimated as an integer, but it is a FHIR string
 		assertEquals(DataType.STRING, FhirTypeMapper.toColumnConfiguration("string", List.of("12345")).getType());
 		assertEquals(DataType.STRING, FhirTypeMapper.toColumnConfiguration(null, List.of("x")).getType());
+	}
+
+	@Test
+	public void mapFreeText() {
+		assertEquals(DataType.TEXT, FhirTypeMapper.toColumnConfiguration("xhtml", List.of("short")).getType());
+		assertEquals(DataType.TEXT, FhirTypeMapper.toColumnConfiguration("markdown", List.of("short")).getType());
+
+		// Strings are free text if the majority of the values is longer than the threshold of the estimation
+		final String longText = "x".repeat(300);
+		assertEquals(DataType.STRING,
+		             FhirTypeMapper.toColumnConfiguration("string", List.of("Body Temperature")).getType());
+		assertEquals(DataType.TEXT,
+		             FhirTypeMapper.toColumnConfiguration("string", List.of(longText, longText, "short")).getType());
+		assertEquals(DataType.STRING,
+		             FhirTypeMapper.toColumnConfiguration("string", List.of(longText, "short", "short")).getType());
 	}
 
 	@Test

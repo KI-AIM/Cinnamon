@@ -6,7 +6,9 @@ import de.kiaim.cinnamon.platform.model.FhirTable;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Base;
+import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Element;
+import org.hl7.fhir.r4.model.Narrative;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Property;
 import org.hl7.fhir.r4.model.Resource;
@@ -36,8 +38,10 @@ import java.util.regex.Pattern;
  * </ul>
  * Each column carries the FHIR datatype of its values, which is used to derive the Cinnamon data type.
  * <p>
+ * Narratives ({@code text.div}) are flattened as plain text using {@link FhirNarrativeText} with the type
+ * {@link #NARRATIVE_TYPE}. Narratives without text are removed when unflattening, as FHIR requires a div.
+ * <p>
  * Not supported yet: contained resources.
- * Narratives ({@code text.div}) are not part of the HAPI children and therefore never exported.
  * <p>
  * The class is thread-safe; HAPI model objects are created per call and the {@link FhirContext} is thread-safe.
  *
@@ -46,6 +50,16 @@ import java.util.regex.Pattern;
 @Component
 @Slf4j
 public class FhirFlattener {
+
+	/**
+	 * FHIR type of the narrative text column.
+	 */
+	public static final String NARRATIVE_TYPE = "xhtml";
+
+	/**
+	 * Name of the narrative element, which is not part of the HAPI children.
+	 */
+	private static final String NARRATIVE_DIV = "div";
 
 	/**
 	 * Properties that are not flattened.
@@ -140,6 +154,8 @@ public class FhirFlattener {
 			}
 		}
 
+		removeNarrativeWithoutText(resource);
+
 		return resource;
 	}
 
@@ -215,6 +231,19 @@ public class FhirFlattener {
 				}
 			}
 		}
+
+		// The div of a narrative is not part of the children, add it after the status like in the specification
+		if (base instanceof Narrative narrative && narrative.hasDiv()) {
+			final String text = FhirNarrativeText.toPlainText(narrative.getDiv());
+			if (!text.isEmpty()) {
+				final String childPath = path + "." + NARRATIVE_DIV;
+				final List<SegmentKey> childKey = new ArrayList<>(key.size() + 1);
+				childKey.addAll(key);
+				childKey.add(new SegmentKey(properties.size(), NARRATIVE_DIV, -1));
+				columns.putIfAbsent(childPath, new ColumnInfo(childKey, NARRATIVE_TYPE));
+				values.put(childPath, text);
+			}
+		}
 	}
 
 	/**
@@ -245,9 +274,16 @@ public class FhirFlattener {
 		}
 
 		Base current = resource;
-		for (int i = 1; i < segments.length; i++) {
+		for (int i = 1; i < segments.length - 1; i++) {
 			current = getOrCreateChild(current, segments[i]);
 		}
+
+		final String lastSegment = segments[segments.length - 1];
+		if (current instanceof Narrative narrative && lastSegment.equals(NARRATIVE_DIV)) {
+			narrative.setDiv(FhirNarrativeText.toXhtml(value));
+			return;
+		}
+		current = getOrCreateChild(current, lastSegment);
 
 		if (!(current instanceof PrimitiveType<?> primitive)) {
 			throw new IllegalArgumentException("Path does not point to a primitive value");
@@ -259,6 +295,20 @@ public class FhirFlattener {
 			// HAPI keeps the raw string of invalid values (e.g. unknown codes) and would encode it
 			clear(primitive);
 			throw e;
+		}
+	}
+
+	/**
+	 * Removes the narrative if it has no text.
+	 * FHIR requires a div for narratives, but the text column can be empty, e.g. after the anonymization,
+	 * while the status is still set.
+	 *
+	 * @param resource The resource.
+	 */
+	private static void removeNarrativeWithoutText(final Resource resource) {
+		if (resource instanceof DomainResource domainResource && domainResource.hasText() &&
+		    !domainResource.getText().hasDiv()) {
+			domainResource.setText(null);
 		}
 	}
 

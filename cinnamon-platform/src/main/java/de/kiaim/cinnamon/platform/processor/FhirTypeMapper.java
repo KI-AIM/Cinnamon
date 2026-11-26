@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataBuilder;
 import de.kiaim.cinnamon.model.data.DateData;
 import de.kiaim.cinnamon.model.data.DateTimeData;
+import de.kiaim.cinnamon.model.data.TextData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.DataBuildingException;
 import org.jspecify.annotations.Nullable;
@@ -26,8 +27,14 @@ import java.util.regex.Pattern;
  * <p>
  * The FHIR datatype of an element is fixed by the specification, so the Cinnamon data type is derived from it
  * instead of estimating it from samples.
- * Only dates need a look at the values, because FHIR allows reduced precision ({@code 2020}, {@code 2020-05}),
- * which Cinnamon's date types cannot represent. Such columns fall back to {@link DataType#STRING}.
+ * Values are only inspected in two cases:
+ * <ul>
+ *     <li>Dates, because FHIR allows reduced precision ({@code 2020}, {@code 2020-05}),
+ *     which Cinnamon's date types cannot represent. Such columns fall back to {@link DataType#STRING}.</li>
+ *     <li>Strings, because the FHIR type does not distinguish short strings from free text.
+ *     The same length rule as in the estimation for other file types is applied.</li>
+ * </ul>
+ * Narratives ({@code xhtml}) and {@code markdown} are always free text.
  *
  * @author Daniel Preciado-Marquez
  */
@@ -68,7 +75,9 @@ public final class FhirTypeMapper {
 			               ? columnConfiguration(DataType.DATE, new DateFormatConfiguration(FHIR_DATE_FORMAT))
 			               : columnConfiguration(DataType.STRING);
 			case "dateTime", "instant" -> mapDateTime(values);
-			// string, code, id, uri, url, canonical, oid, uuid, markdown, base64Binary, time, integer64, ...
+			case "xhtml", "markdown" -> columnConfiguration(DataType.TEXT);
+			case "string" -> isFreeText(values) ? columnConfiguration(DataType.TEXT) : columnConfiguration(DataType.STRING);
+			// code, id, uri, url, canonical, oid, uuid, base64Binary, time, integer64, ...
 			default -> columnConfiguration(DataType.STRING);
 		};
 	}
@@ -115,6 +124,21 @@ public final class FhirTypeMapper {
 		}
 
 		return columnConfiguration(DataType.STRING);
+	}
+
+	/**
+	 * Checks if the majority of the values is free text,
+	 * using the length rule of {@link TextData.TextDataBuilder#estimateColumnConfiguration(String)}.
+	 */
+	private static boolean isFreeText(final List<String> values) {
+		final TextData.TextDataBuilder builder = new TextData.TextDataBuilder();
+		int freeTextCount = 0;
+		for (final String value : values) {
+			if (builder.estimateColumnConfiguration(value).getType() == DataType.TEXT) {
+				freeTextCount++;
+			}
+		}
+		return freeTextCount * 2 > values.size();
 	}
 
 	/**

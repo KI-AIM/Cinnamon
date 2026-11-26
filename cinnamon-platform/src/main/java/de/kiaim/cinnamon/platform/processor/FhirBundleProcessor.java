@@ -186,7 +186,7 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 			}
 
 			final ColumnConfiguration columnConfiguration =
-					FhirTypeMapper.toColumnConfiguration(table.fhirTypes().get(columnIndex), values);
+					FhirTypeMapper.toColumnConfiguration(table.columns().get(columnIndex), values);
 			columnConfiguration.setIndex(columnIndex);
 			columnConfiguration.setName(table.columnNames().get(columnIndex));
 			columnConfiguration.setScale(Objects.requireNonNull(columnConfiguration.getType()).getDefaultScale());

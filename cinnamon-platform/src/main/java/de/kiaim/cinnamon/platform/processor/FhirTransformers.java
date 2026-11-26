@@ -202,7 +202,7 @@ public class FhirTransformers {
 			}
 		}
 
-		return new FhirTable(columnNames, rows);
+		return FhirTable.withoutTypes(columnNames, rows);
 	}
 
 	private ResourceExtractor getResourceExtractor() {

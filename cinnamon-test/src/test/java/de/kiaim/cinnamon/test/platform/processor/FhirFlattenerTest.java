@@ -7,6 +7,9 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.DateTimeFormatConfi
 import de.kiaim.cinnamon.model.data.DateTimeData;
 import de.kiaim.cinnamon.model.data.DecimalData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
+import de.kiaim.cinnamon.model.exception.DataBuildingException;
+import de.kiaim.cinnamon.model.helper.DataTransformationHelper;
+import de.kiaim.cinnamon.platform.model.FhirColumn;
 import de.kiaim.cinnamon.platform.model.FhirTable;
 import de.kiaim.cinnamon.platform.processor.FhirFlattener;
 import de.kiaim.cinnamon.platform.processor.FhirTypeMapper;
@@ -28,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class FhirFlattenerTest {
 
 	private static final FhirContext FHIR_CONTEXT = FhirContext.forR4();
+	private static final DataTransformationHelper DATA_TRANSFORMATION_HELPER = new DataTransformationHelper();
 
 	private final FhirFlattener flattener = new FhirFlattener(FHIR_CONTEXT);
 
@@ -194,7 +198,68 @@ public class FhirFlattenerTest {
 		assertEquals(DataType.STRING, FhirTypeMapper.toColumnConfiguration("code", List.of("female")).getType());
 		// The value would be estimated as an integer, but it is a FHIR string
 		assertEquals(DataType.STRING, FhirTypeMapper.toColumnConfiguration("string", List.of("12345")).getType());
-		assertEquals(DataType.STRING, FhirTypeMapper.toColumnConfiguration(null, List.of("x")).getType());
+		assertEquals(DataType.STRING, FhirTypeMapper.toColumnConfiguration((String) null, List.of("x")).getType());
+	}
+
+	@Test
+	public void flattenCollectsAllowedCodesOfRequiredBindings() throws IOException {
+		final Bundle bundle = parse(ResourceHelper.loadFhirBundleAsString());
+
+		final FhirTable patients = flattener.flatten(resources(bundle), "Patient");
+		assertEquals(List.of("male", "female", "other", "unknown"), column(patients, "Patient.gender").allowedCodes());
+
+		// Codes without a required binding are not restricted
+		final FhirTable observations = flattener.flatten(resources(bundle), "Observation");
+		assertNull(column(observations, "Observation.code.coding[0].code").allowedCodes());
+		assertEquals("code", column(observations, "Observation.code.coding[0].code").fhirType());
+	}
+
+	@Test
+	public void mapConstraints() {
+		final var gender = FhirTypeMapper.toColumnConfiguration(
+				new FhirColumn("Patient.gender", "code", List.of("male", "female", "other", "unknown")), List.of());
+		assertAccepted(gender, "female");
+		// E.g. a partially masked value of the anonymization
+		assertRejected(gender, "femXXX");
+
+		// Special characters in codes are escaped
+		final var comparator = FhirTypeMapper.toColumnConfiguration(
+				new FhirColumn("Observation.valueQuantity.comparator", "code", List.of("<", "<=", ">=", ">")),
+				List.of());
+		assertAccepted(comparator, "<=");
+		assertRejected(comparator, "<<");
+
+		final var positiveInt = FhirTypeMapper.toColumnConfiguration("positiveInt", List.of("1"));
+		assertAccepted(positiveInt, "1");
+		assertRejected(positiveInt, "0");
+		final var unsignedInt = FhirTypeMapper.toColumnConfiguration("unsignedInt", List.of("0"));
+		assertAccepted(unsignedInt, "0");
+		assertRejected(unsignedInt, "-1");
+
+		// Dates with reduced precision are stored as strings, but must still be FHIR dates
+		final var partialDate = FhirTypeMapper.toColumnConfiguration("date", List.of("1990"));
+		assertEquals(DataType.STRING, partialDate.getType());
+		assertAccepted(partialDate, "1990");
+		assertAccepted(partialDate, "1990-05");
+		assertRejected(partialDate, "1990-13");
+		assertRejected(partialDate, "199X");
+
+		final var partialDateTime = FhirTypeMapper.toColumnConfiguration(
+				"dateTime", List.of("2020-05-01", "2020-05-01T10:00:00+02:00"));
+		assertEquals(DataType.STRING, partialDateTime.getType());
+		assertAccepted(partialDateTime, "2020");
+		assertAccepted(partialDateTime, "2020-05-01T10:00:00.123Z");
+		// FHIR requires an offset for date-times with a time
+		assertRejected(partialDateTime, "2020-05-01T10:00:00");
+
+		final var time = FhirTypeMapper.toColumnConfiguration("time", List.of("10:00:00"));
+		assertAccepted(time, "23:59:59.5");
+		assertRejected(time, "24:00:00");
+
+		final var id = FhirTypeMapper.toColumnConfiguration("id", List.of("p1"));
+		assertAccepted(id, "patient-1.a");
+		assertRejected(id, "patient 1");
+		assertRejected(id, "x".repeat(65));
 	}
 
 	@Test
@@ -248,6 +313,21 @@ public class FhirFlattenerTest {
 		                                        new ColumnConfiguration()));
 		assertEquals("36.2", FhirTypeMapper.toFhirValue(new DecimalData(36.2f), new ColumnConfiguration()));
 		assertNull(FhirTypeMapper.toFhirValue(new DecimalData(null), new ColumnConfiguration()));
+	}
+
+	private static FhirColumn column(final FhirTable table, final String name) {
+		return table.columns().stream().filter(column -> column.name().equals(name)).findFirst().orElseThrow();
+	}
+
+	private static void assertAccepted(final ColumnConfiguration columnConfiguration, final String value) {
+		assertDoesNotThrow(() -> DATA_TRANSFORMATION_HELPER.transformData(value, columnConfiguration),
+		                   "Expected '" + value + "' to be accepted");
+	}
+
+	private static void assertRejected(final ColumnConfiguration columnConfiguration, final String value) {
+		assertThrows(DataBuildingException.class,
+		             () -> DATA_TRANSFORMATION_HELPER.transformData(value, columnConfiguration),
+		             "Expected '" + value + "' to be rejected");
 	}
 
 	private static Bundle parse(final String bundle) {

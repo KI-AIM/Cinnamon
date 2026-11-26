@@ -2,12 +2,15 @@ package de.kiaim.cinnamon.platform.processor;
 
 import ca.uhn.fhir.context.BaseRuntimeElementDefinition;
 import ca.uhn.fhir.context.FhirContext;
+import de.kiaim.cinnamon.platform.model.FhirColumn;
 import de.kiaim.cinnamon.platform.model.FhirTable;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Base;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Element;
+import org.hl7.fhir.r4.model.EnumFactory;
+import org.hl7.fhir.r4.model.Enumeration;
 import org.hl7.fhir.r4.model.Narrative;
 import org.hl7.fhir.r4.model.PrimitiveType;
 import org.hl7.fhir.r4.model.Property;
@@ -109,9 +112,10 @@ public class FhirFlattener {
 		final List<Map.Entry<String, ColumnInfo>> sortedColumns =
 				columns.entrySet().stream().sorted(Map.Entry.comparingByValue(ColumnInfo.ORDER)).toList();
 		final List<String> columnNames = sortedColumns.stream().map(Map.Entry::getKey).toList();
-		final List<@Nullable String> fhirTypes = new ArrayList<>(sortedColumns.size());
+		final List<FhirColumn> fhirColumns = new ArrayList<>(sortedColumns.size());
 		for (final Map.Entry<String, ColumnInfo> column : sortedColumns) {
-			fhirTypes.add(column.getValue().fhirType());
+			fhirColumns.add(new FhirColumn(column.getKey(), column.getValue().fhirType(),
+			                               column.getValue().allowedCodes()));
 		}
 
 		final List<List<@Nullable String>> rows = new ArrayList<>(resourceValues.size());
@@ -123,7 +127,7 @@ public class FhirFlattener {
 			rows.add(row);
 		}
 
-		return new FhirTable(columnNames, fhirTypes, rows);
+		return new FhirTable(fhirColumns, rows);
 	}
 
 	/**
@@ -218,7 +222,8 @@ public class FhirFlattener {
 					                              ? resource.getIdElement().getIdPart()
 					                              : value.primitiveValue();
 					if (primitiveValue != null) {
-						columns.putIfAbsent(childPath, new ColumnInfo(childKey, value.fhirType()));
+						columns.putIfAbsent(childPath,
+						                    new ColumnInfo(childKey, value.fhirType(), getAllowedCodes(value)));
 						values.put(childPath, primitiveValue);
 					}
 
@@ -240,10 +245,41 @@ public class FhirFlattener {
 				final List<SegmentKey> childKey = new ArrayList<>(key.size() + 1);
 				childKey.addAll(key);
 				childKey.add(new SegmentKey(properties.size(), NARRATIVE_DIV, -1));
-				columns.putIfAbsent(childPath, new ColumnInfo(childKey, NARRATIVE_TYPE));
+				columns.putIfAbsent(childPath, new ColumnInfo(childKey, NARRATIVE_TYPE, null));
 				values.put(childPath, text);
 			}
 		}
+	}
+
+	/**
+	 * Returns the codes allowed for the given value.
+	 * HAPI represents codes with a required binding as {@link Enumeration} of a Java enum containing all codes
+	 * of the value set. Other codes are represented as {@code CodeType} and are not restricted.
+	 *
+	 * @param value The primitive value.
+	 * @return The allowed codes or null if the value is not restricted.
+	 */
+	@Nullable
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static List<String> getAllowedCodes(final Base value) {
+		if (!(value instanceof Enumeration<?> enumeration) || enumeration.getValue() == null) {
+			return null;
+		}
+		final Enum<?> constant = enumeration.getValue();
+
+		final EnumFactory factory = enumeration.getEnumFactory();
+		final List<String> codes = new ArrayList<>();
+		for (final Enum<?> candidate : constant.getDeclaringClass().getEnumConstants()) {
+			// HAPI enums contain a NULL constant for unknown codes
+			if (candidate.name().equals("NULL")) {
+				continue;
+			}
+			final String code = factory.toCode(candidate);
+			if (code != null) {
+				codes.add(code);
+			}
+		}
+		return codes.isEmpty() ? null : List.copyOf(codes);
 	}
 
 	/**
@@ -451,10 +487,11 @@ public class FhirFlattener {
 	/**
 	 * Information about a column.
 	 *
-	 * @param key      The sort key of the path.
-	 * @param fhirType The FHIR datatype of the values.
+	 * @param key          The sort key of the path.
+	 * @param fhirType     The FHIR datatype of the values.
+	 * @param allowedCodes The codes allowed by a required binding, null if the values are not restricted.
 	 */
-	private record ColumnInfo(List<SegmentKey> key, String fhirType) {
+	private record ColumnInfo(List<SegmentKey> key, String fhirType, @Nullable List<String> allowedCodes) {
 		private static final Comparator<ColumnInfo> ORDER = (a, b) -> {
 			final int length = Math.min(a.key.size(), b.key.size());
 			for (int i = 0; i < length; i++) {

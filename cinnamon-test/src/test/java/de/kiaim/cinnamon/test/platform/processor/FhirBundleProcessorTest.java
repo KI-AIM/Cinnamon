@@ -4,6 +4,8 @@ import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.enumeration.DataType;
+import de.kiaim.cinnamon.model.enumeration.TransformationErrorType;
+import de.kiaim.cinnamon.platform.model.FhirTable;
 import de.kiaim.cinnamon.platform.model.entity.FhirBundleFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
@@ -103,6 +105,28 @@ public class FhirBundleProcessorTest extends ContextRequiredTest {
 		assertEquals(DataType.DATE, dataConfiguration.getColumnConfigurationByColumnName("Patient.birthDate").getType());
 		// The narrative is free text
 		assertEquals(DataType.TEXT, dataConfiguration.getColumnConfigurationByColumnName("Patient.text.div").getType());
+	}
+
+	@Test
+	public void readReportsValuesViolatingFhirConstraints() throws IOException {
+		var bundle = ResourceHelper.loadFhirBundleAsString();
+		var table = fhirBundleProcessor.getTable(bundle, "Patient");
+		var dataConfiguration = fhirBundleProcessor.estimateDataConfiguration(
+				table, DatatypeEstimationAlgorithm.MOST_ESTIMATED).getDataConfiguration();
+
+		// Replace the gender with a value outside the required value set, e.g. partially masked by the anonymization
+		var genderIndex = table.columnNames().indexOf("Patient.gender");
+		var row = new java.util.ArrayList<>(table.rows().get(0));
+		row.set(genderIndex, "femXXX");
+		var invalidTable = new FhirTable(table.columns(), List.of(row));
+
+		var result = assertDoesNotThrow(() -> fhirBundleProcessor.read(invalidTable, dataConfiguration));
+
+		assertEquals(1, result.getTransformationErrors().size());
+		var error = result.getTransformationErrors().get(0).getDataTransformationErrors().get(0);
+		assertEquals(genderIndex, error.getIndex());
+		assertEquals(TransformationErrorType.FORMAT_ERROR, error.getErrorType());
+		assertNull(result.getDataSet().getDataRows().get(0).getData().get(genderIndex).getValue());
 	}
 
 	@Test

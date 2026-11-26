@@ -4,19 +4,24 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration
 import de.kiaim.cinnamon.model.configuration.data.attributes.Configuration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DateFormatConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DateTimeFormatConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataBuilder;
 import de.kiaim.cinnamon.model.data.DateData;
 import de.kiaim.cinnamon.model.data.DateTimeData;
+import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.data.TextData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.DataBuildingException;
+import de.kiaim.cinnamon.platform.model.FhirColumn;
 import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -35,6 +40,16 @@ import java.util.regex.Pattern;
  *     The same length rule as in the estimation for other file types is applied.</li>
  * </ul>
  * Narratives ({@code xhtml}) and {@code markdown} are always free text.
+ * <p>
+ * Constraints of the FHIR datatypes are added as configurations, so that values violating them, e.g. created by the
+ * anonymization or synthesization, are reported as transformation errors instead of creating invalid FHIR:
+ * <ul>
+ *     <li>Codes with a required binding are restricted to the codes of the value set
+ *     ({@link StringPatternConfiguration}).</li>
+ *     <li>{@code positiveInt} and {@code unsignedInt} are restricted to their ranges ({@link RangeConfiguration}).</li>
+ *     <li>Dates, date-times, times and ids stored as strings must match the FHIR format
+ *     ({@link StringPatternConfiguration}).</li>
+ * </ul>
  *
  * @author Daniel Preciado-Marquez
  */
@@ -46,6 +61,34 @@ public final class FhirTypeMapper {
 	public static final String FHIR_DATE_FORMAT = "yyyy-MM-dd";
 
 	/**
+	 * Pattern of FHIR dates, allowing reduced precision. Taken from the FHIR specification.
+	 */
+	public static final String FHIR_DATE_PATTERN =
+			"([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?";
+
+	/**
+	 * Pattern of FHIR date-times, allowing reduced precision. Taken from the FHIR specification.
+	 */
+	public static final String FHIR_DATE_TIME_PATTERN =
+			"([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])" +
+			"(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?";
+
+	/**
+	 * Pattern of FHIR times. Taken from the FHIR specification.
+	 */
+	public static final String FHIR_TIME_PATTERN = "([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?";
+
+	/**
+	 * Pattern of FHIR ids. Taken from the FHIR specification.
+	 */
+	public static final String FHIR_ID_PATTERN = "[A-Za-z0-9\\-\\.]{1,64}";
+
+	/**
+	 * Characters that have to be escaped in a regular expression.
+	 */
+	private static final Pattern REGEX_SPECIAL_CHARACTERS = Pattern.compile("[\\\\^$.|?*+()\\[\\]{}-]");
+
+	/**
 	 * Matches pattern letters for offsets in a date-time format, ignoring quoted literals.
 	 */
 	private static final Pattern OFFSET_PATTERN_LETTERS = Pattern.compile("[xXZO]");
@@ -54,30 +97,51 @@ public final class FhirTypeMapper {
 	}
 
 	/**
-	 * Derives the column configuration for a column of the given FHIR datatype.
+	 * Derives the column configuration for a column of the given FHIR datatype without restricted codes.
 	 * Index, name and scale are not set.
 	 *
 	 * @param fhirType The FHIR datatype, e.g. {@code date} or {@code decimal}. Null if unknown.
-	 * @param values   The non-empty values of the column. Only inspected for date columns.
+	 * @param values   The non-empty values of the column. Only inspected for date and string columns.
 	 * @return The column configuration.
 	 */
 	public static ColumnConfiguration toColumnConfiguration(@Nullable final String fhirType,
 	                                                        final List<String> values) {
+		return toColumnConfiguration(new FhirColumn("", fhirType), values);
+	}
+
+	/**
+	 * Derives the column configuration for the given column.
+	 * Index, name and scale are not set.
+	 *
+	 * @param column The column containing the FHIR datatype and the allowed codes.
+	 * @param values The non-empty values of the column. Only inspected for date and string columns.
+	 * @return The column configuration.
+	 */
+	public static ColumnConfiguration toColumnConfiguration(final FhirColumn column, final List<String> values) {
+		final String fhirType = column.fhirType();
 		if (fhirType == null) {
 			return columnConfiguration(DataType.STRING);
 		}
 
+		final List<String> allowedCodes = column.allowedCodes();
 		return switch (fhirType) {
 			case "boolean" -> columnConfiguration(DataType.BOOLEAN);
-			case "integer", "positiveInt", "unsignedInt" -> columnConfiguration(DataType.INTEGER);
+			case "integer" -> columnConfiguration(DataType.INTEGER);
+			case "positiveInt" -> columnConfiguration(DataType.INTEGER, range(1));
+			case "unsignedInt" -> columnConfiguration(DataType.INTEGER, range(0));
 			case "decimal" -> columnConfiguration(DataType.DECIMAL);
 			case "date" -> allFullDates(values)
 			               ? columnConfiguration(DataType.DATE, new DateFormatConfiguration(FHIR_DATE_FORMAT))
-			               : columnConfiguration(DataType.STRING);
+			               : columnConfiguration(DataType.STRING, pattern(FHIR_DATE_PATTERN));
 			case "dateTime", "instant" -> mapDateTime(values);
+			case "time" -> columnConfiguration(DataType.STRING, pattern(FHIR_TIME_PATTERN));
+			case "id" -> columnConfiguration(DataType.STRING, pattern(FHIR_ID_PATTERN));
+			case "code" -> allowedCodes != null
+			               ? columnConfiguration(DataType.STRING, pattern(toAlternatives(allowedCodes)))
+			               : columnConfiguration(DataType.STRING);
 			case "xhtml", "markdown" -> columnConfiguration(DataType.TEXT);
 			case "string" -> isFreeText(values) ? columnConfiguration(DataType.TEXT) : columnConfiguration(DataType.STRING);
-			// code, id, uri, url, canonical, oid, uuid, base64Binary, time, integer64, ...
+			// uri, url, canonical, oid, uuid, base64Binary, integer64, ...
 			default -> columnConfiguration(DataType.STRING);
 		};
 	}
@@ -123,7 +187,32 @@ public final class FhirTypeMapper {
 			}
 		}
 
-		return columnConfiguration(DataType.STRING);
+		return columnConfiguration(DataType.STRING, pattern(FHIR_DATE_TIME_PATTERN));
+	}
+
+	/**
+	 * Creates a range configuration for integers from the given minimum without an upper limit.
+	 */
+	private static RangeConfiguration range(final int minValue) {
+		return new RangeConfiguration(new IntegerData(minValue), new IntegerData(Integer.MAX_VALUE));
+	}
+
+	/**
+	 * Creates a pattern configuration matching the whole value.
+	 */
+	private static StringPatternConfiguration pattern(final String pattern) {
+		return new StringPatternConfiguration("^(" + pattern + ")$");
+	}
+
+	/**
+	 * Creates a regular expression matching exactly one of the given codes.
+	 */
+	private static String toAlternatives(final List<String> codes) {
+		final List<String> escapedCodes = new ArrayList<>(codes.size());
+		for (final String code : codes) {
+			escapedCodes.add(REGEX_SPECIAL_CHARACTERS.matcher(code).replaceAll("\\\\$0"));
+		}
+		return String.join("|", escapedCodes);
 	}
 
 	/**

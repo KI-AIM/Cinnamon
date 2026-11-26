@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataRow;
+import de.kiaim.cinnamon.model.enumeration.TransformationErrorType;
 import de.kiaim.cinnamon.model.exception.DataBuildingException;
 import de.kiaim.cinnamon.model.helper.DataTransformationHelper;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
@@ -62,21 +63,31 @@ public class DataRowTransformer {
 		// Process every row
 		boolean errorInRow = false;
 
-		List<Data> transformedCol = new ArrayList<>();
+		List<Data> transformedCol = new ArrayList<>(row.size());
 
 		// Transformation error that was thrown inside the Data builders
 		DataRowTransformationError newError = new DataRowTransformationError(rowIndex);
+
+		final @Nullable ColumnConfiguration[] columnConfigurations = getColumnConfigurationsByIndex(configuration);
 
 		for (int colIndex = 0; colIndex < row.size(); colIndex++) {
 			// Process every column value in a row
 			String col = row.get(colIndex);
 
-			List<ColumnConfiguration> matchingColumnConfigurations =
-					getColumnConfigurationForIndex(configuration.getConfigurations(), colIndex);
-
 			// Every index should appear exactly once
-			assert !matchingColumnConfigurations.isEmpty();
-			ColumnConfiguration columnConfiguration = matchingColumnConfigurations.get(0);
+			final ColumnConfiguration columnConfiguration = columnConfigurations[colIndex];
+			if (columnConfiguration == null) {
+				throw new IllegalArgumentException(
+						"The data configuration contains no column with index " + colIndex + "!");
+			}
+
+			// Handle missing values without creating an exception, as they can be very frequent
+			if (dataTransformationHelper.isValueEmpty(col)) {
+				newError.addError(new DataTransformationError(colIndex, TransformationErrorType.MISSING_VALUE, col));
+				errorInRow = true;
+				transformedCol.add(this.dataTransformationHelper.transformNullValue(columnConfiguration));
+				continue;
+			}
 
 			try {
 				Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
@@ -101,13 +112,22 @@ public class DataRowTransformer {
 		}
 	}
 
-	private List<ColumnConfiguration> getColumnConfigurationForIndex(
-			List<ColumnConfiguration> configurations,
-			int index
-	) {
-		return configurations
-				.stream()
-				.filter(it -> it.getIndex() == index)
-				.toList();
+	/**
+	 * Maps the column configurations to their index.
+	 *
+	 * @param configuration The data configuration.
+	 * @return Array containing the column configuration at the position of its index.
+	 * Null at positions for which no column configuration exists.
+	 */
+	private @Nullable ColumnConfiguration[] getColumnConfigurationsByIndex(final DataConfiguration configuration) {
+		final List<ColumnConfiguration> configurations = configuration.getConfigurations();
+		final @Nullable ColumnConfiguration[] result = new ColumnConfiguration[configurations.size()];
+		for (final ColumnConfiguration columnConfiguration : configurations) {
+			final int index = columnConfiguration.getIndex();
+			if (index >= 0 && index < result.length && result[index] == null) {
+				result[index] = columnConfiguration;
+			}
+		}
+		return result;
 	}
 }

@@ -1,9 +1,7 @@
-package de.kiaim.cinnamon.platform.processor;
+package de.kiaim.cinnamon.platform.helper.fhir;
 
 import ca.uhn.fhir.context.BaseRuntimeElementDefinition;
 import ca.uhn.fhir.context.FhirContext;
-import de.kiaim.cinnamon.platform.model.FhirColumn;
-import de.kiaim.cinnamon.platform.model.FhirTable;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Base;

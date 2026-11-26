@@ -1,7 +1,6 @@
-package de.kiaim.cinnamon.platform.processor;
+package de.kiaim.cinnamon.platform.helper.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
-import de.kiaim.cinnamon.platform.model.FhirTable;
 import de.unimuenster.imi.fhir.columns_parser.Column;
 import de.unimuenster.imi.fhir.transform.BundleTransformer;
 import de.unimuenster.imi.fhir.transform.CsvToFhirTransformer;

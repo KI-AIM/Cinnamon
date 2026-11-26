@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.platform.processor;
+package de.kiaim.cinnamon.platform.helper.fhir;
 
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.Configuration;
@@ -14,7 +14,6 @@ import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.data.TextData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.DataBuildingException;
-import de.kiaim.cinnamon.platform.model.FhirColumn;
 import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;

@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.platform.model;
+package de.kiaim.cinnamon.platform.helper.fhir;
 
 import org.jspecify.annotations.Nullable;
 

@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.platform.processor;
+package de.kiaim.cinnamon.platform.helper.fhir;
 
 import org.hl7.fhir.utilities.xhtml.NodeType;
 import org.hl7.fhir.utilities.xhtml.XhtmlNode;

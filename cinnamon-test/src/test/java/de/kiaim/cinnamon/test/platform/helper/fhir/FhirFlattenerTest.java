@@ -1,4 +1,4 @@
-package de.kiaim.cinnamon.test.platform.processor;
+package de.kiaim.cinnamon.test.platform.helper.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
 import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration;
@@ -9,10 +9,10 @@ import de.kiaim.cinnamon.model.data.DecimalData;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.exception.DataBuildingException;
 import de.kiaim.cinnamon.model.helper.DataTransformationHelper;
-import de.kiaim.cinnamon.platform.model.FhirColumn;
-import de.kiaim.cinnamon.platform.model.FhirTable;
-import de.kiaim.cinnamon.platform.processor.FhirFlattener;
-import de.kiaim.cinnamon.platform.processor.FhirTypeMapper;
+import de.kiaim.cinnamon.platform.helper.fhir.FhirColumn;
+import de.kiaim.cinnamon.platform.helper.fhir.FhirTable;
+import de.kiaim.cinnamon.platform.helper.fhir.FhirFlattener;
+import de.kiaim.cinnamon.platform.helper.fhir.FhirTypeMapper;
 import de.kiaim.cinnamon.test.util.ResourceHelper;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Resource;

@@ -1,5 +1,8 @@
 package de.kiaim.cinnamon.test.platform.processor;
 
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.model.data.Data;
 import de.kiaim.cinnamon.model.data.DataSet;
@@ -8,6 +11,7 @@ import de.kiaim.cinnamon.model.enumeration.TransformationErrorType;
 import de.kiaim.cinnamon.platform.model.FhirTable;
 import de.kiaim.cinnamon.platform.model.entity.FhirBundleFileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
+import de.kiaim.cinnamon.platform.model.entity.FileEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
@@ -105,6 +109,71 @@ public class FhirBundleProcessorTest extends ContextRequiredTest {
 		assertEquals(DataType.DATE, dataConfiguration.getColumnConfigurationByColumnName("Patient.birthDate").getType());
 		// The narrative is free text
 		assertEquals(DataType.TEXT, dataConfiguration.getColumnConfigurationByColumnName("Patient.text.div").getType());
+	}
+
+	@Test
+	public void analyzeFileStoresDerivedDataConfiguration() throws IOException {
+		var bundle = ResourceHelper.loadFhirBundleAsString();
+		var fileConfiguration = new FhirBundleFileConfigurationEntity(new FhirBundleFileConfiguration("Patient"));
+
+		assertDoesNotThrow(() -> fhirBundleProcessor.analyzeFile(new ByteArrayInputStream(bundle.getBytes()),
+		                                                         fileConfiguration));
+		var stored = fileConfiguration.getDerivedDataConfiguration();
+		assertNotNull(stored);
+		assertEquals(13, stored.getConfigurations().size());
+
+		// The stored configuration is used, so the file is not read again
+		var unreadable = new ByteArrayInputStream("not a bundle".getBytes());
+		assertEquals(13, assertDoesNotThrow(() -> fhirBundleProcessor.getNumberColumns(unreadable, fileConfiguration)));
+		var estimation = assertDoesNotThrow(
+				() -> fhirBundleProcessor.estimateDataConfiguration(unreadable, fileConfiguration,
+				                                                    DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+		assertEquals(stored, estimation.getDataConfiguration());
+
+		var file = new FileEntity();
+		file.setFile(new LobWrapperEntity("not a bundle"));
+		file.setFileConfiguration(fileConfiguration);
+		assertDoesNotThrow(() -> fhirBundleProcessor.validateFileAndConfig(file, estimation.getDataConfiguration()));
+
+		// The estimation is a copy, modifications are not stored in the file configuration
+		estimation.getDataConfiguration().getConfigurations().get(0).setType(DataType.INTEGER);
+		assertEquals(DataType.STRING, stored.getConfigurations().get(0).getType());
+	}
+
+	@Test
+	public void analyzeFileWithoutResourceType() throws IOException {
+		var bundle = ResourceHelper.loadFhirBundleAsString();
+		var fileConfiguration = new FhirBundleFileConfigurationEntity(new FhirBundleFileConfiguration());
+		fileConfiguration.setDerivedDataConfiguration(new DataConfiguration());
+
+		assertDoesNotThrow(() -> fhirBundleProcessor.analyzeFile(new ByteArrayInputStream(bundle.getBytes()),
+		                                                         fileConfiguration));
+
+		assertNull(fileConfiguration.getDerivedDataConfiguration());
+	}
+
+	@Test
+	public void storedDataConfigurationKeepsConstraints() {
+		// numberOfSeries is an unsignedInt, the status a code with a required binding
+		var bundle = """
+				{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"ImagingStudy","status":"available",
+				  "subject":{"reference":"Patient/1"},"numberOfSeries":2}}]}""";
+		var fileConfiguration = new FhirBundleFileConfigurationEntity(new FhirBundleFileConfiguration("ImagingStudy"));
+		assertDoesNotThrow(() -> fhirBundleProcessor.analyzeFile(new ByteArrayInputStream(bundle.getBytes()),
+		                                                         fileConfiguration));
+
+		var estimation = assertDoesNotThrow(
+				() -> fhirBundleProcessor.estimateDataConfiguration(new ByteArrayInputStream(new byte[0]),
+				                                                    fileConfiguration,
+				                                                    DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+
+		var numberOfSeries = estimation.getDataConfiguration()
+		                               .getColumnConfigurationByColumnName("ImagingStudy.numberOfSeries");
+		var range = numberOfSeries.getConfiguration(RangeConfiguration.class);
+		assertNotNull(range);
+		assertEquals(0, range.getMinValue().asInteger());
+		var status = estimation.getDataConfiguration().getColumnConfigurationByColumnName("ImagingStudy.status");
+		assertNotNull(status.getConfiguration(StringPatternConfiguration.class));
 	}
 
 	@Test

@@ -8,14 +8,14 @@ import lombok.Setter;
 
 /**
  * Entity class for FHIR NDJSON file configuration.
- * The import of NDJSON files does not require any specific configuration, so this class is empty.
+ * The import of NDJSON files does not require any configuration by the user.
  *
  * @author Daniel Preciado-Marquez
  */
 @Entity
 @DiscriminatorValue(value = FileType.Values.FHIR_NDJSON)
 @Getter @Setter
-public class FhirNdjsonFileConfigurationEntity extends FileConfigurationEntity {
+public class FhirNdjsonFileConfigurationEntity extends FhirFileConfigurationEntity {
 
 	/**
 	 * Default constructor for Spring.

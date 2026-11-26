@@ -16,7 +16,7 @@ import org.jspecify.annotations.Nullable;
 @Entity
 @DiscriminatorValue(value = FileType.Values.FHIR_BUNDLE)
 @Getter @Setter
-public class FhirBundleFileConfigurationEntity extends FileConfigurationEntity {
+public class FhirBundleFileConfigurationEntity extends FhirFileConfigurationEntity {
 
 	/**
 	 * The resource type to export from the bundle.

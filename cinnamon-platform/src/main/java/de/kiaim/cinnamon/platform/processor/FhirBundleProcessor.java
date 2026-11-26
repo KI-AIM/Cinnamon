@@ -6,6 +6,7 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.ColumnConfiguration
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataRow;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.config.SerializationConfig;
 import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
@@ -23,10 +24,12 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Resource;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -45,10 +48,13 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 
 	private final FhirContext fhirContext;
 	private final FhirFlattener fhirFlattener;
+	private final JsonMapper jsonMapper;
 
-	public FhirBundleProcessor(final FhirContext fhirContext, final FhirFlattener fhirFlattener) {
+	public FhirBundleProcessor(final FhirContext fhirContext, final FhirFlattener fhirFlattener,
+	                           final SerializationConfig serializationConfig) {
 		this.fhirContext = fhirContext;
 		this.fhirFlattener = fhirFlattener;
+		this.jsonMapper = serializationConfig.jsonMapper();
 	}
 
 	/**
@@ -96,11 +102,31 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 	public void validateFileAndConfig(FileEntity file, DataConfiguration dataConfiguration)
 			throws BadDataConfigurationException, InternalIOException {
 		final var fileData = Objects.requireNonNull(file.getFile());
-		final var fileConfiguration = Objects.requireNonNull(file.getFileConfiguration());
+		final var fileConfiguration = (FhirBundleFileConfigurationEntity) Objects.requireNonNull(
+				file.getFileConfiguration());
 
-		final List<String> expectedColumns = getAttributeNames(fileData.getLobStream(), fileConfiguration);
+		final List<String> expectedColumns = getDerivedDataConfiguration(
+				fileConfiguration, () -> getTable(fileData.getLobStream(), fileConfiguration)).getColumnNames();
 
 		compareColumnNames(dataConfiguration, expectedColumns);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * Flattens the bundle and stores the derived data configuration in the file configuration.
+	 */
+	@Override
+	public void analyzeFile(final InputStream data, final FileConfigurationEntity fileConfiguration)
+			throws InternalIOException {
+		final FhirBundleFileConfigurationEntity fhirFileConfiguration = (FhirBundleFileConfigurationEntity) fileConfiguration;
+		if (fhirFileConfiguration.getResourceType() == null) {
+			// The resource type can be null after the estimation
+			fhirFileConfiguration.setDerivedDataConfiguration(null);
+			return;
+		}
+
+		fhirFileConfiguration.setDerivedDataConfiguration(
+				deriveDataConfiguration(getTable(data, fhirFileConfiguration)));
 	}
 
 	/**
@@ -115,7 +141,8 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 			return 0;
 		}
 
-		return getTable(data, fhirFileConfiguration).columnNames().size();
+		return getDerivedDataConfiguration(fhirFileConfiguration, () -> getTable(data, fhirFileConfiguration))
+				.getConfigurations().size();
 	}
 
 	/**
@@ -157,8 +184,54 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 			final FileConfigurationEntity fileConfiguration,
 			final DatatypeEstimationAlgorithm algorithm
 	) throws InternalIOException {
-		return estimateDataConfiguration(getTable(data, (FhirBundleFileConfigurationEntity) fileConfiguration),
-		                                 algorithm);
+		final var fhirFileConfiguration = (FhirBundleFileConfigurationEntity) fileConfiguration;
+		return toEstimation(getDerivedDataConfiguration(fhirFileConfiguration,
+		                                                () -> getTable(data, fhirFileConfiguration)));
+	}
+
+	/**
+	 * Returns the data configuration derived from the FHIR datatypes.
+	 * Uses the configuration stored in the file configuration by {@link #analyzeFile} if available,
+	 * so the file does not have to be flattened again. Otherwise, the given table is flattened.
+	 *
+	 * @param fileConfiguration The file configuration possibly containing the derived configuration.
+	 * @param tableSupplier     Supplies the flattened table if no configuration is stored.
+	 * @return A copy of the derived data configuration, which can be modified.
+	 * @throws InternalIOException If flattening the file failed.
+	 */
+	public DataConfiguration getDerivedDataConfiguration(final FhirFileConfigurationEntity fileConfiguration,
+	                                                     final FhirTableSupplier tableSupplier)
+			throws InternalIOException {
+		final DataConfiguration stored = fileConfiguration.getDerivedDataConfiguration();
+		if (stored == null) {
+			return deriveDataConfiguration(tableSupplier.get());
+		}
+
+		// Copy the stored configuration, so modifications of the caller are not persisted in the file configuration
+		return jsonMapper.readValue(jsonMapper.writeValueAsString(stored), DataConfiguration.class);
+	}
+
+	/**
+	 * Derives the data configuration for the given table from the FHIR datatypes of the columns.
+	 *
+	 * @param table The flattened FHIR resources.
+	 * @return The data configuration.
+	 */
+	public DataConfiguration deriveDataConfiguration(final FhirTable table) {
+		return estimateDataConfiguration(table, DatatypeEstimationAlgorithm.MOST_ESTIMATED).getDataConfiguration();
+	}
+
+	/**
+	 * Wraps the derived data configuration into an estimation.
+	 * The confidence is 1 for all columns, as the data types are fixed by the FHIR specification.
+	 *
+	 * @param dataConfiguration The derived data configuration.
+	 * @return The estimation.
+	 */
+	public DataConfigurationEstimation toEstimation(final DataConfiguration dataConfiguration) {
+		final float[] confidences = new float[dataConfiguration.getConfigurations().size()];
+		Arrays.fill(confidences, 1.0f);
+		return new DataConfigurationEstimation(dataConfiguration, confidences);
 	}
 
 	/**
@@ -248,19 +321,6 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 	}
 
 	/**
-	 * Returns the column names containing the FHIR paths from the bundle of the specified resource.
-	 *
-	 * @param data              The FHIR bundle.
-	 * @param fileConfiguration The file configuration.
-	 * @return List of column names.
-	 * @throws InternalIOException If reading the FHIR bundle failed.
-	 */
-	public List<String> getAttributeNames(final InputStream data,
-	                                      final FileConfigurationEntity fileConfiguration) throws InternalIOException {
-		return getTable(data, (FhirBundleFileConfigurationEntity) fileConfiguration).columnNames();
-	}
-
-	/**
 	 * Compares the column names of the given DataConfiguration with the given expected ones.
 	 * Throws an exception if they do not match.
 	 *
@@ -346,5 +406,17 @@ public class FhirBundleProcessor extends CommonDataProcessor implements DataProc
 		}
 
 		return getTable(content, fileConfiguration.getResourceType());
+	}
+
+	/**
+	 * Supplies the flattened table of a FHIR file.
+	 */
+	@FunctionalInterface
+	public interface FhirTableSupplier {
+		/**
+		 * @return The flattened table.
+		 * @throws InternalIOException If reading the file failed.
+		 */
+		FhirTable get() throws InternalIOException;
 	}
 }

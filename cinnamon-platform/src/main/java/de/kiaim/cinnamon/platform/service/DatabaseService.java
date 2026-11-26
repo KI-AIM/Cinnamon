@@ -269,6 +269,7 @@ public class DatabaseService {
 
 		// Update the file-related properties
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
+		dataProcessor.analyzeFile(file.getLobStream(), fileConfiguration);
 		final int numberOfAttributes = dataProcessor.getNumberColumns(file.getLobStream(), fileConfiguration);
 		fileEntity.setNumberOfAttributes(numberOfAttributes);
 	}

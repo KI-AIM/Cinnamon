@@ -90,16 +90,32 @@ public class FhirNdjsonProcessor implements DataProcessor {
 	public void validateFileAndConfig(FileEntity file, DataConfiguration dataConfiguration)
 			throws BadDataConfigurationException, InternalIOException {
 		final var fileData = Objects.requireNonNull(file.getFile());
+		final var fileConfiguration = (FhirNdjsonFileConfigurationEntity) Objects.requireNonNull(
+				file.getFileConfiguration());
 
-		final List<String> expectedColumns = getTable(fileData.getLobStream()).columnNames();
+		final List<String> expectedColumns = fhirBundleProcessor.getDerivedDataConfiguration(
+				fileConfiguration, () -> getTable(fileData.getLobStream())).getColumnNames();
 
 		fhirBundleProcessor.compareColumnNames(dataConfiguration, expectedColumns);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * Flattens the resources and stores the derived data configuration in the file configuration.
+	 */
+	@Override
+	public void analyzeFile(final InputStream data, final FileConfigurationEntity fileConfiguration)
+			throws InternalIOException {
+		((FhirNdjsonFileConfigurationEntity) fileConfiguration).setDerivedDataConfiguration(
+				fhirBundleProcessor.deriveDataConfiguration(getTable(data)));
 	}
 
 	@Override
 	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration
 	) throws InternalIOException {
-		return getTable(data).columnNames().size();
+		return fhirBundleProcessor.getDerivedDataConfiguration((FhirNdjsonFileConfigurationEntity) fileConfiguration,
+		                                                       () -> getTable(data))
+		                          .getConfigurations().size();
 	}
 
 	@Override
@@ -114,7 +130,8 @@ public class FhirNdjsonProcessor implements DataProcessor {
 	                                                             final FileConfigurationEntity fileConfiguration,
 	                                                             final DatatypeEstimationAlgorithm algorithm
 	) throws InternalIOException {
-		return fhirBundleProcessor.estimateDataConfiguration(getTable(data), algorithm);
+		return fhirBundleProcessor.toEstimation(fhirBundleProcessor.getDerivedDataConfiguration(
+				(FhirNdjsonFileConfigurationEntity) fileConfiguration, () -> getTable(data)));
 	}
 
 	@Override

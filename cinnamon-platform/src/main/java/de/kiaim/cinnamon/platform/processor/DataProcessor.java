@@ -63,6 +63,20 @@ public interface DataProcessor {
 	}
 
 	/**
+	 * Analyzes the file after the file or the file configuration has been stored.
+	 * Implementations can derive metadata that is expensive to compute and store it in the file configuration,
+	 * so it can be reused by the other methods instead of reading the whole file again.
+	 * Called before {@link #getNumberColumns(InputStream, FileConfigurationEntity)}.
+	 *
+	 * @param data              The raw data InputStream.
+	 * @param fileConfiguration Configuration describing the format of the data. Can be modified.
+	 * @throws InternalIOException If reading the data failed.
+	 */
+	default void analyzeFile(InputStream data, FileConfigurationEntity fileConfiguration)
+			throws InternalIOException {
+	}
+
+	/**
 	 * Returns the number of columns in the given data.
 	 * This method might be called directly after the estimation.
 	 * Implementations must be able to handle the value returned by {@link #estimateFileConfiguration(LobWrapperEntity, FileCompatibilityEntity)}.

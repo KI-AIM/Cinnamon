@@ -6,7 +6,6 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.DateFormatConfigura
 import de.kiaim.cinnamon.model.configuration.data.attributes.DateTimeFormatConfiguration;
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
-import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
@@ -29,16 +28,16 @@ import java.time.format.DateTimeFormatter;
 import de.kiaim.cinnamon.model.configuration.data.file.XlsxFileConfiguration;
 import org.dhatim.fastexcel.Workbook;
 import org.dhatim.fastexcel.Worksheet;
-import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
-import org.dhatim.fastexcel.reader.Sheet;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -67,15 +66,26 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor 
         }
     }
 
+	/**
+	 * {@inheritDoc}
+	 * Only reads the first two rows to estimate if the file contains a header.
+	 */
 	@Override
 	public FileConfigurationEstimation estimateFileConfiguration(final LobWrapperEntity data,
 	                                                             final FileCompatibilityEntity fileCompatibility)
 			throws InternalIOException {
-		final List<List<String>> records = getRecords(data.getLobStream(), null);
+		final List<List<@Nullable String>> firstRows = withRows(
+				data.getLobStream(), rows -> rows.limit(2).map(row -> getRawValues(row, getWidth(row))).toList());
 
-		final var xlsxFileConfiguration= estimateXlsxFileConfiguration(records);
-		final var fileConfiguration =  new FileConfiguration();
+		final var xlsxFileConfiguration = new XlsxFileConfiguration();
+		// Keep the default if there are less than two rows to compare
+		if (firstRows.size() >= 2) {
+			final int width = Math.max(firstRows.get(0).size(), firstRows.get(1).size());
+			xlsxFileConfiguration.setHasHeader(estimateHasHeader(toHeaderValues(firstRows.get(0), width),
+			                                                     toHeaderValues(firstRows.get(1), width)));
+		}
 
+		final var fileConfiguration = new FileConfiguration();
 		fileConfiguration.setFileType(FileType.XLSX);
 		fileConfiguration.setXlsxFileConfiguration(xlsxFileConfiguration);
 
@@ -84,62 +94,69 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor 
 
 	/**
 	 * {@inheritDoc}
+	 * The number of columns is the width of the widest row, as rows end at their last non-empty cell.
 	 */
 	@Override
-    public int getNumberColumns(InputStream data, FileConfigurationEntity fileConfiguration) throws InternalIOException {
-        List<List<String>> rows = getRecords(data, null);
-        return rows.size();
-    }
+	public int getNumberColumns(final InputStream data, final FileConfigurationEntity fileConfiguration)
+			throws InternalIOException {
+		return withRows(data, XlsxProcessor::getNumberColumns);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public TransformationResult read(InputStream data, FileConfigurationEntity fileConfiguration,
-                                     DataConfiguration configuration) throws BadDatasetException, InternalIOException {
+	/**
+	 * {@inheritDoc}
+	 * Rows with fewer cells than configured columns are padded with missing values.
+	 */
+	@Override
+	public TransformationResult read(final InputStream data, final FileConfigurationEntity fileConfiguration,
+	                                 final DataConfiguration configuration)
+			throws BadDatasetException, InternalIOException {
+		final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
 
-        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
-	    List<List<String>> rows = getRecords(data, configuration);
+		return withRows(data, rows -> {
+			final Iterator<Row> rowIterator = rows.iterator();
+			if (rowIterator.hasNext() && xlsxFileConfiguration.getHasHeader()) {
+				rowIterator.next();
+			}
 
-        if (!rows.isEmpty() && xlsxFileConfiguration.getHasHeader()) {
-            rows.remove(0);
-        }
+			final List<DataRow> dataRows = new ArrayList<>();
+			final List<DataRowTransformationError> errors = new ArrayList<>();
+			int rowIndex = 0;
+			while (rowIterator.hasNext()) {
+				transformRow(getConvertedValues(rowIterator.next(), configuration), rowIndex, configuration,
+				             dataRows, errors);
+				rowIndex++;
+			}
 
+			return new TransformationResult(new DataSet(dataRows, configuration), errors);
+		});
+	}
 
-        final List<DataRow> dataRows = new ArrayList<>();
-        final List<DataRowTransformationError> errors = new ArrayList<>();
-        int rowIndex = 0;
+	/**
+	 * Converts the cells of the row based on the configuration.
+	 * The row is padded with null values to the number of configured columns.
+	 * Non-empty cells beyond the configured columns are kept as raw values,
+	 * so the row is reported as containing too many values.
+	 *
+	 * @param row           The row.
+	 * @param configuration The data configuration.
+	 * @return The converted values.
+	 */
+	private List<@Nullable String> getConvertedValues(final Row row, final DataConfiguration configuration) {
+		final List<ColumnConfiguration> columnConfigurations = configuration.getConfigurations();
+		final int width = Math.max(columnConfigurations.size(), getWidth(row));
 
-        for (List<String> row : rows) {
-            transformRow(row, rowIndex, configuration, dataRows, errors);
-            rowIndex += 1;
-        }
-
-        return new TransformationResult(new DataSet(dataRows, configuration), errors);
-    }
-
-    private List<List<String>> transformSheetToRows(Sheet sheet, DataConfiguration configuration) {
-        List<List<String>> convertedRows = new ArrayList<>();
-
-        try (Stream<Row> rows = sheet.openStream()) {
-            rows.forEach(r -> {
-                List<String> convertedRow = new ArrayList<>();
-
-                try (Stream<Cell> cells = r.stream()) {
-
-                    for (int i = 0; i < r.getCellCount(); i++) {
-                         ColumnConfiguration columnConfiguration = configuration.getConfigurations().get(i);
-
-                        convertedRow.add(getConvertedCellValue(r, i, columnConfiguration));
-                    }
-                }
-                convertedRows.add(convertedRow);
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return convertedRows;
-    }
+		final List<@Nullable String> values = new ArrayList<>(width);
+		for (int i = 0; i < width; i++) {
+			if (i >= row.getCellCount()) {
+				values.add(null);
+			} else if (i < columnConfigurations.size()) {
+				values.add(getConvertedCellValue(row, i, columnConfigurations.get(i)));
+			} else {
+				values.add(row.getCellRawValue(i).orElse(null));
+			}
+		}
+		return values;
+	}
 
     private @Nullable String getConvertedCellValue(Row r, int index, ColumnConfiguration columnConfiguration) {
 
@@ -205,36 +222,40 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor 
     }
 
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public DataConfigurationEstimation estimateDataConfiguration(InputStream data,
-                                                                 FileConfigurationEntity fileConfiguration,
-                                                                 final DatatypeEstimationAlgorithm algorithm) throws InternalIOException {
-        final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
-	    List<List<String>> rows = getRecords(data, null);
+	/**
+	 * {@inheritDoc}
+	 * Reads the file twice: once for determining the number of columns and once for collecting the samples,
+	 * which stops as soon as enough samples are available.
+	 */
+	@Override
+	public DataConfigurationEstimation estimateDataConfiguration(final InputStream data,
+	                                                             final FileConfigurationEntity fileConfiguration,
+	                                                             final DatatypeEstimationAlgorithm algorithm)
+			throws InternalIOException {
+		final XlsxFileConfigurationEntity xlsxFileConfiguration = (XlsxFileConfigurationEntity) fileConfiguration;
+		final byte[] content = readAllBytes(data);
 
-        if (rows.isEmpty()) {
-            return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
-        }
+		final int numberColumns = withRows(new ByteArrayInputStream(content), XlsxProcessor::getNumberColumns);
+		if (numberColumns == 0) {
+			return new DataConfigurationEstimation(new DataConfiguration(), new float[0]);
+		}
 
-        final int numberColumns;
-        final List<String> columnNames;
-        final Iterator<List<String>> rowIterator = rows.iterator();
+		return withRows(new ByteArrayInputStream(content), rows -> {
+			final Iterator<List<@Nullable String>> rowIterator =
+					rows.map(row -> getRawValues(row, numberColumns)).iterator();
 
-        if (xlsxFileConfiguration.getHasHeader()) {
-            columnNames = normalizeColumnNames(rows.get(0).toArray(new String[0]));
-            numberColumns = columnNames.size();
-            rowIterator.next();
-        } else {
-            numberColumns = rows.get(0).size();
-            columnNames = Collections.nCopies(numberColumns, "");
-        }
+			final List<String> columnNames;
+			if (xlsxFileConfiguration.getHasHeader() && rowIterator.hasNext()) {
+				columnNames = normalizeColumnNames(
+						toHeaderValues(rowIterator.next(), numberColumns).toArray(new String[0]));
+			} else {
+				columnNames = Collections.nCopies(numberColumns, "");
+			}
 
-        List<List<String>> samples = getAttributeSamples(rowIterator, numberColumns);
-        return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
-    }
+			final List<List<String>> samples = getAttributeSamples(rowIterator, numberColumns);
+			return estimateDataConfiguration(samples, algorithm, numberColumns, columnNames);
+		});
+	}
 
     /**
      * {@inheritDoc}
@@ -308,64 +329,88 @@ public class XlsxProcessor extends CommonDataProcessor implements DataProcessor 
     }
 
 	/**
-	 * Reads the XLSX data into a nested list.
-	 * Converts the values based on the given configuration.
-	 * If the configuration is null, parses all values as strings.
+	 * Opens the first sheet of the XLSX file and applies the given function to the stream of its rows.
+	 * The rows are read lazily, so functions that do not consume all rows do not read the whole sheet.
 	 *
-	 * @param data          Stream containing the XLSX file.
-	 * @param configuration Configuration for parsing the values to the right data type.
-	 * @return Records of the XLSX file.
+	 * @param data     Stream containing the XLSX file.
+	 * @param function The function processing the rows.
+	 * @param <T>      The result type.
+	 * @param <E>      Exception thrown by the function.
+	 * @return The result of the function.
 	 * @throws InternalIOException If reading the XLSX file failed.
+	 * @throws E                   If the function failed.
 	 */
-	private List<List<String>> getRecords(final InputStream data, @Nullable DataConfiguration configuration) throws InternalIOException {
-        final List<List<String>> records;
+	private static <T, E extends Exception> T withRows(final InputStream data, final RowsFunction<T, E> function)
+			throws InternalIOException, E {
+		try (final InputStream is = data;
+		     final ReadableWorkbook workbook = new ReadableWorkbook(is);
+		     final Stream<Row> rows = workbook.getFirstSheet().openStream()) {
+			return function.apply(rows);
+		} catch (final IOException | UncheckedIOException e) {
+			throw new InternalIOException(InternalIOException.XLSX_READING, "Failed to read the XLSX file", e);
+		}
+	}
 
-		try(final InputStream is = data; final ReadableWorkbook wb = new ReadableWorkbook(is)) {
-			final Sheet sheet = wb.getFirstSheet();
+	/**
+	 * Returns the number of columns, which is the width of the widest row.
+	 */
+	private static int getNumberColumns(final Stream<Row> rows) {
+		return rows.mapToInt(XlsxProcessor::getWidth).max().orElse(0);
+	}
 
-			if (configuration == null) {
-				configuration = getStringDataConfiguration(sheet);
+	/**
+	 * Returns the width of the row, i.e. the index of the last non-empty cell plus one.
+	 * Rows can end before the last column if the trailing cells are empty.
+	 */
+	private static int getWidth(final Row row) {
+		for (int i = row.getCellCount() - 1; i >= 0; i--) {
+			final Optional<String> value = row.getCellRawValue(i);
+			if (value.isPresent() && !value.get().isEmpty()) {
+				return i + 1;
 			}
+		}
+		return 0;
+	}
 
-			records = transformSheetToRows(sheet, configuration);
+	/**
+	 * Returns the raw values of the row, padded with null values to the given width.
+	 */
+	private static List<@Nullable String> getRawValues(final Row row, final int width) {
+		final List<@Nullable String> values = new ArrayList<>(width);
+		for (int i = 0; i < width; i++) {
+			values.add(i < row.getCellCount() ? row.getCellRawValue(i).orElse(null) : null);
+		}
+		return values;
+	}
+
+	/**
+	 * Pads the values to the given width and replaces missing values by empty strings, as used for header rows.
+	 */
+	private static List<String> toHeaderValues(final List<@Nullable String> values, final int width) {
+		final List<String> headerValues = new ArrayList<>(width);
+		for (int i = 0; i < width; i++) {
+			final String value = i < values.size() ? values.get(i) : null;
+			headerValues.add(value != null ? value : "");
+		}
+		return headerValues;
+	}
+
+	private static byte[] readAllBytes(final InputStream data) throws InternalIOException {
+		try (final InputStream is = data) {
+			return is.readAllBytes();
 		} catch (final IOException e) {
 			throw new InternalIOException(InternalIOException.XLSX_READING, "Failed to read the XLSX file", e);
 		}
-
-		return records;
 	}
 
-    private DataConfiguration getStringDataConfiguration(Sheet sheet) {
-        DataConfiguration configuration = new DataConfiguration();
-
-        try (Stream<Row> rows = sheet.openStream()) {
-            Row firstRow = rows.toList().get(0);
-
-            for (int i = 0; i < firstRow.getCellCount(); i++) {
-                configuration.addColumnConfiguration(
-                    new ColumnConfiguration(i, "column" + i, DataType.STRING, DataScale.NOMINAL, new ArrayList<>())
-                );
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return configuration;
-    }
-
 	/**
-	 * Estimates the XLSX-specific configuration.
+	 * Function processing the rows of a sheet.
 	 *
-	 * @param records The XLSX content.
-	 * @return The estimated XLSX configuration.
+	 * @param <T> The result type.
+	 * @param <E> Exception thrown by the function.
 	 */
-	private XlsxFileConfiguration estimateXlsxFileConfiguration(final List<List<String>> records) {
-		final var config = new XlsxFileConfiguration();
-
-		final boolean hasHeader = estimateHasHeader(records.get(0), records.get(1));
-		config.setHasHeader(hasHeader);
-
-		return config;
+	@FunctionalInterface
+	private interface RowsFunction<T, E extends Exception> {
+		T apply(Stream<Row> rows) throws E;
 	}
 }

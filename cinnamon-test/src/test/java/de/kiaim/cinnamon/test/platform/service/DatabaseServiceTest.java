@@ -11,6 +11,8 @@ import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.dto.LoadDataRequest;
+import de.kiaim.cinnamon.platform.model.StoredTransformationError;
 import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
 import de.kiaim.cinnamon.platform.model.DataTransformationError;
@@ -34,6 +36,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -313,6 +316,30 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		assertEquals(1, assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSetId)),
 		             "Missing value errors must count as invalid!");
+	}
+
+	@Test
+	void getTransformationErrorsForEncoding() {
+		// Row 2 contains a missing value error in column 2 and a format error in column 4
+		final TransformationResult transformationResult =
+				TransformationResultTestHelper.generateTransformationResult(true);
+		final ProjectEntity project = getTestProject();
+
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
+		final Map<Integer, Integer> allColumns = Map.of();
+		final Map<Integer, Integer> column4 = Map.of(4, 0);
+
+		final LoadDataRequest nullEncoding = new LoadDataRequest();
+		assertEquals(List.of(), databaseService.getTransformationErrorsForEncoding(dataSet, allColumns, nullEncoding),
+		             "Errors must not be loaded if all encodings are '$null'!");
+
+		final LoadDataRequest valueEncoding = new LoadDataRequest();
+		valueEncoding.setDefaultNullEncoding("$value");
+		assertEquals(2, databaseService.getTransformationErrorsForEncoding(dataSet, allColumns, valueEncoding).size());
+		assertEquals(List.of(new StoredTransformationError(2, 4, TransformationErrorType.FORMAT_ERROR, "forty two")),
+		             databaseService.getTransformationErrorsForEncoding(dataSet, column4, valueEncoding),
+		             "Only errors of the requested columns must be loaded!");
 	}
 
 	@Test

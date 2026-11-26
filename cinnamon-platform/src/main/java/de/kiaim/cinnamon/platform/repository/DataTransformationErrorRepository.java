@@ -1,12 +1,13 @@
 package de.kiaim.cinnamon.platform.repository;
 
+import de.kiaim.cinnamon.platform.model.StoredTransformationError;
 import de.kiaim.cinnamon.platform.model.entity.DataTransformationErrorEntity;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Transactional(readOnly = true)
 public interface DataTransformationErrorRepository extends CrudRepository<DataTransformationErrorEntity, Long> {
@@ -16,9 +17,15 @@ public interface DataTransformationErrorRepository extends CrudRepository<DataTr
 	@Query(value = "SELECT COUNT(*) FROM (SELECT DISTINCT row_index FROM data_transformation_error_entity WHERE data_set_id = :dataSetId) AS temp", nativeQuery = true)
 	long countDistinctRowIndexByDataSetId(Long dataSetId);
 
-	Set<DataTransformationErrorEntity> findByDataSetId(Long dataSetId);
+	// The following queries return projections instead of entities,
+	// so a large number of errors can be loaded without creating managed entities.
 
-	Set<DataTransformationErrorEntity> findByDataSetIdAndRowIndexBetween(Long dataSet_id, int rowIndex, int rowIndex2);
+	List<StoredTransformationError> findByDataSetId(Long dataSetId);
 
-	Set<DataTransformationErrorEntity> findByDataSetIdAndRowIndexIn(Long dataSet_id, List<Integer> rowIndex);
+	List<StoredTransformationError> findByDataSetIdAndColumnIndexIn(Long dataSetId, Collection<Integer> columnIndices);
+
+	List<StoredTransformationError> findByDataSetIdAndRowIndexBetween(Long dataSetId, int startRowIndex,
+	                                                                  int endRowIndex);
+
+	List<StoredTransformationError> findByDataSetIdAndRowIndexIn(Long dataSetId, Collection<Integer> rowIndices);
 }

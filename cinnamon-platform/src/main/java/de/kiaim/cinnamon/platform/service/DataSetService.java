@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.exception.*;
+import de.kiaim.cinnamon.platform.model.StoredTransformationError;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalEndpoint;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
@@ -58,7 +59,7 @@ public class DataSetService {
 		final Map<Integer, Integer> columnIndexMapping = getColumnIndexMapping(dataSet.getDataConfiguration());
 		final LoadDataRequest loadDataRequest = new LoadDataRequest();
 		loadDataRequest.setKeepTimeZones(keepTimeZones);
-		return encodeDataRows(dataSet, new HashSet<>(), columnIndexMapping, loadDataRequest);
+		return encodeDataRows(dataSet, List.of(), columnIndexMapping, loadDataRequest);
 	}
 
 	/**
@@ -71,7 +72,7 @@ public class DataSetService {
 	 * @return Encoded data set.
 	 */
 	public List<List<@Nullable Object>> encodeDataRows(final DataSet dataSet,
-	                                         final Set<DataTransformationErrorEntity> transformationErrors,
+	                                         final Collection<StoredTransformationError> transformationErrors,
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
 		return encodeDataRows(dataSet, transformationErrors, 0, null, columnIndexMapping, loadDataRequest);
@@ -91,7 +92,7 @@ public class DataSetService {
 	 * @return Encoded data set.
 	 */
 	public List<List<@Nullable Object>> encodeDataRows(final DataSet dataSet,
-	                                         final Set<DataTransformationErrorEntity> transformationErrors,
+	                                         final Collection<StoredTransformationError> transformationErrors,
 	                                         final int rowOffset,
 	                                         @Nullable final List<Integer> indexMapping,
 	                                         final Map<Integer, Integer> columnIndexMapping,
@@ -99,19 +100,12 @@ public class DataSetService {
 
 		final List<List<@Nullable Object>> data = printDataRows(dataSet, loadDataRequest.isKeepTimeZones());
 
-		String defaultNullEncoding = loadDataRequest.getDefaultNullEncoding();
-		String missingValueEncoding = loadDataRequest.getMissingValueEncoding() == null
-		                              ? defaultNullEncoding
-		                              : loadDataRequest.getMissingValueEncoding();
-		String formatErrorEncoding = loadDataRequest.getFormatErrorEncoding() == null
-		                             ? defaultNullEncoding
-		                             : loadDataRequest.getFormatErrorEncoding();
-		String valueNotInRangeEncoding = loadDataRequest.getValueNotInRangeEncoding() == null
-		                                 ? defaultNullEncoding
-		                                 : loadDataRequest.getValueNotInRangeEncoding();
+		final String defaultNullEncoding = loadDataRequest.getDefaultNullEncoding();
+		final String missingValueEncoding = getMissingValueEncoding(loadDataRequest);
+		final String formatErrorEncoding = getFormatErrorEncoding(loadDataRequest);
+		final String valueNotInRangeEncoding = getValueNotInRangeEncoding(loadDataRequest);
 
-		if (!"$null".equals(defaultNullEncoding) || !"$null".equals(missingValueEncoding) ||
-		    !"$null".equals(formatErrorEncoding) || !"$null".equals(valueNotInRangeEncoding)) {
+		if (requiresTransformationErrors(loadDataRequest)) {
 
 			// Null values without a transformation error are missing values whose original value was null.
 			// Encode all null values as missing values first, the transformation errors below overwrite the values
@@ -121,28 +115,59 @@ public class DataSetService {
 				                 missingValueEncoding);
 			}
 
-			for (final DataTransformationErrorEntity transformationError : transformationErrors) {
-				if (!columnIndexMapping.isEmpty() && !columnIndexMapping.containsKey(transformationError.getColumnIndex())) {
+			for (final StoredTransformationError transformationError : transformationErrors) {
+				if (!columnIndexMapping.isEmpty() &&
+				    !columnIndexMapping.containsKey(transformationError.columnIndex())) {
 					// Column is not requested
 					continue;
 				}
 
-				final var encodedValue = switch (transformationError.getErrorType()) {
+				final var encodedValue = switch (transformationError.errorType()) {
 					case CONFIG_ERROR, OTHER -> encodeValue(defaultNullEncoding, transformationError);
 					case FORMAT_ERROR -> encodeValue(formatErrorEncoding, transformationError);
 					case MISSING_VALUE -> encodeValue(missingValueEncoding, transformationError);
 					case VALUE_NOT_IN_RANGE -> encodeValue(valueNotInRangeEncoding, transformationError);
 				};
 
-				final Integer columnIndex = columnIndexMapping.get(transformationError.getColumnIndex());
+				final Integer columnIndex = columnIndexMapping.get(transformationError.columnIndex());
 				final int rowIndex = indexMapping != null
-				                  ? indexMapping.indexOf(transformationError.getRowIndex())
-				                  : transformationError.getRowIndex() - rowOffset;
+				                  ? indexMapping.indexOf(transformationError.rowIndex())
+				                  : transformationError.rowIndex() - rowOffset;
 				data.get(rowIndex).set(columnIndex, encodedValue);
 			}
 		}
 
 		return data;
+	}
+
+	/**
+	 * Checks if encoding the data for the given request requires the transformation errors.
+	 * If all encodings are '$null', the null values stored for the errors are kept as they are,
+	 * so the errors do not have to be loaded.
+	 *
+	 * @param loadDataRequest Export settings.
+	 * @return True if the transformation errors are required.
+	 */
+	public boolean requiresTransformationErrors(final LoadDataRequest loadDataRequest) {
+		return !"$null".equals(loadDataRequest.getDefaultNullEncoding()) ||
+		       !"$null".equals(getMissingValueEncoding(loadDataRequest)) ||
+		       !"$null".equals(getFormatErrorEncoding(loadDataRequest)) ||
+		       !"$null".equals(getValueNotInRangeEncoding(loadDataRequest));
+	}
+
+	private String getMissingValueEncoding(final LoadDataRequest loadDataRequest) {
+		return Objects.requireNonNullElse(loadDataRequest.getMissingValueEncoding(),
+		                                  loadDataRequest.getDefaultNullEncoding());
+	}
+
+	private String getFormatErrorEncoding(final LoadDataRequest loadDataRequest) {
+		return Objects.requireNonNullElse(loadDataRequest.getFormatErrorEncoding(),
+		                                  loadDataRequest.getDefaultNullEncoding());
+	}
+
+	private String getValueNotInRangeEncoding(final LoadDataRequest loadDataRequest) {
+		return Objects.requireNonNullElse(loadDataRequest.getValueNotInRangeEncoding(),
+		                                  loadDataRequest.getDefaultNullEncoding());
 	}
 
 	/**
@@ -355,12 +380,12 @@ public class DataSetService {
 	 * @return The encoded value.
 	 */
 	@Nullable
-	private String encodeValue(final String encoding, final DataTransformationErrorEntity transformationError) {
+	private String encodeValue(final String encoding, final StoredTransformationError transformationError) {
 		if ("$null".equals(encoding)) {
 			return null;
 		}
 		if ("$value".equals(encoding)) {
-			return transformationError.getOriginalValue();
+			return transformationError.originalValue();
 		}
 		return encoding;
 	}

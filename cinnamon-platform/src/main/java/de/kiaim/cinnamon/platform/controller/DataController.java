@@ -15,6 +15,7 @@ import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
+import de.kiaim.cinnamon.platform.model.StoredTransformationError;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import io.swagger.v3.oas.annotations.Operation;
@@ -661,8 +662,9 @@ public class DataController {
 				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
 				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
 						dataSetEntity.getDataConfiguration(), columnNames);
-				result = dataSetService.encodeDataRows(dataSet, databaseService.getTransformationErrors(dataSetEntity),
-				                                       columnIndexMapping, loadDataRequest);
+				final List<StoredTransformationError> errors = databaseService.getTransformationErrorsForEncoding(
+						dataSetEntity, columnIndexMapping, loadDataRequest);
+				result = dataSetService.encodeDataRows(dataSet, errors, columnIndexMapping, loadDataRequest);
 			}
 			case LOAD_DATA_SET -> {
 				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(
@@ -670,9 +672,10 @@ public class DataController {
 				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
 				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
 						dataSetEntity.getDataConfiguration(), columnNames);
+				final List<StoredTransformationError> errors = databaseService.getTransformationErrorsForEncoding(
+						dataSetEntity, columnIndexMapping, loadDataRequest);
 				final List<List<@Nullable Object>> dataRows = dataSetService.encodeDataRows(
-						dataSet, databaseService.getTransformationErrors(dataSetEntity), columnIndexMapping,
-						loadDataRequest);
+						dataSet, errors, columnIndexMapping, loadDataRequest);
 				result = new DataSetEncoded(dataSet.getDataConfiguration(), dataRows);
 			}
 			case LOAD_TRANSFORMATION_RESULT -> {

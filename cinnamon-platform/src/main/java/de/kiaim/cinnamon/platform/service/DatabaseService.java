@@ -27,6 +27,7 @@ import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.helper.DataschemeGenerator;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.DataTransformationError;
+import de.kiaim.cinnamon.platform.model.StoredTransformationError;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
@@ -1231,12 +1232,12 @@ public class DatabaseService {
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
 		for (final var error : getTransformationErrors(dataSetEntity)) {
-			if (!rowErrors.containsKey(error.getRowIndex())) {
-				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex()));
+			if (!rowErrors.containsKey(error.rowIndex())) {
+				rowErrors.put(error.rowIndex(), new DataRowTransformationError(error.rowIndex()));
 			}
-			final var rowError = rowErrors.get(error.getRowIndex());
-			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(),
-			                                              error.getOriginalValue()));
+			final var rowError = rowErrors.get(error.rowIndex());
+			rowError.addError(new DataTransformationError(error.columnIndex(), error.errorType(),
+			                                              error.originalValue()));
 		}
 
 		return new TransformationResult(dataSet, rowErrors.values().stream().toList());
@@ -1283,7 +1284,7 @@ public class DatabaseService {
 
 		final List<Integer> rowNumbers;
 
-		final Set<DataTransformationErrorEntity> errors;
+		final List<StoredTransformationError> errors;
 		if (calcRowNumbers) {
 			rowNumbers = dataSet.getData().stream().map(a -> (Integer) a.get(a.size() - 1)).toList();
 			errors = errorRepository.findByDataSetIdAndRowIndexIn(dataSetEntity.getId(), rowNumbers);
@@ -1309,18 +1310,18 @@ public class DatabaseService {
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
 		for (final var error : errors) {
-			if (!columnIndexMapping.containsKey(error.getColumnIndex())) {
+			if (!columnIndexMapping.containsKey(error.columnIndex())) {
 				continue;
 			}
 
-			if (!rowErrors.containsKey(error.getRowIndex())) {
+			if (!rowErrors.containsKey(error.rowIndex())) {
 				final int index =
-						rowNumbers != null ? rowNumbers.indexOf(error.getRowIndex()) : error.getRowIndex() - startRow;
-				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(index));
+						rowNumbers != null ? rowNumbers.indexOf(error.rowIndex()) : error.rowIndex() - startRow;
+				rowErrors.put(error.rowIndex(), new DataRowTransformationError(index));
 			}
-			final var rowError = rowErrors.get(error.getRowIndex());
-			final Integer columnIndex = columnIndexMapping.get(error.getColumnIndex());
-			rowError.addError(new DataTransformationError(columnIndex, error.getErrorType(), error.getOriginalValue()));
+			final var rowError = rowErrors.get(error.rowIndex());
+			final Integer columnIndex = columnIndexMapping.get(error.columnIndex());
+			rowError.addError(new DataTransformationError(columnIndex, error.errorType(), error.originalValue()));
 		}
 
 		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
@@ -1425,9 +1426,37 @@ public class DatabaseService {
 	 * @param dataSetEntity The data set.
 	 * @return The transformation errors.
 	 */
-	public Set<DataTransformationErrorEntity> getTransformationErrors(final DataSetEntity dataSetEntity) {
+	public List<StoredTransformationError> getTransformationErrors(final DataSetEntity dataSetEntity) {
 		final Long dataSetId = dataSetEntity.getId();
-		return dataSetId == null ? new HashSet<>() : errorRepository.findByDataSetId(dataSetId);
+		return dataSetId == null ? List.of() : errorRepository.findByDataSetId(dataSetId);
+	}
+
+	/**
+	 * Returns the transformation errors of the given data set that are required for encoding the data
+	 * as specified in the given request.
+	 * Returns no errors if the encoding does not require them, and only the errors of the requested columns otherwise.
+	 *
+	 * @param dataSetEntity      The data set.
+	 * @param columnIndexMapping Mapping from the original column index to the index in the export.
+	 *                           If empty, errors of all columns are returned.
+	 * @param loadDataRequest    Export settings.
+	 * @return The transformation errors.
+	 */
+	public List<StoredTransformationError> getTransformationErrorsForEncoding(
+			final DataSetEntity dataSetEntity, final Map<Integer, Integer> columnIndexMapping,
+			final LoadDataRequest loadDataRequest) {
+		final Long dataSetId = dataSetEntity.getId();
+		if (dataSetId == null || !dataSetService.requiresTransformationErrors(loadDataRequest)) {
+			return List.of();
+		}
+
+		// Filtering by the columns is not necessary if all columns are requested
+		final DataConfiguration dataConfiguration = dataSetEntity.getDataConfiguration();
+		if (columnIndexMapping.isEmpty() ||
+		    (dataConfiguration != null && columnIndexMapping.size() >= dataConfiguration.getConfigurations().size())) {
+			return errorRepository.findByDataSetId(dataSetId);
+		}
+		return errorRepository.findByDataSetIdAndColumnIndexIn(dataSetId, columnIndexMapping.keySet());
 	}
 
 	/**

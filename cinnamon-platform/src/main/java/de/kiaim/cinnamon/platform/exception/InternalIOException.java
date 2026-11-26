@@ -82,6 +82,11 @@ public class InternalIOException extends InternalException {
 	 */
 	public static final String FHIR_NDJSON_WRITING = "15";
 
+	/**
+	 * Exception code for a failed reading of a data set in the JSON format.
+	 */
+	public static final String DATA_SET_READING = "16";
+
 	public InternalIOException(final String exceptionCode, final String message, @Nullable final Exception cause) {
 		super(exceptionCode, message, cause);
 	}

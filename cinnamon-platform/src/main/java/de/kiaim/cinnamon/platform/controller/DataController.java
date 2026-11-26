@@ -670,7 +670,7 @@ public class DataController {
 				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
 				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
 						dataSetEntity.getDataConfiguration(), columnNames);
-				final List<List<Object>> dataRows = dataSetService.encodeDataRows(
+				final List<List<@Nullable Object>> dataRows = dataSetService.encodeDataRows(
 						dataSet, dataSetEntity.getDataTransformationErrors(), columnIndexMapping, loadDataRequest);
 				result = new DataSetEncoded(dataSet.getDataConfiguration(), dataRows);
 			}

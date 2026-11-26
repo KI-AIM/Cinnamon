@@ -24,6 +24,7 @@ import de.kiaim.cinnamon.platform.service.DataSetService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -174,7 +175,7 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 
 		try {
 			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
-			for (final List<Object> dataRow : dataSetService.encodeDataRowsSimple(dataset, keepTimeZones)) {
+			for (final List<@Nullable Object> dataRow : dataSetService.encodeDataRowsSimple(dataset, keepTimeZones)) {
 				csvPrinter.printRecord(dataRow);
 			}
 			csvPrinter.flush();

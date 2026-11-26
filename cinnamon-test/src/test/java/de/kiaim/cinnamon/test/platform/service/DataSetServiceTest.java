@@ -7,6 +7,7 @@ import de.kiaim.cinnamon.platform.model.entity.DataTransformationErrorEntity;
 import de.kiaim.cinnamon.platform.service.DataSetService;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import de.kiaim.cinnamon.test.util.DataSetTestHelper;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -31,7 +32,7 @@ public class DataSetServiceTest extends ContextRequiredTest {
 
 		final LoadDataRequest request = new LoadDataRequest();
 		request.setMissingValueEncoding("MISSING");
-		final List<List<Object>> data = encode(dataSet, errors, request);
+		final List<List<@Nullable Object>> data = encode(dataSet, errors, request);
 
 		assertEquals("MISSING", data.get(2).get(2));
 		assertEquals("MISSING", data.get(2).get(4), "Null values without an error must be encoded as missing!");
@@ -44,7 +45,7 @@ public class DataSetServiceTest extends ContextRequiredTest {
 
 		final LoadDataRequest request = new LoadDataRequest();
 		request.setMissingValueEncoding("$value");
-		final List<List<Object>> data = encode(dataSet, errors, request);
+		final List<List<@Nullable Object>> data = encode(dataSet, errors, request);
 
 		assertEquals("", data.get(2).get(2));
 		assertNull(data.get(2).get(4), "The original value of null values without an error is null!");
@@ -58,13 +59,13 @@ public class DataSetServiceTest extends ContextRequiredTest {
 		final LoadDataRequest request = new LoadDataRequest();
 		request.setMissingValueEncoding("MISSING");
 		request.setFormatErrorEncoding("$value");
-		final List<List<Object>> data = encode(dataSet, errors, request);
+		final List<List<@Nullable Object>> data = encode(dataSet, errors, request);
 
 		assertEquals("MISSING", data.get(2).get(2));
 		assertEquals("forty two", data.get(2).get(4));
 	}
 
-	private List<List<Object>> encode(final DataSet dataSet, final Set<DataTransformationErrorEntity> errors,
+	private List<List<@Nullable Object>> encode(final DataSet dataSet, final Set<DataTransformationErrorEntity> errors,
 	                                  final LoadDataRequest request) {
 		return dataSetService.encodeDataRows(dataSet, errors,
 		                                     dataSetService.getColumnIndexMapping(dataSet.getDataConfiguration()),

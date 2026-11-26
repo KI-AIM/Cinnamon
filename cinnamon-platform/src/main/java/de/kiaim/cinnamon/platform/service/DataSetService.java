@@ -54,7 +54,7 @@ public class DataSetService {
 	 * @param keepTimeZones If time zone patterns of date-time formats should be kept.
 	 * @return Encoded native values of the dataset
 	 */
-	public List<List<Object>> encodeDataRowsSimple(final DataSet dataSet, final boolean keepTimeZones) {
+	public List<List<@Nullable Object>> encodeDataRowsSimple(final DataSet dataSet, final boolean keepTimeZones) {
 		final Map<Integer, Integer> columnIndexMapping = getColumnIndexMapping(dataSet.getDataConfiguration());
 		final LoadDataRequest loadDataRequest = new LoadDataRequest();
 		loadDataRequest.setKeepTimeZones(keepTimeZones);
@@ -70,7 +70,7 @@ public class DataSetService {
 	 * @param loadDataRequest Export settings.
 	 * @return Encoded data set.
 	 */
-	public List<List<Object>> encodeDataRows(final DataSet dataSet,
+	public List<List<@Nullable Object>> encodeDataRows(final DataSet dataSet,
 	                                         final Set<DataTransformationErrorEntity> transformationErrors,
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
@@ -90,14 +90,14 @@ public class DataSetService {
 	 * @param loadDataRequest Export settings.
 	 * @return Encoded data set.
 	 */
-	public List<List<Object>> encodeDataRows(final DataSet dataSet,
+	public List<List<@Nullable Object>> encodeDataRows(final DataSet dataSet,
 	                                         final Set<DataTransformationErrorEntity> transformationErrors,
 	                                         final int rowOffset,
 	                                         @Nullable final List<Integer> indexMapping,
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
 
-		final List<List<Object>> data = printDataRows(dataSet, loadDataRequest.isKeepTimeZones());
+		final List<List<@Nullable Object>> data = printDataRows(dataSet, loadDataRequest.isKeepTimeZones());
 
 		String defaultNullEncoding = loadDataRequest.getDefaultNullEncoding();
 		String missingValueEncoding = loadDataRequest.getMissingValueEncoding() == null
@@ -154,8 +154,8 @@ public class DataSetService {
 	 * @param keepTimeZones If time zone patterns of date-time formats should be kept and filled with UTC.
 	 * @return The converted dataset.
 	 */
-	private List<List<Object>> printDataRows(final DataSet dataSet, final boolean keepTimeZones) {
-		final List<List<Object>> result = new ArrayList<>(dataSet.getData().size());
+	private List<List<@Nullable Object>> printDataRows(final DataSet dataSet, final boolean keepTimeZones) {
+		final List<List<@Nullable Object>> result = new ArrayList<>(dataSet.getData().size());
 
 		final PrintDataRowsContext context = PrintDataRowsContext.createFor(dataSet.getDataConfiguration(),
 		                                                                    keepTimeZones);
@@ -175,9 +175,9 @@ public class DataSetService {
 	 * @param dataConfiguration The data configuration defining the attributes and their format.
 	 * @return The converted dataset.
 	 */
-	private List<Object> printDataRow(final DataRow row, final DataConfiguration dataConfiguration,
-									  final PrintDataRowsContext context) {
-		final List<Object> result = new ArrayList<>(row.getData().size());
+	private List<@Nullable Object> printDataRow(final DataRow row, final DataConfiguration dataConfiguration,
+	                                            final PrintDataRowsContext context) {
+		final List<@Nullable Object> result = new ArrayList<>(row.getData().size());
 
 		for (int i = 0; i < row.getData().size(); i++) {
 			final Data value = row.getData().get(i);
@@ -332,9 +332,9 @@ public class DataSetService {
 	 * @param numberColumns The number of data columns.
 	 * @param encoding      The value to be inserted.
 	 */
-	private void encodeNullValues(final List<List<Object>> data, final int numberColumns,
+	private void encodeNullValues(final List<List<@Nullable Object>> data, final int numberColumns,
 	                              final String encoding) {
-		for (final List<Object> row : data) {
+		for (final List<@Nullable Object> row : data) {
 			final int end = Math.min(numberColumns, row.size());
 			for (int columnIndex = 0; columnIndex < end; columnIndex++) {
 				if (row.get(columnIndex) == null) {

@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.model.data.DataSet;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -16,5 +17,5 @@ public class DataSetEncoded {
 	private final DataConfiguration dataConfiguration;
 
 	@Schema(description = "The data")
-	private final List<List<Object>> data;
+	private final List<List<@Nullable Object>> data;
 }

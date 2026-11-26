@@ -1273,7 +1273,7 @@ public class DatabaseService {
 			                      .collect(java.util.stream.Collectors.toList());
 		}
 
-		List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers,
+		List<List<@Nullable Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers,
 		                                                        columnIndexMapping,
 		                                                        loadDataRequest);
 

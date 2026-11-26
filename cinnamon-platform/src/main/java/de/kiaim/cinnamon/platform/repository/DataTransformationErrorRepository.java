@@ -16,6 +16,8 @@ public interface DataTransformationErrorRepository extends CrudRepository<DataTr
 	@Query(value = "SELECT COUNT(*) FROM (SELECT DISTINCT row_index FROM data_transformation_error_entity WHERE data_set_id = :dataSetId) AS temp", nativeQuery = true)
 	long countDistinctRowIndexByDataSetId(Long dataSetId);
 
+	Set<DataTransformationErrorEntity> findByDataSetId(Long dataSetId);
+
 	Set<DataTransformationErrorEntity> findByDataSetIdAndRowIndexBetween(Long dataSet_id, int rowIndex, int rowIndex2);
 
 	Set<DataTransformationErrorEntity> findByDataSetIdAndRowIndexIn(Long dataSet_id, List<Integer> rowIndex);

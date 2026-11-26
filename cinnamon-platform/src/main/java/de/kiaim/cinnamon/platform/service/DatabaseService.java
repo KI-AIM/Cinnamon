@@ -32,6 +32,8 @@ import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +72,26 @@ public class DatabaseService {
 
 	private final Logger LOGGER = LoggerFactory.getLogger(DatabaseService.class);
 
+	/**
+	 * Name of the sequence for the IDs of the transformation errors.
+	 * The errors are inserted with plain SQL, so the sequence is not used by Hibernate.
+	 */
+	private static final String TRANSFORMATION_ERROR_SEQUENCE = "data_transformation_error_entity_seq";
+
+	/**
+	 * Maximum number of transformation errors inserted with a single statement.
+	 */
+	private static final int TRANSFORMATION_ERROR_CHUNK_SIZE = 50_000;
+
+	/**
+	 * Connection that is not bound to a transaction.
+	 */
 	private final Connection connection;
+	private final DataSource dataSource;
+
+	@PersistenceContext
+	private EntityManager entityManager;
+
 	private final DataProcessingRepository dataProcessingRepository;
 	private final DataSetRepository dataSetRepository;
 	private final DataTransformationErrorRepository errorRepository;
@@ -102,6 +123,7 @@ public class DatabaseService {
 	                       final DataSourceProcessorService dataSourceProcessorService,
 	                       final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
+		this.dataSource = dataSource;
 		this.dataProcessingRepository = dataProcessingRepository;
 		this.errorRepository = errorRepository;
 		jsonMapper = serializationConfig.jsonMapper();
@@ -614,7 +636,7 @@ public class DatabaseService {
 		DataSetEntity dataSetEntity = doStoreOriginalDataConfiguration(project, dataSet.getDataConfiguration());
 
 		// Store transformation errors
-		convertTransformationErrors(transformationResult, dataSetEntity);
+		storeTransformationErrors(transformationResult, dataSetEntity);
 
 		dataSetEntity = storeDataSet(dataSet, dataSetEntity);
 
@@ -658,10 +680,10 @@ public class DatabaseService {
 		final DataSetEntity dataSetEntity = doStoreDataConfiguration(dataSet.getDataConfiguration(),
 		                                                             dataProcessingEntity, processed);
 
-		// Store transformation errors
-		convertTransformationErrors(transformationResult, dataSetEntity);
-
 		dataProcessingRepository.save(dataProcessingEntity);
+
+		// Store transformation errors
+		storeTransformationErrors(transformationResult, dataSetEntity);
 
 		storeDataSet(dataSet, dataSetEntity);
 
@@ -1208,7 +1230,7 @@ public class DatabaseService {
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
-		for (final var error : dataSetEntity.getDataTransformationErrors()) {
+		for (final var error : getTransformationErrors(dataSetEntity)) {
 			if (!rowErrors.containsKey(error.getRowIndex())) {
 				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex()));
 			}
@@ -1387,7 +1409,7 @@ public class DatabaseService {
 			}
 		}
 
-		dataSet.getDataTransformationErrors().clear();
+		deleteTransformationErrors(dataSet);
 		dataSet.setStoredData(false);
 		dataSet.setHasHoldOut(false);
 		dataSet.setHoldOutSeed(0);
@@ -1395,6 +1417,17 @@ public class DatabaseService {
 		dataSet.getStatisticsProcess().reset();
 
 		log.debug("Deleted dataset with ID {}", dataSet.getId());
+	}
+
+	/**
+	 * Returns all transformation errors of the given data set.
+	 *
+	 * @param dataSetEntity The data set.
+	 * @return The transformation errors.
+	 */
+	public Set<DataTransformationErrorEntity> getTransformationErrors(final DataSetEntity dataSetEntity) {
+		final Long dataSetId = dataSetEntity.getId();
+		return dataSetId == null ? new HashSet<>() : errorRepository.findByDataSetId(dataSetId);
 	}
 
 	/**
@@ -1991,20 +2024,119 @@ public class DatabaseService {
 		deleteDataSet(dataSet);
 	}
 
-	private void convertTransformationErrors(final TransformationResult transformationResult,
-	                                         final DataSetEntity dataSet) {
-		for (final DataRowTransformationError rowTransformationError : transformationResult.getTransformationErrors()) {
-			for (final DataTransformationError transformationError : rowTransformationError.getDataTransformationErrors()) {
+	/**
+	 * Stores the transformation errors of the given transformation result for the given data set.
+	 * The errors are inserted in bulk with plain SQL instead of persisting entities one by one,
+	 * as a data set can contain millions of errors.
+	 * Uses the connection of the current transaction, so the data set does not have to be committed beforehand.
+	 *
+	 * @param transformationResult The transformation result containing the errors.
+	 * @param dataSet              The data set the errors belong to.
+	 * @throws InternalDataSetPersistenceException If inserting the errors failed.
+	 */
+	private void storeTransformationErrors(final TransformationResult transformationResult,
+	                                       final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
+		if (transformationResult.getTransformationErrors().isEmpty()) {
+			return;
+		}
 
-				final DataTransformationErrorEntity transformationErrorEntity = new DataTransformationErrorEntity();
+		// The errors reference the data set, so it has to be written into the database first
+		entityManager.flush();
 
-				transformationErrorEntity.setRowIndex(rowTransformationError.getIndex());
-				transformationErrorEntity.setColumnIndex(transformationError.getIndex());
-				transformationErrorEntity.setErrorType(transformationError.getErrorType());
-				transformationErrorEntity.setOriginalValue(transformationError.getRawValue());
+		final String query =
+				"INSERT INTO data_transformation_error_entity " +
+				"(id, data_set_id, row_index, column_index, error_type, original_value) " +
+				"SELECT nextval('" + TRANSFORMATION_ERROR_SEQUENCE + "'), ?, " +
+				"e.row_index, e.column_index, e.error_type, e.original_value " +
+				"FROM unnest(?::integer[], ?::integer[], ?::varchar[], ?::varchar[]) " +
+				"AS e(row_index, column_index, error_type, original_value)";
 
-				dataSet.addDataRowTransformationError(transformationErrorEntity);
+		final Connection transactionConnection = DataSourceUtils.getConnection(dataSource);
+		try (final PreparedStatement statement = transactionConnection.prepareStatement(query)) {
+			final List<Integer> rowIndices = new ArrayList<>(TRANSFORMATION_ERROR_CHUNK_SIZE);
+			final List<Integer> columnIndices = new ArrayList<>(TRANSFORMATION_ERROR_CHUNK_SIZE);
+			final List<String> errorTypes = new ArrayList<>(TRANSFORMATION_ERROR_CHUNK_SIZE);
+			final List<@Nullable String> originalValues = new ArrayList<>(TRANSFORMATION_ERROR_CHUNK_SIZE);
+
+			for (final DataRowTransformationError rowError : transformationResult.getTransformationErrors()) {
+				for (final DataTransformationError error : rowError.getDataTransformationErrors()) {
+					rowIndices.add(rowError.getIndex());
+					columnIndices.add(error.getIndex());
+					errorTypes.add(error.getErrorType().name());
+					originalValues.add(error.getRawValue());
+
+					if (rowIndices.size() == TRANSFORMATION_ERROR_CHUNK_SIZE) {
+						insertTransformationErrors(transactionConnection, statement, dataSet.getId(), rowIndices,
+						                           columnIndices, errorTypes, originalValues);
+					}
+				}
 			}
+
+			insertTransformationErrors(transactionConnection, statement, dataSet.getId(), rowIndices, columnIndices,
+			                           errorTypes, originalValues);
+		} catch (final SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE,
+			                                              "Failed to store the transformation errors!", e);
+		} finally {
+			DataSourceUtils.releaseConnection(transactionConnection, dataSource);
+		}
+	}
+
+	/**
+	 * Inserts the given transformation errors and clears the given lists afterward.
+	 *
+	 * @param connection     The connection used to create the arrays.
+	 * @param statement      The prepared insert statement.
+	 * @param dataSetId      The ID of the data set.
+	 * @param rowIndices     The row indices of the errors.
+	 * @param columnIndices  The column indices of the errors, aligned with the row indices.
+	 * @param errorTypes     The error types, aligned with the row indices.
+	 * @param originalValues The original values, aligned with the row indices.
+	 * @throws SQLException If inserting the errors failed.
+	 */
+	private void insertTransformationErrors(final Connection connection, final PreparedStatement statement,
+	                                        final @Nullable Long dataSetId, final List<Integer> rowIndices,
+	                                        final List<Integer> columnIndices, final List<String> errorTypes,
+	                                        final List<@Nullable String> originalValues) throws SQLException {
+		if (rowIndices.isEmpty()) {
+			return;
+		}
+
+		statement.setObject(1, dataSetId);
+		statement.setArray(2, connection.createArrayOf("integer", rowIndices.toArray()));
+		statement.setArray(3, connection.createArrayOf("integer", columnIndices.toArray()));
+		statement.setArray(4, connection.createArrayOf("varchar", errorTypes.toArray()));
+		statement.setArray(5, connection.createArrayOf("varchar", originalValues.toArray()));
+		statement.executeUpdate();
+
+		rowIndices.clear();
+		columnIndices.clear();
+		errorTypes.clear();
+		originalValues.clear();
+	}
+
+	/**
+	 * Deletes all transformation errors of the given data set with a single statement.
+	 * Uses the connection of the current transaction.
+	 *
+	 * @param dataSet The data set.
+	 * @throws InternalDataSetPersistenceException If deleting the errors failed.
+	 */
+	private void deleteTransformationErrors(final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
+		if (dataSet.getId() == null) {
+			return;
+		}
+
+		final Connection transactionConnection = DataSourceUtils.getConnection(dataSource);
+		try (final PreparedStatement statement = transactionConnection.prepareStatement(
+				"DELETE FROM data_transformation_error_entity WHERE data_set_id = ?")) {
+			statement.setLong(1, dataSet.getId());
+			statement.executeUpdate();
+		} catch (final SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
+			                                              "Failed to delete the transformation errors!", e);
+		} finally {
+			DataSourceUtils.releaseConnection(transactionConnection, dataSource);
 		}
 	}
 

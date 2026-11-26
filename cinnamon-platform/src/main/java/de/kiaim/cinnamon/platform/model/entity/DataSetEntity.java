@@ -15,9 +15,7 @@ import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Entity containing the metadata of a data set.
@@ -66,12 +64,6 @@ public class DataSetEntity extends ProcessOwner {
 	@Column(nullable = false)
 	@Setter
 	private boolean confirmedData = false;
-
-	/**
-	 * List of transformation errors during the parsing.
-	 */
-	@OneToMany(mappedBy = "dataSet", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-	private final Set<DataTransformationErrorEntity> dataTransformationErrors = new HashSet<>();
 
 	/**
 	 * List of steps that have modified this data set.
@@ -123,18 +115,6 @@ public class DataSetEntity extends ProcessOwner {
 
 	public @Nullable Long getId() {
 		return this.id;
-	}
-
-	/**
-	 * Adds the given transformation error to the data set.
-	 * @param dataTransformationError The error to be added.
-	 */
-	public void addDataRowTransformationError(final DataTransformationErrorEntity dataTransformationError) {
-		dataTransformationErrors.add(dataTransformationError);
-
-		if (dataTransformationError.getDataSet() != this) {
-			dataTransformationError.setDataSet(this);
-		}
 	}
 
 	/**

@@ -11,7 +11,6 @@ import de.kiaim.cinnamon.model.exception.DataBuildingException;
 import de.kiaim.cinnamon.model.helper.DataTransformationHelper;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
-import de.kiaim.cinnamon.platform.model.DataTransformationError;
 import de.kiaim.cinnamon.platform.model.Pair;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
@@ -46,6 +45,9 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
     @Autowired
     DataTransformationHelper dataTransformationHelper;
+
+    @Autowired
+    DataRowTransformer dataRowTransformer;
 
 	/**
 	 * Estimates if the given first row is a header row by detecting attribute names and data type differences.
@@ -94,12 +96,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
 
     /**
      * Transforms a row into a DataRow and appends it to the given list of data rows.
-     * Upon transformation, each value is validated.
-     * If a fault has been detected,
-     * the error will be added to the DataRowTransformationError list with the
-     * corresponding raw row string and the row index.
-     * If an error was detected for any value in a row, the complete row will
-     * not be added to the list of DataRows.
+     * See {@link DataRowTransformer#transformRow}.
      *
      * @param row Input: Row to transform
      * @param rowIndex Input index of the row
@@ -110,57 +107,7 @@ public abstract class CommonDataProcessor implements DataProcessor {
      */
     public void transformRow(List<String> row, int rowIndex, DataConfiguration configuration,
                              List<DataRow> dataRows, List<DataRowTransformationError> errors) throws BadDatasetException {
-		if (row.size() < configuration.getConfigurations().size()) {
-			throw new BadDatasetException(BadDatasetException.ROW_TOO_FEW_VALUES,
-			                              "The row " + (rowIndex + 1) + " contains too few values: expected " +
-			                              configuration.getConfigurations().size() + ", but got " + row.size() + "!");
-		}
-		if (row.size() > configuration.getConfigurations().size()) {
-			throw new BadDatasetException(BadDatasetException.ROW_TOO_MANY_VALUES,
-			                              "The row " + (rowIndex + 1) + " contains too many values: expected " +
-			                              configuration.getConfigurations().size() + ", but got " + row.size() + "!");
-		}
-
-        // Process every row
-        boolean errorInRow = false;
-
-        List<Data> transformedCol = new ArrayList<>();
-
-        // Transformation error that was thrown inside the Data builders
-        DataRowTransformationError newError = new DataRowTransformationError(rowIndex);
-
-        for (int colIndex = 0; colIndex < row.size(); colIndex++) {
-            // Process every column value in a row
-            String col = row.get(colIndex);
-
-            List<ColumnConfiguration> matchingColumnConfigurations =
-                    getColumnConfigurationForIndex(configuration.getConfigurations(), colIndex);
-
-            // Every index should appear exactly once
-            assert !matchingColumnConfigurations.isEmpty();
-            ColumnConfiguration columnConfiguration = matchingColumnConfigurations.get(0);
-
-            try {
-                Data transformedData = this.dataTransformationHelper.transformData(col, columnConfiguration);
-                transformedCol.add(transformedData);
-            } catch (DataBuildingException e) {
-                //Resolve to error type, to easier parse information to frontend
-                newError.addError(new DataTransformationError(colIndex, e.getTransformationErrorType(), col));
-
-                //Set Flag so error will be added
-                errorInRow = true;
-
-                // Remove faulty value from dataset
-                transformedCol.add(this.dataTransformationHelper.transformNullValue(columnConfiguration));
-            }
-        }
-
-        dataRows.add(new DataRow(transformedCol));
-
-        if (errorInRow) {
-            //Add error to errorList
-            errors.add(newError);
-        }
+        dataRowTransformer.transformRow(row, rowIndex, configuration, dataRows, errors);
     }
 
     /**
@@ -254,16 +201,6 @@ public abstract class CommonDataProcessor implements DataProcessor {
         }
 
         return samples;
-    }
-
-    private List<ColumnConfiguration> getColumnConfigurationForIndex(
-            List<ColumnConfiguration> configurations,
-            int index
-    ) {
-        return configurations
-                .stream()
-                .filter(it -> it.getIndex() == index)
-                .toList();
     }
 
     /**

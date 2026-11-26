@@ -11,6 +11,11 @@ import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.test.util.DataSetTestHelper;
+import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
+import de.kiaim.cinnamon.platform.model.DataTransformationError;
+import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.model.enumeration.TransformationErrorType;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
@@ -272,6 +277,42 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final int numberInvalidRows = assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSet.getId()));
 		assertEquals(1, numberInvalidRows, "Number of invalid rows does not match!");
+	}
+
+	@Test
+	void countInvalidRowsIgnoresNullValuesWithoutError() {
+		// Row 2 contains null values, but no transformation errors
+		final TransformationResult transformationResult = new TransformationResult(
+				DataSetTestHelper.generateDataSet(true), List.of());
+		final ProjectEntity project = getTestProject();
+
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		final long dataSetId = project.getOriginalData().getDataSet().getId();
+
+		assertEquals(0, assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSetId)),
+		             "Null values without an error must not count as invalid!");
+		assertEquals(3, assertDoesNotThrow(
+				             () -> databaseService.countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.VALID, null)),
+		             "Rows with null values without an error must be selected as valid!");
+		assertEquals(0, assertDoesNotThrow(
+				             () -> databaseService.countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.ERRORS, null)),
+		             "Rows with null values without an error must not be selected as erroneous!");
+	}
+
+	@Test
+	void countInvalidRowsWithMissingValueErrors() {
+		// Row 2 contains an empty string with a missing value error and a null value without an error
+		final DataRowTransformationError rowError = new DataRowTransformationError(2);
+		rowError.addError(new DataTransformationError(2, TransformationErrorType.MISSING_VALUE, ""));
+		final TransformationResult transformationResult = new TransformationResult(
+				DataSetTestHelper.generateDataSet(true), List.of(rowError));
+		final ProjectEntity project = getTestProject();
+
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		final long dataSetId = project.getOriginalData().getDataSet().getId();
+
+		assertEquals(1, assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSetId)),
+		             "Missing value errors must count as invalid!");
 	}
 
 	@Test

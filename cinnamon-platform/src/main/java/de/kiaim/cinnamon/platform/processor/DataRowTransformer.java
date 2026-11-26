@@ -38,6 +38,10 @@ public class DataRowTransformer {
 	 * the error will be added to the DataRowTransformationError list with the
 	 * corresponding raw row string and the row index.
 	 * Faulty values are replaced by null values, so the row is still added to the list of DataRows.
+	 * Values that are null are not treated as faults and do not create an error,
+	 * so a null value without an error implicitly marks a missing value.
+	 * Other missing values like empty strings create a {@link TransformationErrorType#MISSING_VALUE} error
+	 * containing the raw value.
 	 *
 	 * @param row           Input: Row to transform
 	 * @param rowIndex      Input index of the row
@@ -81,7 +85,14 @@ public class DataRowTransformer {
 						"The data configuration contains no column with index " + colIndex + "!");
 			}
 
-			// Handle missing values without creating an exception, as they can be very frequent
+			// Values that are null are stored without a transformation error.
+			// A null value without an error therefore implicitly marks a missing value.
+			if (col == null) {
+				transformedCol.add(this.dataTransformationHelper.transformNullValue(columnConfiguration));
+				continue;
+			}
+
+			// Handle other missing values and keep the raw value, so it can be restored when exporting the data.
 			if (dataTransformationHelper.isValueEmpty(col)) {
 				newError.addError(new DataTransformationError(colIndex, TransformationErrorType.MISSING_VALUE, col));
 				errorInRow = true;

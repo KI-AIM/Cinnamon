@@ -113,6 +113,14 @@ public class DataSetService {
 		if (!"$null".equals(defaultNullEncoding) || !"$null".equals(missingValueEncoding) ||
 		    !"$null".equals(formatErrorEncoding) || !"$null".equals(valueNotInRangeEncoding)) {
 
+			// Null values without a transformation error are missing values whose original value was null.
+			// Encode all null values as missing values first, the transformation errors below overwrite the values
+			// of all other null values.
+			if (!"$null".equals(missingValueEncoding) && !"$value".equals(missingValueEncoding)) {
+				encodeNullValues(data, dataSet.getDataConfiguration().getConfigurations().size(),
+				                 missingValueEncoding);
+			}
+
 			for (final DataTransformationErrorEntity transformationError : transformationErrors) {
 				if (!columnIndexMapping.isEmpty() && !columnIndexMapping.containsKey(transformationError.getColumnIndex())) {
 					// Column is not requested
@@ -314,6 +322,26 @@ public class DataSetService {
 		}
 
 		return columnIndexMapping;
+	}
+
+	/**
+	 * Replaces all null values of the data columns with the given encoding.
+	 * Meta-attributes like the row index appended after the data columns are not modified.
+	 *
+	 * @param data          The printed data rows.
+	 * @param numberColumns The number of data columns.
+	 * @param encoding      The value to be inserted.
+	 */
+	private void encodeNullValues(final List<List<Object>> data, final int numberColumns,
+	                              final String encoding) {
+		for (final List<Object> row : data) {
+			final int end = Math.min(numberColumns, row.size());
+			for (int columnIndex = 0; columnIndex < end; columnIndex++) {
+				if (row.get(columnIndex) == null) {
+					row.set(columnIndex, encoding);
+				}
+			}
+		}
 	}
 
 	/**

@@ -76,17 +76,15 @@ public class DataSetJsonReaderTest extends ContextRequiredTest {
 		assertEquals(Arrays.asList("female", 3), values(rows.get(0).getData()));
 		assertEquals(Arrays.asList(null, null), values(rows.get(1).getData()));
 
+		assertEquals(Arrays.asList(null, null), values(rows.get(2).getData()));
+
 		var errors = result.getTransformationErrors();
-		assertEquals(2, errors.size());
+		assertEquals(1, errors.size());
 		assertEquals(1, errors.get(0).getIndex());
 		assertEquals(List.of(TransformationErrorType.FORMAT_ERROR, TransformationErrorType.VALUE_NOT_IN_RANGE),
 		             errors.get(0).getDataTransformationErrors().stream()
 		                   .map(DataTransformationError::getErrorType).toList());
-		// Suppressed values are missing values, like empty cells of other file types
-		assertEquals(2, errors.get(1).getIndex());
-		assertEquals(List.of(TransformationErrorType.MISSING_VALUE, TransformationErrorType.MISSING_VALUE),
-		             errors.get(1).getDataTransformationErrors().stream()
-		                   .map(DataTransformationError::getErrorType).toList());
+		// Suppressed values are null and are therefore stored without a transformation error
 	}
 
 	@Test

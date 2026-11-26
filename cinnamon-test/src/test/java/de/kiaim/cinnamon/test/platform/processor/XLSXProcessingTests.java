@@ -7,10 +7,7 @@ import de.kiaim.cinnamon.model.configuration.data.attributes.DateFormatConfigura
 import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataScale;
 import de.kiaim.cinnamon.model.enumeration.DataType;
-import de.kiaim.cinnamon.model.enumeration.TransformationErrorType;
 import de.kiaim.cinnamon.platform.PlatformApplication;
-import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
-import de.kiaim.cinnamon.platform.model.DataTransformationError;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
@@ -156,9 +153,8 @@ public class XLSXProcessingTests {
 
         assertEquals(2, result.getDataSet().getDataRows().size());
         assertEquals(new StringData(null), result.getDataSet().getDataRows().get(1).getData().get(1));
-        assertEquals(List.of(new DataRowTransformationError(
-                             1, List.of(new DataTransformationError(1, TransformationErrorType.MISSING_VALUE, null)))),
-                     result.getTransformationErrors());
+        // Blank cells are null and are therefore stored without a transformation error
+        assertEquals(List.of(), result.getTransformationErrors());
     }
 
     @Test
@@ -246,9 +242,8 @@ public class XLSXProcessingTests {
 
         assertEquals(2, result.getDataSet().getDataRows().size());
         assertEquals(new StringData(null), result.getDataSet().getDataRows().get(1).getData().get(1));
-        assertEquals(List.of(new DataRowTransformationError(
-                             1, List.of(new DataTransformationError(1, TransformationErrorType.MISSING_VALUE, null)))),
-                     result.getTransformationErrors());
+        // Blank cells are null and are therefore stored without a transformation error
+        assertEquals(List.of(), result.getTransformationErrors());
     }
 
     private TransformationResult testReadMethodOfXlsxProcessor_getExpectedTransformationResult() {

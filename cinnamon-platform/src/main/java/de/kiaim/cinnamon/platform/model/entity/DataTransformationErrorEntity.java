@@ -11,6 +11,8 @@ import org.jspecify.annotations.Nullable;
  * Class to represent a transformation error in the database.
  */
 @Entity
+@Table(indexes = @Index(name = "idx_data_transformation_error_data_set_row",
+                        columnList = "data_set_id, row_index"))
 @Getter
 @NoArgsConstructor
 public class DataTransformationErrorEntity {

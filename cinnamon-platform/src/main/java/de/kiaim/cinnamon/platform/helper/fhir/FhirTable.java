@@ -15,17 +15,6 @@ import java.util.List;
 public record FhirTable(List<FhirColumn> columns, List<List<@Nullable String>> rows) {
 
 	/**
-	 * Creates a table without type information.
-	 *
-	 * @param columnNames The column names, containing the FHIR paths of the values.
-	 * @param rows        The rows of the table.
-	 * @return The table.
-	 */
-	public static FhirTable withoutTypes(final List<String> columnNames, final List<List<@Nullable String>> rows) {
-		return new FhirTable(columnNames.stream().map(name -> new FhirColumn(name, null)).toList(), rows);
-	}
-
-	/**
 	 * @return The column names, containing the FHIR paths of the values.
 	 */
 	public List<String> columnNames() {

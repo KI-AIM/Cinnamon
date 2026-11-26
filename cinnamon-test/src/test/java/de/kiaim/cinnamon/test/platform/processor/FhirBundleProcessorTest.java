@@ -16,11 +16,8 @@ import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.platform.processor.FhirBundleProcessor;
-import de.kiaim.cinnamon.platform.helper.fhir.FhirTransformers;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import de.kiaim.cinnamon.test.util.ResourceHelper;
-import de.unimuenster.imi.fhir.transform.ResultTable;
-import de.unimuenster.imi.fhir.transform.SubTable;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -30,7 +27,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -254,27 +250,6 @@ public class FhirBundleProcessorTest extends ContextRequiredTest {
 		String expectedContent = ResourceHelper.loadFileAsString("fhir-bundle-patient.json")
 		                                       .replace("\r\n", "\n");
 		assertEquals(expectedContent, content);
-	}
-
-	@Test
-	public void toFhirTableKeysColumnsByName() {
-		// Column indices are counted per resource, so "status" has index 3 in the first and index 2 in the second
-		var first = new SubTable();
-		first.addColumn("id", "a");
-		first.addColumn("code[0]", "x");
-		first.addColumn("status", "active");
-		var second = new SubTable();
-		second.addColumn("id", "b");
-		second.addColumn("status", "inactive");
-		second.getData().put(new kotlin.Pair<>(3, "note"), Collections.singletonList(null));
-		var empty = new SubTable();
-
-		var table = FhirTransformers.toFhirTable(new ResultTable(List.of(first, second, empty)));
-
-		assertEquals(List.of("id", "code[0]", "status", "note"), table.columnNames());
-		assertEquals(2, table.rows().size());
-		assertEquals(Arrays.asList("a", "x", "active", null), table.rows().get(0));
-		assertEquals(Arrays.asList("b", null, "inactive", null), table.rows().get(1));
 	}
 
 	@Test

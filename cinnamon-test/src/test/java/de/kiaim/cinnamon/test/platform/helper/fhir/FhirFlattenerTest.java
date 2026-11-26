@@ -59,7 +59,7 @@ public class FhirFlattenerTest {
 
 	@Test
 	public void flattenKeepsIndicesOfEqualValues() {
-		// Caramelizer derived the index by searching for the value, so equal values got the same index
+		// The index must be the position, not the first element with an equal value
 		final var bundle = parse("""
 				{"resourceType":"Bundle","entry":[{"resource":{"resourceType":"Patient",
 				  "identifier":[{"system":"a","value":"same"},{"system":"b","value":"same"}]}}]}""");

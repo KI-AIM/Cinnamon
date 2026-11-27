@@ -33,22 +33,6 @@ public class TransformationResultTestHelper {
 		}
 	}
 
-	public static String generateTransformationResultAsJsonA() {
-		return
-				"""
-						{"dataSet":""" + DataSetTestHelper.generateDataSetAsJson() +
-				"""
-						,"transformationErrors":[{"index":2,"dataTransformationErrors":[{"index":2,"errorType":"MISSING_VALUE","rawValue":""},{"index":4,"errorType":"FORMAT_ERROR","rawValue":"forty two"}]}]}""";
-	}
-
-	public static String generateTransformationResultAsJsonB() {
-		return
-				"""
-						{"dataSet":""" + DataSetTestHelper.generateDataSetAsJson() +
-				"""
-						,"transformationErrors":[{"index":2,"dataTransformationErrors":[{"index":4,"errorType":"FORMAT_ERROR","rawValue":"forty two"},{"index":2,"errorType":"MISSING_VALUE","rawValue":""}]}]}""";
-	}
-
 	public static String generateTransformationResultAsYaml() {
 		return
 				"""

@@ -4,8 +4,6 @@ import de.kiaim.cinnamon.model.configuration.data.DataSourceConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.DatasetConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
-import de.kiaim.cinnamon.model.data.DataRow;
-import de.kiaim.cinnamon.model.data.DataSet;
 import de.kiaim.cinnamon.model.dto.ErrorResponse;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.platform.exception.*;
@@ -13,15 +11,11 @@ import de.kiaim.cinnamon.platform.model.dto.*;
 import de.kiaim.cinnamon.platform.service.*;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
-import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
-import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -278,7 +272,7 @@ public class DataController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(projectId, RequestType.ESTIMATE, null, null, null, user);
+		return handleRequest(projectId, RequestType.ESTIMATE, null, null, user);
 	}
 
 	@Operation(summary = "Stores or updates the given configuration.",
@@ -308,7 +302,7 @@ public class DataController {
 			final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(projectId, RequestType.STORE_CONFIG, request.getConfiguration(), null, null, user);
+		return handleRequest(projectId, RequestType.STORE_CONFIG, request.getConfiguration(), null, user);
 	}
 
 	@Operation(summary = "Stores the given data into the internal database for further processing.",
@@ -338,7 +332,7 @@ public class DataController {
 			@Valid final StoreDataConfigurationRequest request,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(projectId, RequestType.STORE_DATE_SET, request.getConfiguration(), null, null, user);
+		return handleRequest(projectId, RequestType.STORE_DATE_SET, request.getConfiguration(), null, user);
 	}
 
 	@Operation(summary = "Confirms that the current dataset should be used.",
@@ -363,7 +357,7 @@ public class DataController {
 			@PathVariable final String projectId,
 			@AuthenticationPrincipal UserEntity user
 	) throws ApiException {
-		return handleRequest(projectId, RequestType.CONFIRM_DATE_SET, null, null, null, user);
+		return handleRequest(projectId, RequestType.CONFIRM_DATE_SET, null, null, user);
 	}
 
 	@Operation(summary = "Returns the configuration of the data set.",
@@ -391,7 +385,7 @@ public class DataController {
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(projectId, RequestType.LOAD_CONFIG, null, dataSetSource, null, user);
+		return handleRequest(projectId, RequestType.LOAD_CONFIG, null, dataSetSource, user);
 	}
 
 	@Operation(summary = "Returns general information the data set.",
@@ -419,47 +413,7 @@ public class DataController {
 			@ParameterObject @Valid final DataSetSource dataSetSource,
 			@AuthenticationPrincipal final UserEntity user
 	) throws ApiException {
-		return handleRequest(projectId, RequestType.INFO, null, dataSetSource, null, user);
-	}
-
-	@Operation(summary = "Returns the data of the data set.",
-	           description = "Returns the data of the data.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200",
-			             description = "Successfully found the data and returns the data.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 array = @ArraySchema(schema = @Schema(implementation = DataRow.class)),
-			                                 examples = {@ExampleObject("[" + DataRow.DATA_ROW_EXAMPLE + "]")}),
-			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
-			                                 array = @ArraySchema(schema = @Schema(implementation = DataRow.class)),
-			                                 examples = {
-					                                 @ExampleObject("""
-					                                                - - true
-					                                                  - "2023-12-24"
-					                                                  - "2023-12-24T18:30:01.123456"
-					                                                  - 4.2
-					                                                  - 42
-					                                                  - "Hello World!"
-					                                                """)
-			                                 })}),
-			@ApiResponse(responseCode = "400",
-			             description = "The user has no stored data.",
-			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))),
-			@ApiResponse(responseCode = "500",
-			             description = "An internal error occurred.",
-			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))),
-	})
-	@GetMapping(value = "/data",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<Object> loadData(
-			@PathVariable final String projectId,
-			@ParameterObject @Valid final DataSetSource dataSetSource,
-			@ParameterObject LoadDataRequest request,
-			@AuthenticationPrincipal UserEntity user
-	) throws ApiException {
-		return handleRequest(projectId, RequestType.LOAD_DATA, null, dataSetSource, request, user);
+		return handleRequest(projectId, RequestType.INFO, null, dataSetSource, user);
 	}
 
 	@Operation(summary = "Creates a hold-out split.",
@@ -496,14 +450,18 @@ public class DataController {
 	}
 
 	@Operation(summary = "Returns the data set.",
-	           description = "Returns the data set.")
+	           description = "Returns the data configuration of the selected columns, the encoded data " +
+	                         "and the transformation errors of the selected rows and columns. " +
+	                         "Dates are formatted as configured in the data configuration. " +
+	                         "The indices of the transformation errors are the positions of the row and column " +
+	                         "in the returned data.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 			             description = "Successfully found the data set. Returns the data set.",
 			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = DataSet.class)),
+			                                 schema = @Schema(implementation = DataSetEncoded.class)),
 			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = DataSet.class))}),
+			                                 schema = @Schema(implementation = DataSetEncoded.class))}),
 			@ApiResponse(responseCode = "400",
 			             description = "The user has no stored data set.",
 			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
@@ -515,44 +473,19 @@ public class DataController {
 	})
 	@GetMapping(value = "",
 	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<Object> loadDataSet(
+	public DataSetEncoded loadDataSet(
 			@PathVariable final String projectId,
 			@ParameterObject @Valid final DataSetSource dataSetSource,
-			@ParameterObject LoadDataRequest request,
-			@AuthenticationPrincipal UserEntity user
+			@ParameterObject @Valid final LoadDataRequest request,
+			@Parameter(description = "If the transformation errors should be included.")
+			@RequestParam(required = false, defaultValue = "true") final boolean includeErrors,
+			@AuthenticationPrincipal UserEntity requestUser
 	) throws ApiException {
-		return handleRequest(projectId, RequestType.LOAD_DATA_SET, null, dataSetSource, request, user);
-	}
+		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
+		final ProjectEntity project = projectService.getProject(user, projectId);
 
-	@Operation(summary = "Returns the entire transformation result.",
-	           description = "Returns the entire transformation result.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200",
-			             description = "Successfully found the data and returns the data.",
-			             content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-			                                 schema = @Schema(implementation = TransformationResult.class)
-			             ),
-			                        @Content(mediaType = MediaType.APPLICATION_YAML_VALUE,
-			                                 schema = @Schema(implementation = TransformationResult.class)
-			                        )}),
-			@ApiResponse(responseCode = "400",
-			             description = "The user has no stored data.",
-			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))),
-			@ApiResponse(responseCode = "500",
-			             description = "An internal error occurred.",
-			             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-			                                 schema = @Schema(implementation = ErrorResponse.class))),
-	})
-	@GetMapping(value = "/transformationResult",
-	            produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_YAML_VALUE})
-	public ResponseEntity<Object> loadTransformationResult(
-			@PathVariable final String projectId,
-			@ParameterObject @Valid final DataSetSource dataSetSource,
-			@ParameterObject LoadDataRequest request,
-			@AuthenticationPrincipal UserEntity user
-	) throws ApiException {
-		return handleRequest(projectId, RequestType.LOAD_TRANSFORMATION_RESULT, null, dataSetSource, request, user);
+		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
+		return databaseService.exportEncodedDataSet(dataSetEntity, request, includeErrors);
 	}
 
 	@Operation(summary = "Returns a page the transformation result.",
@@ -604,9 +537,6 @@ public class DataController {
 	 *     <li>{@link RequestType#ESTIMATE}: </li>
 	 *     <li>{@link RequestType#INFO}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#LOAD_CONFIG}: requestUser, stepName</li>
-	 *     <li>{@link RequestType#LOAD_DATA}: loadDataRequest, requestUser, stepName</li>
-	 *     <li>{@link RequestType#LOAD_DATA_SET}: loadDataRequest, requestUser, stepName</li>
-	 *     <li>{@link RequestType#LOAD_TRANSFORMATION_RESULT}: requestUser, stepName</li>
 	 *     <li>{@link RequestType#STORE_CONFIG}: configuration, requestUser</li>
 	 *     <li>{@link RequestType#STORE_DATE_SET}: configuration, user</li>
 	 * </ul>
@@ -614,7 +544,6 @@ public class DataController {
 	 * @param projectId       ID of the project.
 	 * @param requestType     Type of the request.
 	 * @param configuration   Configuration describing the source data.
-	 * @param loadDataRequest Settings for the data set export.
 	 * @param dataSetSource   Source of the data set.
 	 * @param requestUser     User of the request.
 	 * @return Response entity containing the response based on the request type or an error description.
@@ -624,14 +553,10 @@ public class DataController {
 			final RequestType requestType,
 			@Nullable final DataConfiguration configuration,
 			@Nullable final DataSetSource dataSetSource,
-			@Nullable final LoadDataRequest loadDataRequest,
 			final UserEntity requestUser
 	) throws ApiException {
 		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
-
-		final HoldOutSelector holdOutSelector =
-				loadDataRequest != null ? loadDataRequest.getHoldOutSelector() : HoldOutSelector.ALL;
 
 		final Object result;
 		switch (requestType) {
@@ -647,20 +572,6 @@ public class DataController {
 			}
 			case LOAD_CONFIG -> {
 				result = databaseService.exportDataConfiguration(projectEntity, dataSetSource);
-			}
-			case LOAD_DATA -> {
-				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity,
-				                                                                           dataSetSource);
-				result = databaseService.exportEncodedDataSet(dataSetEntity, requireLoadDataRequest(loadDataRequest))
-				                        .getData();
-			}
-			case LOAD_DATA_SET -> {
-				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity,
-				                                                                           dataSetSource);
-				result = databaseService.exportEncodedDataSet(dataSetEntity, requireLoadDataRequest(loadDataRequest));
-			}
-			case LOAD_TRANSFORMATION_RESULT -> {
-				result = databaseService.exportTransformationResult(projectEntity, holdOutSelector, dataSetSource);
 			}
 			case STORE_CONFIG -> {
 				databaseService.storeOriginalDataConfiguration(configuration, projectEntity);
@@ -687,30 +598,11 @@ public class DataController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
-	/**
-	 * Returns the given request or the default request if no request is given.
-	 *
-	 * @param loadDataRequest The request.
-	 * @return The given request or the default request.
-	 */
-	private LoadDataRequest requireLoadDataRequest(@Nullable final LoadDataRequest loadDataRequest) {
-		if (loadDataRequest != null) {
-			return loadDataRequest;
-		}
-
-		final LoadDataRequest defaultRequest = new LoadDataRequest();
-		defaultRequest.setHoldOutSelector(HoldOutSelector.ALL);
-		return defaultRequest;
-	}
-
 	private enum RequestType {
 		CONFIRM_DATE_SET,
 		ESTIMATE,
 		INFO,
 		LOAD_CONFIG,
-		LOAD_DATA,
-		LOAD_DATA_SET,
-		LOAD_TRANSFORMATION_RESULT,
 		STORE_CONFIG,
 		STORE_DATE_SET,
 	}

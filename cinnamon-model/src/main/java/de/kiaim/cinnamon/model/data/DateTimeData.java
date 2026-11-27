@@ -153,6 +153,8 @@ public class DateTimeData extends Data {
 		 * order-dependent, per-sample first match used by {@link #estimateColumnConfiguration(String)}.
 		 * List order is only used to break ties between formats that match the same number of samples.
 		 *
+		 * The remaining formats are skipped once a format matches all samples.
+		 *
 		 * @param samples The samples belonging to a single column.
 		 * @return The best-fitting format, or empty if no format matches any sample.
 		 */
@@ -174,6 +176,11 @@ public class DateTimeData extends Data {
 				if (count > bestCount) {
 					bestCount = count;
 					bestFormat = format;
+				}
+
+				// No later format can match more samples, and ties are won by the earlier format
+				if (bestCount == samples.size()) {
+					break;
 				}
 			}
 

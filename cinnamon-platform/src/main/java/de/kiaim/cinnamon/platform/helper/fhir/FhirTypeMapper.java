@@ -21,9 +21,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -58,6 +60,11 @@ public final class FhirTypeMapper {
 	 * Format of FHIR dates with full precision.
 	 */
 	public static final String FHIR_DATE_FORMAT = "yyyy-MM-dd";
+
+	/**
+	 * Maximum number of distinct values used for estimating the format of date-times.
+	 */
+	private static final int DATE_TIME_FORMAT_SAMPLE_SIZE = 100;
 
 	/**
 	 * Pattern of FHIR dates, allowing reduced precision. Taken from the FHIR specification.
@@ -171,6 +178,8 @@ public final class FhirTypeMapper {
 	 * Maps a dateTime or instant column.
 	 * Columns containing only dates are mapped to {@link DataType#DATE}.
 	 * Otherwise, a date-time format that accepts all values is searched.
+	 * The format is estimated on a sample of the values first, as testing all formats against all values is slow.
+	 * Only if the format estimated on the sample does not accept all values, the estimation is repeated on all values.
 	 */
 	private static ColumnConfiguration mapDateTime(final List<String> values) {
 		if (allFullDates(values)) {
@@ -178,15 +187,57 @@ public final class FhirTypeMapper {
 		}
 
 		final DateTimeData.DateTimeDataBuilder builder = new DateTimeData.DateTimeDataBuilder();
-		final Optional<String> format = builder.estimateFormatForSamples(values);
-		if (format.isPresent()) {
-			final Configuration formatConfiguration = new DateTimeFormatConfiguration(format.get());
-			if (allAccepted(builder, values, formatConfiguration)) {
-				return columnConfiguration(DataType.DATE_TIME, formatConfiguration);
+
+		final List<String> samples = sampleDistinct(values, DATE_TIME_FORMAT_SAMPLE_SIZE);
+		final Optional<Configuration> sampleFormat = estimateDateTimeFormat(builder, samples, values);
+		if (sampleFormat.isPresent()) {
+			return columnConfiguration(DataType.DATE_TIME, sampleFormat.get());
+		}
+
+		// If the sample is smaller than the maximum size, it already contains all distinct values
+		if (samples.size() >= DATE_TIME_FORMAT_SAMPLE_SIZE) {
+			final Optional<Configuration> format = estimateDateTimeFormat(builder, values, values);
+			if (format.isPresent()) {
+				return columnConfiguration(DataType.DATE_TIME, format.get());
 			}
 		}
 
 		return columnConfiguration(DataType.STRING, pattern(FHIR_DATE_TIME_PATTERN));
+	}
+
+	/**
+	 * Estimates the date-time format for the given samples.
+	 *
+	 * @param builder The builder used for the estimation and the validation.
+	 * @param samples The samples to estimate the format for.
+	 * @param values  All values of the column, which must be accepted by the format.
+	 * @return The format configuration if the estimated format accepts all values.
+	 */
+	private static Optional<Configuration> estimateDateTimeFormat(final DateTimeData.DateTimeDataBuilder builder,
+	                                                              final List<String> samples,
+	                                                              final List<String> values) {
+		final Optional<String> format = builder.estimateFormatForSamples(samples);
+		if (format.isPresent()) {
+			final Configuration formatConfiguration = new DateTimeFormatConfiguration(format.get());
+			if (allAccepted(builder, values, formatConfiguration)) {
+				return Optional.of(formatConfiguration);
+			}
+		}
+		return Optional.empty();
+	}
+
+	/**
+	 * Returns up to the given number of distinct values, in the order of their first occurrence.
+	 */
+	private static List<String> sampleDistinct(final List<String> values, final int sampleSize) {
+		final Set<String> samples = new LinkedHashSet<>();
+		for (final String value : values) {
+			if (samples.size() >= sampleSize) {
+				break;
+			}
+			samples.add(value);
+		}
+		return new ArrayList<>(samples);
 	}
 
 	/**

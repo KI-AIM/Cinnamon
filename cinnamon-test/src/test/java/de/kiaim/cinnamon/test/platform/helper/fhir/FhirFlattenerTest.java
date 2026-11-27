@@ -202,6 +202,48 @@ public class FhirFlattenerTest {
 	}
 
 	@Test
+	public void mapDateTimeFormatFromSample() {
+		final List<String> values = new ArrayList<>();
+		for (int i = 0; i < 200; i++) {
+			values.add(LocalDateTime.of(2020, 1, 1, 0, 0).plusMinutes(i) + ":00+02:00");
+		}
+
+		final var dateTime = FhirTypeMapper.toColumnConfiguration("dateTime", values);
+		assertEquals(DataType.DATE_TIME, dateTime.getType());
+		assertEquals("yyyy-MM-dd'T'HH:mm:ssxxx",
+		             dateTime.getConfiguration(DateTimeFormatConfiguration.class).getDateTimeFormatter());
+	}
+
+	@Test
+	public void mapDateTimeFormatNotRepresentedBySample() {
+		// The first 100 distinct values are accepted by xxx, which is preferred, but only XXX accepts Z
+		final List<String> values = new ArrayList<>();
+		for (int i = 0; i < 200; i++) {
+			values.add(LocalDateTime.of(2020, 1, 1, 0, 0).plusMinutes(i) + ":00+02:00");
+		}
+		values.add("2020-01-02T10:00:00Z");
+
+		final var dateTime = FhirTypeMapper.toColumnConfiguration("dateTime", values);
+		assertEquals(DataType.DATE_TIME, dateTime.getType());
+		assertEquals("yyyy-MM-dd'T'HH:mm:ssXXX",
+		             dateTime.getConfiguration(DateTimeFormatConfiguration.class).getDateTimeFormatter());
+	}
+
+	@Test
+	public void mapDateTimeFormatFewDistinctValues() {
+		// The sample contains all distinct values, so the estimation is not repeated on all values
+		final List<String> values = new ArrayList<>();
+		for (int i = 0; i < 500; i++) {
+			values.add(i % 2 == 0 ? "2020-01-01T10:00:00+02:00" : "2020-01-01T10:00:00Z");
+		}
+
+		final var dateTime = FhirTypeMapper.toColumnConfiguration("dateTime", values);
+		assertEquals(DataType.DATE_TIME, dateTime.getType());
+		assertEquals("yyyy-MM-dd'T'HH:mm:ssXXX",
+		             dateTime.getConfiguration(DateTimeFormatConfiguration.class).getDateTimeFormatter());
+	}
+
+	@Test
 	public void flattenCollectsAllowedCodesOfRequiredBindings() throws IOException {
 		final Bundle bundle = parse(ResourceHelper.loadFhirBundleAsString());
 

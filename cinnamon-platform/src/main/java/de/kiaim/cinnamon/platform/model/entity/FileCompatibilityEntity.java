@@ -33,8 +33,9 @@ public class FileCompatibilityEntity {
     private final Set<FileType> compatibleFileTypes = new HashSet<>();
 
     /**
-     * The resource types contained in the FHIR bundle.
-     * Only relevant for files of type {@link de.kiaim.cinnamon.model.configuration.data.file.FileType#FHIR}
+     * The resource types contained in the FHIR bundle or NDJSON file.
+     * Only relevant for files of type {@link de.kiaim.cinnamon.model.configuration.data.file.FileType#FHIR_BUNDLE} and
+     * {@link de.kiaim.cinnamon.model.configuration.data.file.FileType#FHIR_NDJSON}.
      */
     @Type(JsonType.class)
     @Column(columnDefinition = "json")

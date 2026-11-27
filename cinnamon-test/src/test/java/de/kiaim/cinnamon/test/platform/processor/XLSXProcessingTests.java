@@ -10,6 +10,7 @@ import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.platform.PlatformApplication;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
+import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
@@ -18,10 +19,13 @@ import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.processor.XlsxProcessor;
 import de.kiaim.cinnamon.test.util.DataSetTestHelper;
 import de.kiaim.cinnamon.test.util.FileConfigurationTestHelper;
+import org.dhatim.fastexcel.Workbook;
+import org.dhatim.fastexcel.Worksheet;
 import org.dhatim.fastexcel.reader.Cell;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
 import org.dhatim.fastexcel.reader.Sheet;
+import de.kiaim.cinnamon.test.util.TestDatabaseExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +41,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith({TestDatabaseExtension.class, SpringExtension.class})
 @SpringBootTest(classes = PlatformApplication.class)
 @ActiveProfiles("test")
 public class XLSXProcessingTests {
@@ -111,6 +115,136 @@ public class XLSXProcessingTests {
         assertEquals(actualResult, expectedResult);
     }
 
+
+    @Test
+    void getNumberColumnsCountsColumnsNotRows() throws IOException {
+        // 6 rows (header + 5 data rows) with 5 columns
+        final FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, true);
+
+        final int numberColumns = assertDoesNotThrow(
+                () -> xlsxProcessor.getNumberColumns(new FileInputStream("src/test/resources/xlsx_test_with_header.xlsx"), fileConfiguration));
+
+        assertEquals(5, numberColumns);
+    }
+
+    @Test
+    void readWithTrailingBlankCell() throws IOException {
+        // The last cell of the second row is blank
+        final ByteArrayOutputStream xlsx = new ByteArrayOutputStream();
+        try (final Workbook workbook = new Workbook(xlsx, "Test", "1.0")) {
+            final Worksheet worksheet = workbook.newWorksheet("data");
+            worksheet.value(0, 0, 1);
+            worksheet.value(0, 1, "Alice");
+            worksheet.value(1, 0, 2);
+        }
+
+        final FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
+        final DataConfiguration config = new DataConfiguration();
+        config.setConfigurations(List.of(
+                new ColumnConfiguration(0, "id", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()),
+                new ColumnConfiguration(1, "name", DataType.STRING, DataScale.NOMINAL, new ArrayList<>())
+        ));
+
+        assertEquals(2, assertDoesNotThrow(() -> xlsxProcessor.getNumberColumns(
+                new ByteArrayInputStream(xlsx.toByteArray()), fileConfiguration)));
+
+        final TransformationResult result = assertDoesNotThrow(
+                () -> xlsxProcessor.read(new ByteArrayInputStream(xlsx.toByteArray()), fileConfiguration, config));
+
+        assertEquals(2, result.getDataSet().getDataRows().size());
+        assertEquals(new StringData(null), result.getDataSet().getDataRows().get(1).getData().get(1));
+        // Blank cells are null and are therefore stored without a transformation error
+        assertEquals(List.of(), result.getTransformationErrors());
+    }
+
+    @Test
+    void estimateWithShortFirstRow() throws IOException {
+        // The first row has a trailing blank cell, later rows have more cells
+        final ByteArrayOutputStream xlsx = new ByteArrayOutputStream();
+        try (final Workbook workbook = new Workbook(xlsx, "Test", "1.0")) {
+            final Worksheet worksheet = workbook.newWorksheet("data");
+            worksheet.value(0, 0, 1);
+            worksheet.value(1, 0, 2);
+            worksheet.value(1, 1, "Bob");
+        }
+
+        final FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
+
+        final DataConfigurationEstimation estimation = assertDoesNotThrow(
+                () -> xlsxProcessor.estimateDataConfiguration(new ByteArrayInputStream(xlsx.toByteArray()),
+                                                              fileConfiguration,
+                                                              DatatypeEstimationAlgorithm.MOST_ESTIMATED));
+        assertEquals(2, estimation.getDataConfiguration().getConfigurations().size());
+        assertEquals(2, assertDoesNotThrow(() -> xlsxProcessor.getNumberColumns(
+                new ByteArrayInputStream(xlsx.toByteArray()), fileConfiguration)));
+    }
+
+    @Test
+    void estimateFileConfigurationWithSingleRow() throws IOException {
+        final ByteArrayOutputStream xlsx = new ByteArrayOutputStream();
+        try (final Workbook workbook = new Workbook(xlsx, "Test", "1.0")) {
+            final Worksheet worksheet = workbook.newWorksheet("data");
+            worksheet.value(0, 0, "id");
+        }
+
+        // Used to fail, because the header estimation compares the first two rows
+        final var estimation = assertDoesNotThrow(() -> xlsxProcessor.estimateFileConfiguration(
+                new LobWrapperEntity(xlsx.toByteArray()), new FileCompatibilityEntity()));
+
+        // Without a second row to compare, the default is kept
+        assertTrue(estimation.getEstimation().getXlsxFileConfiguration().isHasHeader());
+    }
+
+    @Test
+    void readRowWithTooManyValues() throws IOException {
+        final ByteArrayOutputStream xlsx = new ByteArrayOutputStream();
+        try (final Workbook workbook = new Workbook(xlsx, "Test", "1.0")) {
+            final Worksheet worksheet = workbook.newWorksheet("data");
+            worksheet.value(0, 0, 1);
+            worksheet.value(1, 0, 2);
+            worksheet.value(1, 1, "unexpected");
+        }
+
+        final FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
+        final DataConfiguration config = new DataConfiguration();
+        config.setConfigurations(List.of(
+                new ColumnConfiguration(0, "id", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>())
+        ));
+
+        final BadDatasetException exception = assertThrows(BadDatasetException.class, () -> xlsxProcessor.read(
+                new ByteArrayInputStream(xlsx.toByteArray()), fileConfiguration, config));
+        assertTrue(exception.getMessage().contains("too many values"));
+    }
+
+    @Test
+    void testReadWithBlankCell() throws IOException {
+        final ByteArrayOutputStream xlsx = new ByteArrayOutputStream();
+        try (final Workbook workbook = new Workbook(xlsx, "Test", "1.0")) {
+            final Worksheet worksheet = workbook.newWorksheet("data");
+            worksheet.value(0, 0, 1);
+            worksheet.value(0, 1, "Alice");
+            worksheet.value(0, 2, "true");
+            // Cell (1, 1) is left blank
+            worksheet.value(1, 0, 2);
+            worksheet.value(1, 2, "false");
+        }
+
+        final FileConfigurationEntity fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.XLSX, false);
+        final DataConfiguration config = new DataConfiguration();
+        config.setConfigurations(List.of(
+                new ColumnConfiguration(0, "id", DataType.INTEGER, DataScale.INTERVAL, new ArrayList<>()),
+                new ColumnConfiguration(1, "name", DataType.STRING, DataScale.NOMINAL, new ArrayList<>()),
+                new ColumnConfiguration(2, "smoker", DataType.BOOLEAN, DataScale.NOMINAL, new ArrayList<>())
+        ));
+
+        final TransformationResult result = assertDoesNotThrow(
+                () -> xlsxProcessor.read(new ByteArrayInputStream(xlsx.toByteArray()), fileConfiguration, config));
+
+        assertEquals(2, result.getDataSet().getDataRows().size());
+        assertEquals(new StringData(null), result.getDataSet().getDataRows().get(1).getData().get(1));
+        // Blank cells are null and are therefore stored without a transformation error
+        assertEquals(List.of(), result.getTransformationErrors());
+    }
 
     private TransformationResult testReadMethodOfXlsxProcessor_getExpectedTransformationResult() {
         List<DataRow> dataRows =

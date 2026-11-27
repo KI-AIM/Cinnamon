@@ -12,6 +12,7 @@ import de.kiaim.cinnamon.platform.repository.ExecutionStepRepository;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.service.*;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
+import de.kiaim.cinnamon.platform.processor.DataSetJsonReader;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
 import de.kiaim.cinnamon.test.platform.ContextRequiredTest;
 import de.kiaim.cinnamon.test.util.WithMockWebServer;
@@ -59,6 +60,7 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		ExecutionStepRepository executionStepRepository = mock(ExecutionStepRepository.class);
 
 		CsvProcessor csvProcessor = mock(CsvProcessor.class);
+		DataSetJsonReader dataSetJsonReader = mock(DataSetJsonReader.class);
 		DatabaseService databaseService = mock(DatabaseService.class);
 		ExternalServerInstanceService externalServerInstanceService = mock(ExternalServerInstanceService.class);
 		ProjectRepository projectRepository = mock(ProjectRepository.class);
@@ -69,7 +71,8 @@ public class ProcessServiceTest extends ContextRequiredTest {
 		this.processService = new ProcessService(serializationConfig, sslEnabled, port, contextPath,
 		                                         cinnamonConfiguration, taskScheduler, transactionTemplate,
 		                                         backgroundProcessRepository, executionStepRepository,
-		                                         projectRepository, executionStepMapper, csvProcessor, databaseService,
+		                                         projectRepository, executionStepMapper, csvProcessor, dataSetJsonReader,
+		                                         databaseService,
 		                                         dataProcessorService, dataSetService, externalConfigurationService,
 		                                         externalServerInstanceService, httpService, stepService);
 

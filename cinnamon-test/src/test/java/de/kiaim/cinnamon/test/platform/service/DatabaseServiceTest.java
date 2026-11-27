@@ -11,6 +11,13 @@ import de.kiaim.cinnamon.model.enumeration.StageStatus;
 import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.exception.BadConfigurationNameException;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
+import de.kiaim.cinnamon.platform.model.dto.LoadDataRequest;
+import de.kiaim.cinnamon.platform.model.StoredTransformationError;
+import de.kiaim.cinnamon.test.util.DataSetTestHelper;
+import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
+import de.kiaim.cinnamon.platform.model.DataTransformationError;
+import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
+import de.kiaim.cinnamon.model.enumeration.TransformationErrorType;
 import de.kiaim.cinnamon.platform.model.dto.DataSetSource;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
@@ -29,6 +36,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -272,6 +280,66 @@ class DatabaseServiceTest extends DatabaseTest {
 
 		final int numberInvalidRows = assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSet.getId()));
 		assertEquals(1, numberInvalidRows, "Number of invalid rows does not match!");
+	}
+
+	@Test
+	void countInvalidRowsIgnoresNullValuesWithoutError() {
+		// Row 2 contains null values, but no transformation errors
+		final TransformationResult transformationResult = new TransformationResult(
+				DataSetTestHelper.generateDataSet(true), List.of());
+		final ProjectEntity project = getTestProject();
+
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		final long dataSetId = project.getOriginalData().getDataSet().getId();
+
+		assertEquals(0, assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSetId)),
+		             "Null values without an error must not count as invalid!");
+		assertEquals(3, assertDoesNotThrow(
+				             () -> databaseService.countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.VALID, null)),
+		             "Rows with null values without an error must be selected as valid!");
+		assertEquals(0, assertDoesNotThrow(
+				             () -> databaseService.countEntries(dataSetId, HoldOutSelector.ALL, RowSelector.ERRORS, null)),
+		             "Rows with null values without an error must not be selected as erroneous!");
+	}
+
+	@Test
+	void countInvalidRowsWithMissingValueErrors() {
+		// Row 2 contains an empty string with a missing value error and a null value without an error
+		final DataRowTransformationError rowError = new DataRowTransformationError(2);
+		rowError.addError(new DataTransformationError(2, TransformationErrorType.MISSING_VALUE, ""));
+		final TransformationResult transformationResult = new TransformationResult(
+				DataSetTestHelper.generateDataSet(true), List.of(rowError));
+		final ProjectEntity project = getTestProject();
+
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		final long dataSetId = project.getOriginalData().getDataSet().getId();
+
+		assertEquals(1, assertDoesNotThrow(() -> databaseService.countInvalidRows(dataSetId)),
+		             "Missing value errors must count as invalid!");
+	}
+
+	@Test
+	void getTransformationErrorsForEncoding() {
+		// Row 2 contains a missing value error in column 2 and a format error in column 4
+		final TransformationResult transformationResult =
+				TransformationResultTestHelper.generateTransformationResult(true);
+		final ProjectEntity project = getTestProject();
+
+		assertDoesNotThrow(() -> databaseService.storeOriginalTransformationResult(transformationResult, project));
+		final DataSetEntity dataSet = project.getOriginalData().getDataSet();
+		final Map<Integer, Integer> allColumns = Map.of();
+		final Map<Integer, Integer> column4 = Map.of(4, 0);
+
+		final LoadDataRequest nullEncoding = new LoadDataRequest();
+		assertEquals(List.of(), databaseService.getTransformationErrorsForEncoding(dataSet, allColumns, nullEncoding),
+		             "Errors must not be loaded if all encodings are '$null'!");
+
+		final LoadDataRequest valueEncoding = new LoadDataRequest();
+		valueEncoding.setDefaultNullEncoding("$value");
+		assertEquals(2, databaseService.getTransformationErrorsForEncoding(dataSet, allColumns, valueEncoding).size());
+		assertEquals(List.of(new StoredTransformationError(2, 4, TransformationErrorType.FORMAT_ERROR, "forty two")),
+		             databaseService.getTransformationErrorsForEncoding(dataSet, column4, valueEncoding),
+		             "Only errors of the requested columns must be loaded!");
 	}
 
 	@Test

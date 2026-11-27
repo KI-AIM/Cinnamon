@@ -14,16 +14,6 @@
 	<name>cinnamon-platform</name>
 	<description>The base project for Cinnamon, that includes the web app for data management, anonymization and evaluation.</description>
 
-	<repositories>
-		<repository>
-			<id>github</id>
-			<name>GitHub FhirExtinguisher</name>
-			<url>https://maven.pkg.github.com/JohannesOehm/FhirExtinguisher</url>
-			<releases><enabled>true</enabled></releases>
-			<snapshots><enabled>true</enabled></snapshots>
-		</repository>
-	</repositories>
-
 	<properties>
 		<org.dhatim.fastexcel.version>0.20.2</org.dhatim.fastexcel.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
@@ -109,17 +99,6 @@
 			<groupId>de.ki-aim</groupId>
 			<artifactId>cinnamon-model</artifactId>
 			<version>${project.version}</version>
-		</dependency>
-
-		<dependency>
-		  <groupId>de.unimuenster.imi.fhir</groupId>
-		  <artifactId>columns-parser-jvm</artifactId>
-		  <version>1.8.0-DEV4</version>
-		</dependency>
-		<dependency>
-		  <groupId>de.unimuenster.imi.fhir</groupId>
-		  <artifactId>transform-fhir</artifactId>
-		  <version>1.8.0-DEV4</version>
 		</dependency>
 
 		<dependency>

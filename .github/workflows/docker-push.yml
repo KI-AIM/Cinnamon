@@ -33,16 +33,6 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
-      # Add settings.xml inside the project, Bake refuses to read secret files outside of it
-      - name: Configure Maven
-        run: |
-          mkdir -p secrets
-          envsubst < .github/maven/settings.xml > secrets/mvn_settings.xml
-          chmod 600 secrets/mvn_settings.xml
-        env:
-          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-          GITHUB_ACTOR: ${{ secrets.GH_PACKAGES_USER }}
-
       # Build all images
       - name: Build Docker images
         run: docker compose -f docker-compose-build.yml build

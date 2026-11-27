@@ -29,14 +29,25 @@
         </div>
         <div class="page-wrapper">
 
-            <!-- Latest notification -->
-            @if (latestNotification$ | async; as notification) {
-                <app-info-card animate.enter="slide-in-from-top" animate.leave="slide-out-to-top" [closable]="true"
-                               class="notification" [typeClass]="'card-' + notification.type"
-                               (onClose)="notificationService.markLatestAsRead();">
-                    {{ notification.message }}
-                </app-info-card>
-            }
+            <div class="notification-stack">
+                <!-- Export Status -->
+                @if (exportStatus$ | async) {
+                    <app-info-card typeClass="card-warn" class="notification" animate.enter="slide-in-from-top"
+                                   animate.leave="slide-out-to-top">
+                        The export is being prepared. This may take a moment.<br/>
+                        <button mat-raised-button color="primary" (click)="abortProjectExport();">Abort</button>
+                    </app-info-card>
+                }
+
+                <!-- Latest notification -->
+                @if (latestNotification$ | async; as notification) {
+                    <app-info-card animate.enter="slide-in-from-top" animate.leave="slide-out-to-top" [closable]="true"
+                                   class="notification" [typeClass]="'card-' + notification.type"
+                                   (onClose)="notificationService.markLatestAsRead();">
+                        {{ notification.message }}
+                    </app-info-card>
+                }
+            </div>
 
             <div class="page-content">
                 <!-- Info for locked step -->

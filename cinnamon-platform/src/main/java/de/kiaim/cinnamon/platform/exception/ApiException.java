@@ -4,6 +4,7 @@ import de.kiaim.cinnamon.model.dto.ErrorDetails;
 import de.kiaim.cinnamon.platform.controller.ApiExceptionHandler;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatusCode;
 
 /**
@@ -50,7 +51,7 @@ public abstract class ApiException extends Exception {
 		this.errorDetails = errorDetails;
 	}
 
-	public ApiException(final String exceptionCode, final String message, final Throwable cause) {
+	public ApiException(final String exceptionCode, final String message, @Nullable final Throwable cause) {
 		super(message, cause);
 		this.exceptionCode = exceptionCode;
 	}

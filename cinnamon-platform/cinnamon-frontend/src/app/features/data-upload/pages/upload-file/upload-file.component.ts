@@ -167,8 +167,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
      * @private
      */
     protected isFileConfigurationInvalid(): boolean {
-        if (this.fileConfiguration.fileType === FileType.FHIR) {
-            if (this.fileConfiguration.fhirFileConfiguration == null || this.fileConfiguration.fhirFileConfiguration.resourceType == null) {
+        if (this.fileConfiguration.fileType === FileType.FHIR_BUNDLE) {
+            if (this.fileConfiguration.fhirBundleFileConfiguration == null || this.fileConfiguration.fhirBundleFileConfiguration.resourceType == null) {
                 return true;
             }
         }
@@ -220,7 +220,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                 switchMap(() => this.statusService.updateNextStep(Steps.UPLOAD)),
                 switchMap(() => this.fileService.refreshDataSourceConfiguration()),
                 take(1),
-                switchMap(() => this.fileService.estimateFileConfiguration())
+                switchMap(() => this.fileService.estimateFileConfiguration()),
             ).subscribe({
                 next: (value) => {
                     this.handleFileConfigurationEstimation(value, showFileConfig);
@@ -392,7 +392,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
                 this.fileConfiguration.fileType = FileType.CSV;
                 break;
             case "json":
-                this.fileConfiguration.fileType = FileType.FHIR;
+                this.fileConfiguration.fileType = FileType.FHIR_BUNDLE;
+                break;
+            case "ndjson":
+                this.fileConfiguration.fileType = FileType.FHIR_NDJSON;
                 break;
             case "xlsx":
                 this.fileConfiguration.fileType = FileType.XLSX;
@@ -423,8 +426,11 @@ export class UploadFileComponent implements OnInit, OnDestroy {
 
         this.loadingEstimation = false;
 
-        if (openDialog && value.estimation.fileType === FileType.FHIR) {
-            this.openDialog(this.fileConfigurationDialog);
+        if (openDialog && value.estimation.fileType === FileType.FHIR_BUNDLE) {
+            // Wait until the pageData$ was updated so the resource types are present when opening the dialog
+            setTimeout(() => {
+                this.openDialog(this.fileConfigurationDialog);
+            });
         }
     }
 

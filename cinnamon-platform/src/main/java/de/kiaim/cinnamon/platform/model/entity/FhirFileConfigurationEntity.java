@@ -1,43 +1,36 @@
 package de.kiaim.cinnamon.platform.model.entity;
 
-
-import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.FileType;
-import jakarta.persistence.DiscriminatorValue;
+import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
+import de.kiaim.cinnamon.platform.converter.DataConfigurationAttributeConverter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
 
 /**
- * File configuration for FHIR bundles.
- * Contains metadata required to read a file.
+ * Common file configuration for FHIR files.
+ * <p>
+ * Flattening a FHIR file requires parsing the whole file, which is expensive.
+ * Therefore, the result of the flattening is derived once when the file configuration is stored
+ * and reused for counting the columns, validating the column names and estimating the data configuration.
+ *
+ * @author Daniel Preciado-Marquez
  */
 @Entity
-@DiscriminatorValue(value = FileType.Values.FHIR)
 @Getter @Setter
-public class FhirFileConfigurationEntity extends FileConfigurationEntity {
+public abstract class FhirFileConfigurationEntity extends FileConfigurationEntity {
 
 	/**
-	 * The resource type to export from the bundle.
+	 * The data configuration derived from the FHIR datatypes of the flattened columns.
+	 * Null if it has not been derived yet, e.g. because the resource type is not selected.
 	 */
+	@Convert(converter = DataConfigurationAttributeConverter.class)
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(columnDefinition = "json")
 	@Nullable
-	private String resourceType;
-
-	/**
-	 * Default constructor for Spring.
-	 */
-	public FhirFileConfigurationEntity() {
-		this.fileType = FileType.FHIR;
-	}
-
-	/**
-	 * Creates a new FHIR file configuration from the given DTO.
-	 *
-	 * @param configuration The configuration.
-	 */
-	public FhirFileConfigurationEntity(final FhirFileConfiguration configuration) {
-		this.resourceType = configuration.getResourceType();
-		this.fileType = FileType.FHIR;
-	}
+	private DataConfiguration derivedDataConfiguration = null;
 }

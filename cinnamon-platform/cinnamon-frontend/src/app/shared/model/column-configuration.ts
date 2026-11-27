@@ -2,6 +2,7 @@ import { DateFormatConfiguration } from "@shared/model/date-format-configuration
 import { DateTimeFormatConfiguration } from "@shared/model/date-time-format-configuration";
 import { RangeConfiguration } from "@shared/model/range-configuration";
 import { StringPatternConfiguration } from "@shared/model/string-pattern-configuration";
+import { TextLanguageConfiguration } from "@shared/model/text-language-configuration";
 import { TransformFnParams } from "class-transformer/types/interfaces";
 import { DataType } from "./data-type";
 import { Configuration } from "./configuration";
@@ -46,17 +47,20 @@ function transformConfigurations(params: TransformFnParams): Configuration[] {
     for (const obj of params.value) {
         const name = obj.getName() as string;
         switch (name) {
-            case DateFormatConfiguration.name:
+            case DateFormatConfiguration.NAME:
                 result.push(plainToInstance(DateFormatConfiguration, obj));
                 break;
-            case DateTimeFormatConfiguration.name:
+            case DateTimeFormatConfiguration.NAME:
                 result.push(plainToInstance(DateTimeFormatConfiguration, obj));
                 break;
-            case RangeConfiguration.name:
+            case RangeConfiguration.NAME:
                 result.push(plainToInstance(RangeConfiguration, obj));
                 break;
-            case StringPatternConfiguration.name:
+            case StringPatternConfiguration.NAME:
                 result.push(plainToInstance(StringPatternConfiguration, obj));
+                break;
+            case TextLanguageConfiguration.NAME:
+                result.push(plainToInstance(TextLanguageConfiguration, obj));
                 break;
             default:
                 console.error("Unhandled configuration type: " + name);

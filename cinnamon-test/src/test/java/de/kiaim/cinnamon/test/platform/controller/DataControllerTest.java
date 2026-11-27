@@ -3,6 +3,7 @@ package de.kiaim.cinnamon.test.platform.controller;
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.RangeConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.attributes.StringPatternConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.FhirBundleFileConfiguration;
 import de.kiaim.cinnamon.model.data.IntegerData;
 import de.kiaim.cinnamon.model.enumeration.DataSourceType;
 import de.kiaim.cinnamon.model.enumeration.DataType;
@@ -10,11 +11,9 @@ import de.kiaim.cinnamon.platform.exception.ApiException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
-import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.Mode;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
-import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.service.ProjectService;
@@ -38,7 +37,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -356,7 +354,7 @@ class DataControllerTest extends ControllerTest {
 	@Test
 	void postFileConfigurationOtherInvalidFileConfiguration() throws Exception {
 		FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration();
-		fileConfiguration.setFhirFileConfiguration(new FhirFileConfiguration());
+		fileConfiguration.setFhirBundleFileConfiguration(new FhirBundleFileConfiguration());
 
 		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file/configuration")
 				                .param("fileConfiguration",
@@ -450,7 +448,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("configuration", string))
 		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta[0].source[0]'"))
+		       .andExpect(errorMessage("Attribute number 4 with name 'invalid' does not match the column name of the FHIR bundle 'Observation.meta.source'"))
 		       .andExpect(errorCode(ApiException.assembleErrorCode("1", "9", "3")));
 	}
 
@@ -711,114 +709,6 @@ class DataControllerTest extends ControllerTest {
 	}
 
 	// ================================================================================================================
-	// region loadData()
-	// ================================================================================================================
-
-	@Test
-	void loadData() throws Exception {
-		postData();
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
-		                                      .accept(MediaType.APPLICATION_YAML)
-		                                      .param("selector", "original"))
-		       .andExpect(status().isOk())
-		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml()));
-	}
-
-	@Test
-	void loadDataNoDataSet() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
-		                                      .param("selector", "original"))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage(
-				       "The project '" + testProject.getId() + "' does not contain an original data set!"));
-	}
-
-	@WithAnonymousUser
-	@Test
-	void loadDataNoPermissions() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
-		                                      .param("selector", "original"))
-		       .andExpect(status().isUnauthorized());
-	}
-
-	@Test
-	void loadDataColumns() throws Exception {
-		postData();
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
-		                                      .accept(MediaType.APPLICATION_YAML)
-		                                      .param("selector", "original")
-		                                      .param("columns", "column4_integer,column0_boolean"))
-		       .andExpect(status().isOk())
-		       .andExpect(content().string(DataSetTestHelper.generateDataColumnsAsYaml()));
-	}
-
-	@Test
-	void loadDataInvalidColumns() throws Exception {
-		postData();
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
-		                                      .param("selector", "original")
-		                                      .param("columns", "invalid1,column4_integer,invalid2"))
-		       .andExpect(status().isBadRequest())
-		       .andExpect(errorMessage("Data set does not contain columns with names: 'invalid1', 'invalid2'"));
-	}
-
-	@Test
-	void loadDataEncoding() throws Exception {
-		postData(true);
-
-		final String defaultNullEncoding = "N/A";
-		final String formatErrorEncoding = ":(";
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
-		                                      .accept(MediaType.APPLICATION_YAML)
-		                                      .param("selector", "original")
-		                                      .param("defaultNullEncoding", defaultNullEncoding)
-		                                      .param("formatErrorEncoding", formatErrorEncoding))
-		       .andExpect(status().isOk())
-		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml(wrapInQuotes(defaultNullEncoding),
-		                                                                        wrapInQuotes(formatErrorEncoding))));
-	}
-
-	@Test
-	void loadDataEncodingNull() throws Exception {
-		postData(true);
-
-		final String defaultNullEncoding = "N/A";
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
-		                                      .accept(MediaType.APPLICATION_YAML)
-		                                      .param("selector", "original")
-		                                      .param("defaultNullEncoding", defaultNullEncoding)
-		                                      .param("formatErrorEncoding", "$null"))
-		       .andExpect(status().isOk())
-		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml(wrapInQuotes(defaultNullEncoding),
-		                                                                        "null")));
-	}
-
-	@Test
-	void loadDataEncodingValue() throws Exception {
-		postData(true);
-
-		final String defaultNullEncoding = "N/A";
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data/data")
-		                                      .accept(MediaType.APPLICATION_YAML)
-		                                      .param("selector", "original")
-		                                      .param("defaultNullEncoding", defaultNullEncoding)
-		                                      .param("formatErrorEncoding", "$value"))
-		       .andExpect(status().isOk())
-		       .andExpect(content().string(DataSetTestHelper.generateDataAsYaml(wrapInQuotes(defaultNullEncoding),
-		                                                                        wrapInQuotes("forty two"))));
-	}
-
-	// ================================================================================================================
-	// endregion
-	// ================================================================================================================
-
-	// ================================================================================================================
 	// region generateHoldOutSplit()
 	// ================================================================================================================
 
@@ -837,26 +727,26 @@ class DataControllerTest extends ControllerTest {
 		assertEquals(holdOutPercentage, project.getOriginalData().getDatasetConfiguration().getHoldOutSplitPercentage(),
 		             "Hold-out percentage not set correctly!");
 
-		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
 				                .accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().isOk())
-				.andExpect(content().json("[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']]"));
+				.andExpect(content().json("{data: [[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']]}"));
 
-		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name())
 				                .accept(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]"));
+		       .andExpect(content().json("{data: [[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]}"));
 
-		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
 				                .param("selector", "original")
 				                .param("holdOutSelector", HoldOutSelector.ALL.name())
 				                .accept(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("[[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!'],[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]"));
+		       .andExpect(content().json("{data: [[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!'],[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!']]}"));
 	}
 
 	@Test
@@ -897,7 +787,8 @@ class DataControllerTest extends ControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
-		                                      .param("selector", "original"))
+		                                      .param("selector", "original")
+		                                      .param("includeErrors", "false"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsYaml()));
 	}
@@ -908,7 +799,8 @@ class DataControllerTest extends ControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_JSON)
-		                                      .param("selector", "original"))
+		                                      .param("selector", "original")
+		                                      .param("includeErrors", "false"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsJson()));
 	}
@@ -937,6 +829,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
+		                                      .param("includeErrors", "false")
 		                                      .param("columns", "column4_integer,column0_boolean"))
 		       .andExpect(status().isOk())
 		       .andExpect(content().string(DataSetTestHelper.generateDataSetColumnsAsYaml()));
@@ -963,6 +856,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_YAML)
 		                                      .param("selector", "original")
+		                                      .param("includeErrors", "false")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
 		       .andExpect(status().isOk())
@@ -981,6 +875,7 @@ class DataControllerTest extends ControllerTest {
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
 		                                      .accept(MediaType.APPLICATION_JSON)
 		                                      .param("selector", "original")
+		                                      .param("includeErrors", "false")
 		                                      .param("defaultNullEncoding", defaultNullEncoding)
 		                                      .param("formatErrorEncoding", formatErrorEncoding))
 		       .andExpect(status().isOk())
@@ -994,14 +889,81 @@ class DataControllerTest extends ControllerTest {
 	// ================================================================================================================
 
 	@Test
-	void loadTransformationResult() throws Exception {
+	void loadDataSetEncodingNull() throws Exception {
 		postData(true);
 
-		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult")
+		final String defaultNullEncoding = "N/A";
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
+		                                      .accept(MediaType.APPLICATION_YAML)
+		                                      .param("selector", "original")
+		                                      .param("includeErrors", "false")
+		                                      .param("defaultNullEncoding", defaultNullEncoding)
+		                                      .param("formatErrorEncoding", "$null"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsYaml(wrapInQuotes(defaultNullEncoding),
+		                                                                           "null")));
+	}
+
+	@Test
+	void loadDataSetEncodingValue() throws Exception {
+		postData(true);
+
+		final String defaultNullEncoding = "N/A";
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/project/" + testProject.getExternalId() + "/data")
+		                                      .accept(MediaType.APPLICATION_YAML)
+		                                      .param("selector", "original")
+		                                      .param("includeErrors", "false")
+		                                      .param("defaultNullEncoding", defaultNullEncoding)
+		                                      .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().string(DataSetTestHelper.generateDataSetAsYaml(wrapInQuotes(defaultNullEncoding),
+		                                                                           wrapInQuotes("forty two"))));
+	}
+
+	@Test
+	void loadDataSetTransformationErrors() throws Exception {
+		postData(true);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
 				                .param("selector", "original"))
 		       .andExpect(status().isOk())
-		       .andExpect(content().string(oneOf(TransformationResultTestHelper.generateTransformationResultAsJsonA(),
-		                                         TransformationResultTestHelper.generateTransformationResultAsJsonB())));
+		       .andExpect(jsonPath("$.dataConfiguration").exists())
+		       .andExpect(content().json(
+				       "{data: [[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!'],[true,'2023-11-20',null,4.2,null,'Hello World!']]," +
+				       "transformationErrors: [{index: 2, dataTransformationErrors: [{index: 2, errorType: 'MISSING_VALUE', rawValue: ''},{index: 4, errorType: 'FORMAT_ERROR', rawValue: 'forty two'}]}]}"));
+	}
+
+	@Test
+	void loadDataSetTransformationErrorsColumns() throws Exception {
+		postData(true);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
+				                .param("selector", "original")
+				                .param("columns", "column4_integer,column0_boolean"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{data: [[42,true],[24,false],[null,true]]," +
+				       "transformationErrors: [{index: 2, dataTransformationErrors: [{index: 0, errorType: 'FORMAT_ERROR', rawValue: 'forty two'}]}]}",
+				       false))
+		       .andExpect(jsonPath("$.transformationErrors[0].dataTransformationErrors.length()").value(1));
+	}
+
+	@Test
+	void loadDataSetWithoutTransformationErrors() throws Exception {
+		postData(true);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
+				                .param("selector", "original")
+				                .param("includeErrors", "false")
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.data[2][4]").value("forty two"))
+		       .andExpect(jsonPath("$.transformationErrors").doesNotExist());
 	}
 
 	@Test
@@ -1176,6 +1138,74 @@ class DataControllerTest extends ControllerTest {
 		       .andExpect(status().isOk())
 		       .andExpect(content().json(
 				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[0,1],'page':1,'perPage':10,total:2,'totalPages':1}"));
+	}
+
+	// The hold-out split of 20% contains the row with the transformation errors (row 2)
+
+	@Test
+	void loadDataSetSelectHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{data: [[true,'2023-11-20',null,4.2,'forty two','Hello World!']]," +
+				       "transformationErrors: [{index: 0, dataTransformationErrors: [{index: 2, errorType: 'MISSING_VALUE', rawValue: ''},{index: 4, errorType: 'FORMAT_ERROR', rawValue: 'forty two'}]}]}"));
+	}
+
+	@Test
+	void loadDataSetSelectNotHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{data: [[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']]," +
+				       "transformationErrors: []}"));
+	}
+
+	@Test
+	void loadDataSetSelectHoldOutColumns() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
+				                .param("selector", "original")
+				                .param("columns", "column4_integer,column0_boolean")
+				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{data: [['forty two',true]]," +
+				       "transformationErrors: [{index: 0, dataTransformationErrors: [{index: 0, errorType: 'FORMAT_ERROR', rawValue: 'forty two'}]}]}"))
+		       .andExpect(jsonPath("$.transformationErrors[0].dataTransformationErrors.length()").value(1));
+	}
+
+	@Test
+	void loadDataSetSelectHoldOutWithoutTransformationErrors() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
+				                .param("includeErrors", "false")
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{data: [[true,'2023-11-20',null,4.2,'forty two','Hello World!']]}"))
+		       .andExpect(jsonPath("$.transformationErrors").doesNotExist());
 	}
 
 	private String wrapInQuotes(final String value) {

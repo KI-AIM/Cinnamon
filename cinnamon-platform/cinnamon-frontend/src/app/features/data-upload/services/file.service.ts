@@ -4,7 +4,7 @@ import { CsvFileConfiguration, Delimiter, LineEnding, QuoteChar } from "@shared/
 import {
     DataSourceConfiguration,
     DataSourceType,
-    FhirFileConfiguration,
+    FhirBundleFileConfiguration,
     FileConfiguration,
     FileConfigurationEstimation
 } from "@shared/model/file-configuration";
@@ -14,11 +14,10 @@ import { ErrorHandlingService } from "@shared/services/error-handling.service";
 import { ProjectService } from "@shared/services/project.service";
 import {
     distinctUntilChanged,
-    finalize,
+    finalize, map,
     Observable,
     of,
     ReplaySubject,
-    share,
     shareReplay,
     switchMap,
     take,
@@ -30,6 +29,7 @@ import { environments } from "src/environments/environment";
     providedIn: 'root',
 })
 export class FileService {
+    // Cache for the UploadFileComponent
     fileConfiguration: FileConfiguration;
 
     private readonly _fileInfoSubject: ReplaySubject<FileInformation>;
@@ -41,6 +41,11 @@ export class FileService {
     private readonly _dataSourceConfiguration$: Observable<DataSourceConfiguration>;
     private _dataSourceConfigurationFetched: boolean = false;
     private _dataSourceConfigurationLoading$: Observable<DataSourceConfiguration> | null = null;
+
+    private readonly _fileConfigurationSubject: ReplaySubject<FileConfiguration>;
+    private readonly _fileConfiguration$: Observable<FileConfiguration>;
+    private _fileConfigurationFetched: boolean = false;
+    private _fileConfigurationLoading$: Observable<FileConfiguration> | null = null;
 
 	constructor(
         private readonly errorHandlingService: ErrorHandlingService,
@@ -57,11 +62,14 @@ export class FileService {
             distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
         );
 
+        this._fileConfigurationSubject = new ReplaySubject<FileConfiguration>(1);
+        this._fileConfiguration$ = this._fileConfigurationSubject.asObservable();
+
         this.fileConfiguration = new FileConfiguration(
             null,
             new CsvFileConfiguration(Delimiter.COMMA, LineEnding.LF, QuoteChar.DOUBLE_QUOTE, true),
             new XlsxFileConfiguration(true),
-            new FhirFileConfiguration(""));
+            new FhirBundleFileConfiguration(""));
     }
 
     public get fileInfo$(): Observable<FileInformation> {
@@ -165,11 +173,45 @@ export class FileService {
     }
 
     public get fileConfiguration$(): Observable<FileConfiguration> {
-        return this.projectService.projectIdRequiredOnce$.pipe(
+        if (!this._fileConfigurationFetched && !this._fileConfigurationLoading$) {
+            this.refreshFileConfiguration().subscribe({
+                error: (error) => {
+                    this._fileConfigurationFetched = false;
+                    this.errorHandlingService.addError(error, "Failed to fetch the file configuration.");
+                },
+            });
+        }
+
+        return this._fileConfiguration$;
+    }
+
+    public refreshFileConfiguration(): Observable<FileConfiguration> {
+        if (this._fileConfigurationLoading$) {
+            return this._fileConfigurationLoading$;
+        }
+
+        this._fileConfigurationLoading$ = this.projectService.projectIdRequiredOnce$.pipe(
             switchMap(projectId => this.fetchFileConfiguration(projectId)),
-            tap(value => this.fileConfiguration = value),
-            share(),
+            tap(value => this.updateFileConfiguration(value)),
+            finalize(() => {
+                this._fileConfigurationLoading$ = null;
+            }),
+            shareReplay({bufferSize: 1, refCount: false}),
         );
+
+        return this._fileConfigurationLoading$;
+    }
+
+    /**
+     * Updates the cached file configuration and notifies all subscribers of {@link fileConfiguration$}.
+     *
+     * @param fileConfiguration The new file configuration.
+     * @private
+     */
+    private updateFileConfiguration(fileConfiguration: FileConfiguration): void {
+        this.fileConfiguration = fileConfiguration;
+        this._fileConfigurationFetched = true;
+        this._fileConfigurationSubject.next(fileConfiguration);
     }
 
     public invalidateCache() {
@@ -178,6 +220,9 @@ export class FileService {
 
         this._dataSourceConfigurationFetched = false;
         this._dataSourceConfigurationLoading$ = null;
+
+        this._fileConfigurationFetched = false;
+        this._fileConfigurationLoading$ = null;
     }
 
     public getFileConfiguration(): FileConfiguration {
@@ -219,7 +264,12 @@ export class FileService {
     public estimateFileConfiguration(): Observable<FileConfigurationEstimation> {
         return this.projectService.projectIdRequiredOnce$.pipe(
             switchMap(projectId => this.postFileEstimationAction(projectId)),
-            tap(value => this.fileConfiguration = value.estimation),
+            tap(value => this.updateFileConfiguration(value.estimation)),
+            // The file type inside the info is only available after saving the file configuration.
+            // So the file info should be updated after the estimation.
+            switchMap((config) => this.refreshFileInfo().pipe(
+                map(() => config),
+            )),
         );
     }
 

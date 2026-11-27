@@ -261,22 +261,22 @@ export class DataConfigurationComponent implements OnInit {
             const addConfigs = [];
 
             for (const addConfig of columnConfiguration.configurations) {
-                if (addConfig.getName() === "DateFormatConfiguration") {
+                if (addConfig.getName() === DateFormatConfiguration.NAME) {
                     const dateFormatConfiguration = addConfig as DateFormatConfiguration;
                     addConfigs.push(
                         this.formBuilder.group({
-                            name: ["DateFormatConfiguration"],
+                            name: [DateFormatConfiguration.NAME],
                             dateFormatter: [{
                                 value: dateFormatConfiguration.dateFormatter,
                                 disabled: this.locked
                             }, {validators: [Validators.required]}],
                         })
                     );
-                } else if (addConfig.getName() === "DateTimeFormatConfiguration") {
+                } else if (addConfig.getName() === DateTimeFormatConfiguration.NAME) {
                     const dateTimeFormatConfiguration = addConfig as DateTimeFormatConfiguration;
                     addConfigs.push(
                         this.formBuilder.group({
-                            name: ["DateTimeFormatConfiguration"],
+                            name: [DateTimeFormatConfiguration.NAME],
                             dateTimeFormatter: [{
                                 value: dateTimeFormatConfiguration.dateTimeFormatter,
                                 disabled: this.locked
@@ -285,11 +285,11 @@ export class DataConfigurationComponent implements OnInit {
                             }],
                         })
                     );
-                } else if (addConfig.getName() === "RangeConfiguration") {
+                } else if (addConfig.getName() === RangeConfiguration.NAME) {
                     const rangeConfiguration = addConfig as RangeConfiguration;
                     addConfigs.push(
                         this.formBuilder.group({
-                            name: ["RangeConfiguration"],
+                            name: [RangeConfiguration.NAME],
                             minValue: [{value: rangeConfiguration.minValue, disabled: this.locked}, {
                                 validators: [Validators.required]
                             }],
@@ -298,21 +298,21 @@ export class DataConfigurationComponent implements OnInit {
                             }],
                         })
                     );
-                } else if (addConfig.getName() === "StringPatternConfiguration") {
+                } else if (addConfig.getName() === StringPatternConfiguration.NAME) {
                     const stringPatternConfiguration = addConfig as StringPatternConfiguration;
                     addConfigs.push(
                         this.formBuilder.group({
-                            name: ["StringPatternConfiguration"],
+                            name: [StringPatternConfiguration.NAME],
                             pattern: [{value: stringPatternConfiguration.pattern, disabled: this.locked}, {
                                 validators: [Validators.required]
                             }],
                         })
                     );
-                } else if (addConfig.getName() === "TextLanguageConfiguration") {
+                } else if (addConfig.getName() === TextLanguageConfiguration.NAME) {
                     const textLanguageConfiguration = addConfig as TextLanguageConfiguration;
                     addConfigs.push(
                         this.formBuilder.group({
-                            name: ["TextLanguageConfiguration"],
+                            name: [TextLanguageConfiguration.NAME],
                             language: [{
                                 value: textLanguageConfiguration.language,
                                 disabled: this.locked
@@ -326,7 +326,7 @@ export class DataConfigurationComponent implements OnInit {
 
             const columnGroup = this.formBuilder.group({
                 index: [columnConfiguration.index],
-                name: [{value: columnConfiguration.name, disabled: this.locked || fileType === FileType.FHIR}, {
+                name: [{value: columnConfiguration.name, disabled: this.locked || fileType === FileType.FHIR_BUNDLE || fileType === FileType.FHIR_NDJSON}, {
                     validators: [Validators.required, noSpaceValidator()]
                 }],
                 type: [{
@@ -463,7 +463,7 @@ export class DataConfigurationComponent implements OnInit {
                 let hasFormat = false;
                 for (const additionalConfiguration of additionalConfigurations.controls) {
                     const nameControl = additionalConfiguration.get('name')!;
-                    if (nameControl.value === "DateFormatConfiguration") {
+                    if (nameControl.value === DateFormatConfiguration.NAME) {
                         hasFormat = true;
                         break;
                     }
@@ -480,7 +480,7 @@ export class DataConfigurationComponent implements OnInit {
                 let hasFormat = false;
                 for (const additionalConfiguration of additionalConfigurations.controls) {
                     const nameControl = additionalConfiguration.get('name')!;
-                    if (nameControl.value === "DateTimeFormatConfiguration") {
+                    if (nameControl.value === DateTimeFormatConfiguration.NAME) {
                         hasFormat = true;
                         break;
                     }

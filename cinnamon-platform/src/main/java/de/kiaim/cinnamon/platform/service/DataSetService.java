@@ -8,6 +8,7 @@ import de.kiaim.cinnamon.model.data.*;
 import de.kiaim.cinnamon.model.enumeration.DataType;
 import de.kiaim.cinnamon.model.enumeration.ProcessStatus;
 import de.kiaim.cinnamon.platform.exception.*;
+import de.kiaim.cinnamon.platform.model.StoredTransformationError;
 import de.kiaim.cinnamon.platform.model.entity.*;
 import de.kiaim.cinnamon.platform.model.configuration.ExternalEndpoint;
 import de.kiaim.cinnamon.platform.model.configuration.CinnamonConfiguration;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -45,13 +47,19 @@ public class DataSetService {
 	/**
 	 * Encodes the given dataset.
 	 * All columns are included, and transformation errors are not injected.
+	 * Date-time values are stored normalized to UTC.
+	 * If keepTimeZones is true, time zone patterns of the date-time formats are kept and filled with UTC,
+	 * otherwise they are stripped from the format.
 	 *
-	 * @param dataSet The dataset to encode.
+	 * @param dataSet       The dataset to encode.
+	 * @param keepTimeZones If time zone patterns of date-time formats should be kept.
 	 * @return Encoded native values of the dataset
 	 */
-	public List<List<Object>> encodeDataRowsSimple(final DataSet dataSet) {
+	public List<List<@Nullable Object>> encodeDataRowsSimple(final DataSet dataSet, final boolean keepTimeZones) {
 		final Map<Integer, Integer> columnIndexMapping = getColumnIndexMapping(dataSet.getDataConfiguration());
-		return encodeDataRows(dataSet, new HashSet<>(), columnIndexMapping, new LoadDataRequest());
+		final LoadDataRequest loadDataRequest = new LoadDataRequest();
+		loadDataRequest.setKeepTimeZones(keepTimeZones);
+		return encodeDataRows(dataSet, List.of(), columnIndexMapping, loadDataRequest);
 	}
 
 	/**
@@ -63,66 +71,73 @@ public class DataSetService {
 	 * @param loadDataRequest Export settings.
 	 * @return Encoded data set.
 	 */
-	public List<List<Object>> encodeDataRows(final DataSet dataSet,
-	                                         final Set<DataTransformationErrorEntity> transformationErrors,
+	public List<List<@Nullable Object>> encodeDataRows(final DataSet dataSet,
+	                                         final Collection<StoredTransformationError> transformationErrors,
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
-		return encodeDataRows(dataSet, transformationErrors, 0, null, columnIndexMapping, loadDataRequest);
+		return encodeDataRows(dataSet, transformationErrors, null, columnIndexMapping, loadDataRequest);
 	}
 
 	/**
 	 * Encodes the given data set using the given DataConfiguration and the given encoding configuration.
 	 * Replaces all null values with the configured encoding.
-	 * Applies the given offset to the row indices of the transformation errors if indexMapping is null.
-	 * If indexMapping is not null, uses the value at the given position as the row index.
+	 * If rowPositions is null, the row index of a transformation error is used as the position of the row
+	 * in the given data set. Otherwise, the position is looked up in rowPositions
+	 * and errors of rows that are not contained are skipped.
 	 *
 	 * @param dataSet DataSet to encode.
 	 * @param transformationErrors The transformation errors
-	 * @param rowOffset Start row of the data set that is applied to the indices of the transformation errors.
-	 * @param indexMapping Mapping for the index in the original data set.
+	 * @param rowPositions Mapping from the row index in the original data set to the position in the given data set.
+	 *                     See {@link #getRowPositions(List)}.
 	 * @param loadDataRequest Export settings.
 	 * @return Encoded data set.
 	 */
-	public List<List<Object>> encodeDataRows(final DataSet dataSet,
-	                                         final Set<DataTransformationErrorEntity> transformationErrors,
-	                                         final int rowOffset,
-	                                         @Nullable final List<Integer> indexMapping,
+	public List<List<@Nullable Object>> encodeDataRows(final DataSet dataSet,
+	                                         final Collection<StoredTransformationError> transformationErrors,
+	                                         @Nullable final Map<Integer, Integer> rowPositions,
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
 
-		final List<List<Object>> data = printDataRows(dataSet);
+		final List<List<@Nullable Object>> data = printDataRows(dataSet, loadDataRequest.isKeepTimeZones());
 
-		String defaultNullEncoding = loadDataRequest.getDefaultNullEncoding();
-		String missingValueEncoding = loadDataRequest.getMissingValueEncoding() == null
-		                              ? defaultNullEncoding
-		                              : loadDataRequest.getMissingValueEncoding();
-		String formatErrorEncoding = loadDataRequest.getFormatErrorEncoding() == null
-		                             ? defaultNullEncoding
-		                             : loadDataRequest.getFormatErrorEncoding();
-		String valueNotInRangeEncoding = loadDataRequest.getValueNotInRangeEncoding() == null
-		                                 ? defaultNullEncoding
-		                                 : loadDataRequest.getValueNotInRangeEncoding();
+		final String defaultNullEncoding = loadDataRequest.getDefaultNullEncoding();
+		final String missingValueEncoding = getMissingValueEncoding(loadDataRequest);
+		final String formatErrorEncoding = getFormatErrorEncoding(loadDataRequest);
+		final String valueNotInRangeEncoding = getValueNotInRangeEncoding(loadDataRequest);
 
-		if (!"$null".equals(defaultNullEncoding) || !"$null".equals(missingValueEncoding) ||
-		    !"$null".equals(formatErrorEncoding) || !"$null".equals(valueNotInRangeEncoding)) {
+		if (requiresTransformationErrors(loadDataRequest)) {
 
-			for (final DataTransformationErrorEntity transformationError : transformationErrors) {
-				if (!columnIndexMapping.isEmpty() && !columnIndexMapping.containsKey(transformationError.getColumnIndex())) {
+			// Null values without a transformation error are missing values whose original value was null.
+			// Encode all null values as missing values first, the transformation errors below overwrite the values
+			// of all other null values.
+			if (!"$null".equals(missingValueEncoding) && !"$value".equals(missingValueEncoding)) {
+				encodeNullValues(data, dataSet.getDataConfiguration().getConfigurations().size(),
+				                 missingValueEncoding);
+			}
+
+			for (final StoredTransformationError transformationError : transformationErrors) {
+				if (!columnIndexMapping.isEmpty() &&
+				    !columnIndexMapping.containsKey(transformationError.columnIndex())) {
 					// Column is not requested
 					continue;
 				}
 
-				final var encodedValue = switch (transformationError.getErrorType()) {
+				final Integer rowIndex = rowPositions != null
+				                         ? rowPositions.get(transformationError.rowIndex())
+				                         : Integer.valueOf(transformationError.rowIndex());
+				if (rowIndex == null) {
+					// Row is not exported
+					continue;
+				}
+
+				final var encodedValue = switch (transformationError.errorType()) {
 					case CONFIG_ERROR, OTHER -> encodeValue(defaultNullEncoding, transformationError);
 					case FORMAT_ERROR -> encodeValue(formatErrorEncoding, transformationError);
 					case MISSING_VALUE -> encodeValue(missingValueEncoding, transformationError);
 					case VALUE_NOT_IN_RANGE -> encodeValue(valueNotInRangeEncoding, transformationError);
 				};
 
-				final Integer columnIndex = columnIndexMapping.get(transformationError.getColumnIndex());
-				final int rowIndex = indexMapping != null
-				                  ? indexMapping.indexOf(transformationError.getRowIndex())
-				                  : transformationError.getRowIndex() - rowOffset;
+				final Integer columnIndex = columnIndexMapping.get(transformationError.columnIndex());
 				data.get(rowIndex).set(columnIndex, encodedValue);
 			}
 		}
@@ -131,17 +146,63 @@ public class DataSetService {
 	}
 
 	/**
+	 * Maps the row indices in the original data set to their position in the given list.
+	 *
+	 * @param rowNumbers The row indices in the original data set, in the order of the exported rows.
+	 * @return Map from the row index to the position.
+	 */
+	public Map<Integer, Integer> getRowPositions(final List<Integer> rowNumbers) {
+		final Map<Integer, Integer> rowPositions = new HashMap<>((int) (rowNumbers.size() / 0.75f) + 1);
+		for (int i = 0; i < rowNumbers.size(); i++) {
+			rowPositions.put(rowNumbers.get(i), i);
+		}
+		return rowPositions;
+	}
+
+	/**
+	 * Checks if encoding the data for the given request requires the transformation errors.
+	 * If all encodings are '$null', the null values stored for the errors are kept as they are,
+	 * so the errors do not have to be loaded.
+	 *
+	 * @param loadDataRequest Export settings.
+	 * @return True if the transformation errors are required.
+	 */
+	public boolean requiresTransformationErrors(final LoadDataRequest loadDataRequest) {
+		return !"$null".equals(loadDataRequest.getDefaultNullEncoding()) ||
+		       !"$null".equals(getMissingValueEncoding(loadDataRequest)) ||
+		       !"$null".equals(getFormatErrorEncoding(loadDataRequest)) ||
+		       !"$null".equals(getValueNotInRangeEncoding(loadDataRequest));
+	}
+
+	private String getMissingValueEncoding(final LoadDataRequest loadDataRequest) {
+		return Objects.requireNonNullElse(loadDataRequest.getMissingValueEncoding(),
+		                                  loadDataRequest.getDefaultNullEncoding());
+	}
+
+	private String getFormatErrorEncoding(final LoadDataRequest loadDataRequest) {
+		return Objects.requireNonNullElse(loadDataRequest.getFormatErrorEncoding(),
+		                                  loadDataRequest.getDefaultNullEncoding());
+	}
+
+	private String getValueNotInRangeEncoding(final LoadDataRequest loadDataRequest) {
+		return Objects.requireNonNullElse(loadDataRequest.getValueNotInRangeEncoding(),
+		                                  loadDataRequest.getDefaultNullEncoding());
+	}
+
+	/**
 	 * Prepares the values of the dataset to be printed.
 	 * Converts the dataset into a row-major list of the underlying values.
 	 * The values are converted into their original values before parsing.
 	 *
-	 * @param dataSet The dataset
+	 * @param dataSet       The dataset
+	 * @param keepTimeZones If time zone patterns of date-time formats should be kept and filled with UTC.
 	 * @return The converted dataset.
 	 */
-	private List<List<Object>> printDataRows(final DataSet dataSet) {
-		final List<List<Object>> result = new ArrayList<>(dataSet.getData().size());
+	private List<List<@Nullable Object>> printDataRows(final DataSet dataSet, final boolean keepTimeZones) {
+		final List<List<@Nullable Object>> result = new ArrayList<>(dataSet.getData().size());
 
-		final PrintDataRowsContext context = PrintDataRowsContext.createFor(dataSet.getDataConfiguration());
+		final PrintDataRowsContext context = PrintDataRowsContext.createFor(dataSet.getDataConfiguration(),
+		                                                                    keepTimeZones);
 
 		for (final DataRow row : dataSet.getDataRows()) {
 			result.add(printDataRow(row, dataSet.getDataConfiguration(), context));
@@ -152,15 +213,15 @@ public class DataSetService {
 
 	/**
 	 * Prepares the values of a row to be printed.
-	 * See {@link #printDataRows(DataSet)} for more information.
+	 * See {@link #printDataRows(DataSet, boolean)} for more information.
 	 *
 	 * @param row               The row.
 	 * @param dataConfiguration The data configuration defining the attributes and their format.
 	 * @return The converted dataset.
 	 */
-	private List<Object> printDataRow(final DataRow row, final DataConfiguration dataConfiguration,
-									  final PrintDataRowsContext context) {
-		final List<Object> result = new ArrayList<>(row.getData().size());
+	private List<@Nullable Object> printDataRow(final DataRow row, final DataConfiguration dataConfiguration,
+	                                            final PrintDataRowsContext context) {
+		final List<@Nullable Object> result = new ArrayList<>(row.getData().size());
 
 		for (int i = 0; i < row.getData().size(); i++) {
 			final Data value = row.getData().get(i);
@@ -193,9 +254,9 @@ public class DataSetService {
 				if (config == null || dateTimeValue == null) {
 					result.add(value.getValue());
 				} else {
-					final String format = context.getDateTimeFormatter().get(columnConfiguration.getIndex());
-					final DateTimeFormatter formatter = new DateTimeData.DateTimeDataBuilder().buildFormatter(format);
-					result.add(formatter.format(dateTimeValue));
+					// Values are normalized to UTC on import, see DateTimeData.DateTimeDataBuilder#parseAndNormalize
+					final DateTimeFormatter formatter = context.getDateTimeFormatter().get(columnConfiguration.getIndex());
+					result.add(formatter.format(dateTimeValue.atZone(ZoneOffset.UTC)));
 				}
 			} else {
 				result.add(value.getValue());
@@ -308,6 +369,26 @@ public class DataSetService {
 	}
 
 	/**
+	 * Replaces all null values of the data columns with the given encoding.
+	 * Meta-attributes like the row index appended after the data columns are not modified.
+	 *
+	 * @param data          The printed data rows.
+	 * @param numberColumns The number of data columns.
+	 * @param encoding      The value to be inserted.
+	 */
+	private void encodeNullValues(final List<List<@Nullable Object>> data, final int numberColumns,
+	                              final String encoding) {
+		for (final List<@Nullable Object> row : data) {
+			final int end = Math.min(numberColumns, row.size());
+			for (int columnIndex = 0; columnIndex < end; columnIndex++) {
+				if (row.get(columnIndex) == null) {
+					row.set(columnIndex, encoding);
+				}
+			}
+		}
+	}
+
+	/**
 	 * Encodes the value.
 	 * "$null" replaces the value with 'null'.
 	 * "$values" inserts the value from the given transformation error.
@@ -318,12 +399,12 @@ public class DataSetService {
 	 * @return The encoded value.
 	 */
 	@Nullable
-	private String encodeValue(final String encoding, final DataTransformationErrorEntity transformationError) {
+	private String encodeValue(final String encoding, final StoredTransformationError transformationError) {
 		if ("$null".equals(encoding)) {
 			return null;
 		}
 		if ("$value".equals(encoding)) {
-			return transformationError.getOriginalValue();
+			return transformationError.originalValue();
 		}
 		return encoding;
 	}
@@ -486,41 +567,48 @@ public class DataSetService {
 	}
 
 	/**
-	 * Helper class for {@link DataSetService#printDataRows(DataSet)}.
+	 * Helper class for {@link DataSetService#printDataRows(DataSet, boolean)}.
 	 * Contains preprocessed data for printing the data rows.
 	 */
 	@Getter
 	private static final class PrintDataRowsContext {
 		/**
-		 * Formatters date time columns with striped time zone patterns.
+		 * Formatters for date time columns.
+		 * Time zone patterns are stripped unless time zones should be kept.
 		 */
-		private final Map<Integer, String> dateTimeFormatter = new HashMap<>();
+		private final Map<Integer, DateTimeFormatter> dateTimeFormatter = new HashMap<>();
 
 		/**
 		 * Creates a new context for printing the data rows.
 		 *
 		 * @param dataConfiguration The data configuration of the dataset to be printed.
+		 * @param keepTimeZones     If time zone patterns of date-time formats should be kept.
 		 * @return The initialized context.
 		 */
-		public static PrintDataRowsContext createFor(final DataConfiguration dataConfiguration) {
+		public static PrintDataRowsContext createFor(final DataConfiguration dataConfiguration,
+		                                             final boolean keepTimeZones) {
 			final PrintDataRowsContext context = new PrintDataRowsContext();
-			context.init(dataConfiguration);
+			context.init(dataConfiguration, keepTimeZones);
 			return context;
 		}
 
 		/**
 		 * Prepares the context for printing the data rows.
-		 * Stripes the time zone patterns from the date formatters.
+		 * Builds the date-time formatters, stripping the time zone patterns if time zones should not be kept.
 		 *
 		 * @param dataConfiguration The data configuration of the dataset to be printed.
+		 * @param keepTimeZones     If time zone patterns of date-time formats should be kept.
 		 */
-		private void init(final DataConfiguration dataConfiguration) {
+		private void init(final DataConfiguration dataConfiguration, final boolean keepTimeZones) {
+			final var builder = new DateTimeData.DateTimeDataBuilder();
 			for (final ColumnConfiguration columnConfiguration : dataConfiguration.getConfigurations()) {
 				if (columnConfiguration.getType() == DataType.DATE_TIME) {
 					final var config = columnConfiguration.getConfiguration(DateTimeFormatConfiguration.class);
 					if (config != null) {
-						final String format = stripTimeZonePatterns(config.getDateTimeFormatter());
-						this.dateTimeFormatter.put(columnConfiguration.getIndex(), format);
+						final String format = keepTimeZones
+						                      ? config.getDateTimeFormatter()
+						                      : stripTimeZonePatterns(config.getDateTimeFormatter());
+						this.dateTimeFormatter.put(columnConfiguration.getIndex(), builder.buildFormatter(format));
 					}
 				}
 			}

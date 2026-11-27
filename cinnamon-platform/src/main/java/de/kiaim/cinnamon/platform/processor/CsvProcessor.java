@@ -24,6 +24,7 @@ import de.kiaim.cinnamon.platform.service.DataSetService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -154,13 +155,27 @@ public class CsvProcessor extends CommonDataProcessor implements DataProcessor {
 	 */
 	@Override
 	public void write(final OutputStream outputStream, final DataSet dataset) throws InternalIOException {
+		write(outputStream, dataset, false);
+	}
+
+	/**
+	 * Writes the given dataset as CSV into the given output stream.
+	 *
+	 * @param outputStream  The output stream to write into.
+	 * @param dataset       The dataset to write.
+	 * @param keepTimeZones If time zone patterns of date-time formats should be kept and filled with UTC.
+	 *                      If false, they are stripped from the format.
+	 * @throws InternalIOException If writing the CSV failed.
+	 */
+	public void write(final OutputStream outputStream, final DataSet dataset, final boolean keepTimeZones)
+			throws InternalIOException {
 		final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
 		final CSVFormat csvFormat = CSVFormat.Builder.create().setHeader(
 				dataset.getDataConfiguration().getColumnNames().toArray(new String[0])).get();
 
 		try {
 			final CSVPrinter csvPrinter = new CSVPrinter(outputStreamWriter, csvFormat);
-			for (final List<Object> dataRow : dataSetService.encodeDataRowsSimple(dataset)) {
+			for (final List<@Nullable Object> dataRow : dataSetService.encodeDataRowsSimple(dataset, keepTimeZones)) {
 				csvPrinter.printRecord(dataRow);
 			}
 			csvPrinter.flush();

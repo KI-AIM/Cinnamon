@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents an error during the transformation.
@@ -31,7 +32,9 @@ public class DataTransformationError {
 
 	/**
 	 * Raw value from the data set.
+	 * Can be null if the original value was null.
 	 */
 	@Schema(description = "Raw value from the data set.", example = "2023-12-24")
+	@Nullable
 	private final String rawValue;
 }

@@ -20,7 +20,6 @@ import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.mapper.DataSourceConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.DatasetConfigurationMapper;
 import de.kiaim.cinnamon.platform.model.mapper.FileConfigurationMapper;
-import de.kiaim.cinnamon.platform.processor.FhirProcessor;
 import de.kiaim.cinnamon.platform.repository.DataProcessingRepository;
 import de.kiaim.cinnamon.platform.repository.DataSetRepository;
 import de.kiaim.cinnamon.platform.repository.DataTransformationErrorRepository;
@@ -28,11 +27,14 @@ import de.kiaim.cinnamon.platform.repository.ProjectRepository;
 import de.kiaim.cinnamon.platform.helper.DataschemeGenerator;
 import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import de.kiaim.cinnamon.platform.model.DataTransformationError;
+import de.kiaim.cinnamon.platform.model.StoredTransformationError;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
 import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +73,26 @@ public class DatabaseService {
 
 	private final Logger LOGGER = LoggerFactory.getLogger(DatabaseService.class);
 
+	/**
+	 * Name of the sequence for the IDs of the transformation errors.
+	 * The errors are inserted with plain SQL, so the sequence is not used by Hibernate.
+	 */
+	private static final String TRANSFORMATION_ERROR_SEQUENCE = "data_transformation_error_entity_seq";
+
+	/**
+	 * Maximum number of transformation errors inserted with a single statement.
+	 */
+	private static final int TRANSFORMATION_ERROR_CHUNK_SIZE = 50_000;
+
+	/**
+	 * Connection that is not bound to a transaction.
+	 */
 	private final Connection connection;
+	private final DataSource dataSource;
+
+	@PersistenceContext
+	private EntityManager entityManager;
+
 	private final DataProcessingRepository dataProcessingRepository;
 	private final DataSetRepository dataSetRepository;
 	private final DataTransformationErrorRepository errorRepository;
@@ -87,7 +108,6 @@ public class DatabaseService {
 	private final DataSetService dataSetService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSourceProcessorService dataSourceProcessorService;
-	private final FhirProcessor fhirProcessor;
 	private final StepService stepService;
 
 	@Autowired
@@ -102,9 +122,9 @@ public class DatabaseService {
 	                       final DataSetService dataSetService,
 	                       final DataProcessorService dataProcessorService,
 	                       final DataSourceProcessorService dataSourceProcessorService,
-	                       final FhirProcessor fhirProcessor,
 	                       final StepService stepService) {
 		this.connection = DataSourceUtils.getConnection(dataSource);
+		this.dataSource = dataSource;
 		this.dataProcessingRepository = dataProcessingRepository;
 		this.errorRepository = errorRepository;
 		jsonMapper = serializationConfig.jsonMapper();
@@ -117,7 +137,6 @@ public class DatabaseService {
 		this.dataSetService = dataSetService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSourceProcessorService = dataSourceProcessorService;
-		this.fhirProcessor = fhirProcessor;
 		this.stepService = stepService;
 	}
 
@@ -273,6 +292,7 @@ public class DatabaseService {
 
 		// Update the file-related properties
 		final DataProcessor dataProcessor = dataProcessorService.getDataProcessor(fileConfiguration.getFileType());
+		dataProcessor.analyzeFile(file.getLobStream(), fileConfiguration);
 		final int numberOfAttributes = dataProcessor.getNumberColumns(file.getLobStream(), fileConfiguration);
 		fileEntity.setNumberOfAttributes(numberOfAttributes);
 	}
@@ -597,11 +617,13 @@ public class DatabaseService {
 	 * @throws BadStateException                   If no file for the original data has been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored.
 	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
+	 * @throws InternalMissingHandlingException    If no processor is available for the currently stored file.
 	 */
 	@Transactional
 	public Long storeOriginalTransformationResult(final TransformationResult transformationResult,
 	                                              final ProjectEntity project)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException,
+					       InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
 
@@ -615,7 +637,7 @@ public class DatabaseService {
 		DataSetEntity dataSetEntity = doStoreOriginalDataConfiguration(project, dataSet.getDataConfiguration());
 
 		// Store transformation errors
-		convertTransformationErrors(transformationResult, dataSetEntity);
+		storeTransformationErrors(transformationResult, dataSetEntity);
 
 		dataSetEntity = storeDataSet(dataSet, dataSetEntity);
 
@@ -638,12 +660,13 @@ public class DatabaseService {
 	 * @throws BadStateException                   If the file for the dataset has not been selected.
 	 * @throws InternalDataSetPersistenceException If the data set could not be stored due to an internal error.
 	 * @throws InternalIOException                 If reading the FHIR bundle file from the database failed.
+	 * @throws InternalMissingHandlingException    If no processor is available for the currently stored file.
 	 */
 	@Transactional
 	public void storeTransformationResult(final TransformationResult transformationResult,
 	                                      final DataProcessingEntity dataProcessingEntity,
 	                                      final List<Job> processed)
-			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException {
+			throws BadDataConfigurationException, BadDataSetIdException, BadStateException, InternalDataSetPersistenceException, InternalIOException, InternalMissingHandlingException {
 		final ProjectEntity project = dataProcessingEntity.getExecutionStep().getPipeline().getProject();
 		final DataSet dataSet = transformationResult.getDataSet();
 		final DataConfiguration dataConfiguration = dataSet.getDataConfiguration();
@@ -658,10 +681,10 @@ public class DatabaseService {
 		final DataSetEntity dataSetEntity = doStoreDataConfiguration(dataSet.getDataConfiguration(),
 		                                                             dataProcessingEntity, processed);
 
-		// Store transformation errors
-		convertTransformationErrors(transformationResult, dataSetEntity);
-
 		dataProcessingRepository.save(dataProcessingEntity);
+
+		// Store transformation errors
+		storeTransformationErrors(transformationResult, dataSetEntity);
 
 		storeDataSet(dataSet, dataSetEntity);
 
@@ -1184,40 +1207,108 @@ public class DatabaseService {
 	}
 
 	/**
-	 * Exports the transformation result associated with the given project and source.
+	 * Exports the data of the given data set and encodes it as specified in the given request.
+	 * Returns the columns with the names given in the request in the given order.
+	 * If no column names are provided, all columns are exported.
+	 * If includeErrors is true, the transformation errors of the exported rows and columns are included.
+	 * The indices of the errors are the positions of the row and column in the export.
 	 *
-	 * @param project         The project of which the data set should be exported.
-	 * @param holdOutSelector Which hold-out rows should be selected.
-	 * @param dataSetSource   Source of the data set.
-	 * @return The transformation result.
-	 * @throws BadDataSetIdException                     If no DataConfiguration is associated with the given project.
-	 * @throws BadStateException                         If the data set does not exist.
-	 * @throws BadStepNameException                      If the source is a job and the job does not exist or does not have a data set.
-	 * @throws InternalApplicationConfigurationException If the process is not configured correctly
-	 * @throws InternalDataSetPersistenceException       If the data set could not be exported due to an internal error.
-	 * @throws InternalIOException                       If the DataConfiguration could not be deserialized from the stored JSON.
-	 * @throws InternalInvalidStateException             If the application is in an invalid state.
-	 * @throws InternalMissingHandlingException          If no handling exists for the selector of the process.
+	 * @param dataSetEntity   The data set to be exported.
+	 * @param loadDataRequest Export settings.
+	 * @param includeErrors   If the transformation errors should be included.
+	 * @return The data configuration of the exported columns, the encoded data and the transformation errors.
+	 * @throws BadColumnNameException              If the data set does not contain a column with the given names.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
 	 */
 	@Transactional
-	public TransformationResult exportTransformationResult(final ProjectEntity project,
-	                                                       final HoldOutSelector holdOutSelector,
-	                                                       final DataSetSource dataSetSource)
-			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
-		final DataSet dataSet = exportDataSet(project, holdOutSelector, dataSetSource);
-		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
+	public DataSetEncoded exportEncodedDataSet(final DataSetEntity dataSetEntity,
+	                                           final LoadDataRequest loadDataRequest,
+	                                           final boolean includeErrors)
+			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
+		final List<String> columnNames = loadDataRequest.getColumnNames();
+		final HoldOutSelector holdOutSelector = loadDataRequest.getHoldOutSelector();
 
-		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
-		for (final var error : dataSetEntity.getDataTransformationErrors()) {
-			if (!rowErrors.containsKey(error.getRowIndex())) {
-				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(error.getRowIndex()));
-			}
-			final var rowError = rowErrors.get(error.getRowIndex());
-			rowError.addError(new DataTransformationError(error.getColumnIndex(), error.getErrorType(),
-			                                              error.getOriginalValue()));
+		existColumnsOrThrow(dataSetEntity.getDataConfiguration(), columnNames);
+		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
+				dataSetEntity.getDataConfiguration(), columnNames);
+		final List<StoredTransformationError> errors =
+				includeErrors || dataSetService.requiresTransformationErrors(loadDataRequest)
+				? getTransformationErrors(dataSetEntity, columnIndexMapping)
+				: List.of();
+
+		// If hold-out rows are filtered, the row index of an error does not match the position of the row
+		final boolean exportRowIndices = !errors.isEmpty() && isFilteredByHoldOut(dataSetEntity, holdOutSelector);
+		final DataSet dataSet = exportDataSet(dataSetEntity, RowSelector.ALL, columnNames, holdOutSelector, false, 0,
+		                                      0, exportRowIndices);
+
+		Map<Integer, Integer> rowPositions = null;
+		if (exportRowIndices) {
+			rowPositions = dataSetService.getRowPositions(removeRowIndexColumn(dataSet));
 		}
 
-		return new TransformationResult(dataSet, rowErrors.values().stream().toList());
+		final List<List<@Nullable Object>> data = dataSetService.encodeDataRows(dataSet, errors, rowPositions,
+		                                                                        columnIndexMapping, loadDataRequest);
+		final List<DataRowTransformationError> transformationErrors =
+				includeErrors ? groupTransformationErrors(errors, rowPositions, columnIndexMapping) : null;
+		return new DataSetEncoded(dataSet.getDataConfiguration(), data, transformationErrors);
+	}
+
+	/**
+	 * Groups the given transformation errors by row and converts their indices to the positions in an export.
+	 * Skips errors of rows and columns that are not exported.
+	 *
+	 * @param errors             The transformation errors.
+	 * @param rowPositions       Mapping from the row index to the position of the row in the export.
+	 *                           If null, the row index is used as the position.
+	 * @param columnIndexMapping Mapping from the original column index to the index in the export.
+	 * @return The errors grouped by row, ordered by the position of the row.
+	 */
+	private List<DataRowTransformationError> groupTransformationErrors(
+			final Collection<StoredTransformationError> errors, @Nullable final Map<Integer, Integer> rowPositions,
+			final Map<Integer, Integer> columnIndexMapping) {
+		final Map<Integer, DataRowTransformationError> rowErrors = new TreeMap<>();
+		for (final StoredTransformationError error : errors) {
+			final Integer columnIndex = columnIndexMapping.get(error.columnIndex());
+			final Integer position = rowPositions != null
+			                         ? rowPositions.get(error.rowIndex())
+			                         : Integer.valueOf(error.rowIndex());
+			if (columnIndex == null || position == null) {
+				// Row or column is not exported
+				continue;
+			}
+
+			rowErrors.computeIfAbsent(position, DataRowTransformationError::new)
+			         .addError(new DataTransformationError(columnIndex, error.errorType(), error.originalValue()));
+		}
+		return new ArrayList<>(rowErrors.values());
+	}
+
+	/**
+	 * Checks if exporting the given data set with the given selector leaves out hold-out rows.
+	 * In this case, the position of a row in the export does not match its row index.
+	 *
+	 * @param dataSetEntity   The data set.
+	 * @param holdOutSelector Which hold-out rows should be selected.
+	 * @return True if rows are left out.
+	 */
+	private boolean isFilteredByHoldOut(final DataSetEntity dataSetEntity, final HoldOutSelector holdOutSelector) {
+		return dataSetEntity.isHasHoldOut() && holdOutSelector != HoldOutSelector.ALL;
+	}
+
+	/**
+	 * Removes the row index column from a data set exported with the row index column.
+	 *
+	 * @param dataSet The data set containing the row index as the last value of each row.
+	 * @return The row indices in the order of the rows.
+	 */
+	private List<Integer> removeRowIndexColumn(final DataSet dataSet) {
+		final List<Integer> rowNumbers = new ArrayList<>(dataSet.getDataRows().size());
+		for (final DataRow dataRow : dataSet.getDataRows()) {
+			final List<Data> data = dataRow.getData();
+			rowNumbers.add(data.remove(data.size() - 1).asInteger());
+		}
+		return rowNumbers;
 	}
 
 	/**
@@ -1261,7 +1352,7 @@ public class DatabaseService {
 
 		final List<Integer> rowNumbers;
 
-		final Set<DataTransformationErrorEntity> errors;
+		final List<StoredTransformationError> errors;
 		if (calcRowNumbers) {
 			rowNumbers = dataSet.getData().stream().map(a -> (Integer) a.get(a.size() - 1)).toList();
 			errors = errorRepository.findByDataSetIdAndRowIndexIn(dataSetEntity.getId(), rowNumbers);
@@ -1273,9 +1364,9 @@ public class DatabaseService {
 			                      .collect(java.util.stream.Collectors.toList());
 		}
 
-		List<List<Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers,
-		                                                        columnIndexMapping,
-		                                                        loadDataRequest);
+		final Map<Integer, Integer> rowPositions = dataSetService.getRowPositions(rowNumbers);
+		List<List<@Nullable Object>> data = dataSetService.encodeDataRows(dataSet, errors, rowPositions,
+		                                                                  columnIndexMapping, loadDataRequest);
 
 		if (calcRowNumbers) {
 			data = data.stream().map(a -> a.subList(0, a.size() - 1)).toList();
@@ -1285,23 +1376,8 @@ public class DatabaseService {
 		                                    columnIndexMapping.keySet());
 		final int numberPages = (int) Math.ceil((float) numberRows / pageSize);
 
-		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
-		for (final var error : errors) {
-			if (!columnIndexMapping.containsKey(error.getColumnIndex())) {
-				continue;
-			}
-
-			if (!rowErrors.containsKey(error.getRowIndex())) {
-				final int index =
-						rowNumbers != null ? rowNumbers.indexOf(error.getRowIndex()) : error.getRowIndex() - startRow;
-				rowErrors.put(error.getRowIndex(), new DataRowTransformationError(index));
-			}
-			final var rowError = rowErrors.get(error.getRowIndex());
-			final Integer columnIndex = columnIndexMapping.get(error.getColumnIndex());
-			rowError.addError(new DataTransformationError(columnIndex, error.getErrorType(), error.getOriginalValue()));
-		}
-
-		final List<DataRowTransformationError> transformationErrors = rowErrors.values().stream().toList();
+		final List<DataRowTransformationError> transformationErrors = groupTransformationErrors(
+				errors, rowPositions, columnIndexMapping);
 
 		return new TransformationResultPage(data, transformationErrors, rowNumbers, pageNumber, pageSize, numberRows,
 		                                    numberPages);
@@ -1387,7 +1463,7 @@ public class DatabaseService {
 			}
 		}
 
-		dataSet.getDataTransformationErrors().clear();
+		deleteTransformationErrors(dataSet);
 		dataSet.setStoredData(false);
 		dataSet.setHasHoldOut(false);
 		dataSet.setHoldOutSeed(0);
@@ -1395,6 +1471,61 @@ public class DatabaseService {
 		dataSet.getStatisticsProcess().reset();
 
 		log.debug("Deleted dataset with ID {}", dataSet.getId());
+	}
+
+	/**
+	 * Returns all transformation errors of the given data set.
+	 *
+	 * @param dataSetEntity The data set.
+	 * @return The transformation errors.
+	 */
+	public List<StoredTransformationError> getTransformationErrors(final DataSetEntity dataSetEntity) {
+		final Long dataSetId = dataSetEntity.getId();
+		return dataSetId == null ? List.of() : errorRepository.findByDataSetId(dataSetId);
+	}
+
+	/**
+	 * Returns the transformation errors of the given data set that are required for encoding the data
+	 * as specified in the given request.
+	 * Returns no errors if the encoding does not require them, and only the errors of the requested columns otherwise.
+	 *
+	 * @param dataSetEntity      The data set.
+	 * @param columnIndexMapping Mapping from the original column index to the index in the export.
+	 *                           If empty, errors of all columns are returned.
+	 * @param loadDataRequest    Export settings.
+	 * @return The transformation errors.
+	 */
+	public List<StoredTransformationError> getTransformationErrorsForEncoding(
+			final DataSetEntity dataSetEntity, final Map<Integer, Integer> columnIndexMapping,
+			final LoadDataRequest loadDataRequest) {
+		if (!dataSetService.requiresTransformationErrors(loadDataRequest)) {
+			return List.of();
+		}
+		return getTransformationErrors(dataSetEntity, columnIndexMapping);
+	}
+
+	/**
+	 * Returns the transformation errors of the given data set in the given columns.
+	 *
+	 * @param dataSetEntity      The data set.
+	 * @param columnIndexMapping Mapping from the original column index to the index in the export.
+	 *                           If empty, errors of all columns are returned.
+	 * @return The transformation errors.
+	 */
+	public List<StoredTransformationError> getTransformationErrors(final DataSetEntity dataSetEntity,
+	                                                               final Map<Integer, Integer> columnIndexMapping) {
+		final Long dataSetId = dataSetEntity.getId();
+		if (dataSetId == null) {
+			return List.of();
+		}
+
+		// Filtering by the columns is not necessary if all columns are requested
+		final DataConfiguration dataConfiguration = dataSetEntity.getDataConfiguration();
+		if (columnIndexMapping.isEmpty() ||
+		    (dataConfiguration != null && columnIndexMapping.size() >= dataConfiguration.getConfigurations().size())) {
+			return errorRepository.findByDataSetId(dataSetId);
+		}
+		return errorRepository.findByDataSetIdAndColumnIndexIn(dataSetId, columnIndexMapping.keySet());
 	}
 
 	/**
@@ -1668,7 +1799,7 @@ public class DatabaseService {
 	}
 
 	private void checkFile(final ProjectEntity project, final DataConfiguration dataConfiguration
-	) throws BadStateException, BadDataConfigurationException, InternalIOException {
+	) throws BadStateException, BadDataConfigurationException, InternalIOException, InternalMissingHandlingException {
 		// Check if the file and the file configuration are available
 		final FileEntity fileEntity = project.getOriginalData().getFile();
 		final LobWrapperEntity file = fileEntity.getFile();
@@ -1682,6 +1813,7 @@ public class DatabaseService {
 			                            "Storing a dataset requires the file configuration!");
 		}
 
+		// Check if the number of attributes match
 		if (dataConfiguration.getConfigurations().size() != fileEntity.getNumberOfAttributes()) {
 			throw new BadDataConfigurationException(BadDataConfigurationException.INVALID_NUMBER_OF_ATTRIBUTES,
 			                                        "Dataset contains " + fileEntity.getNumberOfAttributes() +
@@ -1689,23 +1821,10 @@ public class DatabaseService {
 			                                        dataConfiguration.getConfigurations().size() + " attributes!");
 		}
 
-		// Validate that column names match the paths of the FHIR bundle
+		// Do file type dependent checks
 		final FileType fileType = fileConfiguration.getFileType();
-		if (fileType == FileType.FHIR) {
-			final List<String> expectedColumns = fhirProcessor.getAttributeNames(file.getLobStream(),
-			                                                                     fileConfiguration);
-
-			for (int i = 0; i < fileEntity.getNumberOfAttributes(); i++) {
-				final String columnName = dataConfiguration.getConfigurations().get(i).getName();
-				final String fhirColumnName = expectedColumns.get(i);
-				if (!columnName.equals(fhirColumnName)) {
-					throw new BadDataConfigurationException(BadDataConfigurationException.FHIR_ATTRIBUTE_MISMATCH,
-					                                        "Attribute number " + (i + 1) + " with name '" + columnName +
-					                                        "' does not match the column name of the FHIR bundle '" +
-					                                        fhirColumnName + "'");
-				}
-			}
-		}
+		final var processor = dataProcessorService.getDataProcessor(fileType);
+		processor.validateFileAndConfig(fileEntity, dataConfiguration);
 	}
 
 	private DataSetEntity storeDataSet(final DataSet dataSet, final DataSetEntity dataSetEntity)
@@ -2003,20 +2122,119 @@ public class DatabaseService {
 		deleteDataSet(dataSet);
 	}
 
-	private void convertTransformationErrors(final TransformationResult transformationResult,
-	                                         final DataSetEntity dataSet) {
-		for (final DataRowTransformationError rowTransformationError : transformationResult.getTransformationErrors()) {
-			for (final DataTransformationError transformationError : rowTransformationError.getDataTransformationErrors()) {
+	/**
+	 * Stores the transformation errors of the given transformation result for the given data set.
+	 * The errors are inserted in bulk with plain SQL instead of persisting entities one by one,
+	 * as a data set can contain millions of errors.
+	 * Uses the connection of the current transaction, so the data set does not have to be committed beforehand.
+	 *
+	 * @param transformationResult The transformation result containing the errors.
+	 * @param dataSet              The data set the errors belong to.
+	 * @throws InternalDataSetPersistenceException If inserting the errors failed.
+	 */
+	private void storeTransformationErrors(final TransformationResult transformationResult,
+	                                       final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
+		if (transformationResult.getTransformationErrors().isEmpty()) {
+			return;
+		}
 
-				final DataTransformationErrorEntity transformationErrorEntity = new DataTransformationErrorEntity();
+		// The errors reference the data set, so it has to be written into the database first
+		entityManager.flush();
 
-				transformationErrorEntity.setRowIndex(rowTransformationError.getIndex());
-				transformationErrorEntity.setColumnIndex(transformationError.getIndex());
-				transformationErrorEntity.setErrorType(transformationError.getErrorType());
-				transformationErrorEntity.setOriginalValue(transformationError.getRawValue());
+		final String query =
+				"INSERT INTO data_transformation_error_entity " +
+				"(id, data_set_id, row_index, column_index, error_type, original_value) " +
+				"SELECT nextval('" + TRANSFORMATION_ERROR_SEQUENCE + "'), ?, " +
+				"e.row_index, e.column_index, e.error_type, e.original_value " +
+				"FROM unnest(?::integer[], ?::integer[], ?::varchar[], ?::varchar[]) " +
+				"AS e(row_index, column_index, error_type, original_value)";
 
-				dataSet.addDataRowTransformationError(transformationErrorEntity);
+		final Connection transactionConnection = DataSourceUtils.getConnection(dataSource);
+		try (final PreparedStatement statement = transactionConnection.prepareStatement(query)) {
+			final List<Integer> rowIndices = new ArrayList<>(TRANSFORMATION_ERROR_CHUNK_SIZE);
+			final List<Integer> columnIndices = new ArrayList<>(TRANSFORMATION_ERROR_CHUNK_SIZE);
+			final List<String> errorTypes = new ArrayList<>(TRANSFORMATION_ERROR_CHUNK_SIZE);
+			final List<@Nullable String> originalValues = new ArrayList<>(TRANSFORMATION_ERROR_CHUNK_SIZE);
+
+			for (final DataRowTransformationError rowError : transformationResult.getTransformationErrors()) {
+				for (final DataTransformationError error : rowError.getDataTransformationErrors()) {
+					rowIndices.add(rowError.getIndex());
+					columnIndices.add(error.getIndex());
+					errorTypes.add(error.getErrorType().name());
+					originalValues.add(error.getRawValue());
+
+					if (rowIndices.size() == TRANSFORMATION_ERROR_CHUNK_SIZE) {
+						insertTransformationErrors(transactionConnection, statement, dataSet.getId(), rowIndices,
+						                           columnIndices, errorTypes, originalValues);
+					}
+				}
 			}
+
+			insertTransformationErrors(transactionConnection, statement, dataSet.getId(), rowIndices, columnIndices,
+			                           errorTypes, originalValues);
+		} catch (final SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_STORE,
+			                                              "Failed to store the transformation errors!", e);
+		} finally {
+			DataSourceUtils.releaseConnection(transactionConnection, dataSource);
+		}
+	}
+
+	/**
+	 * Inserts the given transformation errors and clears the given lists afterward.
+	 *
+	 * @param connection     The connection used to create the arrays.
+	 * @param statement      The prepared insert statement.
+	 * @param dataSetId      The ID of the data set.
+	 * @param rowIndices     The row indices of the errors.
+	 * @param columnIndices  The column indices of the errors, aligned with the row indices.
+	 * @param errorTypes     The error types, aligned with the row indices.
+	 * @param originalValues The original values, aligned with the row indices.
+	 * @throws SQLException If inserting the errors failed.
+	 */
+	private void insertTransformationErrors(final Connection connection, final PreparedStatement statement,
+	                                        final @Nullable Long dataSetId, final List<Integer> rowIndices,
+	                                        final List<Integer> columnIndices, final List<String> errorTypes,
+	                                        final List<@Nullable String> originalValues) throws SQLException {
+		if (rowIndices.isEmpty()) {
+			return;
+		}
+
+		statement.setObject(1, dataSetId);
+		statement.setArray(2, connection.createArrayOf("integer", rowIndices.toArray()));
+		statement.setArray(3, connection.createArrayOf("integer", columnIndices.toArray()));
+		statement.setArray(4, connection.createArrayOf("varchar", errorTypes.toArray()));
+		statement.setArray(5, connection.createArrayOf("varchar", originalValues.toArray()));
+		statement.executeUpdate();
+
+		rowIndices.clear();
+		columnIndices.clear();
+		errorTypes.clear();
+		originalValues.clear();
+	}
+
+	/**
+	 * Deletes all transformation errors of the given data set with a single statement.
+	 * Uses the connection of the current transaction.
+	 *
+	 * @param dataSet The data set.
+	 * @throws InternalDataSetPersistenceException If deleting the errors failed.
+	 */
+	private void deleteTransformationErrors(final DataSetEntity dataSet) throws InternalDataSetPersistenceException {
+		if (dataSet.getId() == null) {
+			return;
+		}
+
+		final Connection transactionConnection = DataSourceUtils.getConnection(dataSource);
+		try (final PreparedStatement statement = transactionConnection.prepareStatement(
+				"DELETE FROM data_transformation_error_entity WHERE data_set_id = ?")) {
+			statement.setLong(1, dataSet.getId());
+			statement.executeUpdate();
+		} catch (final SQLException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_DELETE,
+			                                              "Failed to delete the transformation errors!", e);
+		} finally {
+			DataSourceUtils.releaseConnection(transactionConnection, dataSource);
 		}
 	}
 

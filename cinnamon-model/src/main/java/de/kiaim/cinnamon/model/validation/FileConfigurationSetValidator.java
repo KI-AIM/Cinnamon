@@ -1,9 +1,6 @@
 package de.kiaim.cinnamon.model.validation;
 
-import de.kiaim.cinnamon.model.configuration.data.file.CsvFileConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.FhirFileConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.XlsxFileConfiguration;
-import de.kiaim.cinnamon.model.configuration.data.file.FileConfiguration;
+import de.kiaim.cinnamon.model.configuration.data.file.*;
 import jakarta.validation.*;
 import org.jspecify.annotations.Nullable;
 
@@ -12,6 +9,7 @@ import java.util.Set;
 /**
  * Validates if the corresponding file configuration for the file type defined {@link FileConfiguration#getFileType()} is set.
  * Additionally, validates only the configuration that matches the selected file type.
+ * For FHIR NDJSON files, no specific configuration is required, so this validation is always true.
  *
  * @author Daniel Preciado-Marquez
  */
@@ -27,8 +25,9 @@ public class FileConfigurationSetValidator implements ConstraintValidator<FileCo
 		return switch (value.getFileType()) {
 			case CSV -> validateFileConfiguration(value.getCsvFileConfiguration(), "csvFileConfiguration", context,
 			                                      "CSV file configuration must be set for CSV files!");
-			case FHIR -> validateFileConfiguration(value.getFhirFileConfiguration(), "fhirFileConfiguration", context,
-			                                       "FHIR file configuration must be set for FHIR bundles!");
+			case FHIR_BUNDLE -> validateFileConfiguration(value.getFhirBundleFileConfiguration(), "fhirFileConfiguration", context,
+			                                              "FHIR file configuration must be set for FHIR bundles!");
+			case FHIR_NDJSON -> true;
 			case XLSX -> validateFileConfiguration(value.getXlsxFileConfiguration(), "xlsxFileConfiguration", context,
 			                                       "XLSX file configuration must be set for XLSX files!");
 		};
@@ -43,7 +42,7 @@ public class FileConfigurationSetValidator implements ConstraintValidator<FileCo
 	 * @param missingMessage    The error message in case the given configuration is null.
 	 * @param <T>               A concrete file configuration
 	 *                          {@link CsvFileConfiguration},
-	 *                          {@link FhirFileConfiguration} or
+	 *                          {@link FhirBundleFileConfiguration} or
 	 *                          {@link XlsxFileConfiguration}
 	 * @return If the configuration is valid.
 	 */

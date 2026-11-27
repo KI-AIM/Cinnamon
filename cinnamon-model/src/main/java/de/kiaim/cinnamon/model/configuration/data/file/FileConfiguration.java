@@ -46,11 +46,11 @@ public class FileConfiguration implements ConfigurationDTO {
 
 	/**
 	 * Configuration specific for FHIR bundles.
-	 * Must be set if {@link #fileType} is set to {@link FileType#FHIR}.
+	 * Must be set if {@link #fileType} is set to {@link FileType#FHIR_BUNDLE}.
 	 */
 	@Schema(description = "Configuration specific for FHIR bundles.")
 	@Nullable
-	private FhirFileConfiguration fhirFileConfiguration;
+	private FhirBundleFileConfiguration fhirBundleFileConfiguration;
 
 	/**
 	 * {@inheritDoc}

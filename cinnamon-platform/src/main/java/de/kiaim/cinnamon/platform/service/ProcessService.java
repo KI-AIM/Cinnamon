@@ -25,6 +25,7 @@ import de.kiaim.cinnamon.model.configuration.data.file.FileType;
 import de.kiaim.cinnamon.platform.model.mapper.ExecutionStepMapper;
 import de.kiaim.cinnamon.platform.processor.CsvProcessor;
 import de.kiaim.cinnamon.platform.processor.DataProcessor;
+import de.kiaim.cinnamon.platform.processor.DataSetJsonReader;
 import de.kiaim.cinnamon.platform.repository.BackgroundProcessRepository;
 import de.kiaim.cinnamon.platform.repository.ExecutionStepRepository;
 import de.kiaim.cinnamon.platform.repository.ProjectRepository;
@@ -32,7 +33,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutException;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -102,6 +102,7 @@ public class ProcessService {
 	private final ExecutionStepMapper executionStepMapper;
 
 	private final CsvProcessor csvProcessor;
+	private final DataSetJsonReader dataSetJsonReader;
 	private final DatabaseService databaseService;
 	private final DataProcessorService dataProcessorService;
 	private final DataSetService dataSetService;
@@ -120,7 +121,7 @@ public class ProcessService {
 	                      final ExecutionStepRepository executionStepRepository,
 	                      final ProjectRepository projectRepository,
 	                      final ExecutionStepMapper executionStepMapper,
-	                      final CsvProcessor csvProcessor,
+	                      final CsvProcessor csvProcessor, final DataSetJsonReader dataSetJsonReader,
 	                      final DatabaseService databaseService, final DataProcessorService dataProcessorService,
 	                      final DataSetService dataSetService,
 	                      final ExternalConfigurationService externalConfigurationService,
@@ -142,6 +143,7 @@ public class ProcessService {
 		this.projectRepository = projectRepository;
 		this.executionStepMapper = executionStepMapper;
 		this.csvProcessor = csvProcessor;
+		this.dataSetJsonReader = dataSetJsonReader;
 		this.databaseService = databaseService;
 		this.dataProcessorService = dataProcessorService;
 		this.dataSetService = dataSetService;
@@ -719,11 +721,13 @@ public class ProcessService {
 
 							}
 							case DATA_SET -> {
-								String jsonString = IOUtils.toString(value.getInputStream(), StandardCharsets.UTF_8);
-								DataSet dataSet = jsonMapper.readValue(jsonString, DataSet.class);
-
-								TransformationResult transformationResult = new TransformationResult(dataSet,
-								                                                                     new ArrayList<>());
+								// Validate the values like for the DATA encoding, so values violating the
+								// configuration are stored as transformation errors
+								final DataConfiguration resultDataConfiguration = process.getProject().getOriginalData()
+								                                                         .getDataSet()
+								                                                         .getDataConfiguration();
+								final TransformationResult transformationResult = dataSetJsonReader.read(
+										value.getInputStream(), resultDataConfiguration);
 								databaseService.storeTransformationResult(transformationResult, dataProcessing,
 								                                          processed);
 							}

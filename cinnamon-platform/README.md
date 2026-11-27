@@ -9,27 +9,9 @@ It is responsible for:
 
 ## Build & Run
 
-Cinnamon Platform uses maven packages hosted on GitHub, so you have to set up authentication for GitHub's package registry first.
-This can be done by adding a server entry with ID `github` to your `~/.m2/settings.xml`.
-The personal access token needs at least the `read:packages` scope.
-Below is a snippet of the server entry.
-A minimal example of the entire file can be found in the [settings.xml](../.github/maven/settings.xml) used by GitHub actions.
-
-```xml
-<servers>
-    <server>
-        <id>github</id>
-        <username>USERNAME</username>
-        <password>PERSONAL_ACCESS_TOKEN</password>
-    </server>
-</servers>
-```
-
 ### Docker
 
 It is recommended to use the [docker-compose-build.yml](../docker-compose-build.yml) for building and [docker-compose.yml](../docker-compose.yml) for running the platform with Docker.
-
-Before building the image, copy the [settings.xml](../.github/maven/settings.xml) to `../secrets/mvn_settings.xml` and fill in the username and PAT.
 
 Run the following command in the root directory to build Cinnamon Platform:
 ```sh

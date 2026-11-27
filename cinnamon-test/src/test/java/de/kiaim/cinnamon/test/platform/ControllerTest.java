@@ -181,7 +181,7 @@ public class ControllerTest extends DatabaseTest {
 
 	protected void postFhirFile() throws Exception {
 		final MockMultipartFile file = ResourceHelper.loadFhirBundle();
-		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.FHIR);
+		final FileConfiguration fileConfiguration = FileConfigurationTestHelper.generateFileConfiguration(FileType.FHIR_BUNDLE);
 
 		mockMvc.perform(multipart("/api/project/" + testProject.getExternalId() + "/data/file")
 				                .file(file))
@@ -192,7 +192,7 @@ public class ControllerTest extends DatabaseTest {
 				                .param("fileConfiguration",
 				                       objectMapper.writeValueAsString(fileConfiguration)))
 		       .andExpect(status().isOk())
-		       .andExpect(content().json("{name: 'file.json', type: 'FHIR', fhirResourceTypes: ['Patient', 'Observation'], numberOfAttributes: 13}"));
+		       .andExpect(content().json("{name: 'file.json', type: 'FHIR_BUNDLE', fhirResourceTypes: ['Patient', 'Observation'], numberOfAttributes: 14}"));
 	}
 
 	protected void estimateDataConfiguration() throws Exception {

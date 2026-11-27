@@ -5,6 +5,7 @@ import de.kiaim.cinnamon.platform.model.DataRowTransformationError;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
 public class TransformationResultPage {
 
 	@Schema(description = "Row of the data set.", implementation = DataRow.class)
-	private final List<List<Object>> data;
+	private final List<List<@Nullable Object>> data;
 
 	@Schema(description = "List of all transformation errors.")
 	private final List<DataRowTransformationError> transformationErrors;

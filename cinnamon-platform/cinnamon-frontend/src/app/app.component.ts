@@ -2,6 +2,7 @@ import { Component, OnInit, TemplateRef, ChangeDetectionStrategy } from '@angula
 import { MatDialog } from "@angular/material/dialog";
 import { Steps } from "@core/enums/steps";
 import { AppNotification, NotificationService } from "@core/services/notification.service";
+import { ExportService } from "@shared/services/export.service";
 import { StatusService } from "@shared/services/status.service";
 import { TitleService } from './core/services/title-service.service';
 import { AppConfig, AppConfigService } from "./shared/services/app-config.service";
@@ -38,6 +39,7 @@ export class AppComponent implements OnInit {
     protected readonly StatusService = StatusService;
 
     protected appConfig$: Observable<AppConfig>;
+    protected exportStatus$: Observable<boolean>;
     protected latestNotification$: Observable<AppNotification | null>;
     protected locked$: Observable<LockedInformation>;
     protected user$: Observable<User>;
@@ -46,6 +48,7 @@ export class AppComponent implements OnInit {
         private readonly appConfigService: AppConfigService,
         protected readonly errorHandlingService: ErrorHandlingService,
         private readonly dialog: MatDialog,
+        private readonly exportService: ExportService,
         protected readonly notificationService: NotificationService,
         // StateManagementService is injected so it gets initialized
         private readonly stateManagementService: StateManagementService,
@@ -57,6 +60,7 @@ export class AppComponent implements OnInit {
 
     public ngOnInit(): void {
         this.appConfig$ = this.appConfigService.appConfig$;
+        this.exportStatus$ = this.exportService.exportStatus$();
         this.latestNotification$ = this.notificationService.latestNotification$();
         this.locked$ = this.stateManagementService.currentStepLocked$;
         this.user$ = this.userService.user$;
@@ -96,5 +100,12 @@ export class AppComponent implements OnInit {
                 this.errorHandlingService.addError(error);
             },
         });
+    }
+
+    /**
+     * Aborts the running project export.
+     */
+    protected abortProjectExport(): void {
+        this.exportService.abortExport();
     }
 }

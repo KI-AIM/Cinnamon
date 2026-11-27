@@ -15,7 +15,8 @@ export class DataSourceConfiguration {
 
 export enum FileType {
 	CSV = "CSV",
-    FHIR = "FHIR",
+    FHIR_BUNDLE = "FHIR_BUNDLE",
+    FHIR_NDJSON = "FHIR_NDJSON",
     XLSX = "XLSX",
 }
 
@@ -24,14 +25,14 @@ export class FileConfiguration {
         public fileType: FileType | null,
         public csvFileConfiguration: CsvFileConfiguration | null,
         public xlsxFileConfiguration: XlsxFileConfiguration | null,
-        public fhirFileConfiguration: FhirFileConfiguration | null,
+        public fhirBundleFileConfiguration: FhirBundleFileConfiguration | null,
     ) {}
 }
 
 /**
  * File configuration for FHIR bundles.
  */
-export class FhirFileConfiguration {
+export class FhirBundleFileConfiguration {
     constructor(
         /**
          * The resource type to export from the bundle.

@@ -2,12 +2,14 @@ package de.kiaim.cinnamon.platform.processor;
 
 import de.kiaim.cinnamon.model.configuration.data.attributes.DataConfiguration;
 import de.kiaim.cinnamon.model.data.DataSet;
+import de.kiaim.cinnamon.platform.exception.BadDataConfigurationException;
 import de.kiaim.cinnamon.platform.exception.BadDatasetException;
 import de.kiaim.cinnamon.platform.exception.InternalIOException;
 import de.kiaim.cinnamon.platform.model.dto.DataConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.dto.FileConfigurationEstimation;
 import de.kiaim.cinnamon.platform.model.entity.FileConfigurationEntity;
 import de.kiaim.cinnamon.platform.model.entity.FileCompatibilityEntity;
+import de.kiaim.cinnamon.platform.model.entity.FileEntity;
 import de.kiaim.cinnamon.platform.model.entity.LobWrapperEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.DatatypeEstimationAlgorithm;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
@@ -45,6 +47,34 @@ public interface DataProcessor {
 	FileConfigurationEstimation estimateFileConfiguration(LobWrapperEntity data,
 	                                                      FileCompatibilityEntity fileCompatibility)
 			throws InternalIOException;
+
+	/**
+	 * Validates that the given file and data configuration are compatible.
+	 * Null checks and attribute count validation are done beforehand,
+	 * so {@code file.getFile()} and {@code file.getFileConfiguration()} are guaranteed to be not null.
+	 *
+	 * @param file              The file containing the dataset.
+	 * @param dataConfiguration The data configuration to be validated.
+	 * @throws BadDataConfigurationException In case of incompatibilities between file and configuration.
+	 * @throws InternalIOException           If reading the file failed.
+	 */
+	default void validateFileAndConfig(FileEntity file, DataConfiguration dataConfiguration)
+			throws BadDataConfigurationException, InternalIOException {
+	}
+
+	/**
+	 * Analyzes the file after the file or the file configuration has been stored.
+	 * Implementations can derive metadata that is expensive to compute and store it in the file configuration,
+	 * so it can be reused by the other methods instead of reading the whole file again.
+	 * Called before {@link #getNumberColumns(InputStream, FileConfigurationEntity)}.
+	 *
+	 * @param data              The raw data InputStream.
+	 * @param fileConfiguration Configuration describing the format of the data. Can be modified.
+	 * @throws InternalIOException If reading the data failed.
+	 */
+	default void analyzeFile(InputStream data, FileConfigurationEntity fileConfiguration)
+			throws InternalIOException {
+	}
 
 	/**
 	 * Returns the number of columns in the given data.

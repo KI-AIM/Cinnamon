@@ -1208,6 +1208,8 @@ public class DatabaseService {
 
 	/**
 	 * Exports the transformation result associated with the given project and source.
+	 * Contains only the transformation errors of the exported rows.
+	 * The index of a row error is the position of the row in the exported data set.
 	 *
 	 * @param project         The project of which the data set should be exported.
 	 * @param holdOutSelector Which hold-out rows should be selected.
@@ -1227,20 +1229,109 @@ public class DatabaseService {
 	                                                       final HoldOutSelector holdOutSelector,
 	                                                       final DataSetSource dataSetSource)
 			throws BadDataSetIdException, InternalDataSetPersistenceException, InternalIOException, BadStepNameException, InternalApplicationConfigurationException, BadStateException, InternalInvalidStateException, InternalMissingHandlingException {
-		final DataSet dataSet = exportDataSet(project, holdOutSelector, dataSetSource);
 		final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(project, dataSetSource);
+
+		// If hold-out rows are filtered, the row index of an error does not match the position of the row
+		final boolean exportRowIndices = isFilteredByHoldOut(dataSetEntity, holdOutSelector);
+		final DataSet dataSet;
+		try {
+			dataSet = exportDataSet(dataSetEntity, RowSelector.ALL, new ArrayList<>(), holdOutSelector, false, 0, 0,
+			                        exportRowIndices);
+		} catch (final BadColumnNameException e) {
+			throw new InternalDataSetPersistenceException(InternalDataSetPersistenceException.DATA_SET_EXPORT,
+			                                              "Failed to export the dataset due to an error in the column selection!",
+			                                              e);
+		}
+
+		Map<Integer, Integer> rowPositions = null;
+		if (exportRowIndices) {
+			rowPositions = dataSetService.getRowPositions(removeRowIndexColumn(dataSet));
+		}
 
 		final Map<Integer, DataRowTransformationError> rowErrors = new HashMap<>();
 		for (final var error : getTransformationErrors(dataSetEntity)) {
-			if (!rowErrors.containsKey(error.rowIndex())) {
-				rowErrors.put(error.rowIndex(), new DataRowTransformationError(error.rowIndex()));
+			final Integer position = rowPositions != null
+			                         ? rowPositions.get(error.rowIndex())
+			                         : Integer.valueOf(error.rowIndex());
+			if (position == null) {
+				// Row is not exported
+				continue;
 			}
-			final var rowError = rowErrors.get(error.rowIndex());
+
+			final var rowError = rowErrors.computeIfAbsent(error.rowIndex(),
+			                                               k -> new DataRowTransformationError(position));
 			rowError.addError(new DataTransformationError(error.columnIndex(), error.errorType(),
 			                                              error.originalValue()));
 		}
 
 		return new TransformationResult(dataSet, rowErrors.values().stream().toList());
+	}
+
+	/**
+	 * Exports the data of the given data set and encodes it as specified in the given request.
+	 * Returns the columns with the names given in the request in the given order.
+	 * If no column names are provided, all columns are exported.
+	 *
+	 * @param dataSetEntity   The data set to be exported.
+	 * @param loadDataRequest Export settings.
+	 * @return The data configuration of the exported columns and the encoded data.
+	 * @throws BadColumnNameException              If the data set does not contain a column with the given names.
+	 * @throws InternalDataSetPersistenceException If the data set could not be exported due to an internal error.
+	 * @throws InternalIOException                 If the DataConfiguration could not be deserialized from the stored JSON.
+	 */
+	@Transactional
+	public DataSetEncoded exportEncodedDataSet(final DataSetEntity dataSetEntity,
+	                                           final LoadDataRequest loadDataRequest)
+			throws BadColumnNameException, InternalDataSetPersistenceException, InternalIOException {
+		final List<String> columnNames = loadDataRequest.getColumnNames();
+		final HoldOutSelector holdOutSelector = loadDataRequest.getHoldOutSelector();
+
+		existColumnsOrThrow(dataSetEntity.getDataConfiguration(), columnNames);
+		final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
+				dataSetEntity.getDataConfiguration(), columnNames);
+		final List<StoredTransformationError> errors = getTransformationErrorsForEncoding(
+				dataSetEntity, columnIndexMapping, loadDataRequest);
+
+		// If hold-out rows are filtered, the row index of an error does not match the position of the row
+		final boolean exportRowIndices = !errors.isEmpty() && isFilteredByHoldOut(dataSetEntity, holdOutSelector);
+		final DataSet dataSet = exportDataSet(dataSetEntity, RowSelector.ALL, columnNames, holdOutSelector, false, 0,
+		                                      0, exportRowIndices);
+
+		Map<Integer, Integer> rowPositions = null;
+		if (exportRowIndices) {
+			rowPositions = dataSetService.getRowPositions(removeRowIndexColumn(dataSet));
+		}
+
+		final List<List<@Nullable Object>> data = dataSetService.encodeDataRows(dataSet, errors, rowPositions,
+		                                                                        columnIndexMapping, loadDataRequest);
+		return new DataSetEncoded(dataSet.getDataConfiguration(), data);
+	}
+
+	/**
+	 * Checks if exporting the given data set with the given selector leaves out hold-out rows.
+	 * In this case, the position of a row in the export does not match its row index.
+	 *
+	 * @param dataSetEntity   The data set.
+	 * @param holdOutSelector Which hold-out rows should be selected.
+	 * @return True if rows are left out.
+	 */
+	private boolean isFilteredByHoldOut(final DataSetEntity dataSetEntity, final HoldOutSelector holdOutSelector) {
+		return dataSetEntity.isHasHoldOut() && holdOutSelector != HoldOutSelector.ALL;
+	}
+
+	/**
+	 * Removes the row index column from a data set exported with the row index column.
+	 *
+	 * @param dataSet The data set containing the row index as the last value of each row.
+	 * @return The row indices in the order of the rows.
+	 */
+	private List<Integer> removeRowIndexColumn(final DataSet dataSet) {
+		final List<Integer> rowNumbers = new ArrayList<>(dataSet.getDataRows().size());
+		for (final DataRow dataRow : dataSet.getDataRows()) {
+			final List<Data> data = dataRow.getData();
+			rowNumbers.add(data.remove(data.size() - 1).asInteger());
+		}
+		return rowNumbers;
 	}
 
 	/**
@@ -1296,9 +1387,9 @@ public class DatabaseService {
 			                      .collect(java.util.stream.Collectors.toList());
 		}
 
-		List<List<@Nullable Object>> data = dataSetService.encodeDataRows(dataSet, errors, startRow, rowNumbers,
-		                                                        columnIndexMapping,
-		                                                        loadDataRequest);
+		final Map<Integer, Integer> rowPositions = dataSetService.getRowPositions(rowNumbers);
+		List<List<@Nullable Object>> data = dataSetService.encodeDataRows(dataSet, errors, rowPositions,
+		                                                                  columnIndexMapping, loadDataRequest);
 
 		if (calcRowNumbers) {
 			data = data.stream().map(a -> a.subList(0, a.size() - 1)).toList();
@@ -1314,12 +1405,13 @@ public class DatabaseService {
 				continue;
 			}
 
-			if (!rowErrors.containsKey(error.rowIndex())) {
-				final int index =
-						rowNumbers != null ? rowNumbers.indexOf(error.rowIndex()) : error.rowIndex() - startRow;
-				rowErrors.put(error.rowIndex(), new DataRowTransformationError(index));
+			final Integer position = rowPositions.get(error.rowIndex());
+			if (position == null) {
+				continue;
 			}
-			final var rowError = rowErrors.get(error.rowIndex());
+
+			final var rowError = rowErrors.computeIfAbsent(error.rowIndex(),
+			                                               k -> new DataRowTransformationError(position));
 			final Integer columnIndex = columnIndexMapping.get(error.columnIndex());
 			rowError.addError(new DataTransformationError(columnIndex, error.errorType(), error.originalValue()));
 		}

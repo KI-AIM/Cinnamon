@@ -1177,6 +1177,110 @@ class DataControllerTest extends ControllerTest {
 				       "{'data':[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']],'transformationErrors':[],'rowNumbers':[0,1],'page':1,'perPage':10,total:2,'totalPages':1}"));
 	}
 
+	// The hold-out split of 20% contains the row with the transformation errors (row 2)
+
+	@Test
+	void loadDataSelectHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "[[true,'2023-11-20',null,4.2,'forty two','Hello World!']]", true));
+	}
+
+	@Test
+	void loadDataSelectNotHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "[[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']]",
+				       true));
+	}
+
+	@Test
+	void loadDataSelectHoldOutColumns() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/data")
+				                .param("selector", "original")
+				                .param("columns", "column4_integer,column0_boolean")
+				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("[['forty two',true]]", true));
+	}
+
+	@Test
+	void loadDataSetSelectHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json("{data: [[true,'2023-11-20',null,4.2,'forty two','Hello World!']]}"));
+	}
+
+	@Test
+	void loadDataSetSelectNotHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data")
+				                .accept(MediaType.APPLICATION_JSON)
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name())
+				                .param("formatErrorEncoding", "$value"))
+		       .andExpect(status().isOk())
+		       .andExpect(content().json(
+				       "{data: [[true,'2023-11-20','2023-11-20T12:50:27.123456',4.2,42,'Hello World!'],[false,'2023-11-20','2023-11-20T12:50:27.123456',2.4,24,'Bye World!']]}"));
+	}
+
+	@Test
+	void loadTransformationResultSelectHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult")
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.HOLD_OUT.name()))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.dataSet.data.length()").value(1))
+		       .andExpect(jsonPath("$.dataSet.data[0].length()").value(6))
+		       .andExpect(jsonPath("$.transformationErrors.length()").value(1))
+		       .andExpect(jsonPath("$.transformationErrors[0].index").value(0))
+		       .andExpect(jsonPath("$.transformationErrors[0].dataTransformationErrors.length()").value(2));
+	}
+
+	@Test
+	void loadTransformationResultSelectNotHoldOut() throws Exception {
+		postData();
+		createHoldOut(0.2f);
+
+		mockMvc.perform(get("/api/project/" + testProject.getExternalId() + "/data/transformationResult")
+				                .param("selector", "original")
+				                .param("holdOutSelector", HoldOutSelector.NOT_HOLD_OUT.name()))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.dataSet.data.length()").value(2))
+		       .andExpect(jsonPath("$.dataSet.data[0].length()").value(6))
+		       .andExpect(jsonPath("$.transformationErrors.length()").value(0));
+	}
+
 	private String wrapInQuotes(final String value) {
 		return "\"" + value + "\"";
 	}

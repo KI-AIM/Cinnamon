@@ -15,7 +15,6 @@ import de.kiaim.cinnamon.platform.model.entity.DataSetEntity;
 import de.kiaim.cinnamon.platform.model.entity.ProjectEntity;
 import de.kiaim.cinnamon.platform.model.enumeration.HoldOutSelector;
 import de.kiaim.cinnamon.platform.model.enumeration.RowSelector;
-import de.kiaim.cinnamon.platform.model.StoredTransformationError;
 import de.kiaim.cinnamon.platform.model.TransformationResult;
 import de.kiaim.cinnamon.platform.model.entity.UserEntity;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,9 +37,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/project/{projectId}/data")
@@ -634,10 +630,6 @@ public class DataController {
 		final UserEntity user = userService.getUserByUsername(requestUser.getUsername());
 		final ProjectEntity projectEntity = projectService.getProject(user, projectId);
 
-		final List<String> columnNames = loadDataRequest != null
-		                                 ? loadDataRequest.getColumnNames()
-		                                 : new ArrayList<>();
-
 		final HoldOutSelector holdOutSelector =
 				loadDataRequest != null ? loadDataRequest.getHoldOutSelector() : HoldOutSelector.ALL;
 
@@ -659,24 +651,13 @@ public class DataController {
 			case LOAD_DATA -> {
 				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity,
 				                                                                           dataSetSource);
-				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
-				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
-						dataSetEntity.getDataConfiguration(), columnNames);
-				final List<StoredTransformationError> errors = databaseService.getTransformationErrorsForEncoding(
-						dataSetEntity, columnIndexMapping, loadDataRequest);
-				result = dataSetService.encodeDataRows(dataSet, errors, columnIndexMapping, loadDataRequest);
+				result = databaseService.exportEncodedDataSet(dataSetEntity, requireLoadDataRequest(loadDataRequest))
+				                        .getData();
 			}
 			case LOAD_DATA_SET -> {
-				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(
-						projectEntity, dataSetSource);
-				final DataSet dataSet = databaseService.exportDataSet(dataSetEntity, columnNames, holdOutSelector);
-				final Map<Integer, Integer> columnIndexMapping = dataSetService.getColumnIndexMapping(
-						dataSetEntity.getDataConfiguration(), columnNames);
-				final List<StoredTransformationError> errors = databaseService.getTransformationErrorsForEncoding(
-						dataSetEntity, columnIndexMapping, loadDataRequest);
-				final List<List<@Nullable Object>> dataRows = dataSetService.encodeDataRows(
-						dataSet, errors, columnIndexMapping, loadDataRequest);
-				result = new DataSetEncoded(dataSet.getDataConfiguration(), dataRows);
+				final DataSetEntity dataSetEntity = dataSetService.getDataSetEntityOrThrow(projectEntity,
+				                                                                           dataSetSource);
+				result = databaseService.exportEncodedDataSet(dataSetEntity, requireLoadDataRequest(loadDataRequest));
 			}
 			case LOAD_TRANSFORMATION_RESULT -> {
 				result = databaseService.exportTransformationResult(projectEntity, holdOutSelector, dataSetSource);
@@ -704,6 +685,22 @@ public class DataController {
 			}
 		}
 		return new ResponseEntity<>(result, HttpStatus.OK);
+	}
+
+	/**
+	 * Returns the given request or the default request if no request is given.
+	 *
+	 * @param loadDataRequest The request.
+	 * @return The given request or the default request.
+	 */
+	private LoadDataRequest requireLoadDataRequest(@Nullable final LoadDataRequest loadDataRequest) {
+		if (loadDataRequest != null) {
+			return loadDataRequest;
+		}
+
+		final LoadDataRequest defaultRequest = new LoadDataRequest();
+		defaultRequest.setHoldOutSelector(HoldOutSelector.ALL);
+		return defaultRequest;
 	}
 
 	private enum RequestType {

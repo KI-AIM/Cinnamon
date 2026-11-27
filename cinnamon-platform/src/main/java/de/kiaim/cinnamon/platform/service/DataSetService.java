@@ -75,26 +75,26 @@ public class DataSetService {
 	                                         final Collection<StoredTransformationError> transformationErrors,
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
-		return encodeDataRows(dataSet, transformationErrors, 0, null, columnIndexMapping, loadDataRequest);
+		return encodeDataRows(dataSet, transformationErrors, null, columnIndexMapping, loadDataRequest);
 	}
 
 	/**
 	 * Encodes the given data set using the given DataConfiguration and the given encoding configuration.
 	 * Replaces all null values with the configured encoding.
-	 * Applies the given offset to the row indices of the transformation errors if indexMapping is null.
-	 * If indexMapping is not null, uses the value at the given position as the row index.
+	 * If rowPositions is null, the row index of a transformation error is used as the position of the row
+	 * in the given data set. Otherwise, the position is looked up in rowPositions
+	 * and errors of rows that are not contained are skipped.
 	 *
 	 * @param dataSet DataSet to encode.
 	 * @param transformationErrors The transformation errors
-	 * @param rowOffset Start row of the data set that is applied to the indices of the transformation errors.
-	 * @param indexMapping Mapping for the index in the original data set.
+	 * @param rowPositions Mapping from the row index in the original data set to the position in the given data set.
+	 *                     See {@link #getRowPositions(List)}.
 	 * @param loadDataRequest Export settings.
 	 * @return Encoded data set.
 	 */
 	public List<List<@Nullable Object>> encodeDataRows(final DataSet dataSet,
 	                                         final Collection<StoredTransformationError> transformationErrors,
-	                                         final int rowOffset,
-	                                         @Nullable final List<Integer> indexMapping,
+	                                         @Nullable final Map<Integer, Integer> rowPositions,
 	                                         final Map<Integer, Integer> columnIndexMapping,
 	                                         final LoadDataRequest loadDataRequest) {
 
@@ -122,6 +122,14 @@ public class DataSetService {
 					continue;
 				}
 
+				final Integer rowIndex = rowPositions != null
+				                         ? rowPositions.get(transformationError.rowIndex())
+				                         : Integer.valueOf(transformationError.rowIndex());
+				if (rowIndex == null) {
+					// Row is not exported
+					continue;
+				}
+
 				final var encodedValue = switch (transformationError.errorType()) {
 					case CONFIG_ERROR, OTHER -> encodeValue(defaultNullEncoding, transformationError);
 					case FORMAT_ERROR -> encodeValue(formatErrorEncoding, transformationError);
@@ -130,14 +138,25 @@ public class DataSetService {
 				};
 
 				final Integer columnIndex = columnIndexMapping.get(transformationError.columnIndex());
-				final int rowIndex = indexMapping != null
-				                  ? indexMapping.indexOf(transformationError.rowIndex())
-				                  : transformationError.rowIndex() - rowOffset;
 				data.get(rowIndex).set(columnIndex, encodedValue);
 			}
 		}
 
 		return data;
+	}
+
+	/**
+	 * Maps the row indices in the original data set to their position in the given list.
+	 *
+	 * @param rowNumbers The row indices in the original data set, in the order of the exported rows.
+	 * @return Map from the row index to the position.
+	 */
+	public Map<Integer, Integer> getRowPositions(final List<Integer> rowNumbers) {
+		final Map<Integer, Integer> rowPositions = new HashMap<>((int) (rowNumbers.size() / 0.75f) + 1);
+		for (int i = 0; i < rowNumbers.size(); i++) {
+			rowPositions.put(rowNumbers.get(i), i);
+		}
+		return rowPositions;
 	}
 
 	/**

@@ -153,6 +153,14 @@ export class ConfigurationPageComponent implements OnInit {
     ) {
     }
 
+    /**
+     * Routes to the data configuration step, where the extended analysis can be enabled.
+     * @protected
+     */
+    protected routeToExtendedAnalysis(): void {
+        this.stateManagementService.routeToStep(Steps.DATA_CONFIG).subscribe();
+    }
+
     protected get isSynthetizationConfiguration(): boolean {
         return this.algorithmService.getConfigurationName() === "synthetization_configuration";
     }

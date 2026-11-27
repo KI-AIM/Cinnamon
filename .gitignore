@@ -6,6 +6,7 @@ target/
 
 ### Local files ###
 .env
+docker-compose-dev.yml
 secrets/
 scripts/resources/
 .DS_Store

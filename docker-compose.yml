@@ -93,17 +93,14 @@ services:
     cinnamon-pdf:
         # Renders the report page of the frontend into a PDF.
         # Must not be exposed: it renders arbitrary URLs unless restricted by the allow list.
-        # TODO Pin an exact version
-        image: gotenberg/gotenberg:8
+        image: gotenberg/gotenberg:9.10.2
         container_name: cinnamon-pdf
         restart: unless-stopped
-        ports:
-            - "127.0.0.1:3000:3000"
         networks:
             - report-network
         command:
             - gotenberg
-#            - --chromium-allow-list=^http://cinnamon-platform:8080/.*
+            - --chromium-allow-list=^http://cinnamon-platform:8080/.*
             # Between the page timeout (90s) and cinnamon.report-renderer.timeout (120s)
             - --api-timeout=110s
     cinnamon-synthetization:

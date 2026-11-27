@@ -10,6 +10,9 @@ cinnamon.external-server.risk-assessment-server.callback-host=host.docker.intern
 cinnamon.password-requirements.min-length=1
 cinnamon.password-requirements.constraints=lowercase
 
+cinnamon.report-renderer.url=http://localhost:3000
+cinnamon.report-renderer.platform-url=http://host.docker.internal:8080
+
 logging.level.de.kiaim.cinnamon.platform=debug
 
 management.endpoint.health.show-components=always
